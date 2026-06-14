@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { Send, Sparkles, ChevronLeft, ChevronRight, Mic, Loader2, Headphones, Volume2, Languages, Pause, BookOpen, Trash2, Sliders, Settings } from "lucide-react";
-import { apiRequest, ensureAuthenticated } from "../../lib/api";
+import { apiRequest, ensureAuthenticated, API_BASE_URL } from "../../lib/api";
  
 interface Syllable {
   char: string;
@@ -319,8 +319,6 @@ export default function TutorChat() {
 
     try {
       const token = localStorage.getItem("token");
-      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
-      
       const response = await fetch(`${API_BASE_URL}/speech/stt`, {
         method: "POST",
         headers: {
@@ -437,7 +435,6 @@ export default function TutorChat() {
           ? (baseLanguage === "english" ? "en" : "ko")
           : (baseLanguage === "english" ? "ko" : "en");
 
-        const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
         const audioUrl = `${API_BASE_URL}/speech/tts?text=${encodeURIComponent(cleanedText)}&lang=${langCode}&voice=${encodeURIComponent(selectedVoiceName || "")}`;
 
         
@@ -764,7 +761,6 @@ export default function TutorChat() {
                           if (confirm("Are you sure you want to delete this dialogue session?")) {
                             try {
                               const token = localStorage.getItem("token");
-                              const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
                               const response = await fetch(`${API_BASE_URL}/tutor/conversations/${c.id}`, {
                                 method: "DELETE",
                                 headers: {
