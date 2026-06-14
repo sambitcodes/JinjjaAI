@@ -45,7 +45,7 @@ export default function UnifiedAuthLandingPage() {
     if (window.google) {
       try {
         window.google.accounts.id.initialize({
-          client_id: "523932271425-0m4bk0528jml3lu278tmk9cmfia6uvm6.apps.googleusercontent.com",
+          client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "523932271425-0m4bk0528jml3lu278tmk9cmfia6uvm6.apps.googleusercontent.com",
           callback: handleGoogleCredentialResponse,
         });
         
