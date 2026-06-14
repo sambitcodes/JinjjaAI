@@ -413,11 +413,11 @@ async def submit_words_answer(body: AnswerSubmit, current_user: User = Depends(g
 async def generate_quiz(use_ai: bool = False, current_user: User = Depends(get_current_user)):
     static_quiz = [
         {"id": "q1", "type": "choice", "question": "Select the vowel that sounds like 'ee' in 'feet':", "options": ["ㅏ", "ㅓ", "ㅡ", "ㅣ"], "correct_answer": "ㅣ", "explanation": "ㅣ makes the pure high 'ee' sound."},
-        {"id": "q2", "type": "choice", "question": "Which word means 'cucumber' and uses ㅗ and ㅣ?", "options": ["아기", "어머니", "오이", "우유"], "correct_answer": "오이", "explanation": "오이 is cucumber."},
-        {"id": "q3", "type": "choice", "question": "Which of these is a flat throat sound (ㅡ)?", "options": ["ㅏ", "ㅓ", "ㅡ", "ㅣ"], "correct_answer": "ㅡ", "explanation": "ㅡ is the flat throat 'eu' vowel."},
-        {"id": "q4", "type": "choice", "question": "Select the correct Hangeul translation for 'mother' (어머니):", "options": ["아기", "어머니", "오이", "우리"], "correct_answer": "어머니", "explanation": "어머니 is mother."},
-        {"id": "q5", "type": "writing", "question": "Type the Hangeul letter for 'ah' (with silent ㅇ):", "correct_answer": "아", "explanation": "아 is Romanized as 'a' or 'ah'."},
-        {"id": "q6", "type": "writing", "question": "Type the Hangeul word for 'baby' (아기):", "correct_answer": "아기", "explanation": "아기 is baby."}
+        {"id": "q2", "type": "choice", "question": "Which of these Hangeul words means 'cucumber'?", "options": ["아기", "어머니", "오이", "우유"], "correct_answer": "오이", "explanation": "오이 is cucumber, composed of ㅗ (o) and ㅣ (i)."},
+        {"id": "q3", "type": "choice", "question": "Which of these represents a flat throat 'eu' vowel sound?", "options": ["ㅏ", "ㅓ", "ㅡ", "ㅣ"], "correct_answer": "ㅡ", "explanation": "ㅡ is the flat throat 'eu' vowel."},
+        {"id": "q4", "type": "choice", "question": "Select the correct Hangeul translation for 'mother' (eo-meo-ni):", "options": ["아기", "어머니", "오이", "우리"], "correct_answer": "어머니", "explanation": "어머니 is mother."},
+        {"id": "q5", "type": "writing", "question": "Type the Hangeul letter for 'ah' (with silent placeholder consonant):", "correct_answer": "아", "explanation": "아 is Romanized as 'a' or 'ah'."},
+        {"id": "q6", "type": "writing", "question": "Type the Hangeul word for 'baby' (a-gi):", "correct_answer": "아기", "explanation": "아기 is baby."}
     ]
 
     if not use_ai:
@@ -436,7 +436,8 @@ async def generate_quiz(use_ai: bool = False, current_user: User = Depends(get_c
         "  \"correct_answer\": \"string\",\n"
         "  \"explanation\": \"string\"\n"
         "}\n"
-        "Cover vowels: ㅏ, ㅓ, ㅗ, ㅜ, ㅡ, ㅣ and basic words like 아기, 어머니, 오이."
+        "Cover vowels: ㅏ, ㅓ, ㅗ, ㅜ, ㅡ, ㅣ and basic words like 아기, 어머니, 오이.\n"
+        "CRITICAL RULE: The question field MUST NOT contain the correct Hangeul letter or word itself. It should describe it phonetically or conceptually. For example, instead of writing 'Which one is ㅏ?', write 'Select the Hangeul letter that sounds like a in father'. The target letter or word must only appear in the options and correct_answer fields."
     )
     ai_output = await call_llama_groq(prompt)
     if ai_output:
