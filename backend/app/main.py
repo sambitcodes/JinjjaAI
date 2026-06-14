@@ -25,9 +25,11 @@ app.mount("/materials", StaticFiles(directory=materials_dir), name="materials")
 
 # Set all CORS enabled origins
 if settings.BACKEND_CORS_ORIGINS:
+    origins = [str(origin).strip("/") for origin in settings.BACKEND_CORS_ORIGINS]
+    print(f"DEBUG CORS: Allowed origins configured: {origins}", flush=True)
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=[str(origin).strip("/") for origin in settings.BACKEND_CORS_ORIGINS],
+        allow_origins=origins,
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
