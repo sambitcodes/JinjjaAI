@@ -377,6 +377,11 @@ export default function Phase1VowelBootcampWizard({
           <button 
             onClick={() => setShowOutline(!showOutline)}
             className="text-[10px] bg-zinc-900 border border-white/10 hover:bg-zinc-800 text-zinc-300 px-2.5 py-1 rounded transition cursor-pointer"
+          >
+            Outline
+          </button>
+        </div>
+      </header>
       {/* Screen 1: Welcome/Overview */}
       {step === 1 && (
         <div className="glass-panel neon-border p-10 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center text-center max-w-3xl mx-auto">
