@@ -44,8 +44,8 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
     { name: "Lessons Path", href: "/lessons", icon: BookOpen },
     { name: "AI Tutor Chat", href: "/tutor", icon: MessageSquare },
     { name: "Games Arcade", href: "/games", icon: Gamepad2 },
-    { name: "Materials", href: "/materials", icon: Library },
-    { name: "Online Materials", href: "/online", icon: Globe },
+    { name: "Materials Warehouse", href: "/materials", icon: Library },
+    { name: "Online hub", href: "/online", icon: Globe },
     { name: "AI Benchmarks", href: "/benchmarks", icon: Award },
   ];
 

@@ -58,15 +58,8 @@ export default function MaterialsWarehouse() {
     try {
       const user = await ensureAuthenticated();
       if (!user) return;
-      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
-      const token = localStorage.getItem("token");
-      const response = await fetch(`${API_BASE_URL}/lessons/materials`, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {}
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setMaterials(data);
-      }
+      const data = await apiRequest("/lessons/materials");
+      setMaterials(data);
     } catch (err) {
       console.error("Failed to load materials:", err);
     } finally {
@@ -75,6 +68,7 @@ export default function MaterialsWarehouse() {
   };
 
   useEffect(() => {
+    document.title = "Materials Warehouse - Jinjja AI";
     loadMaterials();
   }, []);
 
@@ -94,8 +88,11 @@ export default function MaterialsWarehouse() {
       try {
         const win = window as any;
         const pdfjsLib = win.pdfjsLib;
-        const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
-        const cleanBaseUrl = API_URL.replace("/api/v1", "");
+        let apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+        if (apiBase && !apiBase.includes("/api/v1")) {
+          apiBase = apiBase.replace(/\/$/, "") + "/api/v1";
+        }
+        const cleanBaseUrl = apiBase.replace("/api/v1", "").replace(/\/$/, "");
         const docUrl = `${cleanBaseUrl}${selectedPdf.url}`;
         
         const loadingTask = pdfjsLib.getDocument({
@@ -596,8 +593,11 @@ export default function MaterialsWarehouse() {
               {/* Download Button */}
               <a
                 href={(() => {
-                  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
-                  const cleanBaseUrl = API_URL.replace("/api/v1", "");
+                  let apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+                  if (apiBase && !apiBase.includes("/api/v1")) {
+                    apiBase = apiBase.replace(/\/$/, "") + "/api/v1";
+                  }
+                  const cleanBaseUrl = apiBase.replace("/api/v1", "").replace(/\/$/, "");
                   return `${cleanBaseUrl}${selectedPdf.url}`;
                 })()}
                 download

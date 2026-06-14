@@ -65,16 +65,10 @@ export default function OnlineMaterials() {
     try {
       const user = await ensureAuthenticated();
       if (!user) return;
-      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
-      const token = localStorage.getItem("token");
-      const response = await fetch(`${API_BASE_URL}/lessons/online`, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {}
-      });
-      if (response.ok) {
-        const rawVideos = await response.json();
-        
-        // Group raw videos by playlist (or unique source_seed_id)
-        const groups: Record<string, OnlineResource> = {};
+      const rawVideos = await apiRequest("/lessons/online");
+      
+      // Group raw videos by playlist (or unique source_seed_id)
+      const groups: Record<string, OnlineResource> = {};
         
         rawVideos.forEach((video: any, index: number) => {
           const seedId = video.source_seed_id || `seed_${index}`;
@@ -178,7 +172,6 @@ export default function OnlineMaterials() {
         });
 
         setResources(groupedResources);
-      }
     } catch (err) {
       console.error("Failed to load online materials:", err);
     } finally {
@@ -187,6 +180,7 @@ export default function OnlineMaterials() {
   };
 
   useEffect(() => {
+    document.title = "Online hub - Jinjja AI";
     fetchOnlineMaterials();
   }, []);
 
@@ -548,7 +542,7 @@ export default function OnlineMaterials() {
                 <span>Vault Repository</span>
               </div>
               <h1 className="text-3xl md:text-5xl font-black text-white leading-tight tracking-tight">
-                Online <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-400 via-amber-400 to-red-500 font-black">Materials</span>
+                Online <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-400 via-amber-400 to-red-500 font-black">hub</span>
               </h1>
               <p className="text-zinc-400 text-sm leading-relaxed">
                 Explore handpicked playlists, sync live transcripts, and query Gwan-Sik's Groq AI Helper for custom summaries and quizzes.
