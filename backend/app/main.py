@@ -11,8 +11,17 @@ app = FastAPI(
     redoc_url="/redoc"
 )
 
-# Mount book materials directory
-app.mount("/materials", StaticFiles(directory="/app/korean_book_materials"), name="materials")
+# Mount book materials directory safely
+import os
+materials_dir = "/app/korean_book_materials"
+if not os.path.exists(materials_dir):
+    local_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "korean_book_materials"))
+    if os.path.exists(local_path):
+        materials_dir = local_path
+    else:
+        os.makedirs(materials_dir, exist_ok=True)
+
+app.mount("/materials", StaticFiles(directory=materials_dir), name="materials")
 
 # Set all CORS enabled origins
 if settings.BACKEND_CORS_ORIGINS:
