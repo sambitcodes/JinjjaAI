@@ -4,10 +4,17 @@ from pydantic import AnyHttpUrl, BeforeValidator, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing_extensions import Annotated
 
+import json
+
 def parse_cors(v: Union[str, List[str]]) -> List[str]:
-    if isinstance(v, str) and not v.startswith("["):
-        return [i.strip() for i in v.split(",")]
-    elif isinstance(v, (list, str)):
+    if isinstance(v, str):
+        if v.startswith("[") and v.endswith("]"):
+            try:
+                return json.loads(v)
+            except Exception:
+                pass
+        return [i.strip() for i in v.split(",") if i.strip()]
+    elif isinstance(v, list):
         return v
     raise ValueError(v)
 
