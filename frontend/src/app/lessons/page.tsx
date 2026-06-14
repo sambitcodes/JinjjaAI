@@ -148,30 +148,30 @@ export default function LessonPlayer() {
       // Headers
       if (trimmed.startsWith("# ")) {
         return (
-          <h1 key={idx} className="text-xl md:text-2xl font-black text-white mt-5 mb-3 border-b border-white/10 pb-2 flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-brand-400" />
+          <h1 key={idx} className="text-2xl md:text-3xl lg:text-4xl font-black text-white mt-6 mb-4 border-b border-white/10 pb-2 flex items-center gap-2">
+            <span className="h-2.5 w-2.5 rounded-full bg-brand-400" />
             {trimmed.slice(2)}
           </h1>
         );
       }
       if (trimmed.startsWith("## ")) {
         return (
-          <h2 key={idx} className="text-lg md:text-xl font-black text-zinc-100 mt-4 mb-2.5 flex items-center gap-1.5">
-            <span className="h-1.5 w-1.5 rounded bg-brand-400" />
+          <h2 key={idx} className="text-xl md:text-2xl lg:text-3xl font-black text-zinc-100 mt-5 mb-3 flex items-center gap-1.5">
+            <span className="h-2 w-2 rounded bg-brand-400" />
             {trimmed.slice(3)}
           </h2>
         );
       }
       if (trimmed.startsWith("### ")) {
         return (
-          <h3 key={idx} className="text-base md:text-lg font-extrabold text-amber-300 mt-4 mb-2">
+          <h3 key={idx} className="text-lg md:text-xl lg:text-2xl font-extrabold text-amber-300 mt-5 mb-2.5">
             {trimmed.slice(4)}
           </h3>
         );
       }
       if (trimmed.startsWith("#### ")) {
         return (
-          <h4 key={idx} className="text-xs md:text-sm font-black text-purple-400 uppercase tracking-widest mt-3 mb-1">
+          <h4 key={idx} className="text-sm md:text-base lg:text-lg font-black text-purple-400 uppercase tracking-widest mt-4 mb-2">
             {trimmed.slice(5)}
           </h4>
         );
@@ -181,9 +181,9 @@ export default function LessonPlayer() {
       if (trimmed.startsWith("- ") || trimmed.startsWith("* ")) {
         const content = trimmed.slice(2);
         return (
-          <div key={idx} className="flex items-start gap-2 pl-4 my-1">
+          <div key={idx} className="flex items-start gap-2.5 pl-4 my-1.5">
             <span className="text-brand-400 select-none mt-1.5">•</span>
-            <span className="text-zinc-300 text-xs md:text-sm leading-relaxed">{parseInlineMarkdown(content)}</span>
+            <span className="text-zinc-300 text-sm md:text-base lg:text-lg leading-relaxed">{parseInlineMarkdown(content)}</span>
           </div>
         );
       }
@@ -192,16 +192,16 @@ export default function LessonPlayer() {
       const numMatch = trimmed.match(/^(\d+)\.\s(.*)/);
       if (numMatch) {
         return (
-          <div key={idx} className="flex items-start gap-2 pl-4 my-1">
-            <span className="text-brand-400 font-mono font-bold select-none text-xs mt-0.5">{numMatch[1]}.</span>
-            <span className="text-zinc-300 text-xs md:text-sm leading-relaxed">{parseInlineMarkdown(numMatch[2])}</span>
+          <div key={idx} className="flex items-start gap-2.5 pl-4 my-1.5">
+            <span className="text-brand-400 font-mono font-bold select-none text-sm mt-0.5">{numMatch[1]}.</span>
+            <span className="text-zinc-300 text-sm md:text-base lg:text-lg leading-relaxed">{parseInlineMarkdown(numMatch[2])}</span>
           </div>
         );
       }
       
       // Paragraph
       return (
-        <p key={idx} className="text-zinc-300 text-xs md:text-sm leading-relaxed my-1.5">
+        <p key={idx} className="text-zinc-300 text-sm md:text-base lg:text-lg leading-relaxed my-2">
           {parseInlineMarkdown(trimmed)}
         </p>
       );
@@ -777,7 +777,11 @@ export default function LessonPlayer() {
   console.log("LessonPlayer Render: activeIdx =", activeIdx, "lessons length =", lessons.length, "active title =", activeLesson?.title);
 
   return (
-    <div className="min-h-screen text-foreground max-w-2xl mx-auto p-4 flex flex-col justify-center relative overflow-hidden">
+    <div className={`min-h-screen text-foreground p-4 flex flex-col justify-center relative overflow-hidden transition-all duration-300 w-full ${
+      showSyllabus 
+        ? "max-w-3xl lg:max-w-5xl xl:max-w-6xl lg:pl-80 mx-auto" 
+        : "max-w-2xl lg:max-w-4xl mx-auto"
+    }`}>
       
       {/* Background glowing decorations */}
       <div className="absolute -top-10 left-1/4 w-[400px] h-[400px] bg-gradient-to-tr from-purple-500/10 to-indigo-500/5 rounded-full blur-[140px] pointer-events-none animate-pulse duration-10000" />

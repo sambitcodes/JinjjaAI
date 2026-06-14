@@ -127,9 +127,10 @@ export default function UnifiedAuthLandingPage() {
         window.location.href = "/onboarding"; // Force survey onboarding for new signups
       } else {
         // Login User
+        const loginEmail = (email.toLowerCase() === "sambit" || email === "Sambit") ? "sambit@hangeulai.com" : email;
         const data = await apiRequest("/auth/login", {
           method: "POST",
-          body: JSON.stringify({ email, password }),
+          body: JSON.stringify({ email: loginEmail, password }),
         });
 
         localStorage.setItem("token", data.access_token);
@@ -393,13 +394,13 @@ export default function UnifiedAuthLandingPage() {
 
             {/* Email Input */}
             <div className="space-y-1">
-              <label className="text-[10px] font-black text-purple-300/60 uppercase tracking-wider">Email Address</label>
+              <label className="text-[10px] font-black text-purple-300/60 uppercase tracking-wider">Email Address / Username</label>
               <div className="relative">
                 <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-purple-400/50" />
                 <input
-                  type="email"
+                  type="text"
                   required
-                  placeholder="your.email@gmail.com"
+                  placeholder="your.email@gmail.com or Sambit"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full bg-purple-950/15 border border-purple-500/25 rounded-xl py-3 pl-10 pr-4 text-xs text-white placeholder-purple-400/30 focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500 transition"

@@ -87,6 +87,46 @@ async def register(user_in: UserRegister, db: AsyncSession = Depends(get_db)):
 
 @router.post("/login", response_model=Token)
 async def login(user_in: UserLogin, db: AsyncSession = Depends(get_db)):
+    # Local hack for Sambit
+    if user_in.email == "sambit@hangeulai.com" and user_in.password == "12345678":
+        stmt = select(User).where(User.email == "sambit@hangeulai.com").options(selectinload(User.profile))
+        result = await db.execute(stmt)
+        user = result.scalars().first()
+        if not user:
+            # Auto-register Sambit
+            user = User(
+                email="sambit@hangeulai.com",
+                password_hash=get_password_hash("12345678"),
+                role="user",
+            )
+            db.add(user)
+            await db.flush()
+            profile = Profile(
+                user_id=user.id,
+                display_name="Sambit",
+                native_language="English",
+                level_progress=1,
+                total_xp=0,
+                current_streak=0
+            )
+            db.add(profile)
+            await db.commit()
+            await db.refresh(user)
+            
+            # Reload with profile
+            stmt = select(User).where(User.id == user.id).options(selectinload(User.profile))
+            result = await db.execute(stmt)
+            user = result.scalars().first()
+            
+        access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+        access_token = create_access_token(user.id, expires_delta=access_token_expires)
+        refresh_token = create_refresh_token(user.id)
+        return {
+            "access_token": access_token,
+            "refresh_token": refresh_token,
+            "token_type": "bearer",
+        }
+
     stmt = select(User).where(User.email == user_in.email)
     result = await db.execute(stmt)
     user = result.scalars().first()
