@@ -22,7 +22,7 @@ class Settings(BaseSettings):
     # CORS
     BACKEND_CORS_ORIGINS: Annotated[
         Union[List[str], str], BeforeValidator(parse_cors)
-    ] = ["http://localhost:3000", "http://127.0.0.1:3000"]
+    ] = ["http://localhost:3000", "http://127.0.0.1:3000", "https://jinjja-frontend.onrender.com"]
 
     # PostgreSQL Database
     POSTGRES_SERVER: str = "localhost"
