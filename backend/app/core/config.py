@@ -21,7 +21,7 @@ class Settings(BaseSettings):
     
     # CORS
     BACKEND_CORS_ORIGINS: Annotated[
-        List[str], BeforeValidator(parse_cors)
+        Union[List[str], str], BeforeValidator(parse_cors)
     ] = ["http://localhost:3000", "http://127.0.0.1:3000"]
 
     # PostgreSQL Database
