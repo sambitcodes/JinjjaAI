@@ -4,11 +4,25 @@ from fastapi.staticfiles import StaticFiles
 from backend.app.core.config import settings
 from backend.app.api.router import api_router
 
+from contextlib import asynccontextmanager
+from backend.app.core.database import engine, Base
+# Import all models so they register with Base before create_all
+from backend.app.models import user, lesson, study
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    print("Lifespan: Verifying and creating database tables...", flush=True)
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    print("Lifespan: Database tables verified/created successfully.", flush=True)
+    yield
+
 app = FastAPI(
     title=settings.PROJECT_NAME,
     openapi_url=f"{settings.API_V1_STR}/openapi.json",
     docs_url="/docs",
-    redoc_url="/redoc"
+    redoc_url="/redoc",
+    lifespan=lifespan
 )
 
 # Mount book materials directory safely
