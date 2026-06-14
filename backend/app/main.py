@@ -6,6 +6,7 @@ from backend.app.api.router import api_router
 
 from contextlib import asynccontextmanager
 from backend.app.core.database import engine, Base
+from sqlalchemy import text
 # Import all models so they register with Base before create_all
 from backend.app.models import user, lesson, study
 
@@ -14,7 +15,11 @@ async def lifespan(app: FastAPI):
     print("Lifespan: Verifying and creating database tables...", flush=True)
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-    print("Lifespan: Database tables verified/created successfully.", flush=True)
+        print("Lifespan: Database tables verified/created successfully. Running migration checks...", flush=True)
+        await conn.execute(text(
+            "ALTER TABLE profiles ADD COLUMN IF NOT EXISTS gender VARCHAR(50)"
+        ))
+        print("Lifespan: Migration checks completed successfully.", flush=True)
     yield
 
 app = FastAPI(
