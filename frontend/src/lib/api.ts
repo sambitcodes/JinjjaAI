@@ -1,4 +1,8 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+let baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+if (baseUrl && !baseUrl.includes("/api/v1")) {
+  baseUrl = baseUrl.replace(/\/$/, "") + "/api/v1";
+}
+const API_BASE_URL = baseUrl;
 
 export async function apiRequest(endpoint: string, options: RequestInit = {}) {
   const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
