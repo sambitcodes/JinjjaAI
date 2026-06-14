@@ -27,14 +27,27 @@ app = FastAPI(
 
 # Mount book materials directory safely
 import os
-materials_dir = "/app/korean_book_materials"
-if not os.path.exists(materials_dir):
-    local_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "korean_book_materials"))
-    if os.path.exists(local_path):
-        materials_dir = local_path
-    else:
-        os.makedirs(materials_dir, exist_ok=True)
 
+def _find_materials_dir() -> str:
+    # The Dockerfile copies the repo into /app/backend/, so PDFs land at:
+    #   /app/backend/korean_book_materials/
+    # __file__ is /app/backend/app/main.py  →  go up 2 levels to reach /app/backend/
+    candidates = [
+        os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "korean_book_materials")),  # Docker: /app/backend/korean_book_materials
+        os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "korean_book_materials")),  # Local dev fallback
+        "/app/korean_book_materials",  # Legacy override
+    ]
+    for candidate in candidates:
+        if os.path.isdir(candidate) and any(f.endswith(".pdf") for f in os.listdir(candidate) if os.path.isfile(os.path.join(candidate, f))):
+            print(f"Materials dir found: {candidate}", flush=True)
+            return candidate
+    # Nothing found – create a placeholder so StaticFiles doesn't crash
+    fallback = candidates[0]
+    os.makedirs(fallback, exist_ok=True)
+    print(f"WARNING: No PDFs found. Created empty materials dir: {fallback}", flush=True)
+    return fallback
+
+materials_dir = _find_materials_dir()
 app.mount("/materials", StaticFiles(directory=materials_dir), name="materials")
 
 # Set all CORS enabled origins

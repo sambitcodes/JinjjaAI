@@ -60,8 +60,19 @@ async def list_curated_lessons(
 @router.get("/materials")
 async def list_book_materials(current_user: User = Depends(get_current_user)):
     import os
-    directory = "/app/korean_book_materials"
-    if not os.path.exists(directory):
+    # __file__ is backend/app/api/v1/lessons.py → go up 3 levels to backend/
+    backend_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
+    candidates = [
+        os.path.join(backend_root, "korean_book_materials"),          # Docker: /app/backend/korean_book_materials
+        os.path.abspath(os.path.join(backend_root, "..", "korean_book_materials")),  # Local dev
+        "/app/korean_book_materials",  # legacy
+    ]
+    directory = None
+    for c in candidates:
+        if os.path.isdir(c):
+            directory = c
+            break
+    if not directory:
         return []
     
     files = []
@@ -96,14 +107,13 @@ async def list_book_materials(current_user: User = Depends(get_current_user)):
 async def get_online_study_materials(current_user: User = Depends(get_current_user)):
     import os
     import json
-    # Read the output JSON file directly from root/backend workspace
-    # Since backend volume bind mounts the workspace folder, let's locate it relative to backend path
-    # /app/backend/youtube-output-format.json
+    # __file__ is backend/app/api/v1/lessons.py → go up 3 levels to backend/
+    backend_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
     paths_to_try = [
+        os.path.join(backend_root, "app", "services", "youtube_output_format.json"),  # Docker
         "/app/backend/app/services/youtube_output_format.json",
         "backend/app/services/youtube_output_format.json",
         "app/services/youtube_output_format.json",
-        "../app/services/youtube_output_format.json"
     ]
     for p in paths_to_try:
         if os.path.exists(p):
