@@ -12,6 +12,7 @@ class ProfileResponse(BaseModel):
     current_streak: int
     last_active: datetime
     dob: str | None = None
+    gender: str | None = None
     study_reason: str | None = None
     occupation: str | None = None
     korean_culture_experience: str | None = None
@@ -30,6 +31,7 @@ class ProfileUpdate(BaseModel):
     native_language: str | None = None
     level_progress: int | None = None
     dob: str | None = None
+    gender: str | None = None
     study_reason: str | None = None
     occupation: str | None = None
     korean_culture_experience: str | None = None

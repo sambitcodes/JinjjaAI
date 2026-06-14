@@ -44,6 +44,8 @@ async def update_profile(
         profile.level_progress = payload.level_progress
     if payload.dob is not None:
         profile.dob = payload.dob
+    if payload.gender is not None:
+        profile.gender = payload.gender
     if payload.study_reason is not None:
         profile.study_reason = payload.study_reason
     if payload.occupation is not None:
@@ -70,6 +72,7 @@ async def update_profile(
 class GenerateNameRequest(BaseModel):
     name: str
     dob: str
+    gender: str = "Prefer not to say"
     study_reason: str
     occupation: str
     korean_culture_experience: str
@@ -88,11 +91,16 @@ async def generate_korean_name(
         f"Generate a beautiful, culturally authentic, and meaningful Korean name for a student with these details:\n"
         f"- English/Original Name: {payload.name}\n"
         f"- DOB: {payload.dob}\n"
+        f"- Gender Identity: {payload.gender}\n"
         f"- Reason for studying Korean: {payload.study_reason}\n"
         f"- Current Occupation: {payload.occupation}\n"
         f"- Korean Culture Experience: {payload.korean_culture_experience}\n"
         f"- Korean Language Proficiency: {payload.korean_proficiency}\n\n"
-        "Generate a fun, warm, and highly personalized Korean name in Hangul (2 syllables usually, e.g. 서준, 민선, 지우). "
+        "IMPORTANT: Generate a name that is culturally appropriate for the person's gender identity. "
+        "For Male, use traditionally masculine Korean names (e.g. 서준, 민준, 지훈). "
+        "For Female, use traditionally feminine Korean names (e.g. 지우, 서연, 민선). "
+        "For Non-binary, gender-neutral, or 'Prefer not to say', use beautiful gender-neutral Korean names (e.g. 지우, 유나, 하늘).\n"
+        "Generate a fun, warm, and highly personalized Korean name in Hangul (2 syllables usually). "
         "Explain the deep meaning of the syllables and write a warm, encouraging explanation of why this name perfectly fits their background.\n\n"
         "Return the response in strict JSON format with these exact keys:\n"
         "{\n"

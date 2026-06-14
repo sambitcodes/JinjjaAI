@@ -37,6 +37,7 @@ class Profile(Base):
 
     # Onboarding details
     dob: Mapped[str] = mapped_column(String(50), nullable=True)
+    gender: Mapped[str] = mapped_column(String(50), nullable=True)
     study_reason: Mapped[str] = mapped_column(String(255), nullable=True)
     occupation: Mapped[str] = mapped_column(String(100), nullable=True)
     korean_culture_experience: Mapped[str] = mapped_column(String(255), nullable=True)

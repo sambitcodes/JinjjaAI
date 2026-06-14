@@ -7,7 +7,7 @@ import {
   Trash2, RotateCcw, Scroll, ShieldAlert, Crop, X, ChevronRight, CheckCircle2,
   Trophy, Calendar, Briefcase, Volume2, BarChart3, BrainCircuit, Zap,
   Mic, GraduationCap, BookMarked, Layers, RefreshCw, Compass,
-  Activity, Clock, Lock, Heart, Medal, Map
+  Activity, Clock, Lock, Heart, Medal, Map, Pencil, Save, User as UserIcon
 } from "lucide-react";
 import { ensureAuthenticated, apiRequest } from "../../lib/api";
 
@@ -22,6 +22,7 @@ interface ProfileData {
   current_streak: number;
   native_language: string;
   dob?: string;
+  gender?: string;
   study_reason?: string;
   occupation?: string;
   korean_culture_experience?: string;
@@ -354,6 +355,21 @@ export default function Dashboard() {
   const [deleteConfirmInput, setDeleteConfirmInput] = useState("");
   const [deleting, setDeleting] = useState(false);
 
+  // Edit Profile modal states
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editSaving, setEditSaving] = useState(false);
+  const [editName, setEditName] = useState("");
+  const [editGender, setEditGender] = useState("Prefer not to say");
+  const [editDobYear, setEditDobYear] = useState("");
+  const [editDobMonth, setEditDobMonth] = useState("");
+  const [editDobDay, setEditDobDay] = useState("");
+  const [editNativeLang, setEditNativeLang] = useState("English");
+  const [editStudyReason, setEditStudyReason] = useState("");
+  const [editOccupation, setEditOccupation] = useState("");
+  const [editCultureExp, setEditCultureExp] = useState("");
+  const [editProficiency, setEditProficiency] = useState("");
+  const [editKoreanName, setEditKoreanName] = useState("");
+
   // Calendar Scheduler states
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
@@ -585,6 +601,55 @@ export default function Dashboard() {
     finally { setDeleting(false); setShowDeleteModal(false); }
   };
 
+  // ── Edit Profile handlers ────────────────────────────────────────────────
+  const openEditModal = () => {
+    if (!profile) return;
+    setEditName(profile.display_name || "");
+    setEditGender(profile.gender || "Prefer not to say");
+    setEditKoreanName(profile.korean_name || "");
+    setEditNativeLang(profile.native_language || "English");
+    setEditStudyReason(profile.study_reason || "K-Pop & K-Dramas (Korean Wave)");
+    setEditOccupation(profile.occupation || "Student");
+    setEditCultureExp(profile.korean_culture_experience || "Deeply immersed (Watch dramas & eat Korean food daily)");
+    setEditProficiency(profile.korean_proficiency || "Absolute Beginner (Don't know Hangul)");
+    if (profile.dob) {
+      const parts = profile.dob.split("-");
+      if (parts.length === 3) {
+        setEditDobYear(parts[0]);
+        setEditDobMonth(String(parseInt(parts[1])));
+        setEditDobDay(String(parseInt(parts[2])));
+      }
+    } else { setEditDobYear(""); setEditDobMonth(""); setEditDobDay(""); }
+    setShowEditModal(true);
+  };
+
+  const handleSaveProfile = async () => {
+    setEditSaving(true);
+    try {
+      const dob = (editDobYear && editDobMonth && editDobDay)
+        ? `${editDobYear}-${editDobMonth.padStart(2,"0")}-${editDobDay.padStart(2,"0")}`
+        : (profile?.dob || "");
+      await apiRequest("/progress/profile", {
+        method: "PATCH",
+        body: JSON.stringify({
+          display_name: editName.trim() || profile?.display_name,
+          gender: editGender,
+          korean_name: editKoreanName.trim() || profile?.korean_name,
+          native_language: editNativeLang,
+          dob,
+          study_reason: editStudyReason,
+          occupation: editOccupation,
+          korean_culture_experience: editCultureExp,
+          korean_proficiency: editProficiency,
+        }),
+      });
+      setShowEditModal(false);
+      const profileData = await apiRequest("/progress/profile");
+      setProfile(profileData);
+    } catch { alert("Failed to save profile changes. Please try again."); }
+    finally { setEditSaving(false); }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-zinc-950">
@@ -675,6 +740,14 @@ export default function Dashboard() {
                   </div>
                 )}
               </div>
+
+              {/* Edit Profile Button */}
+              <button
+                onClick={openEditModal}
+                className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-brand-500/10 hover:bg-brand-500/20 border border-brand-500/20 text-brand-400 hover:text-brand-300 text-xs font-bold transition cursor-pointer"
+              >
+                <Pencil className="w-3.5 h-3.5" /><span>Edit Profile</span>
+              </button>
 
               {/* Reset / Delete */}
               <div className="flex gap-2 w-full pt-1">
@@ -1687,6 +1760,170 @@ export default function Dashboard() {
               <button onClick={handleDeleteAccount} disabled={deleteConfirmInput !== "DELETE" || deleting}
                 className={`flex-1 py-2.5 rounded-xl text-sm font-black transition flex items-center justify-center gap-1.5 ${deleteConfirmInput === "DELETE" && !deleting ? "bg-red-600 hover:bg-red-700 text-white cursor-pointer shadow-lg shadow-red-600/30" : "bg-zinc-900 text-zinc-600 border border-white/5 cursor-not-allowed"}`}>
                 {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Trash2 className="w-4 h-4" /><span>Delete Permanently</span></>}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ═══ EDIT PROFILE MODAL ════════════════════════════════════════════════ */}
+      {showEditModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-fade-in overflow-y-auto">
+          <div className="w-full max-w-lg glass-panel rounded-3xl border border-brand-500/20 shadow-2xl bg-zinc-950 my-4">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-6 border-b border-white/5">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-brand-500/10 rounded-xl border border-brand-500/20">
+                  <UserIcon className="w-5 h-5 text-brand-400" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-black text-white">Edit Profile</h3>
+                  <p className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold">Update your learning identity</p>
+                </div>
+              </div>
+              <button onClick={() => setShowEditModal(false)} className="p-2 hover:bg-white/5 rounded-xl transition cursor-pointer text-zinc-500 hover:text-white">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 space-y-5 max-h-[65vh] overflow-y-auto">
+              {/* Display Name */}
+              <div className="space-y-1.5">
+                <label className="text-[10px] text-zinc-500 uppercase tracking-widest font-black flex items-center gap-1.5">
+                  <UserIcon className="w-3 h-3 text-brand-400" /> Display Name
+                </label>
+                <input type="text" value={editName} onChange={e => setEditName(e.target.value)}
+                  className="w-full bg-zinc-900 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-brand-500/50 transition"
+                  placeholder="Your name" />
+              </div>
+
+              {/* Korean Name */}
+              <div className="space-y-1.5">
+                <label className="text-[10px] text-zinc-500 uppercase tracking-widest font-black flex items-center gap-1.5">
+                  <Sparkles className="w-3 h-3 text-brand-gold" /> Korean Name (한국 이름)
+                </label>
+                <input type="text" value={editKoreanName} onChange={e => setEditKoreanName(e.target.value)}
+                  className="w-full bg-zinc-900 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-brand-500/50 transition font-korean font-bold"
+                  placeholder="e.g. 슬기" />
+              </div>
+
+              {/* Gender */}
+              <div className="space-y-1.5">
+                <label className="text-[10px] text-zinc-500 uppercase tracking-widest font-black flex items-center gap-1.5">
+                  <Heart className="w-3 h-3 text-purple-400" /> Gender Identity
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    { value: "Male", emoji: "♂️" }, { value: "Female", emoji: "♀️" },
+                    { value: "Non-binary", emoji: "⚧️" }, { value: "Genderqueer", emoji: "🏳️‍🌈" },
+                    { value: "Prefer not to say", emoji: "🤐" },
+                  ].map(opt => (
+                    <button key={opt.value} type="button" onClick={() => setEditGender(opt.value)}
+                      className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition cursor-pointer border ${
+                        editGender === opt.value
+                          ? "bg-brand-500/20 border-brand-500/40 text-brand-300"
+                          : "bg-zinc-900 border-white/5 text-zinc-400 hover:text-white"
+                      }`}>
+                      <span>{opt.emoji}</span><span>{opt.value}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Date of Birth */}
+              <div className="space-y-1.5">
+                <label className="text-[10px] text-zinc-500 uppercase tracking-widest font-black flex items-center gap-1.5">
+                  <Calendar className="w-3 h-3 text-accent-pink" /> Date of Birth
+                </label>
+                <div className="flex gap-2">
+                  <select value={editDobMonth} onChange={e => setEditDobMonth(e.target.value)}
+                    className="flex-[2] bg-zinc-900 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-brand-500/50 transition cursor-pointer">
+                    <option value="">Month</option>
+                    {["January","February","March","April","May","June","July","August","September","October","November","December"].map((m, i) => (
+                      <option key={m} value={String(i+1)}>{m}</option>
+                    ))}
+                  </select>
+                  <select value={editDobDay} onChange={e => setEditDobDay(e.target.value)}
+                    className="flex-1 bg-zinc-900 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-brand-500/50 transition cursor-pointer">
+                    <option value="">Day</option>
+                    {Array.from({length: 31}, (_, i) => i+1).map(d => <option key={d} value={String(d)}>{d}</option>)}
+                  </select>
+                  <select value={editDobYear} onChange={e => setEditDobYear(e.target.value)}
+                    className="flex-[1.5] bg-zinc-900 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-brand-500/50 transition cursor-pointer">
+                    <option value="">Year</option>
+                    {Array.from({length: new Date().getFullYear() - 1924}, (_, i) => new Date().getFullYear() - 5 - i).map(y => (
+                      <option key={y} value={String(y)}>{y}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Native Language */}
+              <div className="space-y-1.5">
+                <label className="text-[10px] text-zinc-500 uppercase tracking-widest font-black flex items-center gap-1.5">
+                  <GraduationCap className="w-3 h-3 text-teal-400" /> Native Language
+                </label>
+                <select value={editNativeLang} onChange={e => setEditNativeLang(e.target.value)}
+                  className="w-full bg-zinc-900 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-brand-500/50 transition cursor-pointer">
+                  <option>English</option><option>Spanish</option><option>French</option>
+                  <option>Japanese</option><option>Chinese</option><option>Hindi</option><option>German</option>
+                </select>
+              </div>
+
+              {/* Study Reason */}
+              <div className="space-y-1.5">
+                <label className="text-[10px] text-zinc-500 uppercase tracking-widest font-black flex items-center gap-1.5">
+                  <Heart className="w-3 h-3 text-pink-400" /> Why study Korean?
+                </label>
+                <select value={editStudyReason} onChange={e => setEditStudyReason(e.target.value)}
+                  className="w-full bg-zinc-900 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-brand-500/50 transition cursor-pointer">
+                  <option>K-Pop & K-Dramas (Korean Wave)</option>
+                  <option>Travel or tourism in South Korea</option>
+                  <option>Career & job opportunities</option>
+                  <option>Academic research or linguistic curiosity</option>
+                  <option>Connecting with Korean family or partner</option>
+                  <option>General self-improvement</option>
+                </select>
+              </div>
+
+              {/* Occupation */}
+              <div className="space-y-1.5">
+                <label className="text-[10px] text-zinc-500 uppercase tracking-widest font-black flex items-center gap-1.5">
+                  <Briefcase className="w-3 h-3 text-brand-400" /> Occupation
+                </label>
+                <select value={editOccupation} onChange={e => setEditOccupation(e.target.value)}
+                  className="w-full bg-zinc-900 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-brand-500/50 transition cursor-pointer">
+                  <option>Student</option><option>Software Engineer</option><option>Designer / Artist</option>
+                  <option>Educator / Teacher</option><option>Healthcare Professional</option>
+                  <option>Business Executive / Entrepreneur</option><option>Other Professional</option>
+                </select>
+              </div>
+
+              {/* Korean Proficiency */}
+              <div className="space-y-1.5">
+                <label className="text-[10px] text-zinc-500 uppercase tracking-widest font-black flex items-center gap-1.5">
+                  <Trophy className="w-3 h-3 text-amber-400" /> Korean Proficiency
+                </label>
+                <select value={editProficiency} onChange={e => setEditProficiency(e.target.value)}
+                  className="w-full bg-zinc-900 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-brand-500/50 transition cursor-pointer">
+                  <option>{"Absolute Beginner (Don't know Hangul)"}</option>
+                  <option>Upper Beginner (Know Hangul, basic phrases)</option>
+                  <option>Intermediate (Can hold simple conversation)</option>
+                  <option>Advanced (Can read newspapers & talk fluently)</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex gap-3 p-6 border-t border-white/5">
+              <button onClick={() => setShowEditModal(false)} disabled={editSaving}
+                className="flex-1 bg-zinc-900 hover:bg-zinc-800 text-zinc-400 py-2.5 rounded-xl text-sm font-bold transition cursor-pointer border border-white/5">
+                Cancel
+              </button>
+              <button onClick={handleSaveProfile} disabled={editSaving}
+                className="flex-1 bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-700 text-white py-2.5 rounded-xl text-sm font-black transition cursor-pointer shadow-lg shadow-brand-500/20 flex items-center justify-center gap-2">
+                {editSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Save className="w-4 h-4" /><span>Save Changes</span></>}
               </button>
             </div>
           </div>
