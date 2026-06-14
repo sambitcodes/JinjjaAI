@@ -6,7 +6,7 @@ import {
   Gamepad2, Award, Sparkles, ChevronLeft, Play, RefreshCw, BrainCircuit, Target,
   Layers, Swords, Heart, Plus, Trophy, Trash2, CheckCircle2, ChevronRight, Zap, Loader2
 } from "lucide-react";
-import { apiRequest, ensureAuthenticated } from "@/lib/api";
+import { apiRequest, ensureAuthenticated } from "../../lib/api";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // DATA SETS

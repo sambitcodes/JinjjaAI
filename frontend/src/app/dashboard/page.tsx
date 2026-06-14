@@ -9,7 +9,7 @@ import {
   Mic, GraduationCap, BookMarked, Layers, RefreshCw, Compass,
   Activity, Clock, Lock, Heart, Medal, Map
 } from "lucide-react";
-import { ensureAuthenticated, apiRequest } from "@/lib/api";
+import { ensureAuthenticated, apiRequest } from "../../lib/api";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // TYPES

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight, Volume2, Sparkles, BookOpen, BrainCircuit, Award, Loader2, CheckCircle2, Play, HelpCircle } from "lucide-react";
-import { apiRequest } from "@/lib/api";
+import { apiRequest } from "../lib/api";
 
 interface Phase2ConsonantWizardProps {
   activeLesson: any;

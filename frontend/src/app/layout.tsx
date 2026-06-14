@@ -17,8 +17,8 @@ export const metadata: Metadata = {
   description: "Master Korean with Gwan-Sik, your personalized local AI tutor. Practice writing with floating Hangeul soft keyboards and track your CEFR curriculum pathway.",
 };
 
-import SidebarLayout from "@/components/SidebarLayout";
-import BackgroundDriftParticles from "@/components/BackgroundDriftParticles";
+import SidebarLayout from "../components/SidebarLayout";
+import BackgroundDriftParticles from "../components/BackgroundDriftParticles";
 
 export default function RootLayout({
   children,

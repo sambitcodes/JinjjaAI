@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Sparkles, ArrowRight, ArrowLeft, BookOpen, Compass, Trophy, User, Calendar, GraduationCap, Heart, CheckCircle2, RefreshCw } from "lucide-react";
-import { apiRequest } from "@/lib/api";
+import { apiRequest } from "../../lib/api";
 
 export default function OnboardingPage() {
   // Step tracker

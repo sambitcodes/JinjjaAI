@@ -13,7 +13,7 @@ import {
   BrainCircuit, 
   BookMarked 
 } from "lucide-react";
-import { apiRequest } from "@/lib/api";
+import { apiRequest } from "../lib/api";
 
 interface Phase1VowelBootcampWizardProps {
   activeLesson: any;

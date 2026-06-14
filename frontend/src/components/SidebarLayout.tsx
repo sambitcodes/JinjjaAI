@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Sparkles, BookOpen, MessageSquare, Headphones, Award, Home, User, LogOut, Library, Globe, Gamepad2 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { apiRequest } from "@/lib/api";
+import { apiRequest } from "../lib/api";
 
 import FloatingKeyboard from "./FloatingKeyboard";
 

@@ -7,7 +7,7 @@ import {
   BookOpen, BrainCircuit, HelpCircle, ArrowRight, Search
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ensureAuthenticated, apiRequest } from "@/lib/api";
+import { ensureAuthenticated, apiRequest } from "../../lib/api";
 
 interface PlaylistItem {
   title: string;

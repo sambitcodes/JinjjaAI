@@ -5,7 +5,7 @@ import {
   BookOpen, Folder, ZoomIn, ZoomOut, Maximize, Minimize, 
   ChevronLeft, ChevronRight, Layout, BookOpenCheck, Loader2, ArrowLeft, Download
 } from "lucide-react";
-import { apiRequest, ensureAuthenticated } from "@/lib/api";
+import { apiRequest, ensureAuthenticated } from "../../lib/api";
 
 interface BookMaterial {
   name: string;

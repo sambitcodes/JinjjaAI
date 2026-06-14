@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { Send, Sparkles, ChevronLeft, ChevronRight, Mic, Loader2, Headphones, Volume2, Languages, Pause, BookOpen, Trash2, Sliders, Settings } from "lucide-react";
-import { apiRequest, ensureAuthenticated } from "@/lib/api";
+import { apiRequest, ensureAuthenticated } from "../../lib/api";
  
 interface Syllable {
   char: string;

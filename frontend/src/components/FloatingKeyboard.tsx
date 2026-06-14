@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { Keyboard, X, ArrowDownRight, Sparkles, Delete } from "lucide-react";
-import { assembleHangeul } from "@/lib/hangul";
+import { assembleHangeul } from "../lib/hangul";
 
 export default function FloatingKeyboard() {
   const [isOpen, setIsOpen] = useState(false);

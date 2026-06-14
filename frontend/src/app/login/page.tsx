@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Sparkles, ArrowRight, Languages, Mail, Lock, User as UserIcon, Globe } from "lucide-react";
-import { apiRequest } from "@/lib/api";
+import { apiRequest } from "../../lib/api";
 
 declare global {
   interface Window {
