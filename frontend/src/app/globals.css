@@ -1,0 +1,112 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&family=Gowun+Dodum:wght@400;700&family=Gamja+Flower&display=swap');
+
+@theme inline {
+  --color-brand-50: #f5f3ff;
+  --color-brand-100: #ede9fe;
+  --color-brand-200: #ddd6fe;
+  --color-brand-300: #c084fc;
+  --color-brand-400: #a855f7;
+  --color-brand-500: #8b5cf6;
+  --color-brand-600: #7c3aed;
+  --color-brand-700: #6d28d9;
+  --color-brand-800: #5b21b6;
+  --color-brand-900: #4c1d95;
+
+  --color-accent-pink: #f43f5e;
+  --color-accent-purple: #c084fc;
+  --color-accent-teal: #14b8a6;
+  --color-brand-gold: #f59e0b;
+
+  --animate-gradient: gradient-x 8s ease infinite;
+  --animate-float: float 6s ease-in-out infinite;
+  --animate-pulse-slow: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes gradient-x {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes float-drifting {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg) scale(1);
+    opacity: 0.08;
+  }
+  50% {
+    transform: translateY(-120px) rotate(180deg) scale(1.2);
+    opacity: 0.25;
+  }
+}
+
+:root {
+  --background: #06060c;
+  --foreground: #fafafa;
+  --card: #111122;
+  --card-foreground: #fafafa;
+  --border: #222244;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: 'Outfit', 'Inter', system-ui, -apple-system, sans-serif;
+  overflow-x: hidden;
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(139, 92, 246, 0.12) 0px, transparent 40%),
+    radial-gradient(at 100% 100%, rgba(20, 184, 166, 0.08) 0px, transparent 40%),
+    radial-gradient(at 50% 50%, rgba(244, 63, 94, 0.04) 0px, transparent 50%);
+  background-attachment: fixed;
+}
+
+.font-korean {
+  font-family: 'Gowun Dodum', 'Gamja Flower', sans-serif;
+}
+
+.animate-float-drifting {
+  animation: float-drifting 25s linear infinite;
+}
+
+@keyframes neon-breath {
+  0%, 100% {
+    border-color: rgba(139, 92, 246, 0.2);
+    box-shadow: 0 0 12px rgba(139, 92, 246, 0.08), inset 0 0 6px rgba(139, 92, 246, 0.04);
+  }
+  50% {
+    border-color: rgba(20, 184, 166, 0.45);
+    box-shadow: 0 0 22px rgba(20, 184, 166, 0.18), inset 0 0 10px rgba(20, 184, 166, 0.08);
+  }
+}
+
+.neon-border {
+  animation: neon-breath 6s ease-in-out infinite;
+  border: 1px solid rgba(139, 92, 246, 0.2);
+}
+
+/* Premium Custom Utilities */
+.glass-panel {
+  background: rgba(15, 15, 35, 0.55);
+  backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+.text-gradient {
+  background: linear-gradient(135deg, #a855f7 0%, #f43f5e 50%, #14b8a6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+

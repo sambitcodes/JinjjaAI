@@ -1,0 +1,78 @@
+[
+  {
+    "id": "yt_missvicky_grammar",
+    "type": "playlist",
+    "channel_name": "Korean with Miss Vicky 빅키쌤",
+    "resource_url": "https://www.youtube.com/playlist?list=PLECz2rpRD3Z1q8NmzAOG5cuLYq-rU0BQO",
+    "cefr_range": "A1-A2",
+    "topics": ["Grammar", "Speaking Patterns"],
+    "skills": ["Speaking", "Listening"]
+  },
+  {
+    "id": "yt_missvicky_alphabet",
+    "type": "playlist",
+    "channel_name": "Korean with Miss Vicky 빅키쌤",
+    "resource_url": "https://www.youtube.com/playlist?list=PLECz2rpRD3Z0EeOU0z3aoafwgjHyth7MN",
+    "cefr_range": "A1",
+    "topics": ["Hangeul Alphabet", "Reading", "Pronunciation"],
+    "skills": ["Reading", "Listening"]
+  },
+  {
+    "id": "yt_missvicky_vocabulary",
+    "type": "playlist",
+    "channel_name": "Korean with Miss Vicky 빅키쌤",
+    "resource_url": "https://www.youtube.com/playlist?list=PLECz2rpRD3Z0BoUjRuwlTYM9oyKvV6D68",
+    "cefr_range": "A1-B1",
+    "topics": ["Vocabulary Hacks", "Essential Words"],
+    "skills": ["Vocabulary", "Listening"]
+  },
+  {
+    "id": "yt_gobilly_beginner_course",
+    "type": "playlist",
+    "channel_name": "Go! Billy Korean",
+    "resource_url": "https://www.youtube.com/playlist?list=PLbFrQnW0BNMUkAFj4MjYauXBPtO3I9O_k",
+    "cefr_range": "A1-A2",
+    "topics": ["Beginner Path", "Grammar Focus", "Conversational Phrases"],
+    "skills": ["Speaking", "Listening", "Vocabulary"]
+  },
+  {
+    "id": "yt_single_hangul_billy",
+    "type": "video",
+    "channel_name": "Go! Billy Korean",
+    "resource_url": "https://www.youtube.com/watch?v=0ZhOeA0RD9o",
+    "cefr_range": "A1",
+    "topics": ["Hangeul Alphabet", "Reading", "Bootcamp"],
+    "skills": ["Reading", "Listening"],
+    "duration_iso8601": "PT1H3M22S"
+  },
+  {
+    "id": "yt_single_grammar_billy",
+    "type": "video",
+    "channel_name": "Go! Billy Korean",
+    "resource_url": "https://www.youtube.com/watch?v=fKk4x856v1k",
+    "cefr_range": "A1",
+    "topics": ["SOV Sentence Structure", "Grammar Focus"],
+    "skills": ["Reading", "Listening"],
+    "duration_iso8601": "PT12M15S"
+  },
+  {
+    "id": "yt_single_particles_billy",
+    "type": "video",
+    "channel_name": "Go! Billy Korean",
+    "resource_url": "https://www.youtube.com/watch?v=fS_a-R6pW_M",
+    "cefr_range": "A1",
+    "topics": ["Topic vs Subject Particles", "Grammar Focus"],
+    "skills": ["Reading", "Listening"],
+    "duration_iso8601": "PT15M40S"
+  },
+  {
+    "id": "yt_single_numbers_billy",
+    "type": "video",
+    "channel_name": "Go! Billy Korean",
+    "resource_url": "https://www.youtube.com/watch?v=UaO77_3b7g8",
+    "cefr_range": "A1-A2",
+    "topics": ["Native vs Sino Korean Numbers", "Vocabulary Hacks"],
+    "skills": ["Listening", "Vocabulary"],
+    "duration_iso8601": "PT18M25S"
+  }
+]

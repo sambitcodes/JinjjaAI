@@ -1,0 +1,1 @@
+# HangeulAI backend package initialization

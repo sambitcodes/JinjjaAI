@@ -1,0 +1,83 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: hangeulai-db
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: hangeulai
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - hangeulai-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: hangeulai-cache
+    restart: always
+    ports:
+      - "6379:6379"
+    networks:
+      - hangeulai-network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: hangeulai-backend
+    restart: always
+    depends_on:
+      - postgres
+      - redis
+    environment:
+      - POSTGRES_SERVER=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=hangeulai
+      - REDIS_HOST=redis
+      - JWT_SECRET=prod_super_secret_session_token_key_change_me
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./korean_book_materials:/app/korean_book_materials
+      - ./backend:/app/backend
+    command: uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 --reload
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - hangeulai-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: hangeulai-frontend
+    restart: always
+    depends_on:
+      - backend
+    environment:
+      - PORT=3000
+      - HOSTNAME=0.0.0.0
+      - NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
+      - WATCHPACK_POLLING=true
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+    command: sh -c "npm install --legacy-peer-deps --include=dev && npm run dev"
+    networks:
+      - hangeulai-network
+
+networks:
+  hangeulai-network:
+    driver: bridge
+
+volumes:
+  postgres_data:

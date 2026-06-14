@@ -1,0 +1,62 @@
+# Dependency directories
+node_modules/
+backend/venv/
+backend/.venv/
+venv/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Next.js build output
+.next/
+out/
+next-env.d.ts
+tsconfig.tsbuildinfo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Environments & Secrets
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+backend/.env
+frontend/.env
+frontend/.env.local
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Project specific caches/logs
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+backend/app/services/ai_tutor_orig.py
+frontend/.next/
+frontend/out/
