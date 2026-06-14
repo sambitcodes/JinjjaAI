@@ -43,6 +43,10 @@ class Settings(BaseSettings):
     @classmethod
     def assemble_db_connection(cls, v: str | None, values) -> str:
         if isinstance(v, str) and v:
+            if v.startswith("postgres://"):
+                return v.replace("postgres://", "postgresql+asyncpg://", 1)
+            elif v.startswith("postgresql://") and not v.startswith("postgresql+asyncpg://"):
+                return v.replace("postgresql://", "postgresql+asyncpg://", 1)
             return v
         data = values.data
         user = data.get("POSTGRES_USER")
