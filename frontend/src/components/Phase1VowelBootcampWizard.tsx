@@ -378,24 +378,25 @@ export default function Phase1VowelBootcampWizard({
             onClick={() => setShowOutline(!showOutline)}
             className="text-[10px] bg-zinc-900 border border-white/10 hover:bg-zinc-800 text-zinc-300 px-2.5 py-1 rounded transition cursor-pointer"
           >
-            Outline
+            {showOutline ? "Hide Outline" : "View Outline"}
           </button>
         </div>
       </header>
+
       {/* Screen 1: Welcome/Overview */}
       {step === 1 && (
-        <div className="glass-panel neon-border p-10 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center text-center max-w-3xl mx-auto">
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center text-center">
           <div className="p-4 bg-brand-500/10 rounded-full border border-brand-500/25 w-fit mx-auto text-brand-400 shrink-0">
-            <Sparkles className="w-10 h-10 animate-pulse shrink-0" />
+            <Sparkles className="w-12 h-12 animate-pulse shrink-0" />
           </div>
           <h2 className="text-5xl md:text-6xl font-black text-white">Hangeul 0.1</h2>
           <h3 className="text-2xl md:text-3xl font-bold text-brand-400 mt-1">Vowel Bootcamp</h3>
-          <p className="text-zinc-200 text-base md:text-lg leading-relaxed max-w-2xl mx-auto">
+          <p className="text-zinc-200 text-lg leading-relaxed max-w-4xl mx-auto">
             {metadata?.description || "Welcome to Hangeul! Today you'll learn Korean vowels: how they look, how they sound, and how they shape. Explore vertical and horizontal shapes, play audios, and graduation checks."}
           </p>
-          <div className="bg-zinc-900/60 p-6 rounded-2xl border border-white/5 text-left text-sm text-zinc-400 space-y-3 max-w-2xl mx-auto w-full">
+          <div className="bg-zinc-900/60 p-6 rounded-2xl border border-white/5 text-left text-sm text-zinc-300 space-y-3.5 max-w-4xl mx-auto w-full">
             <p className="text-xs text-zinc-500 font-mono uppercase tracking-wider font-black">🎯 Objectives:</p>
-            <ul className="list-disc list-inside space-y-2 text-zinc-300 pl-1 text-sm md:text-base">
+            <ul className="list-disc list-inside space-y-2 text-zinc-200 pl-1 text-sm md:text-base">
               {(metadata?.goals || [
                 "Recognize all 10 simple vowels visually",
                 "Master mouth alignments and pronunciation nuances",
@@ -404,15 +405,13 @@ export default function Phase1VowelBootcampWizard({
                 <li key={idx}>{g}</li>
               ))}
             </ul>
-            <div className="pt-2 grid grid-cols-2 gap-4 text-xs md:text-sm text-zinc-400">
-              <p><strong>⏱️ Estimated Time:</strong> {metadata?.estimated_minutes || 20} minutes</p>
-              <p><strong>📋 Prerequisites:</strong> {metadata?.prerequisites || "None (True Beginner)"}</p>
-            </div>
+            <p className="pt-2 text-sm md:text-base"><strong>⏱️ Estimated Time:</strong> {metadata?.estimated_minutes || 20} minutes</p>
+            <p className="text-sm md:text-base"><strong>📋 Prerequisites:</strong> {metadata?.prerequisites || "None (True Beginner)"}</p>
           </div>
           <div className="flex flex-col gap-3 max-w-xs mx-auto">
             <button 
               onClick={() => setStep(2)}
-              className="bg-brand-500 hover:bg-brand-600 text-white font-extrabold py-4 px-10 rounded-xl transition text-base flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-brand-500/20"
+              className="bg-brand-500 hover:bg-brand-600 text-white font-bold py-4 px-10 rounded-xl transition text-base flex items-center justify-center gap-2.5 cursor-pointer shadow-lg shadow-brand-500/20"
             >
               <span>Start Phase 1</span>
               <ChevronRight className="w-5 h-5" />
@@ -420,8 +419,8 @@ export default function Phase1VowelBootcampWizard({
           </div>
 
           {showOutline && (
-            <div className="bg-zinc-955 p-6 rounded-2xl border border-white/5 text-left text-xs md:text-sm text-zinc-400 space-y-2 animate-fade-in max-w-md mx-auto w-full font-mono">
-              <p className="font-extrabold text-white text-center pb-2 text-sm md:text-base">Phase Activities Outline</p>
+            <div className="bg-zinc-955 p-6 rounded-xl border border-white/5 text-left text-sm text-zinc-400 space-y-2 animate-fade-in max-w-lg mx-auto w-full font-mono">
+              <p className="font-extrabold text-white text-center pb-2 text-base">Phase Activities Outline</p>
               <p>1. C1 – What are Korean Vowels?</p>
               <p>2. C2 – The 6 Basic Vowel Shapes</p>
               <p>3. C3 – Mouth and Tongue Shapes</p>
@@ -438,7 +437,7 @@ export default function Phase1VowelBootcampWizard({
 
       {/* Concept Screen Template (Steps 2 - 6) */}
       {step >= 2 && step <= 6 && (
-        <div className="glass-panel neon-border p-10 rounded-[2rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center max-w-3xl lg:max-w-4xl mx-auto">
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center">
           <div className="flex justify-between items-center border-b border-white/5 pb-4">
             <h2 className="text-2xl md:text-3xl font-black text-white flex items-center gap-2.5 font-sans">
               <BookOpen className="w-6 h-6 text-brand-400" />
@@ -450,18 +449,18 @@ export default function Phase1VowelBootcampWizard({
                 {step === 6 && "Screen C5: Syllables with ㅇ + Vowels"}
               </span>
             </h2>
-            <span className="text-sm text-zinc-500 font-bold font-sans">Concept {step - 1} of 5</span>
+            <span className="text-xs text-zinc-500 font-bold font-sans">Concept {step - 1} of 5</span>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start text-left">
-            <div className="space-y-5 text-sm md:text-base lg:text-lg text-zinc-300">
+            <div className="space-y-5 text-base md:text-lg text-zinc-200 leading-relaxed">
               {step === 2 && (
                 <div className="space-y-4">
                   <p>Korean Hangeul splits letters into distinct consonants and vowels.</p>
                   <p>Unlike English where vowels change based on vocabulary rules, Korean vowels are highly logical, showing <strong>where your tongue and lips are positioned</strong>, and whether the sound is <strong>"bright" or "dark"</strong>.</p>
-                  <div className="bg-zinc-900/60 p-4 rounded-xl border border-white/5 space-y-3">
-                    <p className="font-bold text-white text-sm">Vowels are drawn from 3 elements representing cosmic elements:</p>
-                    <ul className="list-disc list-inside space-y-1.5 pl-1 text-zinc-400 text-sm">
+                  <div className="bg-zinc-900/60 p-6 rounded-2xl border border-white/5 space-y-4">
+                    <p className="font-bold text-white text-base">Vowels are drawn from 3 elements representing cosmic elements:</p>
+                    <ul className="list-disc list-inside space-y-2 pl-1 text-zinc-300 text-sm md:text-base">
                       <li><strong>ㅣ (standing line)</strong> represents Human (Standing energy)</li>
                       <li><strong>ㅡ (flat line)</strong> represents Earth</li>
                       <li><strong>• (dot / stroke)</strong> represents Sun (Heaven)</li>
@@ -473,16 +472,16 @@ export default function Phase1VowelBootcampWizard({
               {step === 3 && (
                 <div className="space-y-4">
                   <div className="space-y-3">
-                    <h4 className="font-black text-white text-sm uppercase tracking-wide text-brand-300">Group 1 – "Standing" Vowels (Vertical base)</h4>
-                    <ul className="space-y-1.5 text-sm">
+                    <h4 className="font-black text-white text-base uppercase tracking-wide text-brand-300">Group 1 – "Standing" Vowels (Vertical base)</h4>
+                    <ul className="space-y-2 text-sm md:text-base">
                       <li><strong className="text-white">ㅏ</strong>: stroke on the right (bright "ah" sound as in father)</li>
                       <li><strong className="text-white">ㅓ</strong>: stroke on the left (darker "eo", midway between aw and uh)</li>
                       <li><strong className="text-white">ㅣ</strong>: standing line only (close "ee" sound)</li>
                     </ul>
                   </div>
                   <div className="space-y-3 pt-2">
-                    <h4 className="font-black text-white text-sm uppercase tracking-wide text-amber-400">Group 2 – "Lying down" Vowels (Horizontal base)</h4>
-                    <ul className="space-y-1.5 text-sm">
+                    <h4 className="font-black text-white text-base uppercase tracking-wide text-amber-400">Group 2 – "Lying down" Vowels (Horizontal base)</h4>
+                    <ul className="space-y-2 text-sm md:text-base">
                       <li><strong className="text-white">ㅗ</strong>: stroke above the line (rounded lips "o" as in home)</li>
                       <li><strong className="text-white">ㅜ</strong>: stroke below the line (rounded lips "u" as in food)</li>
                       <li><strong className="text-white">ㅡ</strong>: horizontal line only (flat tongue "eu" sound)</li>
@@ -493,25 +492,25 @@ export default function Phase1VowelBootcampWizard({
 
               {step === 4 && (
                 <div className="space-y-4">
-                  <p className="text-sm">Observe how mouth positions align with Hangeul symbols:</p>
-                  <div className="grid grid-cols-2 gap-3 text-xs md:text-sm">
-                    <div className="bg-zinc-900/40 p-3 rounded-xl border border-white/5">
-                      <strong className="text-white block">ㅏ (ah)</strong> Open wide, tongue low.
+                  <p className="text-sm md:text-base">Observe how mouth positions align with Hangeul symbols:</p>
+                  <div className="grid grid-cols-2 gap-4 text-xs md:text-sm">
+                    <div className="bg-zinc-900/40 p-4 rounded-xl border border-white/5">
+                      <strong className="text-white block text-sm md:text-base">ㅏ (ah)</strong> Open wide, tongue low.
                     </div>
-                    <div className="bg-zinc-900/40 p-3 rounded-xl border border-white/5">
-                      <strong className="text-white block">ㅓ (eo)</strong> Relaxed, tongue lower-back.
+                    <div className="bg-zinc-900/40 p-4 rounded-xl border border-white/5">
+                      <strong className="text-white block text-sm md:text-base">ㅓ (eo)</strong> Relaxed, tongue lower-back.
                     </div>
-                    <div className="bg-zinc-900/40 p-3 rounded-xl border border-white/5">
-                      <strong className="text-white block">ㅗ (o)</strong> Lips rounded tight, tongue mid-back.
+                    <div className="bg-zinc-900/40 p-4 rounded-xl border border-white/5">
+                      <strong className="text-white block text-sm md:text-base">ㅗ (o)</strong> Lips rounded tight, tongue mid-back.
                     </div>
-                    <div className="bg-zinc-900/40 p-3 rounded-xl border border-white/5">
-                      <strong className="text-white block">ㅜ (u)</strong> Lips protruded, tongue high-back.
+                    <div className="bg-zinc-900/40 p-4 rounded-xl border border-white/5">
+                      <strong className="text-white block text-sm md:text-base">ㅜ (u)</strong> Lips protruded, tongue high-back.
                     </div>
-                    <div className="bg-zinc-900/40 p-3 rounded-xl border border-white/5">
-                      <strong className="text-white block">ㅡ (eu)</strong> Tongue flat, grin lips sideways.
+                    <div className="bg-zinc-900/40 p-4 rounded-xl border border-white/5">
+                      <strong className="text-white block text-sm md:text-base">ㅡ (eu)</strong> Tongue flat, grin lips sideways.
                     </div>
-                    <div className="bg-zinc-900/40 p-3 rounded-xl border border-white/5">
-                      <strong className="text-white block">ㅣ (i)</strong> Lips spread wide, tongue high-front.
+                    <div className="bg-zinc-900/40 p-4 rounded-xl border border-white/5">
+                      <strong className="text-white block text-sm md:text-base">ㅣ (i)</strong> Lips spread wide, tongue high-front.
                     </div>
                   </div>
                 </div>
@@ -520,13 +519,13 @@ export default function Phase1VowelBootcampWizard({
               {step === 5 && (
                 <div className="space-y-4">
                   <p>In Hangeul, adding a small second stroke to any basic vowel introduces a <strong>"y-" glide sound prefix</strong>.</p>
-                  <div className="bg-zinc-900/60 p-5 rounded-xl border border-white/5 space-y-3 text-sm">
+                  <div className="bg-zinc-900/60 p-6 rounded-2xl border border-white/5 space-y-3 text-sm md:text-base">
                     <p className="font-extrabold text-white">The Glide Vowel Pairs:</p>
-                    <div className="grid grid-cols-2 gap-3 font-mono">
-                      <div>ㅏ (ah) ➔ <strong>ㅑ (ya)</strong></div>
-                      <div>ㅓ (eo) ➔ <strong>ㅕ (yeo)</strong></div>
+                    <div className="grid grid-cols-2 gap-3 font-mono text-base">
+                      <div>ㅏ (ah) ➔ <strong>야 (ya)</strong></div>
+                      <div>ㅓ (eo) ➔ <strong>여 (yeo)</strong></div>
                       <div>ㅗ (o) ➔ <strong>요 (yo)</strong></div>
-                      <div>ㅜ (u) ➔ <strong>ㅠ (yu)</strong></div>
+                      <div>ㅜ (u) ➔ <strong>유 (yu)</strong></div>
                     </div>
                   </div>
                 </div>
@@ -536,7 +535,7 @@ export default function Phase1VowelBootcampWizard({
                 <div className="space-y-4">
                   <p>Korean syllables are structured into rectangular blocks. Every block <strong>must start with a consonant</strong>.</p>
                   <p>When a syllable begins with a vowel sound (with no initial consonant sound), we use the circular symbol <strong>ㅇ as a silent placeholder</strong>.</p>
-                  <div className="bg-zinc-900/60 p-4 rounded-xl border border-white/5 space-y-2 text-sm">
+                  <div className="bg-zinc-900/60 p-6 rounded-2xl border border-white/5 space-y-2 text-sm md:text-base">
                     <p className="font-extrabold text-white">Examples:</p>
                     <p>• ㅇ + ㅏ = <strong>아</strong> (sounds like 'ah')</p>
                     <p>• ㅇ + ㅗ = <strong>오</strong> (sounds like 'o')</p>
@@ -547,27 +546,27 @@ export default function Phase1VowelBootcampWizard({
             </div>
 
             {/* Micro-question Section */}
-            <div className="bg-zinc-900/40 p-6 rounded-2xl border border-white/5 space-y-5">
-              <div className="flex items-center gap-2 text-sm text-brand-300 font-extrabold uppercase tracking-wider">
+            <div className="bg-zinc-900/40 p-8 rounded-2xl border border-white/5 space-y-6">
+              <div className="flex items-center gap-2.5 text-xs text-brand-300 font-extrabold uppercase tracking-wider">
                 <HelpCircle className="w-5 h-5" />
                 <span>Check Your Understanding</span>
               </div>
-              <h4 className="text-sm md:text-base font-bold text-white leading-normal">
+              <h4 className="text-base md:text-lg font-bold text-white leading-normal">
                 {conceptQuestions[step]?.question}
               </h4>
-              <div className="space-y-2.5">
+              <div className="space-y-3">
                 {conceptQuestions[step]?.options.map((opt) => (
                   <button
-                     key={opt.id}
-                     onClick={() => !cChecked && setCSelected(opt.id)}
-                     disabled={cChecked}
-                     className={`w-full p-3.5 rounded-xl text-xs md:text-sm font-bold border transition text-left ${
-                       cSelected === opt.id
-                         ? "border-brand-500 bg-brand-500/10 text-white"
-                         : "border-white/5 bg-zinc-955/60 hover:bg-zinc-900 text-zinc-400"
-                     } ${cChecked && opt.id === conceptQuestions[step]?.correctId ? "border-accent-teal bg-accent-teal/10 text-white" : ""} ${
-                       cChecked && cSelected === opt.id && cSelected !== conceptQuestions[step]?.correctId ? "border-red-500 bg-red-500/10 text-red-400" : ""
-                     }`}
+                    key={opt.id}
+                    onClick={() => !cChecked && setCSelected(opt.id)}
+                    disabled={cChecked}
+                    className={`w-full p-5 rounded-xl text-sm md:text-base font-bold border transition text-left ${
+                      cSelected === opt.id
+                        ? "border-brand-500 bg-brand-500/10 text-white"
+                        : "border-white/5 bg-zinc-955/60 hover:bg-zinc-900 text-zinc-400"
+                    } ${cChecked && opt.id === conceptQuestions[step]?.correctId ? "border-accent-teal bg-accent-teal/10 text-white" : ""} ${
+                      cChecked && cSelected === opt.id && cSelected !== conceptQuestions[step]?.correctId ? "border-red-500 bg-red-500/10 text-red-400" : ""
+                    }`}
                   >
                     {opt.text}
                   </button>
@@ -575,10 +574,10 @@ export default function Phase1VowelBootcampWizard({
               </div>
 
               {cChecked && (
-                <div className={`p-4 rounded-xl border text-xs md:text-sm leading-relaxed ${
+                <div className={`p-4 rounded-xl border text-sm leading-relaxed ${
                   cCorrect ? "bg-accent-teal/5 border-accent-teal/20 text-accent-teal" : "bg-red-500/5 border-red-500/10 text-red-400"
                 }`}>
-                  <p className="font-extrabold mb-1">{cCorrect ? "Correct!" : "Incorrect."}</p>
+                  <p className="font-extrabold mb-1 text-base">{cCorrect ? "Correct!" : "Incorrect."}</p>
                   <p>{conceptQuestions[step]?.explanation}</p>
                 </div>
               )}
@@ -587,7 +586,7 @@ export default function Phase1VowelBootcampWizard({
                 <button
                   onClick={handleCheckConceptQuestion}
                   disabled={!cSelected}
-                  className="w-full bg-brand-500 hover:bg-brand-600 disabled:opacity-40 text-white font-bold py-3 rounded-xl text-xs md:text-sm transition cursor-pointer"
+                  className="w-full bg-brand-500 hover:bg-brand-600 disabled:opacity-40 text-white font-bold py-4 rounded-xl text-sm md:text-base transition cursor-pointer"
                 >
                   Verify Answer
                 </button>
@@ -595,30 +594,36 @@ export default function Phase1VowelBootcampWizard({
             </div>
           </div>
 
-          <div className="flex justify-between items-center pt-5 border-t border-white/5 mt-5">
-            <button onClick={() => setStep(step - 1)} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-xs md:text-sm font-bold transition flex items-center gap-2 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
+          <div className="flex justify-between items-center pt-4 border-t border-white/5 mt-4">
+            <button onClick={() => setStep(step - 1)} className="glass-panel px-4 py-2.5 rounded-xl hover:bg-white/5 text-zinc-400 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
             <button 
               onClick={() => setStep(step + 1)} 
               disabled={!cChecked}
-              className="bg-brand-500 hover:bg-brand-600 disabled:opacity-40 text-white px-6 py-3 rounded-xl text-xs md:text-sm font-bold transition flex items-center gap-2 cursor-pointer"
+              className="bg-brand-500 hover:bg-brand-600 disabled:opacity-40 text-white px-5 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
             >
               <span>Next Step</span>
               <ChevronRight className="w-4 h-4" />
             </button>
           </div>
-                 <div className="flex justify-between items-center border-b border-white/5 pb-4">
-            <h2 className="text-2xl md:text-3xl font-black text-white flex items-center gap-2.5">
-              <Eye className="w-6 h-6 text-brand-400" />
+        </div>
+      )}
+
+      {/* Step 7: Activity 1 – Visual Recognition */}
+      {step === 7 && (
+        <div className="glass-panel neon-border p-8 rounded-3xl shadow-2xl w-full space-y-6 flex-grow flex flex-col justify-center max-w-3xl mx-auto">
+          <div className="flex justify-between items-center border-b border-white/5 pb-4">
+            <h2 className="text-xl font-black text-white flex items-center gap-2">
+              <Eye className="w-5 h-5 text-brand-400" />
               <span>Activity 1: Vowel Gallery & Visual Recognition</span>
             </h2>
-            <span className="text-sm text-zinc-500 font-bold">Step 7 of {totalSteps}</span>
+            <span className="text-xs text-zinc-500 font-bold">Step 7 of {totalSteps}</span>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start text-left">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start text-left">
             {/* Gallery Panel */}
-            <div className="lg:col-span-5 bg-zinc-900/40 p-5 rounded-2xl border border-white/5 space-y-5">
-              <h3 className="text-sm font-black uppercase tracking-wider text-brand-300">Tap to hear & study</h3>
-              <div className="grid grid-cols-3 gap-2.5">
+            <div className="lg:col-span-5 bg-zinc-900/40 p-4 rounded-2xl border border-white/5 space-y-4">
+              <h3 className="text-xs font-black uppercase tracking-wider text-brand-300">Tap to hear & study</h3>
+              <div className="grid grid-cols-3 gap-2">
                 {[
                   { char: "ㅏ", label: "a / ah" },
                   { char: "ㅓ", label: "eo / uh" },
@@ -637,10 +642,10 @@ export default function Phase1VowelBootcampWizard({
                     <button
                       key={item.char}
                       onClick={() => speakWord(speakChar)}
-                      className="p-3 bg-zinc-955 border border-white/5 hover:border-brand-500/20 rounded-xl transition text-center group cursor-pointer"
+                      className="p-2.5 bg-zinc-950 border border-white/5 hover:border-brand-500/20 rounded-xl transition text-center group cursor-pointer"
                     >
-                      <span className="text-3xl font-black text-white block group-hover:scale-110 transition duration-150">{displayChar}</span>
-                      <span className="text-xs text-zinc-500 font-mono tracking-tighter block">{item.label}</span>
+                      <span className="text-2xl font-black text-white block group-hover:scale-110 transition duration-150">{displayChar}</span>
+                      <span className="text-[9px] text-zinc-500 font-mono tracking-tighter block">{item.label}</span>
                     </button>
                   );
                 })}
@@ -648,19 +653,19 @@ export default function Phase1VowelBootcampWizard({
             </div>
 
             {/* Test Panel */}
-            <div className="lg:col-span-7 bg-zinc-900/40 p-6 rounded-2xl border border-white/5 space-y-5">
+            <div className="lg:col-span-7 bg-zinc-900/40 p-5 rounded-2xl border border-white/5 space-y-4">
               {visualQuestions.length === 0 ? (
                 <div className="text-center py-10"><Loader2 className="w-8 h-8 animate-spin mx-auto text-brand-400" /></div>
               ) : (
-                <div className="space-y-5 w-full">
-                  <div className="flex justify-between items-center text-xs text-zinc-500 font-mono">
+                <div className="space-y-4 w-full">
+                  <div className="flex justify-between items-center text-[10px] text-zinc-500 font-mono">
                     <span>VISUAL CHECKPOINT</span>
                     <span>Q {visualIdx + 1}/{visualQuestions.length}</span>
                   </div>
-                  <h3 className="text-base md:text-lg font-black text-white leading-normal">
+                  <h3 className="text-sm font-black text-white leading-normal">
                     {visualQuestions[visualIdx]?.question}
                   </h3>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-2 gap-2.5">
                     {visualQuestions[visualIdx]?.options.map((opt: string) => {
                       const isSelected = visualSelected === opt;
                       const isCorrectAnswer = opt === visualQuestions[visualIdx]?.correct_answer;
@@ -669,7 +674,7 @@ export default function Phase1VowelBootcampWizard({
                           key={opt}
                           onClick={() => !visualChecked && setVisualSelected(opt)}
                           disabled={visualChecked}
-                          className={`p-4 rounded-xl font-black text-2xl lg:text-3xl border transition ${
+                          className={`p-3.5 rounded-xl font-black text-xl border transition ${
                             isSelected
                               ? "border-brand-500 bg-brand-500/10 text-white"
                               : "border-white/5 bg-zinc-950/60 hover:bg-zinc-900 text-zinc-300"
@@ -684,7 +689,7 @@ export default function Phase1VowelBootcampWizard({
                   </div>
 
                   {visualChecked && (
-                    <div className={`p-4 rounded-xl border text-xs md:text-sm space-y-1.5 ${
+                    <div className={`p-3.5 rounded-xl border text-[11px] space-y-1 ${
                       visualCorrect ? "bg-accent-teal/5 border-accent-teal/20 text-accent-teal" : "bg-red-500/5 border-red-500/10 text-red-400"
                     }`}>
                       <p className="font-extrabold">{visualCorrect ? "맞아요! Correct!" : "Oops! Incorrect."}</p>
@@ -697,7 +702,7 @@ export default function Phase1VowelBootcampWizard({
                       <button
                         onClick={handleCheckVisualAnswer}
                         disabled={!visualSelected}
-                        className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white px-6 py-3 rounded-xl text-xs md:text-sm font-bold transition cursor-pointer"
+                        className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white px-5 py-2 rounded-xl text-xs font-bold transition cursor-pointer"
                       >
                         Check Answer
                       </button>
@@ -713,7 +718,7 @@ export default function Phase1VowelBootcampWizard({
                             setStep(8);
                           }
                         }}
-                        className="bg-accent-teal text-zinc-950 hover:bg-accent-teal/90 px-6 py-3 rounded-xl text-xs md:text-sm font-bold transition flex items-center gap-1.5 cursor-pointer"
+                        className="bg-accent-teal text-zinc-950 hover:bg-accent-teal/90 px-5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer"
                       >
                         {visualIdx < visualQuestions.length - 1 ? "Next Question" : "Move to Activity 2"}
                       </button>
@@ -724,28 +729,28 @@ export default function Phase1VowelBootcampWizard({
             </div>
           </div>
 
-          <div className="flex justify-between items-center pt-5 border-t border-white/5">
-            <button onClick={() => setStep(6)} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-xs md:text-sm font-bold transition flex items-center gap-2 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
-            <button onClick={() => setStep(8)} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-xs md:text-sm font-bold transition flex items-center gap-2 cursor-pointer">Skip to Step 8 <ChevronRight className="w-4 h-4" /></button>
+          <div className="flex justify-between items-center pt-4 border-t border-white/5">
+            <button onClick={() => setStep(6)} className="glass-panel px-4 py-2.5 rounded-xl hover:bg-white/5 text-zinc-400 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
+            <button onClick={() => setStep(8)} className="glass-panel px-4 py-2.5 rounded-xl hover:bg-white/5 text-zinc-400 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer">Skip to Step 8 <ChevronRight className="w-4 h-4" /></button>
           </div>
         </div>
       )}
 
       {/* Step 8: Activity 2 – Ear Training & Minimal Pairs */}
       {step === 8 && (
-        <div className="glass-panel neon-border p-10 rounded-[2rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center max-w-4xl lg:max-w-5xl mx-auto">
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center">
           <div className="flex justify-between items-center border-b border-white/5 pb-4">
-            <h2 className="text-2xl md:text-3xl font-black text-white flex items-center gap-2.5">
+            <h2 className="text-2xl font-black text-white flex items-center gap-2">
               <Headphones className="w-6 h-6 text-brand-400" />
               <span>Activity 2: Ear Training & Minimal Pairs</span>
             </h2>
-            <span className="text-sm text-zinc-500 font-bold">Step 8 of {totalSteps}</span>
+            <span className="text-xs text-zinc-500 font-bold">Step 8 of {totalSteps}</span>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start text-left">
             {/* 2A: Single Vowel Identification */}
             <div className="bg-zinc-900/40 p-6 rounded-2xl border border-white/5 space-y-5">
-              <div className="flex justify-between items-center text-xs text-zinc-500 font-mono">
+              <div className="flex justify-between items-center text-[10px] text-zinc-500 font-mono">
                 <span>2A: IDENTIFICATION</span>
                 <span>Q {listeningIdx + 1}/{listeningQuestions.length || 6}</span>
               </div>
@@ -760,7 +765,7 @@ export default function Phase1VowelBootcampWizard({
                 <span className="text-sm text-zinc-400 font-bold">Play the audio cue</span>
               </div>
 
-              <div className="grid grid-cols-3 gap-2.5">
+              <div className="grid grid-cols-3 gap-3">
                 {listeningQuestions[listeningIdx]?.options.map((opt: string) => {
                   const isSelected = listeningSelected === opt;
                   const isCorrectAnswer = opt === listeningQuestions[listeningIdx]?.correct_answer;
@@ -769,7 +774,7 @@ export default function Phase1VowelBootcampWizard({
                       key={opt}
                       onClick={() => !listeningChecked && setListeningSelected(opt)}
                       disabled={listeningChecked}
-                      className={`p-3.5 rounded-xl font-black text-xl md:text-2xl border transition ${
+                      className={`p-4 rounded-xl font-black text-xl border transition ${
                         isSelected
                           ? "border-brand-500 bg-brand-500/10 text-white"
                           : "border-white/5 bg-zinc-955/60 hover:bg-zinc-900 text-zinc-300"
@@ -784,10 +789,10 @@ export default function Phase1VowelBootcampWizard({
               </div>
 
               {listeningChecked && (
-                <div className={`p-4 rounded-xl border text-xs md:text-sm space-y-1.5 ${
+                <div className={`p-4 rounded-xl border text-sm space-y-1 ${
                   listeningCorrect ? "bg-accent-teal/5 border-accent-teal/20 text-accent-teal" : "bg-red-500/5 border-red-500/10 text-red-400"
                 }`}>
-                  <p className="font-extrabold">{listeningCorrect ? "Correct!" : "Incorrect."}</p>
+                  <p className="font-extrabold text-base">{listeningCorrect ? "Correct!" : "Incorrect."}</p>
                   <p>{listeningQuestions[listeningIdx]?.explanation}</p>
                 </div>
               )}
@@ -797,7 +802,7 @@ export default function Phase1VowelBootcampWizard({
                   <button
                     onClick={handleCheckListeningAnswer}
                     disabled={!listeningSelected}
-                    className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white px-5 py-3 rounded-xl text-xs md:text-sm font-bold transition cursor-pointer"
+                    className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer"
                   >
                     Verify Answer
                   </button>
@@ -813,7 +818,7 @@ export default function Phase1VowelBootcampWizard({
                         setListeningIdx(0);
                       }
                     }}
-                    className="bg-accent-teal text-zinc-955 hover:bg-accent-teal/90 px-5 py-3 rounded-xl text-xs md:text-sm font-bold transition flex items-center gap-1.5 cursor-pointer"
+                    className="bg-accent-teal text-zinc-950 hover:bg-accent-teal/90 px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer"
                   >
                     {listeningIdx < listeningQuestions.length - 1 ? "Next Audio" : "Repeat Identification"}
                   </button>
@@ -823,7 +828,7 @@ export default function Phase1VowelBootcampWizard({
 
             {/* 2B: Minimal Pairs Ear Training */}
             <div className="bg-zinc-900/40 p-6 rounded-2xl border border-white/5 space-y-5">
-              <div className="flex justify-between items-center text-xs text-zinc-500 font-mono">
+              <div className="flex justify-between items-center text-[10px] text-zinc-500 font-mono">
                 <span>2B: MINIMAL PAIRS</span>
                 <span>Pair {minPairsIdx + 1}/{minPairs.length || 3}</span>
               </div>
@@ -838,65 +843,65 @@ export default function Phase1VowelBootcampWizard({
                 <span className="text-sm text-zinc-400 font-bold">Play minimal pair sound</span>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-4">
                 <button
                   onClick={() => !minPairsChecked && setMinPairsSelected("left")}
                   disabled={minPairsChecked}
-                  className={`p-4 rounded-xl border text-left space-y-1.5 transition ${
+                  className={`p-4 rounded-xl border text-left space-y-2 transition ${
                     minPairsSelected === "left"
                       ? "border-brand-500 bg-brand-500/10 text-white"
                       : "border-white/5 bg-zinc-955/60 hover:bg-zinc-900 text-zinc-300"
-                  } ${minPairsChecked && minPairs[minPairsIdx]?.correct_side === "left" ? "border-accent-teal bg-accent-teal/10 text-white" : ""}`}
+                  } ${minPairsChecked && minPairs[minPairsIdx]?.correct_side === "left" ? "border-accent-teal bg-accent-teal/10" : ""}`}
                 >
                   <span className="text-[10px] font-bold text-zinc-500 block">LEFT</span>
-                  <div className="text-2xl font-black text-white">{minPairs[minPairsIdx]?.pair[0]}</div>
+                  <div className="text-3xl font-black text-white">{minPairs[minPairsIdx]?.pair[0]}</div>
                   <div className="text-xs text-zinc-400 line-clamp-1">{minPairs[minPairsIdx]?.left_hint}</div>
                 </button>
 
                 <button
                   onClick={() => !minPairsChecked && setMinPairsSelected("right")}
                   disabled={minPairsChecked}
-                  className={`p-4 rounded-xl border text-left space-y-1.5 transition ${
+                  className={`p-4 rounded-xl border text-left space-y-2 transition ${
                     minPairsSelected === "right"
                       ? "border-brand-500 bg-brand-500/10 text-white"
                       : "border-white/5 bg-zinc-955/60 hover:bg-zinc-900 text-zinc-300"
-                  } ${minPairsChecked && minPairs[minPairsIdx]?.correct_side === "right" ? "border-accent-teal bg-accent-teal/10 text-white" : ""}`}
+                  } ${minPairsChecked && minPairs[minPairsIdx]?.correct_side === "right" ? "border-accent-teal bg-accent-teal/10" : ""}`}
                 >
                   <span className="text-[10px] font-bold text-zinc-500 block">RIGHT</span>
-                  <div className="text-2xl font-black text-white">{minPairs[minPairsIdx]?.pair[1]}</div>
+                  <div className="text-3xl font-black text-white">{minPairs[minPairsIdx]?.pair[1]}</div>
                   <div className="text-xs text-zinc-400 line-clamp-1">{minPairs[minPairsIdx]?.right_hint}</div>
                 </button>
               </div>
 
               {minPairsChecked && (
-                <div className={`p-3 rounded-xl border text-[11px] leading-relaxed ${
+                <div className={`p-4 rounded-xl border text-sm leading-relaxed ${
                   minPairsCorrect ? "bg-accent-teal/5 border-accent-teal/20 text-accent-teal" : "bg-red-500/5 border-red-500/10 text-red-400"
                 }`}>
-                  <p className="font-extrabold">{minPairsCorrect ? "Excellent!" : "Acoustic mismatch."}</p>
+                  <p className="font-extrabold text-base">{minPairsCorrect ? "Excellent!" : "Acoustic mismatch."}</p>
                   <p>You heard: <strong>{minPairs[minPairsIdx]?.correct_sound}</strong></p>
                 </div>
               )}
 
               <div className="flex justify-between items-center">
                 {minPairsIdx === minPairs.length - 1 && minPairsChecked && !hardestPair && (
-                  <div className="flex flex-col text-left gap-1">
-                    <span className="text-[9px] text-zinc-500 font-extrabold uppercase">Which pair is hardest?</span>
-                    <div className="flex gap-1">
+                  <div className="flex flex-col text-left gap-1.5">
+                    <span className="text-[10px] text-zinc-500 font-extrabold uppercase">Which pair is hardest?</span>
+                    <div className="flex gap-1.5">
                       {["ㅏ/ㅓ", "ㅗ/ㅜ", "ㅡ/ㅣ"].map(p => (
-                        <button key={p} onClick={() => setHardestPair(p)} className="px-2 py-1 bg-zinc-955 hover:bg-zinc-900 border border-white/5 text-[9px] font-extrabold rounded text-zinc-400 hover:text-white cursor-pointer">{p}</button>
+                        <button key={p} onClick={() => setHardestPair(p)} className="px-3 py-1.5 bg-zinc-955 hover:bg-zinc-900 border border-white/5 text-[10px] font-extrabold rounded text-zinc-400 hover:text-white cursor-pointer">{p}</button>
                       ))}
                     </div>
                   </div>
                 )}
-                {hardestPair && <span className="text-[10px] text-brand-300 font-bold">Hardest pair: {hardestPair} logged!</span>}
+                {hardestPair && <span className="text-xs text-brand-300 font-bold">Hardest pair: {hardestPair} logged!</span>}
 
                 {!minPairsChecked ? (
                   <button
                     onClick={handleCheckMinPairAnswer}
                     disabled={!minPairsSelected}
-                    className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white px-4 py-2 rounded-xl text-xs font-bold transition ml-auto cursor-pointer"
+                    className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer"
                   >
-                    Check Answer
+                    Verify Pair
                   </button>
                 ) : (
                   <button
@@ -910,7 +915,7 @@ export default function Phase1VowelBootcampWizard({
                         setStep(9);
                       }
                     }}
-                    className="bg-accent-teal text-zinc-950 hover:bg-accent-teal/90 px-4 py-2 rounded-xl text-xs font-bold transition ml-auto cursor-pointer"
+                    className="bg-accent-teal text-zinc-955 hover:bg-accent-teal/90 px-4 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer"
                   >
                     {minPairsIdx < minPairs.length - 1 ? "Next Pair" : "Move to Activity 3"}
                   </button>
@@ -921,40 +926,45 @@ export default function Phase1VowelBootcampWizard({
 
           <div className="flex justify-between items-center pt-4 border-t border-white/5">
             <button onClick={() => setStep(7)} className="glass-panel px-4 py-2.5 rounded-xl hover:bg-white/5 text-zinc-400 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
-          {/* Step 9: Activity 3 – Vowels inside Simple Syllables */}
+            <button onClick={() => setStep(9)} className="glass-panel px-4 py-2.5 rounded-xl hover:bg-white/5 text-zinc-400 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer">Skip to Step 9 <ChevronRight className="w-4 h-4" /></button>
+          </div>
+        </div>
+      )}
+
+      {/* Step 9: Activity 3 – Vowels inside Simple Syllables */}
       {step === 9 && (
-        <div className="glass-panel neon-border p-10 rounded-[2rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center max-w-4xl lg:max-w-5xl mx-auto">
+        <div className="glass-panel neon-border p-8 rounded-3xl shadow-2xl w-full space-y-6 flex-grow flex flex-col justify-center max-w-3xl mx-auto">
           <div className="flex justify-between items-center border-b border-white/5 pb-4">
-            <h2 className="text-2xl md:text-3xl font-black text-white flex items-center gap-2.5">
-              <BookMarked className="w-6 h-6 text-brand-400" />
+            <h2 className="text-xl font-black text-white flex items-center gap-2">
+              <BookMarked className="w-5 h-5 text-brand-400" />
               <span>Activity 3: Vowels inside Simple Syllables</span>
             </h2>
-            <span className="text-sm text-zinc-500 font-bold">Step 9 of {totalSteps}</span>
+            <span className="text-xs text-zinc-500 font-bold">Step 9 of {totalSteps}</span>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start text-left">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start text-left">
             {/* 3A: Hear Syllable -> Pick Vowel */}
-            <div className="bg-zinc-900/40 p-6 rounded-2xl border border-white/5 space-y-5">
-              <div className="flex justify-between items-center text-xs text-zinc-500 font-mono">
+            <div className="bg-zinc-900/40 p-5 rounded-2xl border border-white/5 space-y-4">
+              <div className="flex justify-between items-center text-[10px] text-zinc-500 font-mono">
                 <span>3A: HEAR & EXTRACT VOWEL</span>
                 <span>Syllable {syllableHearIdx + 1}/{syllablesCV.length}</span>
               </div>
 
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3">
                 <button 
                   onClick={() => speakWord(syllablesCV[syllableHearIdx]?.syllable)}
-                  className="p-5 bg-brand-500/10 hover:bg-brand-500/20 text-brand-400 border border-brand-500/20 rounded-full transition flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 cursor-pointer"
+                  className="p-4 bg-brand-500/10 hover:bg-brand-500/20 text-brand-400 border border-brand-500/20 rounded-full transition flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 cursor-pointer"
                 >
-                  <Volume2 className="w-7 h-7" />
+                  <Volume2 className="w-6 h-6" />
                 </button>
                 <div className="text-left">
-                  <span className="text-3xl font-black text-white">{syllablesCV[syllableHearIdx]?.syllable}</span>
-                  <span className="text-xs text-zinc-500 block">Hear and extract the core vowel shape</span>
+                  <span className="text-2xl font-black text-white">{syllablesCV[syllableHearIdx]?.syllable}</span>
+                  <span className="text-[10px] text-zinc-500 block">Hear and extract the core vowel shape</span>
                 </div>
               </div>
 
-              <div className="grid grid-cols-5 gap-2">
-                {["ㅏ", "ㅓ", "ㅗ", "ㅜ", "ㅡ", "ㅣ", "ㅑ", "ㅕ", "요", "ㅠ"].map((v) => {
+              <div className="grid grid-cols-5 gap-1.5">
+                {["ㅏ", "ㅓ", "ㅗ", "ㅜ", "ㅡ", "ㅣ", "ㅑ", "ㅕ", "ㅛ", "ㅠ"].map((v) => {
                   const isSelected = syllableHearSelected === v;
                   const isCorrect = v === syllablesCV[syllableHearIdx]?.vowel;
                   return (
@@ -962,7 +972,7 @@ export default function Phase1VowelBootcampWizard({
                       key={v}
                       onClick={() => !syllableHearChecked && setSyllableHearSelected(v)}
                       disabled={syllableHearChecked}
-                      className={`w-12 h-12 rounded-xl font-black text-base md:text-lg border transition flex items-center justify-center cursor-pointer ${
+                      className={`w-10 h-10 rounded-lg font-black text-sm border transition flex items-center justify-center cursor-pointer ${
                         isSelected
                           ? "border-brand-500 bg-brand-500/10 text-white"
                           : "border-white/5 bg-zinc-955/60 hover:bg-zinc-900 text-zinc-400"
@@ -977,7 +987,7 @@ export default function Phase1VowelBootcampWizard({
               </div>
 
               {syllableHearChecked && (
-                <div className={`p-4 rounded-xl border text-xs md:text-sm ${
+                <div className={`p-3 rounded-xl border text-[11px] ${
                   syllableHearCorrect ? "bg-accent-teal/5 border-accent-teal/20 text-accent-teal" : "bg-red-500/5 border-red-500/10 text-red-400"
                 }`}>
                   <p className="font-extrabold">{syllableHearCorrect ? "Correct!" : "Incorrect."}</p>
@@ -990,7 +1000,7 @@ export default function Phase1VowelBootcampWizard({
                   <button
                     onClick={handleCheckSyllableHearAnswer}
                     disabled={!syllableHearSelected}
-                    className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white px-5 py-3 rounded-xl text-xs md:text-sm font-bold transition cursor-pointer"
+                    className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer"
                   >
                     Check Extract
                   </button>
@@ -1006,7 +1016,7 @@ export default function Phase1VowelBootcampWizard({
                         setSyllableHearIdx(0);
                       }
                     }}
-                    className="bg-accent-teal text-zinc-955 hover:bg-accent-teal/90 px-5 py-3 rounded-xl text-xs md:text-sm font-bold transition cursor-pointer"
+                    className="bg-accent-teal text-zinc-950 hover:bg-accent-teal/90 px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer"
                   >
                     {syllableHearIdx < syllablesCV.length - 1 ? "Next Syllable" : "Repeat Mapping"}
                   </button>
@@ -1015,39 +1025,39 @@ export default function Phase1VowelBootcampWizard({
             </div>
 
             {/* 3B: See Syllable -> Say and Self-Check */}
-            <div className="bg-zinc-900/40 p-6 rounded-2xl border border-white/5 space-y-5">
-              <div className="flex justify-between items-center text-xs text-zinc-500 font-mono">
+            <div className="bg-zinc-900/40 p-5 rounded-2xl border border-white/5 space-y-4">
+              <div className="flex justify-between items-center text-[10px] text-zinc-500 font-mono">
                 <span>3B: READ OUT LOUD</span>
                 <span>Syllable {syllableSeeIdx + 1}/{syllablesCV.length}</span>
               </div>
 
-              <div className="text-center py-5 space-y-3">
-                <span className="text-xs text-zinc-500 font-mono uppercase tracking-widest block">Read this block:</span>
-                <span className="text-6xl md:text-7xl font-black text-white block">{syllablesCV[syllableSeeIdx]?.syllable}</span>
+              <div className="text-center py-4 space-y-2">
+                <span className="text-[10px] text-zinc-500 font-mono uppercase tracking-widest block">Read this block:</span>
+                <span className="text-5xl font-black text-white block">{syllablesCV[syllableSeeIdx]?.syllable}</span>
               </div>
 
-              <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-2.5">
                 <button
                   onClick={() => {
                     speakWord(syllablesCV[syllableSeeIdx]?.syllable);
                     setSyllableSeePlayed(true);
                   }}
-                  className="w-full bg-zinc-955 hover:bg-zinc-900 border border-white/10 text-zinc-350 font-bold py-3.5 rounded-xl text-xs md:text-sm flex items-center justify-center gap-2.5 cursor-pointer"
+                  className="w-full bg-zinc-955 hover:bg-zinc-900 border border-white/10 text-zinc-300 font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-2 cursor-pointer"
                 >
-                  <Volume2 className="w-5 h-5 text-brand-400" />
+                  <Volume2 className="w-4 h-4 text-brand-400" />
                   <span>Hear Native Model Accent</span>
                 </button>
 
                 {syllableSeePlayed && (
-                  <div className="space-y-4 pt-2 text-center">
-                    <p className="text-xs text-zinc-400 font-sans">Did your spoken pitch/tone match the native model?</p>
-                    <div className="flex gap-3">
+                  <div className="space-y-3 pt-2 text-center">
+                    <p className="text-[10px] text-zinc-400 font-sans">Did your spoken pitch/tone match the native model?</p>
+                    <div className="flex gap-2">
                       <button
                         onClick={() => {
                           setSyllableSeeSelfCheck("matched");
                           playCorrectSound();
                         }}
-                        className={`flex-1 py-3 rounded-xl text-xs md:text-sm font-bold transition border cursor-pointer ${
+                        className={`flex-1 py-2 rounded-lg text-xs font-bold transition border cursor-pointer ${
                           syllableSeeSelfCheck === "matched" 
                             ? "bg-accent-teal/10 border-accent-teal text-accent-teal" 
                             : "bg-zinc-950 border-white/5 text-zinc-400"
@@ -1060,10 +1070,10 @@ export default function Phase1VowelBootcampWizard({
                           setSyllableSeeSelfCheck("different");
                           playWrongSound();
                         }}
-                        className={`flex-1 py-3 rounded-xl text-xs md:text-sm font-bold transition border cursor-pointer ${
+                        className={`flex-1 py-2 rounded-lg text-xs font-bold transition border cursor-pointer ${
                           syllableSeeSelfCheck === "different" 
                             ? "bg-red-500/10 border-red-500 text-red-400" 
-                            : "bg-zinc-955 border-white/5 text-zinc-400"
+                            : "bg-zinc-950 border-white/5 text-zinc-400"
                         }`}
                       >
                         ✗ Different
@@ -1085,7 +1095,7 @@ export default function Phase1VowelBootcampWizard({
                     }
                   }}
                   disabled={!syllableSeePlayed}
-                  className="bg-brand-500 hover:bg-brand-600 disabled:opacity-40 text-white px-5 py-3 rounded-xl text-xs md:text-sm font-bold transition cursor-pointer"
+                  className="bg-brand-500 hover:bg-brand-600 disabled:opacity-40 text-white px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer"
                 >
                   {syllableSeeIdx < syllablesCV.length - 1 ? "Next Syllable" : "Move to Checkpoint Quiz"}
                 </button>
@@ -1093,28 +1103,33 @@ export default function Phase1VowelBootcampWizard({
             </div>
           </div>
 
-          <div className="flex justify-between items-center pt-5 border-t border-white/5">
-            <button onClick={() => setStep(8)} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-xs md:text-sm font-bold transition flex items-center gap-2 cursor-pointer"><ChevronLeft className="w-4 h-4" /> B      {/* Screen 10: Checkpoint Quiz */}
+          <div className="flex justify-between items-center pt-4 border-t border-white/5">
+            <button onClick={() => setStep(8)} className="glass-panel px-4 py-2.5 rounded-xl hover:bg-white/5 text-zinc-400 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
+            <button onClick={() => setStep(10)} className="glass-panel px-4 py-2.5 rounded-xl hover:bg-white/5 text-zinc-400 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer">Skip to Step 10 <ChevronRight className="w-4 h-4" /></button>
+          </div>
+        </div>
+      )}
+
+      {/* Screen 10: Checkpoint Quiz */}
       {step === 10 && (
-        <div className="glass-panel neon-border p-10 rounded-[2rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center max-w-3xl lg:max-w-4xl mx-auto">
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center">
           <div className="flex justify-between items-center border-b border-white/5 pb-4">
-            <h2 className="text-2xl md:text-3xl font-black text-white flex items-center gap-2.5">
+            <h2 className="text-2xl font-black text-white flex items-center gap-2">
               <Award className="w-6 h-6 text-brand-400" />
               <span>Step 10: Checkpoint Graduation Mini-Quiz</span>
             </h2>
-            <span className="text-sm text-zinc-500 font-bold">Step 10 of {totalSteps}</span>
+            <span className="text-xs text-zinc-500 font-bold">Step 10 of {totalSteps}</span>
           </div>
 
           {phase1Quiz.length === 0 ? (
-            <div className="text-center py-10 max-w-md mx-auto space-y-6">
+            <div className="text-center py-10 max-w-2xl mx-auto space-y-8">
               <div className="p-4 bg-brand-500/10 rounded-full border border-brand-500/25 w-fit mx-auto text-brand-400">
-                <BrainCircuit className="w-12 h-12 animate-pulse" />
+                <BrainCircuit className="w-16 h-16 animate-pulse" />
               </div>
               <div>
-                <h3 className="text-xl font-black text-white">Generate Phase 1 Checkpoint</h3>
-                <p className="text-xs md:text-sm text-zinc-500 mt-1">Select pre-authored static checkpoint questions, or generate a dynamic quiz via Gwan-Sik using Llama AI on demand.</p>
+                <h3 className="text-3xl font-black text-white">Generate Phase 1 Checkpoint</h3>
               </div>
-              <div className="flex flex-col gap-3 pt-2">
+              <div className="flex flex-col gap-4 pt-2 w-full max-w-md mx-auto">
                 <button
                   onClick={async () => {
                     setLoadingQuiz(true);
@@ -1127,7 +1142,7 @@ export default function Phase1VowelBootcampWizard({
                       setLoadingQuiz(false);
                     }
                   }}
-                  className="w-full bg-zinc-900 hover:bg-zinc-800 border border-white/10 text-zinc-300 font-bold py-3.5 rounded-xl transition text-xs md:text-sm flex items-center justify-center gap-2 cursor-pointer"
+                  className="w-full bg-zinc-900 hover:bg-zinc-800 border border-white/10 text-zinc-300 font-bold py-4 rounded-xl transition text-sm flex items-center justify-center gap-2 cursor-pointer"
                   disabled={loadingQuiz}
                 >
                   {loadingQuiz ? <Loader2 className="w-4 h-4 animate-spin" /> : "Load Pre-Authored static Quiz"}
@@ -1145,27 +1160,27 @@ export default function Phase1VowelBootcampWizard({
                       setLoadingQuiz(false);
                     }
                   }}
-                  className="w-full bg-gradient-to-r from-brand-500 to-amber-500 hover:from-brand-600 text-zinc-950 font-black py-3.5 rounded-xl transition text-xs md:text-sm flex items-center justify-center gap-2 shadow shadow-brand-500/20 cursor-pointer"
+                  className="w-full bg-gradient-to-r from-brand-500 to-amber-500 hover:from-brand-600 text-zinc-955 font-black py-4 rounded-xl transition text-sm flex items-center justify-center gap-2 shadow shadow-brand-500/20 cursor-pointer"
                   disabled={loadingQuiz}
                 >
-                  {loadingQuiz ? <Loader2 className="w-4 h-4 animate-spin text-zinc-950" /> : <Sparkles className="w-4 h-4 text-zinc-950" />}
+                  {loadingQuiz ? <Loader2 className="w-4 h-4 animate-spin text-zinc-955" /> : <Sparkles className="w-4 h-4 text-zinc-955" />}
                   <span>Generate dynamic Quiz via Llama AI</span>
                 </button>
               </div>
             </div>
           ) : p1QuizScore === null ? (
-            <div className="space-y-6 max-w-2xl mx-auto w-full text-left">
-              <div className="flex justify-between text-xs md:text-sm text-zinc-500 font-mono">
+            <div className="space-y-6 w-full text-left">
+              <div className="flex justify-between text-xs text-zinc-500 font-mono">
                 <span>Quiz Question {p1QuizIdx + 1} of {phase1Quiz.length}</span>
                 <span>Level: Beginner</span>
               </div>
 
-              <h3 className="text-xl md:text-2xl font-black text-white text-center leading-relaxed">
+              <h3 className="text-xl md:text-2xl font-black text-white text-center leading-relaxed py-4">
                 {phase1Quiz[p1QuizIdx]?.question}
               </h3>
 
               {phase1Quiz[p1QuizIdx]?.type === "choice" ? (
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-4 max-w-4xl mx-auto">
                   {phase1Quiz[p1QuizIdx]?.options.map((opt: string) => {
                     const isSelected = p1QuizSelected === opt;
                     const isCorrectAnswer = opt === phase1Quiz[p1QuizIdx]?.correct_answer;
@@ -1174,7 +1189,7 @@ export default function Phase1VowelBootcampWizard({
                         key={opt}
                         onClick={() => !p1QuizChecked && setP1QuizSelected(opt)}
                         disabled={p1QuizChecked}
-                        className={`p-4 rounded-xl font-black text-lg md:text-xl border transition ${
+                        className={`p-5 rounded-xl font-black text-lg md:text-xl border transition ${
                           isSelected
                             ? "border-brand-500 bg-brand-500/10 text-white"
                             : "border-white/5 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-300"
@@ -1188,31 +1203,31 @@ export default function Phase1VowelBootcampWizard({
                   })}
                 </div>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-4 max-w-xl mx-auto w-full">
                   <input
                     type="text"
                     value={p1QuizWriting}
                     onChange={(e) => setP1QuizWriting(e.target.value)}
                     placeholder="Type your answer here..."
-                    className="w-full bg-zinc-900/60 p-4 rounded-xl border border-white/10 outline-none focus:border-brand-500 text-center font-sans text-xl text-white"
+                    className="w-full bg-zinc-900/60 p-5 rounded-xl border border-white/10 outline-none focus:border-brand-500 text-center font-sans text-xl text-white"
                     disabled={p1QuizChecked}
                     onKeyDown={(e) => e.key === "Enter" && !p1QuizChecked && handleCheckP1Quiz()}
                   />
                   {/* keyboard row */}
                   {!p1QuizChecked && (
-                    <div className="flex flex-wrap gap-2 justify-center bg-zinc-900/30 p-4 rounded-2xl border border-white/5">
+                    <div className="flex flex-wrap gap-1.5 justify-center bg-zinc-900/30 p-4 rounded-2xl border border-white/5">
                       {["아", "어", "오", "우", "으", "이", "아기", "어머니", "오이", "우유"].map((char) => (
                         <button
                           key={char}
                           onClick={() => setP1QuizWriting((prev) => prev + char)}
-                          className="px-4 py-2 bg-zinc-850 hover:bg-zinc-750 text-xs md:text-sm font-bold text-white rounded-lg border border-white/5 cursor-pointer"
+                          className="px-3.5 py-2 bg-zinc-850 hover:bg-zinc-750 text-sm font-bold text-white rounded-lg border border-white/5 cursor-pointer"
                         >
                           {char}
                         </button>
                       ))}
                       <button
                         onClick={() => setP1QuizWriting((prev) => prev.slice(0, -1))}
-                        className="px-4 py-2 bg-red-950/20 text-red-400 hover:bg-red-950/40 text-xs md:text-sm font-bold rounded-lg border border-red-500/10 cursor-pointer"
+                        className="px-3.5 py-2 bg-red-950/20 text-red-400 hover:bg-red-950/40 text-sm font-bold rounded-lg border border-red-500/10 cursor-pointer"
                       >
                         Del
                       </button>
@@ -1222,22 +1237,22 @@ export default function Phase1VowelBootcampWizard({
               )}
 
               {p1QuizChecked && (
-                <div className={`p-5 rounded-xl border text-xs md:text-sm text-left space-y-1.5 ${
+                <div className={`p-5 rounded-xl border text-sm text-left space-y-1.5 max-w-4xl mx-auto w-full ${
                   p1QuizCorrect ? "bg-accent-teal/5 border-accent-teal/20 text-accent-teal" : "bg-red-500/5 border-red-500/10 text-red-400"
                 }`}>
-                  <p className="font-extrabold">{p1QuizCorrect ? "Correct! Excellent." : "Incorrect."}</p>
+                  <p className="font-extrabold text-base">{p1QuizCorrect ? "Correct! Excellent." : "Incorrect."}</p>
                   <p>{phase1Quiz[p1QuizIdx]?.explanation}</p>
                   {!p1QuizCorrect && <p className="font-mono mt-1 text-zinc-300">Correct Answer: {phase1Quiz[p1QuizIdx]?.correct_answer}</p>}
                 </div>
               )}
 
-              <div className="flex justify-between items-center pt-5 border-t border-white/5">
-                <button onClick={() => setStep(9)} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-xs md:text-sm font-bold transition flex items-center gap-2 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
+              <div className="flex justify-between items-center pt-6 border-t border-white/5 max-w-4xl mx-auto w-full">
+                <button onClick={() => setStep(9)} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
                 {!p1QuizChecked ? (
                   <button
                     onClick={handleCheckP1Quiz}
                     disabled={phase1Quiz[p1QuizIdx]?.type === "choice" ? !p1QuizSelected : !p1QuizWriting.trim()}
-                    className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white px-6 py-3 rounded-xl text-xs md:text-sm font-bold transition cursor-pointer"
+                    className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white px-6 py-3 rounded-xl text-xs font-bold transition cursor-pointer"
                   >
                     Check Checkpoint
                   </button>
@@ -1259,7 +1274,7 @@ export default function Phase1VowelBootcampWizard({
                         });
                       }
                     }}
-                    className="bg-accent-teal text-zinc-950 hover:bg-accent-teal/90 px-6 py-3 rounded-xl text-xs md:text-sm font-bold transition flex items-center gap-1.5 cursor-pointer"
+                    className="bg-accent-teal text-zinc-950 hover:bg-accent-teal/90 px-6 py-3 rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer"
                   >
                     {p1QuizIdx < phase1Quiz.length - 1 ? "Next Item" : "See Final Score"}
                   </button>
@@ -1268,35 +1283,35 @@ export default function Phase1VowelBootcampWizard({
             </div>
           ) : (
             /* Quiz Score Results View */
-            <div className="space-y-6 max-w-2xl mx-auto w-full text-center py-6">
-              <div className="p-6 bg-zinc-900/60 rounded-3xl border border-white/5 space-y-5">
-                <span className="text-xs font-mono font-bold text-zinc-500 uppercase tracking-widest block">Checkpoint Complete</span>
-                <h3 className="text-7xl font-black bg-gradient-to-r from-amber-400 to-yellow-300 bg-clip-text text-transparent">{p1QuizScore}%</h3>
-                <p className="text-zinc-200 text-sm leading-normal max-w-md mx-auto">
+            <div className="space-y-6 w-full text-center py-6">
+              <div className="p-6 bg-zinc-900/60 rounded-3xl border border-white/5 space-y-4 max-w-2xl mx-auto w-full">
+                <span className="text-[10px] font-mono font-bold text-zinc-500 uppercase tracking-widest block">Checkpoint Complete</span>
+                <h3 className="text-7xl font-black bg-gradient-to-r from-amber-400 to-yellow-300 bg-clip-text text-transparent font-mono">{p1QuizScore}%</h3>
+                <p className="text-zinc-200 text-sm leading-normal">
                   {p1QuizScore >= 80 ? "Superb! You have mastered Hangeul vowels and simple syllables." : "Good attempt! Let's do additional revisions."}
                 </p>
 
                 {/* demand trigger Llama tutor feedback summary */}
                 <div className="pt-2 text-left">
                   {tutorSummary ? (
-                    <div className="bg-zinc-950 p-5 rounded-2xl border border-brand-500/20 text-left text-xs md:text-sm leading-relaxed text-zinc-300">
-                      <span className="text-[10px] font-black text-brand-400 block mb-1.5 uppercase tracking-widest font-sans animate-fade-in">Gwan-Sik AI Feedback</span>
+                    <div className="bg-zinc-955 p-5 rounded-xl border border-brand-500/20 text-left text-sm leading-relaxed text-zinc-300">
+                      <span className="text-[10px] font-black text-brand-400 block mb-1 uppercase tracking-widest font-sans animate-fade-in">Gwan-Sik AI Feedback</span>
                       <p className="font-serif italic font-medium">"{tutorSummary}"</p>
                     </div>
                   ) : (
                     <button
                       onClick={handleGenerateTutorSummary}
-                      className="bg-zinc-955 hover:bg-zinc-900 border border-brand-500/20 text-brand-400 hover:text-brand-300 font-bold px-5 py-3 rounded-xl text-xs md:text-sm transition flex items-center justify-center gap-2.5 mx-auto cursor-pointer"
+                      className="bg-zinc-950 hover:bg-zinc-900 border border-brand-500/20 text-brand-400 hover:text-brand-300 font-bold px-5 py-3 rounded-xl text-xs transition flex items-center justify-center gap-2 mx-auto cursor-pointer"
                       disabled={loadingTutorSummary}
                     >
                       {loadingTutorSummary ? (
                         <>
-                          <Loader2 className="w-4 h-4 animate-spin" />
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
                           <span>Generating AI report...</span>
                         </>
                       ) : (
                         <>
-                          <Sparkles className="w-4 h-4" />
+                          <Sparkles className="w-3.5 h-3.5" />
                           <span>Get Gwan-Sik feedback report via Llama AI</span>
                         </>
                       )}
@@ -1305,7 +1320,7 @@ export default function Phase1VowelBootcampWizard({
                 </div>
               </div>
 
-              <div className="flex justify-between items-center pt-5 border-t border-white/5">
+              <div className="flex justify-between items-center pt-4 border-t border-white/5 max-w-2xl mx-auto w-full">
                 <button 
                   onClick={() => {
                     setPhase1Quiz([]);
@@ -1314,16 +1329,15 @@ export default function Phase1VowelBootcampWizard({
                     setP1QuizMistakes([]);
                     setTutorSummary(null);
                   }} 
-                  className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-xs md:text-sm font-bold transition cursor-pointer"
+                  className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-xs font-bold transition cursor-pointer"
                 >
                   Retake Checkpoint
                 </button>
                 <button 
                   onClick={() => setStep(11)} 
-                  className="bg-brand-500 hover:bg-brand-600 text-white px-6 py-3 rounded-xl text-xs md:text-sm font-bold transition flex items-center gap-2 cursor-pointer"
+                  className="bg-brand-500 hover:bg-brand-600 text-white px-8 py-3 rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer"
                 >
-                  <span>Go to homework</span>
-                  <ChevronRight className="w-4 h-4" />
+                  Go to homework <ChevronRight className="w-4 h-4" />
                 </button>
               </div>
             </div>
@@ -1333,18 +1347,18 @@ export default function Phase1VowelBootcampWizard({
 
       {/* Screen 11: Complete Panel / Recommendations */}
       {step === 11 && (
-        <div className="glass-panel neon-border p-10 rounded-[2rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center text-center max-w-2xl lg:max-w-3xl mx-auto">
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center text-center">
           <div className="p-4 bg-brand-500/10 rounded-full border border-brand-500/25 w-fit mx-auto text-brand-400">
             <Award className="w-12 h-12 animate-bounce" />
           </div>
           
           <div>
             <h2 className="text-3xl md:text-4xl font-black text-white font-sans">Vowels Bootcamp Complete! 🇰🇷✨</h2>
-            <p className="text-zinc-300 text-sm md:text-base mt-1.5 font-medium">You are fully equipped to launch your consonant mapping drills next.</p>
+            <p className="text-zinc-300 text-sm md:text-base mt-2 font-medium">You are fully equipped to launch your consonant mapping drills next.</p>
           </div>
 
           {recommendations && (
-            <div className="bg-zinc-900/60 p-6 rounded-2xl border border-white/5 text-left text-sm space-y-4 font-sans leading-relaxed">
+            <div className="bg-zinc-900/60 p-6 rounded-2xl border border-white/5 text-left text-sm space-y-4 font-sans leading-relaxed max-w-4xl mx-auto w-full">
               <div>
                 <span className="text-[10px] font-black uppercase tracking-wider text-green-400 block mb-1 font-sans">Strengths</span>
                 <p className="text-zinc-200 font-medium text-sm md:text-base">{recommendations.strength}</p>
@@ -1356,7 +1370,7 @@ export default function Phase1VowelBootcampWizard({
                   {recommendations.weakness}
                 </p>
               </div>
-              <div className="bg-zinc-955 p-5 rounded-xl border border-white/[0.03] space-y-2.5">
+              <div className="bg-zinc-955 p-5 rounded-xl border border-white/[0.03] space-y-3">
                 <span className="text-[10px] font-black uppercase tracking-widest text-brand-400 block font-sans">Recommended Practice Tasks:</span>
                 <ul className="list-decimal list-inside space-y-2 text-zinc-400 pl-1 text-xs md:text-sm">
                   <li>

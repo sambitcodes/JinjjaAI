@@ -777,99 +777,100 @@ export default function LessonPlayer() {
   console.log("LessonPlayer Render: activeIdx =", activeIdx, "lessons length =", lessons.length, "active title =", activeLesson?.title);
 
   return (
-    <div className={`min-h-screen text-foreground p-4 flex flex-col justify-center relative overflow-hidden transition-all duration-300 w-full ${
-      showSyllabus 
-        ? "max-w-3xl lg:max-w-5xl xl:max-w-6xl lg:pl-80 mx-auto" 
-        : "max-w-2xl lg:max-w-4xl mx-auto"
-    }`}>
+    <div className="min-h-screen text-foreground p-6 flex flex-col relative overflow-hidden transition-all duration-300 w-full max-w-[1700px] mx-auto">
       
       {/* Background glowing decorations */}
       <div className="absolute -top-10 left-1/4 w-[400px] h-[400px] bg-gradient-to-tr from-purple-500/10 to-indigo-500/5 rounded-full blur-[140px] pointer-events-none animate-pulse duration-10000" />
       <div className="absolute bottom-10 right-1/4 w-[450px] h-[450px] bg-gradient-to-tr from-cyan-500/10 to-blue-500/5 rounded-full blur-[160px] pointer-events-none animate-pulse duration-8000" />
 
-      {/* Floating Syllabus Button */}
-      <button 
-        onClick={() => setShowSyllabus(!showSyllabus)}
-        className="fixed left-6 top-24 z-50 p-3 bg-zinc-900 border border-white/10 rounded-full hover:bg-zinc-800 text-brand-400 hover:text-white transition shadow-lg flex items-center justify-center cursor-pointer"
-        title="Toggle Course Syllabus"
-      >
-        <Layers className="w-5 h-5" />
-      </button>
-
-      {/* Floating Syllabus Sidebar */}
-      {showSyllabus && (
-        <aside className="fixed left-20 top-24 z-50 w-72 max-h-[75vh] overflow-y-auto glass-panel border border-white/10 p-5 rounded-2xl shadow-2xl animate-fade-in flex flex-col justify-between bg-zinc-950/95">
-          <div className="space-y-4">
-            <h3 className="font-extrabold text-lg flex items-center gap-2">
-              <Layers className="w-5 h-5 text-brand-400" />
-              <span>Course Curriculum Syllabus</span>
-            </h3>
-            <p className="text-xs text-zinc-500">Your progressive learning slides and checkpoints:</p>
-            <div className="space-y-2 max-h-[40vh] overflow-y-auto pr-1">
-              {lessons.map((lesson, idx) => (
-                <button
-                  key={lesson.id}
-                  onClick={() => {
-                    setActiveIdx(idx);
-                    setCurrentStep(1);
-                    setQuizIdx(0);
-                    setSelectedAnswer(null);
-                    setWritingAnswer("");
-                    setQuizChecked(false);
-                    setQuizCorrect(null);
-                    setMistakesCount(0);
-                  }}
-                  className={`w-full text-left p-3 rounded-xl text-xs font-semibold transition border ${
-                    activeIdx === idx
-                      ? "border-brand-500 bg-brand-500/10 text-white"
-                      : "border-white/5 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-400"
-                  }`}
-                >
-                  <div className="truncate flex items-center gap-1">
-                    <Sparkles className="w-3.5 h-3.5 text-brand-400 shrink-0" />
-                    <span>{lesson.title}</span>
-                  </div>
-                  <div className="text-[10px] text-zinc-500 mt-1 font-normal">Level {lesson.level} &bull; {lesson.topic}</div>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Switch / Browse Courses button */}
-          <button
-            onClick={() => setShowCourseSelector(true)}
-            className="w-full mt-4 flex items-center justify-center gap-2 bg-zinc-900/80 hover:bg-zinc-800 text-zinc-300 hover:text-white font-semibold py-3 px-4 rounded-xl border border-white/5 hover:border-white/10 transition text-xs cursor-pointer"
+      {/* Top Controls Bar containing the Curriculum Toggle and Back selection */}
+      <div className="flex items-center justify-between pb-4 mb-4 border-b border-white/5 flex-shrink-0 z-40">
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={() => setShowSyllabus(!showSyllabus)}
+            className="p-3 bg-zinc-900 border border-white/10 rounded-xl hover:bg-zinc-800 text-brand-400 hover:text-white transition shadow-lg flex items-center justify-center cursor-pointer gap-2"
+            title="Toggle Course Syllabus"
           >
-            <Compass className="w-3.5 h-3.5 text-brand-400" />
-            <span>Switch / Browse Courses</span>
+            <Layers className="w-5 h-5" />
+            <span className="text-xs font-bold hidden sm:inline">Curriculum</span>
           </button>
 
-          {/* Reset learning path button in sidebar */}
-          <button
-            onClick={handleResetLessons}
-            className="w-full mt-2 flex items-center justify-center gap-2 bg-red-950/20 hover:bg-red-950/40 text-red-400 hover:text-red-300 font-semibold py-3 px-4 rounded-xl border border-red-500/10 hover:border-red-500/30 transition text-xs cursor-pointer"
-          >
-            <RefreshCw className="w-3.5 h-3.5" />
-            <span>Reset Learning Path</span>
-          </button>
-        </aside>
-      )}
-
-      {/* Main Learning Slide Area */}
-      <main className="w-full flex-grow flex flex-col justify-between min-h-[70vh]">
-        {/* Sticky Top Bar for Back to Courses Button */}
-        <div className="flex items-center justify-between pb-4 mb-4 border-b border-white/5 flex-shrink-0">
           <button 
             onClick={() => setShowCourseSelector(true)}
-            className="inline-flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-purple-900/40 to-indigo-900/40 hover:from-purple-800/60 hover:to-indigo-800/60 text-zinc-100 hover:text-white rounded-xl border border-white/10 hover:border-purple-500/30 text-xs font-black transition cursor-pointer shadow-[0_0_15px_rgba(168,85,247,0.05)] hover:shadow-[0_0_20px_rgba(168,85,247,0.15)]"
+            className="inline-flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-purple-900/40 to-indigo-900/40 hover:from-purple-800/60 hover:to-indigo-800/60 text-zinc-100 hover:text-white rounded-xl border border-white/10 hover:border-purple-500/30 text-xs font-black transition cursor-pointer shadow-[0_0_15px_rgba(168,85,247,0.05)]"
           >
             <ChevronLeft className="w-4 h-4 text-purple-400" />
-            <span>Back to Courses Selection</span>
+            <span>Courses Selection</span>
           </button>
-          <div className="text-[10px] text-zinc-500 font-mono font-bold uppercase tracking-wider bg-zinc-950/40 px-3 py-1.5 rounded-lg border border-white/5">
-            Active: {activeLesson?.title || "Course"}
-          </div>
         </div>
+
+        <div className="text-[10px] text-zinc-500 font-mono font-bold uppercase tracking-wider bg-zinc-950/40 px-3 py-1.5 rounded-lg border border-white/5">
+          Active: {activeLesson?.title || "Course"}
+        </div>
+      </div>
+
+      <div className="flex gap-8 flex-grow relative items-start w-full">
+        {/* Course Curriculum Sidebar */}
+        {showSyllabus && (
+          <aside className="w-80 shrink-0 sticky top-6 z-30 max-h-[80vh] overflow-y-auto glass-panel border border-white/10 p-5 rounded-2xl shadow-2xl flex flex-col justify-between bg-zinc-950/95">
+            <div className="space-y-4">
+              <h3 className="font-extrabold text-lg flex items-center gap-2 text-white">
+                <Layers className="w-5 h-5 text-brand-400" />
+                <span>Curriculum</span>
+              </h3>
+              <p className="text-[11px] text-zinc-500">Your progressive learning slides and checkpoints:</p>
+              <div className="space-y-2 max-h-[45vh] overflow-y-auto pr-1">
+                {lessons.map((lesson, idx) => (
+                  <button
+                    key={lesson.id}
+                    onClick={() => {
+                      setActiveIdx(idx);
+                      setCurrentStep(1);
+                      setQuizIdx(0);
+                      setSelectedAnswer(null);
+                      setWritingAnswer("");
+                      setQuizChecked(false);
+                      setQuizCorrect(null);
+                      setMistakesCount(0);
+                    }}
+                    className={`w-full text-left p-3 rounded-xl text-xs font-semibold transition border ${
+                      activeIdx === idx
+                        ? "border-brand-500 bg-brand-500/10 text-white"
+                        : "border-white/5 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-400"
+                    }`}
+                  >
+                    <div className="truncate flex items-center gap-1">
+                      <Sparkles className="w-3.5 h-3.5 text-brand-400 shrink-0" />
+                      <span>{lesson.title}</span>
+                    </div>
+                    <div className="text-[10px] text-zinc-500 mt-1 font-normal">Level {lesson.level} &bull; {lesson.topic}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-2 mt-4">
+              <button
+                onClick={() => setShowCourseSelector(true)}
+                className="w-full flex items-center justify-center gap-2 bg-zinc-900/80 hover:bg-zinc-800 text-zinc-300 hover:text-white font-semibold py-3 px-4 rounded-xl border border-white/5 hover:border-white/10 transition text-xs cursor-pointer"
+              >
+                <Compass className="w-3.5 h-3.5 text-brand-400" />
+                <span>Switch / Browse Courses</span>
+              </button>
+
+              <button
+                onClick={handleResetLessons}
+                className="w-full flex items-center justify-center gap-2 bg-red-950/20 hover:bg-red-950/40 text-red-400 hover:text-red-300 font-semibold py-3 px-4 rounded-xl border border-red-500/10 hover:border-red-500/30 transition text-xs cursor-pointer"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                <span>Reset Path</span>
+              </button>
+            </div>
+          </aside>
+        )}
+
+        {/* Main Learning Slide Area - Takes full remaining screen width */}
+        <main className="flex-grow w-full flex flex-col justify-between min-h-[70vh]">
 
         {activeLesson?.title?.includes("Phase 1") ? (
           <Phase1VowelBootcampWizard
@@ -1443,6 +1444,7 @@ export default function LessonPlayer() {
           </div>
         )}
       </main>
+      </div>
     </div>
   );
 }
