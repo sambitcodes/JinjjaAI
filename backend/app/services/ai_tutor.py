@@ -54,19 +54,32 @@ class AITutorService:
             valid_groq_models = {
                 "llama-3.3-70b-versatile": "llama-3.3-70b-versatile",
                 "llama-3.1-8b-instant": "llama-3.1-8b-instant",
-                "qwen-2.5-32b": "qwen-2.5-32b"
+                "qwen/qwen3-32b": "qwen/qwen3-32b",
+                "openai/gpt-oss-120b": "openai/gpt-oss-120b",
+                "openai/gpt-oss-20b": "openai/gpt-oss-20b",
+                "groq/compound": "groq/compound",
+                "groq/compound-mini": "groq/compound-mini"
             }
-            model_to_use = "llama-3.3-70b-versatile"
+            model_to_use = "qwen/qwen3-32b"
             if model_override:
-                override_lower = model_override.lower()
-                if "qwen" in override_lower:
-                    model_to_use = "qwen-2.5-32b"
-                elif "llama-3.1" in override_lower or "llama3.1" in override_lower or "8b" in override_lower:
-                    model_to_use = "llama-3.1-8b-instant"
-                elif "llama-3.3" in override_lower or "llama3.3" in override_lower or "70b" in override_lower:
-                    model_to_use = "llama-3.3-70b-versatile"
-                elif model_override in valid_groq_models:
+                if model_override in valid_groq_models:
                     model_to_use = model_override
+                else:
+                    override_lower = model_override.lower()
+                    if "qwen" in override_lower:
+                        model_to_use = "qwen/qwen3-32b"
+                    elif "llama-3.1" in override_lower or "8b" in override_lower:
+                        model_to_use = "llama-3.1-8b-instant"
+                    elif "llama-3.3" in override_lower or "70b" in override_lower:
+                        model_to_use = "llama-3.3-70b-versatile"
+                    elif "gpt-oss-120b" in override_lower:
+                        model_to_use = "openai/gpt-oss-120b"
+                    elif "gpt-oss-20b" in override_lower:
+                        model_to_use = "openai/gpt-oss-20b"
+                    elif "compound-mini" in override_lower:
+                        model_to_use = "groq/compound-mini"
+                    elif "compound" in override_lower:
+                        model_to_use = "groq/compound"
 
             print(f"--> Routing to Groq Model: {model_to_use}", flush=True)
 
