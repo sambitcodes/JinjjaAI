@@ -30,7 +30,7 @@ function getToken(): string | null {
 
 async function apiJson(path: string, opts: RequestInit = {}) {
   const token = getToken();
-  const cleanPath = (path.startsWith("/phases/") || path.startsWith("/quiz/") || path.startsWith("/practice/") || path.startsWith("/speaking/")) ? `/lessons${path}` : path;
+  const cleanPath = (path.startsWith("/phases/") || path.startsWith("/quiz/") || path.startsWith("/practice/")) ? `/lessons${path}` : path;
   const res = await fetch(`${API_BASE}${cleanPath}`, {
     ...opts,
     headers: {
@@ -45,7 +45,7 @@ async function apiJson(path: string, opts: RequestInit = {}) {
 
 async function apiForm(path: string, formData: FormData) {
   const token = getToken();
-  const cleanPath = (path.startsWith("/phases/") || path.startsWith("/quiz/") || path.startsWith("/practice/") || path.startsWith("/speaking/")) ? `/lessons${path}` : path;
+  const cleanPath = (path.startsWith("/phases/") || path.startsWith("/quiz/") || path.startsWith("/practice/")) ? `/lessons${path}` : path;
   const res = await fetch(`${API_BASE}${cleanPath}`, {
     method: "POST",
     headers: token ? { Authorization: `Bearer ${token}` } : {},
@@ -101,6 +101,7 @@ function useRecorder() {
   const [recording, setRecording] = useState(false);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const mediaRef = useRef<MediaRecorder | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
   const chunks = useRef<BlobPart[]>([]);
 
   const start = useCallback(async () => {
@@ -108,15 +109,21 @@ function useRecorder() {
     chunks.current = [];
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
       const mr = new MediaRecorder(stream);
-      mr.ondataavailable = (e) => chunks.current.push(e.data);
+      mr.ondataavailable = (e) => {
+        if (e.data && e.data.size > 0) {
+          chunks.current.push(e.data);
+        }
+      };
       mr.onstop = () => {
         const blob = new Blob(chunks.current, { type: mr.mimeType || "audio/webm" });
         setAudioBlob(blob);
         stream.getTracks().forEach((t) => t.stop());
+        streamRef.current = null;
       };
-      mr.start();
       mediaRef.current = mr;
+      mr.start();
       setRecording(true);
     } catch (err) {
       console.error("Microphone access denied:", err);
@@ -125,7 +132,13 @@ function useRecorder() {
   }, []);
 
   const stop = useCallback(() => {
-    mediaRef.current?.stop();
+    if (mediaRef.current && mediaRef.current.state !== "inactive") {
+      mediaRef.current.stop();
+    }
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
+    }
     setRecording(false);
   }, []);
 
@@ -185,13 +198,18 @@ function RecordButton({
   onStop: () => void;
   disabled?: boolean;
 }) {
+  const handleClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (recording) {
+      onStop();
+    } else {
+      onStart();
+    }
+  };
+
   return (
     <button
-      onMouseDown={onStart}
-      onMouseUp={onStop}
-      onTouchStart={onStart}
-      onTouchEnd={onStop}
-      onClick={recording ? onStop : onStart}
+      onClick={handleClick}
       disabled={disabled}
       className={`flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl font-black text-xs transition uppercase tracking-wider cursor-pointer ${
         recording
@@ -200,7 +218,7 @@ function RecordButton({
       } disabled:opacity-40`}
     >
       {recording ? <MicOff className="w-4 h-4 text-white" /> : <Mic className="w-4 h-4 text-zinc-950" />}
-      <span>{recording ? "Recording..." : "Hold to Record"}</span>
+      <span>{recording ? "Stop Recording" : "Click to Record"}</span>
     </button>
   );
 }

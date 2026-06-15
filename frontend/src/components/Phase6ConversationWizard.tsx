@@ -230,13 +230,13 @@ async function apiForm(path: string, formData: FormData) {
   return res.json();
 }
 
-// ---------------------------------------------------------------------------
 // Audio Recorder Hook
 // ---------------------------------------------------------------------------
 function useRecorder() {
   const [recording, setRecording] = useState(false);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const mediaRef = useRef<MediaRecorder | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
   const chunks = useRef<BlobPart[]>([]);
 
   const start = useCallback(async () => {
@@ -244,15 +244,21 @@ function useRecorder() {
     chunks.current = [];
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
       const mr = new MediaRecorder(stream);
-      mr.ondataavailable = (e) => chunks.current.push(e.data);
+      mr.ondataavailable = (e) => {
+        if (e.data && e.data.size > 0) {
+          chunks.current.push(e.data);
+        }
+      };
       mr.onstop = () => {
         const blob = new Blob(chunks.current, { type: mr.mimeType || "audio/webm" });
         setAudioBlob(blob);
         stream.getTracks().forEach((t) => t.stop());
+        streamRef.current = null;
       };
-      mr.start();
       mediaRef.current = mr;
+      mr.start();
       setRecording(true);
     } catch (err) {
       console.error("Microphone access denied:", err);
@@ -261,7 +267,13 @@ function useRecorder() {
   }, []);
 
   const stop = useCallback(() => {
-    mediaRef.current?.stop();
+    if (mediaRef.current && mediaRef.current.state !== "inactive") {
+      mediaRef.current.stop();
+    }
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
+    }
     setRecording(false);
   }, []);
 
@@ -1065,13 +1077,17 @@ export default function Phase6ConversationWizard({
                 </button>
               </div>
             ) : (
-              // Voice mode hold-to-record
+              // Voice mode click-to-toggle record
               <div className="flex-grow flex items-center gap-4">
                 <button
-                  onMouseDown={rec.start}
-                  onMouseUp={handleStopRecording}
-                  onTouchStart={rec.start}
-                  onTouchEnd={handleStopRecording}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    if (rec.recording) {
+                      handleStopRecording();
+                    } else {
+                      rec.start();
+                    }
+                  }}
                   disabled={sendingTurn || transcribingVoice || (chatMessages.length >= 3 && !inlineChecked)}
                   className={`flex-grow flex items-center justify-center gap-2.5 py-4 rounded-xl font-bold text-base transition cursor-pointer ${
                     rec.recording
@@ -1080,7 +1096,7 @@ export default function Phase6ConversationWizard({
                   } disabled:opacity-40 shadow-md`}
                 >
                   {rec.recording ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
-                  <span>{rec.recording ? "Recording... Release to Stop" : "Hold & Speak"}</span>
+                  <span>{rec.recording ? "Stop Recording" : "Click & Speak"}</span>
                 </button>
 
                 {/* Audio preview text input box */}

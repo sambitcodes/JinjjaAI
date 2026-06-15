@@ -56,6 +56,7 @@ function useRecorder() {
   const [recording, setRecording] = useState(false);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const mediaRef = useRef<MediaRecorder | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
   const chunks = useRef<BlobPart[]>([]);
 
   const start = useCallback(async () => {
@@ -63,15 +64,21 @@ function useRecorder() {
     chunks.current = [];
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
       const mr = new MediaRecorder(stream);
-      mr.ondataavailable = (e) => chunks.current.push(e.data);
+      mr.ondataavailable = (e) => {
+        if (e.data && e.data.size > 0) {
+          chunks.current.push(e.data);
+        }
+      };
       mr.onstop = () => {
         const blob = new Blob(chunks.current, { type: mr.mimeType || "audio/webm" });
         setAudioBlob(blob);
         stream.getTracks().forEach((t) => t.stop());
+        streamRef.current = null;
       };
-      mr.start();
       mediaRef.current = mr;
+      mr.start();
       setRecording(true);
     } catch (err) {
       console.error("Microphone access denied:", err);
@@ -80,7 +87,13 @@ function useRecorder() {
   }, []);
 
   const stop = useCallback(() => {
-    mediaRef.current?.stop();
+    if (mediaRef.current && mediaRef.current.state !== "inactive") {
+      mediaRef.current.stop();
+    }
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
+    }
     setRecording(false);
   }, []);
 
@@ -787,10 +800,13 @@ export default function Course3Phase1LongerRoutinesWizard({
 
               <div className="flex justify-center items-center gap-3">
                 <button
-                  onMouseDown={rec.start}
-                  onMouseUp={rec.stop}
-                  onTouchStart={rec.start}
-                  onTouchEnd={rec.stop}
+                  onClick={() => {
+                    if (rec.recording) {
+                      rec.stop();
+                    } else {
+                      rec.start();
+                    }
+                  }}
                   disabled={speakingTranscribing}
                   className={`p-5 rounded-full transition ${
                     rec.recording
