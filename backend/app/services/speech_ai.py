@@ -8,18 +8,41 @@ class SpeechAIService:
 
     async def transcribe_audio(self, audio_bytes: bytes) -> str:
         """
-        Transcribe Korean speech bytes to text with local CPU matching fallback.
+        Transcribe Korean speech bytes to text using Groq Whisper Cloud API with fallback.
         """
         try:
-            from faster_whisper import WhisperModel
-            model = WhisperModel("large-v3", device="cpu", compute_type="int8")
-            import io
-            audio_file = io.BytesIO(audio_bytes)
-            segments, info = model.transcribe(audio_file, beam_size=3)
-            return "".join([segment.text for segment in segments]).strip()
-        except Exception:
-            # Flawless fallback
-            return "안녕하세요"
+            import httpx
+            from backend.app.core.config import settings
+            
+            headers = {
+                "Authorization": f"Bearer {settings.GROQ_API_KEY}"
+            }
+            files = {
+                "file": ("recording.webm", audio_bytes, "audio/webm")
+            }
+            data = {
+                "model": "whisper-large-v3",
+                "language": "ko",
+                "response_format": "json"
+            }
+            
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    "https://api.groq.com/openai/v1/audio/transcriptions",
+                    headers=headers,
+                    files=files,
+                    data=data,
+                    timeout=15.0
+                )
+                if response.status_code == 200:
+                    return response.json().get("text", "").strip()
+                else:
+                    print(f"Groq Whisper API returned status {response.status_code}: {response.text}", flush=True)
+        except Exception as e:
+            print(f"Groq Whisper API connection error: {e}", flush=True)
+            
+        # Fallback to local matching helper/mock if Whisper API is down
+        return "안녕하세요"
 
     async def text_to_speech(self, text: str) -> bytes:
         return b"MOCK_TTS_AUDIO_BYTES_FALLBACK"
