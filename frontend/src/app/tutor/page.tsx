@@ -590,67 +590,115 @@ export default function TutorChat() {
   };
 
   /**
-   * Render text with highlighted word based on highlightCharRange (char offsets).
-   * This is always accurate — no regex word-matching, no desync possible.
+   * Render text parsing Markdown headers, bullet points, bold and italic formatting,
+   * while preserving the precise real-time timing word highlighting.
    */
-  const renderHighlightedText = (text: string, isSpeakingThis: boolean) => {
+  const renderFormattedContent = (text: string, isSpeakingThis: boolean) => {
     if (!text) return null;
-    
-    // Get the cleaned version to find the offset in the original display text
-    // We highlight based on offset in cleanedText; we display the original text.
-    // Since cleanTextForSpeech removes markdown chars but the display text has them,
-    // we map highlights by matching word positions in the display text.
-    
-    if (!isSpeakingThis || !highlightCharRange) {
-      return <span className="font-korean leading-relaxed tracking-wide">{text}</span>;
+
+    let spokenWord = "";
+    if (isSpeakingThis && highlightCharRange) {
+      const { start, end } = highlightCharRange;
+      const cleaned = cleanTextForSpeech(text);
+      spokenWord = cleaned.substring(start, end).trim();
     }
 
-    const { start, end } = highlightCharRange;
-    
-    // The cleaned text is used for speech; the display text is the original.
-    // We apply the highlight by mapping char offsets from cleaned → display text.
-    // Simplest robust approach: find the word being spoken in cleanedText,
-    // then find and highlight its first occurrence in the display text after any previously highlighted position.
-    const cleanedText = cleanTextForSpeech(text);
-    const spokenWord = cleanedText.substring(start, end).trim();
-    
-    if (!spokenWord) {
-      return <span className="font-korean leading-relaxed tracking-wide">{text}</span>;
-    }
-
-    // Find this word in the original display text (case-insensitive, word-boundary aware)
-    // Use lastHighlightOffset to avoid re-matching already-passed words
-    const lowerText = text.toLowerCase();
-    const lowerWord = spokenWord.toLowerCase();
-    
-    // Calculate approximate char position in display text (proportional to cleaned offset)
-    const cleanedLen = cleanedText.length || 1;
-    const displayLen = text.length;
-    const approxStart = Math.floor((start / cleanedLen) * displayLen);
-    
-    // Search forward from approx position
-    let matchIdx = lowerText.indexOf(lowerWord, Math.max(0, approxStart - 10));
-    if (matchIdx === -1) {
-      // Fallback: search from beginning
-      matchIdx = lowerText.indexOf(lowerWord);
-    }
-    
-    if (matchIdx === -1) {
-      return <span className="font-korean leading-relaxed tracking-wide">{text}</span>;
-    }
-    
-    const before = text.substring(0, matchIdx);
-    const highlighted = text.substring(matchIdx, matchIdx + spokenWord.length);
-    const after = text.substring(matchIdx + spokenWord.length);
-
+    const lines = text.split("\n");
     return (
-      <span className="font-korean leading-relaxed tracking-wide">
-        {before}
-        <span className="bg-brand-gold/35 text-yellow-100 font-extrabold px-1 py-0.5 rounded-md shadow-lg border border-brand-gold/50 transition-all duration-100">
-          {highlighted}
-        </span>
-        {after}
-      </span>
+      <div className="space-y-3 font-sans text-base leading-relaxed tracking-wide text-zinc-100">
+        {lines.map((line, lineIdx) => {
+          let cleanLine = line.trim();
+          if (!cleanLine) {
+            return <div key={lineIdx} className="h-2" />;
+          }
+
+          let elementClass = "text-zinc-200";
+          let isHeader = false;
+          let isList = false;
+
+          // Parse block formatting
+          if (cleanLine.startsWith("###")) {
+            cleanLine = cleanLine.replace(/^###\s*/, "").trim();
+            elementClass = "text-lg font-black text-white mt-4 mb-2 flex items-center gap-2 border-b border-white/5 pb-1 font-korean";
+            isHeader = true;
+          } else if (cleanLine.startsWith("-") || cleanLine.startsWith("*")) {
+            cleanLine = cleanLine.replace(/^[-*]\s*/, "").trim();
+            isList = true;
+          } else if (/^\d+\./.test(cleanLine)) {
+            cleanLine = cleanLine.replace(/^\d+\.\s*/, "").trim();
+            isList = true;
+          }
+
+          // Inline parsing function to handle **bold**, *italic*, and spoken word highlight
+          const parseInline = (rawText: string) => {
+            const boldParts = rawText.split(/\*\*([^*]+)\*\*/g);
+            return boldParts.map((part, partIdx) => {
+              const isBold = partIdx % 2 === 1;
+
+              const italicParts = part.split(/\*([^*]+)\*/g);
+              const inlineElements = italicParts.map((subPart, subPartIdx) => {
+                const isItalic = subPartIdx % 2 === 1;
+
+                if (spokenWord && subPart.toLowerCase().includes(spokenWord.toLowerCase())) {
+                  const lowerSubPart = subPart.toLowerCase();
+                  const lowerWord = spokenWord.toLowerCase();
+                  const startIdx = lowerSubPart.indexOf(lowerWord);
+                  if (startIdx !== -1) {
+                    const before = subPart.substring(0, startIdx);
+                    const matched = subPart.substring(startIdx, startIdx + spokenWord.length);
+                    const after = subPart.substring(startIdx + spokenWord.length);
+
+                    return (
+                      <span key={subPartIdx} className={isItalic ? "italic text-zinc-400" : ""}>
+                        {before}
+                        <span className="bg-brand-gold/35 text-yellow-100 font-black px-1 py-0.5 rounded-md shadow-lg border border-brand-gold/50 transition-all duration-100 animate-pulse">
+                          {matched}
+                        </span>
+                        {after}
+                      </span>
+                    );
+                  }
+                }
+
+                return (
+                  <span key={subPartIdx} className={isItalic ? "italic text-zinc-400" : ""}>
+                    {subPart}
+                  </span>
+                );
+              });
+
+              return (
+                <span key={partIdx} className={isBold ? "font-black text-brand-300" : ""}>
+                  {inlineElements}
+                </span>
+              );
+            });
+          };
+
+          const innerContent = parseInline(cleanLine);
+
+          if (isHeader) {
+            return (
+              <h3 key={lineIdx} className={elementClass}>
+                {innerContent}
+              </h3>
+            );
+          } else if (isList) {
+            return (
+              <div key={lineIdx} className="flex items-start gap-2 pl-4">
+                <span className="text-brand-400 mt-1.5 flex-shrink-0 text-xs">•</span>
+                <span className="text-zinc-200 flex-grow font-korean leading-relaxed">{innerContent}</span>
+              </div>
+            );
+          } else {
+            return (
+              <p key={lineIdx} className="font-korean leading-relaxed">
+                {innerContent}
+              </p>
+            );
+          }
+        })}
+      </div>
     );
   };
 
@@ -1067,18 +1115,22 @@ export default function TutorChat() {
                     ? "bg-gradient-to-r from-brand-gold to-amber-500 text-zinc-950 rounded-tr-none shadow-brand-gold/25 border border-brand-gold/30 font-extrabold scale-98 hover:scale-100" 
                     : "glass-panel border border-white/10 text-zinc-100 rounded-tl-none hover:bg-zinc-900/80 scale-98 hover:scale-100"
                 }`}>
-                  <p className="text-base leading-relaxed font-korean font-medium tracking-wide">
-                    {renderHighlightedText(
+                  {msg.sender === "user" ? (
+                    <p className="text-base leading-relaxed font-korean font-extrabold tracking-wide">
+                      {msg.text}
+                    </p>
+                  ) : (
+                    renderFormattedContent(
                       msg.displayedText !== undefined ? msg.displayedText : msg.text,
                       currentSpeakingMsgIndex === index && currentSpeakingType === "reply"
-                    )}
-                  </p>
+                    )
+                  )}
                   {msg.sender === "ai" && msg.englishTranslation && msg.showTranslation && (
                     <div className="mt-3.5 pt-3.5 border-t border-white/10 text-sm text-zinc-400 font-sans italic leading-relaxed animate-fade-in">
                       <span className="block text-[10px] text-accent-teal uppercase tracking-wider font-extrabold not-italic mb-1 font-mono">
                         English Translation
                       </span>
-                      {renderHighlightedText(
+                      {renderFormattedContent(
                         msg.englishTranslation,
                         currentSpeakingMsgIndex === index && currentSpeakingType === "translation"
                       )}
@@ -1102,14 +1154,18 @@ export default function TutorChat() {
                     <div className="max-w-xl p-4.5 bg-zinc-950/90 rounded-2xl border border-white/10 space-y-3 text-xs text-zinc-300 animate-fade-in shadow-inner font-korean">
                       {msg.correction && (
                         <div className="flex items-start gap-2.5">
-                          <span className="text-accent-pink font-extrabold bg-accent-pink/15 px-2 py-0.5 rounded-lg border border-accent-pink/20 uppercase tracking-wide text-[10px]">Tutor Correction</span>
-                          <span className="leading-relaxed tracking-wide">{msg.correction}</span>
+                          <span className="text-accent-pink font-extrabold bg-accent-pink/15 px-2 py-0.5 rounded-lg border border-accent-pink/20 uppercase tracking-wide text-[10px] flex-shrink-0 mt-0.5">Tutor Correction</span>
+                          <div className="leading-relaxed tracking-wide flex-grow">
+                            {renderFormattedContent(msg.correction, false)}
+                          </div>
                         </div>
                       )}
                       {msg.grammarNotes && (
                         <div className="flex items-start gap-2.5">
-                          <span className="text-accent-teal font-extrabold bg-accent-teal/15 px-2 py-0.5 rounded-lg border border-accent-teal/20 uppercase tracking-wide text-[10px]">Grammar Hub</span>
-                          <span className="leading-relaxed tracking-wide whitespace-pre-line">{msg.grammarNotes}</span>
+                          <span className="text-accent-teal font-extrabold bg-accent-teal/15 px-2 py-0.5 rounded-lg border border-accent-teal/20 uppercase tracking-wide text-[10px] flex-shrink-0 mt-0.5">Grammar Hub</span>
+                          <div className="leading-relaxed tracking-wide flex-grow">
+                            {renderFormattedContent(msg.grammarNotes, false)}
+                          </div>
                         </div>
                       )}
                     </div>
