@@ -1,8 +1,64 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { ChevronLeft, ChevronRight, Volume2, Sparkles, BookOpen, BrainCircuit, Award, Loader2, CheckCircle2, Play, HelpCircle } from "lucide-react";
+import { useEffect, useState, useRef } from "react";
+import { 
+  ChevronLeft, 
+  ChevronRight, 
+  Volume2, 
+  Sparkles, 
+  BookOpen, 
+  Award, 
+  Loader2, 
+  CheckCircle2, 
+  BrainCircuit, 
+  BookMarked,
+  HelpCircle,
+  Eye,
+  Speech,
+  Headphones
+} from "lucide-react";
 import { apiRequest } from "../lib/api";
+
+// Web Audio API Sound synthesizers
+const playCorrectSound = () => {
+  if (typeof window === "undefined") return;
+  try {
+    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(523.25, ctx.currentTime); // C5
+    gain.gain.setValueAtTime(0.1, ctx.currentTime);
+    osc.start();
+    
+    osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.08); // E5
+    osc.stop(ctx.currentTime + 0.22);
+  } catch (e) {
+    console.warn("Audio synthesis error:", e);
+  }
+};
+
+const playWrongSound = () => {
+  if (typeof window === "undefined") return;
+  try {
+    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    
+    osc.type = "sawtooth";
+    osc.frequency.setValueAtTime(140, ctx.currentTime);
+    gain.gain.setValueAtTime(0.1, ctx.currentTime);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.28);
+  } catch (e) {
+    console.warn("Audio synthesis error:", e);
+  }
+};
 
 interface Phase2ConsonantWizardProps {
   activeLesson: any;
@@ -10,45 +66,124 @@ interface Phase2ConsonantWizardProps {
   onComplete: () => void;
 }
 
-export default function Phase2ConsonantWizard({ activeLesson, speakWord, onComplete }: Phase2ConsonantWizardProps) {
+interface MicroQuestion {
+  question: string;
+  options: { id: string; text: string }[];
+  correctId: string;
+  explanation: string;
+}
+
+export default function Phase2ConsonantWizard({
+  activeLesson,
+  speakWord,
+  onComplete,
+}: Phase2ConsonantWizardProps) {
   const [step, setStep] = useState(1);
   const [showOutline, setShowOutline] = useState(false);
+  const totalSteps = 11;
+
+  // DB Data loaded dynamically
   const [metadata, setMetadata] = useState<any>(null);
-  
-  // Step 2: Content
-  const [content, setContent] = useState<any>(null);
-  
-  // Step 3: Visual
+
+  // Micro-question states for C1-C5
+  const [cSelected, setCSelected] = useState<string | null>(null);
+  const [cChecked, setCChecked] = useState(false);
+  const [cCorrect, setCCorrect] = useState<boolean | null>(null);
+
+  // Reset micro-question state when moving between concept screens
+  useEffect(() => {
+    if (step >= 2 && step <= 6) {
+      setCSelected(null);
+      setCChecked(false);
+      setCCorrect(null);
+    }
+  }, [step]);
+
+  // Concept Micro-questions definitions for Consonants
+  const conceptQuestions: Record<number, MicroQuestion> = {
+    2: {
+      question: "When you say 'n' in English, which part touches the top of your mouth?",
+      options: [
+        { id: "A", text: "Tongue-front" },
+        { id: "B", text: "Lips" },
+        { id: "C", text: "Throat" }
+      ],
+      correctId: "A",
+      explanation: "The n-sound (ㄴ) is made with the tongue touching the front roof of the mouth behind the upper teeth. Hangeul consonants trace these speech organ movements!"
+    },
+    3: {
+      question: "Which consonant uses both lips together?",
+      options: [
+        { id: "A", text: "ㄴ (n)" },
+        { id: "B", text: "ㅁ (m)" },
+        { id: "C", text: "ㄱ (g/k)" }
+      ],
+      correctId: "B",
+      explanation: "ㅁ (m) is the lips group consonant. Its box shape outline resembles closed lips."
+    },
+    4: {
+      question: "When you say the aspirated version, which has more air puff on your hand?",
+      options: [
+        { id: "A", text: "The plain version (soft)" },
+        { id: "B", text: "The aspirated version (breath puff)" }
+      ],
+      correctId: "B",
+      explanation: "Aspirated consonants like ㅋ are pronounced with a strong puff of air that you can easily feel on your hand."
+    },
+    5: {
+      question: "In the syllable block 아, is the circular placeholder (ㅇ) silent or like 'ng'?",
+      options: [
+        { id: "A", text: "Silent" },
+        { id: "B", text: "Pronounced as 'ng'" }
+      ],
+      correctId: "A",
+      explanation: "At the start of a block (before the vowel), ㅇ is silent. It only sounds like 'ng' at the bottom of the block (받침 position)."
+    },
+    6: {
+      question: "In a horizontal-vowel syllable like 고, where is the consonant placed?",
+      options: [
+        { id: "A", text: "To the left of the vowel" },
+        { id: "B", text: "Above the vowel" },
+        { id: "C", text: "Below the vowel" }
+      ],
+      correctId: "B",
+      explanation: "For horizontal/lying vowels like ㅗ, the consonant always sits ABOVE the vowel."
+    }
+  };
+
+  // Step 7: Activity 1 (Visual Recognition)
   const [visualQuestions, setVisualQuestions] = useState<any[]>([]);
   const [visualIdx, setVisualIdx] = useState(0);
-  const [visualSelected, setVisualSelected] = useState<string | null>(null);
   const [visualChecked, setVisualChecked] = useState(false);
   const [visualCorrect, setVisualCorrect] = useState<boolean | null>(null);
-  
-  // Step 4: Listening
+  const [visualSelected, setVisualSelected] = useState<string | null>(null);
+
+  // Step 8: Activity 2 (Ear Training)
   const [listeningQuestions, setListeningQuestions] = useState<any[]>([]);
   const [listeningIdx, setListeningIdx] = useState(0);
-  const [listeningSelected, setListeningSelected] = useState<string | null>(null);
   const [listeningChecked, setListeningChecked] = useState(false);
   const [listeningCorrect, setListeningCorrect] = useState<boolean | null>(null);
+  const [listeningSelected, setListeningSelected] = useState<string | null>(null);
 
-  // Step 5: Series (triples)
   const [seriesQuestions, setSeriesQuestions] = useState<any[]>([]);
   const [seriesIdx, setSeriesIdx] = useState(0);
-  const [seriesSelected, setSeriesSelected] = useState<string | null>(null);
   const [seriesChecked, setSeriesChecked] = useState(false);
   const [seriesCorrect, setSeriesCorrect] = useState<boolean | null>(null);
+  const [seriesSelected, setSeriesSelected] = useState<string | null>(null);
+  const [hardestSeries, setHardestSeries] = useState<string | null>(null);
 
-  // Step 6: Syllables Grid & Identification
+  // Step 9: Activity 3 (Syllables)
   const [syllableData, setSyllableData] = useState<any>(null);
-  const [showRomanizations, setShowRomanizations] = useState(false);
-  const [syllableTaskIdx, setSyllableTaskIdx] = useState(0);
-  const [syllableSelected, setSyllableSelected] = useState<string | null>(null);
-  const [syllableChecked, setSyllableChecked] = useState(false);
-  const [syllableCorrect, setSyllableCorrect] = useState<boolean | null>(null);
-  const [syllableMode, setSyllableMode] = useState<"grid" | "identify" | "build">("grid");
+  const [syllableBuildIdx, setSyllableBuildIdx] = useState(0);
+  const [syllableBuildSelected, setSyllableBuildSelected] = useState<string | null>(null);
+  const [syllableBuildChecked, setSyllableBuildChecked] = useState(false);
+  const [syllableBuildCorrect, setSyllableBuildCorrect] = useState<boolean | null>(null);
 
-  // Step 7: Mini-Quiz
+  const [syllableReadIdx, setSyllableReadIdx] = useState(0);
+  const [syllableReadPlayed, setSyllableReadPlayed] = useState(false);
+  const [syllableReadSelfCheck, setSyllableReadSelfCheck] = useState<string | null>(null);
+
+  // Step 10 (Checkpoint Quiz)
   const [quizQuestions, setQuizQuestions] = useState<any[]>([]);
   const [quizIdx, setQuizIdx] = useState(0);
   const [quizSelected, setQuizSelected] = useState<string | null>(null);
@@ -58,124 +193,152 @@ export default function Phase2ConsonantWizard({ activeLesson, speakWord, onCompl
   const [quizScore, setQuizScore] = useState<number | null>(null);
   const [quizMistakes, setQuizMistakes] = useState<string[]>([]);
   const [tutorSummary, setTutorSummary] = useState<string | null>(null);
-  const [loadingTutor, setLoadingTutor] = useState(false);
+  const [loadingTutorSummary, setLoadingTutorSummary] = useState(false);
   const [loadingQuiz, setLoadingQuiz] = useState(false);
 
-  // Step 8: Recommendations
+  // Step 11 (Recommendations)
   const [recommendations, setRecommendations] = useState<any>(null);
 
   // Fetch Step Data Dynamically
   useEffect(() => {
-    const loadStepData = async () => {
+    const fetchStepData = async () => {
       try {
         if (step === 1 && !metadata) {
-          const res = await apiRequest("/lessons/lesson/phase2/metadata");
-          setMetadata(res);
-        } else if (step === 2 && !content) {
-          const res = await apiRequest("/lessons/lesson/phase2/content");
-          setContent(res);
-        } else if (step === 3 && visualQuestions.length === 0) {
-          const res = await apiRequest("/lessons/practice/consonants/visual");
-          setVisualQuestions(res || []);
-        } else if (step === 4 && listeningQuestions.length === 0) {
-          const res = await apiRequest("/lessons/practice/consonants/listening");
-          setListeningQuestions(res || []);
-        } else if (step === 5 && seriesQuestions.length === 0) {
-          const res = await apiRequest("/lessons/practice/consonants/series");
-          setSeriesQuestions(res || []);
-        } else if (step === 6 && !syllableData) {
-          const res = await apiRequest("/lessons/practice/syllables/basic");
-          setSyllableData(res);
-        } else if (step === 8 && !recommendations) {
-          const res = await apiRequest("/lessons/recommendations/hangeul/phase2");
-          setRecommendations(res);
+          const data = await apiRequest("/lessons/lesson/phase2/metadata");
+          setMetadata(data);
+        } else if (step === 7 && visualQuestions.length === 0) {
+          const data = await apiRequest("/lessons/practice/consonants/visual");
+          setVisualQuestions(data || []);
+        } else if (step === 8 && listeningQuestions.length === 0) {
+          const lData = await apiRequest("/lessons/practice/consonants/listening");
+          setListeningQuestions(lData || []);
+          const sData = await apiRequest("/lessons/practice/consonants/series");
+          setSeriesQuestions(sData || []);
+        } else if (step === 9 && !syllableData) {
+          const data = await apiRequest("/lessons/practice/syllables/basic");
+          setSyllableData(data);
+        } else if (step === 11 && !recommendations) {
+          const data = await apiRequest("/lessons/recommendations/hangeul/phase2");
+          setRecommendations(data);
         }
       } catch (err) {
-        console.error("Failed to load step data:", err);
+        console.error("Error loading step data:", err);
       }
     };
-    loadStepData();
+    fetchStepData();
   }, [step]);
 
-  const handleCheckVisual = async () => {
-    const currentQ = visualQuestions[visualIdx];
-    if (!currentQ) return;
-    const isCorrect = visualSelected === currentQ.correct_answer;
+  const handleCheckConceptQuestion = () => {
+    const q = conceptQuestions[step];
+    if (!q || !cSelected) return;
+    const isCorrect = cSelected === q.correctId;
+    setCChecked(true);
+    setCCorrect(isCorrect);
+    if (isCorrect) {
+      playCorrectSound();
+    } else {
+      playWrongSound();
+    }
+  };
+
+  const handleCheckVisualAnswer = async () => {
+    const q = visualQuestions[visualIdx];
+    if (!q || !visualSelected) return;
+    const isCorrect = visualSelected === q.correct_answer;
     setVisualChecked(true);
     setVisualCorrect(isCorrect);
+    
+    if (isCorrect) playCorrectSound();
+    else playWrongSound();
+
     await apiRequest("/lessons/practice/consonants/visual/answer", {
       method: "POST",
-      body: JSON.stringify({ question_id: currentQ.id, correct: isCorrect, answer: visualSelected })
+      body: JSON.stringify({ question_id: q.id, correct: isCorrect, answer: visualSelected })
     });
   };
 
-  const handleCheckListening = async () => {
-    const currentQ = listeningQuestions[listeningIdx];
-    if (!currentQ) return;
-    const isCorrect = listeningSelected === currentQ.correct_answer;
+  const handleCheckListeningAnswer = async () => {
+    const q = listeningQuestions[listeningIdx];
+    if (!q || !listeningSelected) return;
+    const isCorrect = listeningSelected === q.correct_answer;
     setListeningChecked(true);
     setListeningCorrect(isCorrect);
+    
+    if (isCorrect) playCorrectSound();
+    else playWrongSound();
+
     await apiRequest("/lessons/practice/consonants/listening/answer", {
       method: "POST",
-      body: JSON.stringify({ question_id: currentQ.id, correct: isCorrect, answer: listeningSelected })
+      body: JSON.stringify({ question_id: q.id, correct: isCorrect, answer: listeningSelected })
     });
   };
 
-  const handleCheckSeries = async () => {
-    const currentQ = seriesQuestions[seriesIdx];
-    if (!currentQ) return;
-    const isCorrect = seriesSelected === currentQ.correct_answer;
+  const handleCheckSeriesAnswer = async () => {
+    const q = seriesQuestions[seriesIdx];
+    if (!q || !seriesSelected) return;
+    const isCorrect = seriesSelected === q.correct_answer;
     setSeriesChecked(true);
     setSeriesCorrect(isCorrect);
+    
+    if (isCorrect) playCorrectSound();
+    else playWrongSound();
+
     await apiRequest("/lessons/practice/consonants/series/answer", {
       method: "POST",
-      body: JSON.stringify({ question_id: currentQ.id, correct: isCorrect, answer: seriesSelected })
+      body: JSON.stringify({ question_id: q.id, correct: isCorrect, answer: seriesSelected })
     });
   };
 
-  const handleCheckSyllable = async () => {
-    if (!syllableData) return;
-    const currentQ = syllableMode === "identify" 
-      ? syllableData.identification_tasks[syllableTaskIdx]
-      : syllableData.build_tasks[syllableTaskIdx];
-    if (!currentQ) return;
-    const isCorrect = syllableSelected === currentQ.correct_answer;
-    setSyllableChecked(true);
-    setSyllableCorrect(isCorrect);
+  const handleCheckSyllableBuildAnswer = async () => {
+    const item = syllableData?.build_tasks?.[syllableBuildIdx];
+    if (!item || !syllableBuildSelected) return;
+    const isCorrect = syllableBuildSelected === item.correct_answer;
+    setSyllableBuildChecked(true);
+    setSyllableBuildCorrect(isCorrect);
+
+    if (isCorrect) playCorrectSound();
+    else playWrongSound();
+
     await apiRequest("/lessons/practice/syllables/basic/answer", {
       method: "POST",
-      body: JSON.stringify({ question_id: currentQ.id, correct: isCorrect, answer: syllableSelected })
+      body: JSON.stringify({ question_id: item.id, correct: isCorrect, answer: syllableBuildSelected })
     });
   };
 
   const handleCheckQuiz = () => {
-    const currentQ = quizQuestions[quizIdx];
-    if (!currentQ) return;
+    const currentQuiz = quizQuestions[quizIdx];
+    if (!currentQuiz) return;
+
     let isCorrect = false;
-    if (currentQ.type === "choice") {
-      isCorrect = quizSelected === currentQ.correct_answer;
+    if (currentQuiz.type === "choice") {
+      isCorrect = quizSelected === currentQuiz.correct_answer;
     } else {
-      isCorrect = quizWriting.trim().toLowerCase() === currentQ.correct_answer.trim().toLowerCase();
+      isCorrect = quizWriting.trim().toLowerCase() === currentQuiz.correct_answer.trim().toLowerCase();
     }
+
     setQuizChecked(true);
     setQuizCorrect(isCorrect);
-    if (!isCorrect) {
-      setQuizMistakes(prev => [...prev, currentQ.question]);
+    
+    if (isCorrect) {
+      playCorrectSound();
+    } else {
+      playWrongSound();
+      setQuizMistakes((prev) => [...prev, currentQuiz.question]);
     }
   };
 
-  const handleGetTutorFeedback = async () => {
-    setLoadingTutor(true);
+  const handleGenerateTutorSummary = async () => {
+    setLoadingTutorSummary(true);
     try {
-      const res = await apiRequest("/lessons/tutor/phase2/summary", {
+      const data = await apiRequest("/lessons/tutor/phase2/summary", {
         method: "POST",
-        body: JSON.stringify({ mistakes: quizMistakes, score: quizScore || 0 })
+        body: JSON.stringify({ mistakes: quizMistakes, score: quizScore || 0 }),
       });
-      setTutorSummary(res.summary);
+      setTutorSummary(data.summary || "Summary generated");
     } catch (err) {
       console.error(err);
     } finally {
-      setLoadingTutor(false);
+      setLoadingTutorSummary(false);
     }
   };
 
@@ -183,7 +346,7 @@ export default function Phase2ConsonantWizard({ activeLesson, speakWord, onCompl
     <div className="flex-grow flex flex-col justify-between">
       {/* Top Header tracking */}
       <header className="flex justify-between items-center py-4 border-b border-white/5 mb-6">
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-3 text-left">
           <div className="p-2 rounded-xl bg-zinc-900 border border-white/10">
             <BookOpen className="w-5 h-5 text-brand-400" />
           </div>
@@ -191,19 +354,19 @@ export default function Phase2ConsonantWizard({ activeLesson, speakWord, onCompl
             <h2 className="font-extrabold text-lg flex items-center gap-2">
               <span>{activeLesson?.title || "Hangeul Consonants Bootcamp"}</span>
             </h2>
-            <p className="text-xs text-zinc-500">Curated Topic: {activeLesson?.topic || "Consonant foundations"}</p>
+            <p className="text-xs text-zinc-500 font-medium">Curated Topic: Consonant sounds & symbols</p>
           </div>
         </div>
-        
+
         {/* Active progress bar */}
         <div className="flex items-center space-x-4">
           <div className="w-32 h-2.5 bg-zinc-800 rounded-full overflow-hidden">
             <div 
               className="h-full bg-gradient-to-r from-yellow-500 via-orange-500 to-indigo-500 rounded-full transition-all duration-500" 
-              style={{ width: `${(step / 8) * 100}%` }}
+              style={{ width: `${(step / totalSteps) * 100}%` }}
             />
           </div>
-          <span className="text-xs text-zinc-400 font-bold">{Math.round((step / 8) * 100)}%</span>
+          <span className="text-xs text-zinc-400 font-bold">{Math.round((step / totalSteps) * 100)}%</span>
           <button 
             onClick={() => setShowOutline(!showOutline)}
             className="text-[10px] bg-zinc-900 border border-white/10 hover:bg-zinc-800 text-zinc-300 px-2.5 py-1 rounded transition cursor-pointer"
@@ -215,240 +378,402 @@ export default function Phase2ConsonantWizard({ activeLesson, speakWord, onCompl
 
       {/* Screen 1: Welcome/Overview */}
       {step === 1 && (
-        <div className="glass-panel neon-border p-8 rounded-3xl shadow-2xl w-full space-y-6 flex-grow flex flex-col justify-center text-center max-w-xl mx-auto">
-          <div className="p-3 bg-brand-500/10 rounded-full border border-brand-500/25 w-fit mx-auto text-brand-400 shrink-0">
-            <Sparkles className="w-8 h-8 animate-pulse shrink-0" />
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center text-center">
+          <div className="p-4 bg-brand-500/10 rounded-full border border-brand-500/25 w-fit mx-auto text-brand-400 shrink-0">
+            <Sparkles className="w-12 h-12 animate-pulse shrink-0" />
           </div>
-          <h2 className="text-4xl font-black text-white">Hangeul 0.2</h2>
-          <h3 className="text-xl font-bold text-brand-400 mt-1">Consonant Bootcamp</h3>
-          <p className="text-zinc-300 text-sm leading-relaxed">
-            {metadata?.goals || "Learn Korean consonants, including plain, aspirated, and tense sounds, and start reading real syllables."}
+          <h2 className="text-5xl md:text-6xl font-black text-white">Hangeul 0.2</h2>
+          <h3 className="text-2xl md:text-3xl font-bold text-brand-400 mt-1">Consonant Bootcamp</h3>
+          <p className="text-zinc-200 text-lg leading-relaxed max-w-4xl mx-auto">
+            {metadata?.description || "Welcome back to Hangeul Bootcamp! Today you'll meet the 14 basic consonants and their tense/aspirated series. Explore visual mouth mappings, train your ear, and assemble syllable blocks."}
           </p>
-          <div className="bg-zinc-900/60 p-4 rounded-xl border border-white/5 text-left text-xs text-zinc-400 space-y-2">
-            <p><strong>🎯 Objectives:</strong> Recognize 19 basic consonants, master plain vs. aspirated vs. tense series contrast, and build CV syllables.</p>
-            <p><strong>⏱️ Estimated Time:</strong> {metadata?.estimated_time || "20-25 minutes"}</p>
+          <div className="bg-zinc-900/60 p-6 rounded-2xl border border-white/5 text-left text-sm text-zinc-300 space-y-3.5 max-w-4xl mx-auto w-full">
+            <p className="text-xs text-zinc-500 font-mono uppercase tracking-wider font-black">🎯 Objectives:</p>
+            <ul className="list-disc list-inside space-y-2 text-zinc-200 pl-1 text-sm md:text-base">
+              {(metadata?.goals || [
+                "Recognise all 14 basic consonant letters: ㄱ ㄴ ㄷ ㄹ ㅁ ㅂ ㅅ ㅇ ㅈ ㅊ ㅋ ㅌ ㅍ ㅎ",
+                "Understand consonants as stylized mouth & tongue positions",
+                "Differentiate plain vs. aspirated vs. tense consonant series",
+                "Assemble basic CV syllables and master the double role of ㅇ"
+              ]).map((g: string, idx: number) => (
+                <li key={idx}>{g}</li>
+              ))}
+            </ul>
+            <p className="pt-2 text-sm md:text-base"><strong>⏱️ Estimated Time:</strong> {metadata?.estimated_minutes || 20} minutes</p>
+            <p className="text-sm md:text-base"><strong>📋 Prerequisites:</strong> Phase 1 (Vowel Bootcamp)</p>
           </div>
-          <button 
-            onClick={() => setStep(2)}
-            className="bg-brand-500 hover:bg-brand-600 text-white font-bold py-3 px-8 rounded-xl transition text-sm flex items-center justify-center gap-2 mx-auto cursor-pointer"
-          >
-            <span>Start Consonants</span>
-            <ChevronRight className="w-4 h-4" />
-          </button>
-        </div>
-      )}
-
-      {/* Screen 2: Concept Explanation */}
-      {step === 2 && (
-        <div className="glass-panel neon-border p-8 rounded-3xl shadow-2xl w-full space-y-6 flex-grow flex flex-col justify-center">
-          <div className="flex justify-between items-center border-b border-white/5 pb-4">
-            <h2 className="text-xl font-black text-white flex items-center gap-2 font-sans">
-              <BookOpen className="w-5 h-5 text-brand-400" />
-              <span>Consonant Classification Chart</span>
-            </h2>
-            <span className="text-xs text-zinc-500 font-bold font-sans">Step 2 of 8</span>
-          </div>
-          
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-            <div className="space-y-4 text-xs md:text-sm text-zinc-300">
-              <div className="bg-zinc-900/40 p-4 rounded-xl border border-white/5 space-y-2">
-                <h4 className="font-extrabold text-white text-sm">Consonant Types</h4>
-                <p className="text-zinc-400 leading-relaxed">
-                  Hangeul consonants represent the speech organs (tongue, lips, throat) used to pronounce them.
-                </p>
-                <ul className="list-disc list-inside space-y-1 pl-1 text-zinc-400">
-                  <li><strong>Plain:</strong> Normal, relaxed pronunciation.</li>
-                  <li><strong>Aspirated:</strong> Pronounced with an energetic burst of air.</li>
-                  <li><strong>Tense:</strong> Tense vocal cords, high pitched with no breath.</li>
-                </ul>
-              </div>
-
-              <div className="bg-zinc-900/40 p-4 rounded-xl border border-white/5 space-y-2">
-                <h4 className="font-extrabold text-white text-sm">The placeholder 'ㅇ'</h4>
-                <p className="text-zinc-400 leading-relaxed">
-                  At the beginning of a block, <strong>ㅇ</strong> acts as a silent placeholder for vowels. At the end of a block (final position / batchim), it sounds like the <strong>ng</strong> in "king".
-                </p>
-              </div>
-            </div>
-
-            <div className="bg-zinc-900/40 p-5 rounded-2xl border border-white/5 space-y-4">
-              <h3 className="text-xs font-black uppercase text-amber-400 tracking-wider">Interactive Consonant Inventory</h3>
-              {content ? (
-                <div className="space-y-3 max-h-[35vh] overflow-y-auto pr-1">
-                  {content.groups.map((group: any) => (
-                    <div key={group.name} className="space-y-1.5">
-                      <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{group.name}</span>
-                      <div className="grid grid-cols-2 gap-2">
-                        {group.consonants.map((con: any) => (
-                          <div key={con.symbol} className="bg-zinc-950/80 p-2.5 rounded-xl border border-white/5 flex items-center justify-between group hover:border-brand-500/20 transition">
-                            <div>
-                              <span className="text-base font-black text-white block">{con.symbol}</span>
-                              <span className="text-[10px] text-zinc-400">{con.hint}</span>
-                            </div>
-                            <button 
-                              onClick={() => speakWord(con.symbol + "아")}
-                              className="p-1.5 rounded-lg bg-zinc-800 text-zinc-400 hover:text-white transition"
-                              title="Play sample sound (with 아)"
-                            >
-                              <Volume2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-6"><Loader2 className="w-6 h-6 animate-spin mx-auto text-brand-400" /></div>
-              )}
-            </div>
+          <div className="flex flex-col gap-3 max-w-xs mx-auto">
+            <button 
+              onClick={() => setStep(2)}
+              className="bg-brand-500 hover:bg-brand-600 text-white font-bold py-4 px-10 rounded-xl transition text-base flex items-center justify-center gap-2.5 cursor-pointer shadow-lg shadow-brand-500/20"
+            >
+              <span>Start Phase 2</span>
+              <ChevronRight className="w-5 h-5" />
+            </button>
           </div>
 
-          <div className="flex justify-between items-center pt-4 border-t border-white/5">
-            <button onClick={() => setStep(1)} className="glass-panel px-4 py-2.5 rounded-xl hover:bg-white/5 text-zinc-400 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
-            <button onClick={() => setStep(3)} className="bg-brand-500 hover:bg-brand-600 text-white px-5 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer">Next Step <ChevronRight className="w-4 h-4" /></button>
-          </div>
-        </div>
-      )}
-
-      {/* Screen 3: Activity 1 (Visual) */}
-      {step === 3 && (
-        <div className="glass-panel neon-border p-8 rounded-3xl shadow-2xl w-full space-y-6 flex-grow flex flex-col justify-center">
-          <div className="flex justify-between items-center border-b border-white/5 pb-4">
-            <h2 className="text-xl font-black text-white flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-brand-400" />
-              <span>Activity 1 – Visual Recognition</span>
-            </h2>
-            <span className="text-xs text-zinc-500 font-bold">Step 3 of 8 &bull; Q {visualIdx + 1}/{visualQuestions.length}</span>
-          </div>
-
-          {visualQuestions.length === 0 ? (
-            <div className="text-center py-10"><Loader2 className="w-8 h-8 animate-spin mx-auto text-brand-400" /></div>
-          ) : (
-            <div className="space-y-6 max-w-xl mx-auto w-full">
-              <h3 className="text-lg font-extrabold text-white text-center">
-                {visualQuestions[visualIdx]?.question}
-              </h3>
-              <div className="grid grid-cols-2 gap-3">
-                {visualQuestions[visualIdx]?.options.map((opt: string) => (
-                  <button
-                    key={opt}
-                    onClick={() => !visualChecked && setVisualSelected(opt)}
-                    disabled={visualChecked}
-                    className={`p-4 rounded-xl font-black text-sm border transition ${
-                      visualSelected === opt
-                        ? "border-brand-500 bg-brand-500/10 text-white"
-                        : "border-white/5 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-300"
-                    } ${visualChecked && opt === visualQuestions[visualIdx]?.correct_answer ? "border-accent-teal bg-accent-teal/10 text-white" : ""}`}
-                  >
-                    {opt}
-                  </button>
-                ))}
-              </div>
-
-              {visualChecked && (
-                <div className={`p-4 rounded-xl border text-xs space-y-1 ${
-                  visualCorrect ? "bg-accent-teal/5 border-accent-teal/20 text-accent-teal" : "bg-red-500/5 border-red-500/10 text-red-400"
-                }`}>
-                  <p className="font-extrabold">{visualCorrect ? "맞아요! Correct!" : "Oops! Incorrect."}</p>
-                  <p>Correct answer is: {visualQuestions[visualIdx]?.correct_answer}</p>
-                </div>
-              )}
-
-              <div className="flex justify-between items-center pt-4 border-t border-white/5">
-                <button onClick={() => setStep(2)} className="glass-panel px-4 py-2.5 rounded-xl hover:bg-white/5 text-zinc-400 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
-                
-                {!visualChecked ? (
-                  <button
-                    onClick={handleCheckVisual}
-                    disabled={!visualSelected}
-                    className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white px-5 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer"
-                  >
-                    Check Answer
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => {
-                      setVisualChecked(false);
-                      setVisualCorrect(null);
-                      setVisualSelected(null);
-                      if (visualIdx < visualQuestions.length - 1) {
-                        setVisualIdx(visualIdx + 1);
-                      } else {
-                        setStep(4);
-                      }
-                    }}
-                    className="bg-accent-teal text-zinc-950 hover:bg-accent-teal/90 px-5 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer"
-                  >
-                    {visualIdx < visualQuestions.length - 1 ? "Next Question" : "Move to Activity 2"}
-                  </button>
-                )}
-              </div>
+          {showOutline && (
+            <div className="bg-zinc-955 p-6 rounded-xl border border-white/5 text-left text-sm text-zinc-400 space-y-2 animate-fade-in max-w-lg mx-auto w-full font-mono">
+              <p className="font-extrabold text-white text-center pb-2 text-base">Phase Activities Outline</p>
+              <p>1. C1 – What do consonants show?</p>
+              <p>2. C2 – Meet the core consonants</p>
+              <p>3. C3 – Plain vs aspirated vs tense</p>
+              <p>4. C4 – Special letter ㅇ</p>
+              <p>5. C5 – Consonants inside syllable blocks</p>
+              <p>6. Act 1 – Visual Consonant Recognition</p>
+              <p>7. Act 2 – Ear Training & Plain-Aspirated-Tense</p>
+              <p>8. Act 3 – Syllable Combining & Reading</p>
+              <p>9. Checkpoint Mini-Quiz & Homework</p>
             </div>
           )}
         </div>
       )}
 
-      {/* Screen 4: Activity 2 (Listening) */}
-      {step === 4 && (
-        <div className="glass-panel neon-border p-8 rounded-3xl shadow-2xl w-full space-y-6 flex-grow flex flex-col justify-center">
+      {/* Concept Screen Template (Steps 2 - 6) */}
+      {step >= 2 && step <= 6 && (
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center">
           <div className="flex justify-between items-center border-b border-white/5 pb-4">
-            <h2 className="text-xl font-black text-white flex items-center gap-2">
-              <Volume2 className="w-5 h-5 text-brand-400" />
-              <span>Activity 2 – Listening Recognition</span>
+            <h2 className="text-2xl md:text-3xl font-black text-white flex items-center gap-2.5 font-sans">
+              <BookOpen className="w-6 h-6 text-brand-400" />
+              <span>
+                {step === 2 && "Screen C1: What do consonants show?"}
+                {step === 3 && "Screen C2: Meet the core consonants"}
+                {step === 4 && "Screen C3: Plain vs aspirated vs tense"}
+                {step === 5 && "Screen C4: Special letter ㅇ: silent / ng"}
+                {step === 6 && "Screen C5: Consonants inside syllable blocks"}
+              </span>
             </h2>
-            <span className="text-xs text-zinc-500 font-bold">Step 4 of 8 &bull; Q {listeningIdx + 1}/{listeningQuestions.length}</span>
+            <span className="text-xs text-zinc-500 font-bold font-sans">Concept {step - 1} of 5</span>
           </div>
 
-          {listeningQuestions.length === 0 ? (
-            <div className="text-center py-10"><Loader2 className="w-8 h-8 animate-spin mx-auto text-brand-400" /></div>
-          ) : (
-            <div className="space-y-6 max-w-xl mx-auto w-full text-center">
-              <h3 className="text-sm font-black text-zinc-400 uppercase tracking-widest">Listen to the syllable and choose its starting consonant</h3>
-              
-              <button 
-                onClick={() => speakWord(listeningQuestions[listeningIdx]?.audio_text)}
-                className="p-6 bg-brand-500/10 hover:bg-brand-500/20 text-brand-400 border border-brand-500/20 rounded-full mx-auto transition flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 cursor-pointer"
-              >
-                <Volume2 className="w-10 h-10" />
-              </button>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start text-left">
+            <div className="space-y-5 text-base md:text-lg text-zinc-200 leading-relaxed">
+              {step === 2 && (
+                <div className="space-y-4">
+                  <p>Unlike vowels, which represent open cosmic energies, Hangeul consonants were designed systematically as <strong>stylised diagrams of speech organs</strong>.</p>
+                  <p>The symbols trace the shape of the mouth, tongue, teeth, or throat during articulation:</p>
+                  <div className="bg-zinc-900/60 p-6 rounded-2xl border border-white/5 space-y-4 text-sm md:text-base">
+                    <p className="font-bold text-white">Visual Organ Mappings:</p>
+                    <ul className="list-disc list-inside space-y-2 pl-1 text-zinc-300">
+                      <li><strong>ㄴ (n-sound)</strong>: traces the front of the tongue touching the roof of the mouth.</li>
+                      <li><strong>ㅁ (m-sound)</strong>: resembles the closed box shape of lips.</li>
+                      <li><strong>ㅇ (silent/ng)</strong>: represents the round opening of the throat.</li>
+                    </ul>
+                  </div>
+                </div>
+              )}
 
-              <div className="grid grid-cols-4 gap-3 pt-4">
-                {listeningQuestions[listeningIdx]?.options.map((opt: string) => (
+              {step === 3 && (
+                <div className="space-y-4">
+                  <p className="text-sm md:text-base">Let's group the 14 basic consonants by their speech organ origins:</p>
+                  <div className="space-y-3 pt-2 text-sm md:text-base">
+                    <ul className="space-y-2">
+                      <li><strong className="text-white">Lips group:</strong> ㅁ (m), ㅂ (b/p), ㅍ (pʰ)</li>
+                      <li><strong className="text-white">Tongue-front:</strong> ㄴ (n), ㄷ (d/t), ㅌ (tʰ), ㄹ (r/l)</li>
+                      <li><strong className="text-white">Back of tongue:</strong> ㄱ (g/k), ㅋ (kʰ)</li>
+                      <li><strong className="text-white">Fricatives & others:</strong> ㅅ (s), ㅈ (j), ㅊ (ch), ㅎ (h)</li>
+                    </ul>
+                    <p className="text-xs text-zinc-400">Tap the symbols in Activity 1 to hear native audio and read position notes.</p>
+                  </div>
+                </div>
+              )}
+
+              {step === 4 && (
+                <div className="space-y-4">
+                  <p>Korean consonants are grouped into families defined by vocal tension and air release:</p>
+                  <div className="bg-zinc-900/60 p-6 rounded-2xl border border-white/5 space-y-4 text-sm md:text-base">
+                    <p className="font-bold text-white">Three Articulation Levels:</p>
+                    <ul className="space-y-2 text-zinc-300">
+                      <li>• <strong>Plain:</strong> ㄱ (soft, relaxed sound with minimal air release).</li>
+                      <li>• <strong>Aspirated:</strong> ㅋ (pronounced with a strong, conscious puff of air).</li>
+                      <li>• <strong>Tense:</strong> ㄲ (doubled symbol, high vocal cord tension, short and tight sound).</li>
+                    </ul>
+                  </div>
+                </div>
+              )}
+
+              {step === 5 && (
+                <div className="space-y-4">
+                  <p>The circular consonant <strong>ㅇ</strong> has a dual, position-dependent personality:</p>
+                  <div className="bg-zinc-900/60 p-6 rounded-2xl border border-white/5 space-y-3 text-sm md:text-base">
+                    <p>• <strong>Syllable Start:</strong> Silent placeholder (아 sounds like ㅏ).</p>
+                    <p>• <strong>Syllable Bottom (받침):</strong> Pronounced like the nasal 'ng' in the word "king" (앙 sounds like ang).</p>
+                  </div>
+                </div>
+              )}
+
+              {step === 6 && (
+                <div className="space-y-4">
+                  <p>Korean syllable blocks combine consonants (C) and vowels (V):</p>
+                  <div className="bg-zinc-900/60 p-6 rounded-2xl border border-white/5 space-y-3 text-sm md:text-base">
+                    <p className="font-extrabold text-white">Placement Rules:</p>
+                    <p>• **Vertical Vowels** (ㅣ, ㅏ, ㅓ, ㅑ, ㅕ) sit to the **right** of the consonant (e.g. 나).</p>
+                    <p>• **Horizontal Vowels** (ㅡ, ㅗ, ㅜ, ㅛ, ㅠ) sit **below** the consonant (e.g. 고).</p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Micro-question Section */}
+            <div className="bg-zinc-900/40 p-8 rounded-2xl border border-white/5 space-y-6">
+              <div className="flex items-center gap-2.5 text-xs text-brand-300 font-extrabold uppercase tracking-wider">
+                <HelpCircle className="w-5 h-5" />
+                <span>Check Your Understanding</span>
+              </div>
+              <h4 className="text-base md:text-lg font-bold text-white leading-normal">
+                {conceptQuestions[step]?.question}
+              </h4>
+              <div className="space-y-3">
+                {conceptQuestions[step]?.options.map((opt) => (
                   <button
-                    key={opt}
-                    onClick={() => !listeningChecked && setListeningSelected(opt)}
-                    disabled={listeningChecked}
-                    className={`p-4 rounded-xl font-black text-2xl border transition ${
-                      listeningSelected === opt
-                        ? "border-brand-500 bg-brand-500/10 text-white"
-                        : "border-white/5 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-300"
-                    } ${listeningChecked && opt === listeningQuestions[listeningIdx]?.correct_answer ? "border-accent-teal bg-accent-teal/10 text-white" : ""}`}
+                     key={opt.id}
+                     onClick={() => !cChecked && setCSelected(opt.id)}
+                     disabled={cChecked}
+                     className={`w-full p-5 rounded-xl text-sm md:text-base font-bold border transition text-left ${
+                       cSelected === opt.id
+                         ? "border-brand-500 bg-brand-500/10 text-white"
+                         : "border-white/5 bg-zinc-955/60 hover:bg-zinc-900 text-zinc-400"
+                     } ${cChecked && opt.id === conceptQuestions[step]?.correctId ? "border-accent-teal bg-accent-teal/10 text-white" : ""} ${
+                       cChecked && cSelected === opt.id && cSelected !== conceptQuestions[step]?.correctId ? "border-red-500 bg-red-500/10 text-red-400" : ""
+                     }`}
                   >
-                    {opt}
+                    {opt.text}
                   </button>
                 ))}
               </div>
 
+              {cChecked && (
+                <div className={`p-4 rounded-xl border text-sm leading-relaxed ${
+                  cCorrect ? "bg-accent-teal/5 border-accent-teal/20 text-accent-teal" : "bg-red-500/5 border-red-500/10 text-red-400"
+                }`}>
+                  <p className="font-extrabold mb-1 text-base">{cCorrect ? "Correct!" : "Incorrect."}</p>
+                  <p>{conceptQuestions[step]?.explanation}</p>
+                </div>
+              )}
+
+              {!cChecked && (
+                <button
+                  onClick={handleCheckConceptQuestion}
+                  disabled={!cSelected}
+                  className="w-full bg-brand-500 hover:bg-brand-600 disabled:opacity-40 text-white font-bold py-4 rounded-xl text-sm md:text-base transition cursor-pointer"
+                >
+                  Verify Answer
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div className="flex justify-between items-center pt-4 border-t border-white/5 mt-4">
+            <button onClick={() => setStep(step - 1)} className="glass-panel px-4 py-2.5 rounded-xl hover:bg-white/5 text-zinc-400 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
+            <button 
+              onClick={() => setStep(step + 1)} 
+              disabled={!cChecked}
+              className="bg-brand-500 hover:bg-brand-600 disabled:opacity-40 text-white px-5 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
+            >
+              <span>Next Step</span>
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Step 7: Activity 1 – Visual Consonant Recognition */}
+      {step === 7 && (
+        <div className="glass-panel neon-border p-8 rounded-3xl shadow-2xl w-full space-y-6 flex-grow flex flex-col justify-center max-w-3xl mx-auto">
+          <div className="flex justify-between items-center border-b border-white/5 pb-4">
+            <h2 className="text-xl font-black text-white flex items-center gap-2">
+              <Eye className="w-5 h-5 text-brand-400" />
+              <span>Activity 1: Consonant Gallery & Visual Recognition</span>
+            </h2>
+            <span className="text-xs text-zinc-500 font-bold">Step 7 of {totalSteps}</span>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start text-left">
+            {/* Consonant Gallery */}
+            <div className="lg:col-span-5 bg-zinc-900/40 p-4 rounded-2xl border border-white/5 space-y-4">
+              <h3 className="text-xs font-black uppercase tracking-wider text-brand-300 font-sans">Tap to hear & study</h3>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { char: "ㄱ", label: "g / k" },
+                  { char: "ㄴ", label: "n" },
+                  { char: "ㄷ", label: "d / t" },
+                  { char: "ㄹ", label: "r / l" },
+                  { char: "ㅁ", label: "m" },
+                  { char: "ㅂ", label: "b / p" },
+                  { char: "ㅅ", label: "s" },
+                  { char: "ㅇ", label: "silent/ng" },
+                  { char: "ㅈ", label: "j" },
+                  { char: "ㅊ", label: "ch" },
+                  { char: "ㅋ", label: "k" },
+                  { char: "ㅌ", label: "t" },
+                  { char: "ㅍ", label: "p" },
+                  { char: "ㅎ", label: "h" }
+                ].map((item) => (
+                  <button
+                    key={item.char}
+                    onClick={() => speakWord(item.char + "아")}
+                    className="p-2 bg-zinc-950 border border-white/5 hover:border-brand-500/20 rounded-xl transition text-center group cursor-pointer"
+                  >
+                    <span className="text-xl font-black text-white block group-hover:scale-110 transition duration-150">{item.char}</span>
+                    <span className="text-[9px] text-zinc-500 font-mono tracking-tighter block">{item.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Test Panel */}
+            <div className="lg:col-span-7 bg-zinc-900/40 p-5 rounded-2xl border border-white/5 space-y-4 w-full">
+              {visualQuestions.length === 0 ? (
+                <div className="text-center py-10"><Loader2 className="w-8 h-8 animate-spin mx-auto text-brand-400" /></div>
+              ) : (
+                <div className="space-y-4 w-full">
+                  <div className="flex justify-between items-center text-[10px] text-zinc-500 font-mono">
+                    <span>VISUAL CHECKPOINT</span>
+                    <span>Q {visualIdx + 1}/{visualQuestions.length}</span>
+                  </div>
+                  <h3 className="text-sm font-black text-white leading-normal">
+                    {visualQuestions[visualIdx]?.question}
+                  </h3>
+                  <div className="grid grid-cols-2 gap-2.5">
+                    {visualQuestions[visualIdx]?.options.map((opt: string) => {
+                      const isSelected = visualSelected === opt;
+                      const isCorrectAnswer = opt === visualQuestions[visualIdx]?.correct_answer;
+                      return (
+                        <button
+                          key={opt}
+                          onClick={() => !visualChecked && setVisualSelected(opt)}
+                          disabled={visualChecked}
+                          className={`p-3.5 rounded-xl font-black text-xl border transition ${
+                            isSelected
+                              ? "border-brand-500 bg-brand-500/10 text-white"
+                              : "border-white/5 bg-zinc-955/60 hover:bg-zinc-900 text-zinc-300"
+                          } ${visualChecked && isCorrectAnswer ? "border-accent-teal bg-accent-teal/10 text-white" : ""} ${
+                            visualChecked && isSelected && !isCorrectAnswer ? "border-red-500 bg-red-500/10 text-red-400" : ""
+                          }`}
+                        >
+                          {opt}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {visualChecked && (
+                    <div className={`p-3.5 rounded-xl border text-[11px] space-y-1 ${
+                      visualCorrect ? "bg-accent-teal/5 border-accent-teal/20 text-accent-teal" : "bg-red-500/5 border-red-500/10 text-red-400"
+                    }`}>
+                      <p className="font-extrabold">{visualCorrect ? "맞아요! Correct!" : "Oops! Incorrect."}</p>
+                      <p>{visualQuestions[visualIdx]?.explanation}</p>
+                    </div>
+                  )}
+
+                  <div className="flex justify-end pt-2">
+                    {!visualChecked ? (
+                      <button
+                        onClick={handleCheckVisualAnswer}
+                        disabled={!visualSelected}
+                        className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white px-5 py-2 rounded-xl text-xs font-bold transition cursor-pointer"
+                      >
+                        Check Answer
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => {
+                          setVisualChecked(false);
+                          setVisualCorrect(null);
+                          setVisualSelected(null);
+                          if (visualIdx < visualQuestions.length - 1) {
+                            setVisualIdx(visualIdx + 1);
+                          } else {
+                            setStep(8);
+                          }
+                        }}
+                        className="bg-accent-teal text-zinc-950 hover:bg-accent-teal/90 px-5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer"
+                      >
+                        {visualIdx < visualQuestions.length - 1 ? "Next Question" : "Move to Activity 2"}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="flex justify-between items-center pt-4 border-t border-white/5">
+            <button onClick={() => setStep(6)} className="glass-panel px-4 py-2.5 rounded-xl hover:bg-white/5 text-zinc-400 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
+            <button onClick={() => setStep(8)} className="glass-panel px-4 py-2.5 rounded-xl hover:bg-white/5 text-zinc-400 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer">Skip to Step 8 <ChevronRight className="w-4 h-4" /></button>
+          </div>
+        </div>
+      )}
+
+      {/* Step 8: Activity 2 – Listening & Minimal Pairs */}
+      {step === 8 && (
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center">
+          <div className="flex justify-between items-center border-b border-white/5 pb-4">
+            <h2 className="text-2xl font-black text-white flex items-center gap-2">
+              <Headphones className="w-6 h-6 text-brand-400" />
+              <span>Activity 2: Ear Training & Series Triples</span>
+            </h2>
+            <span className="text-xs text-zinc-500 font-bold">Step 8 of {totalSteps}</span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start text-left">
+            {/* 2A: Single Consonant Identification */}
+            <div className="bg-zinc-900/40 p-6 rounded-2xl border border-white/5 space-y-5 w-full">
+              <div className="flex justify-between items-center text-[10px] text-zinc-500 font-mono">
+                <span>2A: IDENTIFICATION</span>
+                <span>Q {listeningIdx + 1}/{listeningQuestions.length}</span>
+              </div>
+              
+              <div className="flex items-center gap-4">
+                <button 
+                  onClick={() => speakWord(listeningQuestions[listeningIdx]?.audio_text)}
+                  className="p-5 bg-brand-500/10 hover:bg-brand-500/20 text-brand-400 border border-brand-500/20 rounded-full transition flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 cursor-pointer"
+                >
+                  <Volume2 className="w-7 h-7" />
+                </button>
+                <span className="text-sm text-zinc-400 font-bold">Play sound cue</span>
+              </div>
+
+              <div className="grid grid-cols-4 gap-2.5">
+                {listeningQuestions[listeningIdx]?.options.map((opt: string) => {
+                  const isSelected = listeningSelected === opt;
+                  const isCorrectAnswer = opt === listeningQuestions[listeningIdx]?.correct_answer;
+                  return (
+                    <button
+                      key={opt}
+                      onClick={() => !listeningChecked && setListeningSelected(opt)}
+                      disabled={listeningChecked}
+                      className={`p-4 rounded-xl font-black text-xl border transition ${
+                        isSelected
+                          ? "border-brand-500 bg-brand-500/10 text-white"
+                          : "border-white/5 bg-zinc-955/60 hover:bg-zinc-900 text-zinc-300"
+                      } ${listeningChecked && isCorrectAnswer ? "border-accent-teal bg-accent-teal/10 text-white" : ""} ${
+                        listeningChecked && isSelected && !isCorrectAnswer ? "border-red-500 bg-red-500/10 text-red-400" : ""
+                      }`}
+                    >
+                      {opt}
+                    </button>
+                  );
+                })}
+              </div>
+
               {listeningChecked && (
-                <div className={`p-4 rounded-xl border text-xs text-left space-y-1 ${
+                <div className={`p-4 rounded-xl border text-sm space-y-1 ${
                   listeningCorrect ? "bg-accent-teal/5 border-accent-teal/20 text-accent-teal" : "bg-red-500/5 border-red-500/10 text-red-400"
                 }`}>
-                  <p className="font-extrabold">{listeningCorrect ? "Excellent ear! Correct!" : "Incorrect."}</p>
+                  <p className="font-extrabold text-base">{listeningCorrect ? "Correct!" : "Incorrect."}</p>
                   <p>{listeningQuestions[listeningIdx]?.explanation}</p>
                 </div>
               )}
 
-              <div className="flex justify-between items-center pt-4 border-t border-white/5">
-                <button onClick={() => setStep(3)} className="glass-panel px-4 py-2.5 rounded-xl hover:bg-white/5 text-zinc-400 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
-                
+              <div className="flex justify-end">
                 {!listeningChecked ? (
                   <button
-                    onClick={handleCheckListening}
+                    onClick={handleCheckListeningAnswer}
                     disabled={!listeningSelected}
-                    className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white px-5 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer"
+                    className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer"
                   >
-                    Check Answer
+                    Verify Answer
                   </button>
                 ) : (
                   <button
@@ -459,86 +784,87 @@ export default function Phase2ConsonantWizard({ activeLesson, speakWord, onCompl
                       if (listeningIdx < listeningQuestions.length - 1) {
                         setListeningIdx(listeningIdx + 1);
                       } else {
-                        setStep(5);
+                        setListeningIdx(0);
                       }
                     }}
-                    className="bg-accent-teal text-zinc-950 hover:bg-accent-teal/90 px-5 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer"
+                    className="bg-accent-teal text-zinc-955 hover:bg-accent-teal/90 px-4 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer"
                   >
-                    {listeningIdx < listeningQuestions.length - 1 ? "Next Question" : "Move to Activity 3"}
+                    {listeningIdx < listeningQuestions.length - 1 ? "Next Audio" : "Repeat Identification"}
                   </button>
                 )}
               </div>
             </div>
-          )}
-        </div>
-      )}
 
-      {/* Screen 5: Activity 3 (Series plain-aspirated-tense triples) */}
-      {step === 5 && (
-        <div className="glass-panel neon-border p-8 rounded-3xl shadow-2xl w-full space-y-6 flex-grow flex flex-col justify-center">
-          <div className="flex justify-between items-center border-b border-white/5 pb-4">
-            <h2 className="text-xl font-black text-white flex items-center gap-2">
-              <BrainCircuit className="w-5 h-5 text-brand-400" />
-              <span>Activity 3 – Plain vs Aspirated vs Tense Triples</span>
-            </h2>
-            <span className="text-xs text-zinc-500 font-bold">Step 5 of 8 &bull; Q {seriesIdx + 1}/{seriesQuestions.length}</span>
-          </div>
-
-          {seriesQuestions.length === 0 ? (
-            <div className="text-center py-10"><Loader2 className="w-8 h-8 animate-spin mx-auto text-brand-400" /></div>
-          ) : (
-            <div className="space-y-6 max-w-2xl mx-auto w-full text-center">
-              <div className="bg-zinc-950/40 p-4 rounded-xl border border-white/5 max-w-sm mx-auto text-xs text-zinc-400">
-                💡 <strong>Aspiration Tip:</strong> Place your hand or a clean tissue in front of your mouth; you should feel a distinct puff of air with aspirated consonants (like ㅋ, ㅌ) but almost none with plain (ㄱ, ㄷ) or tense (ㄲ, ㄸ).
+            {/* 2B: Plain-Aspirated-Tense Triples */}
+            <div className="bg-zinc-900/40 p-6 rounded-2xl border border-white/5 space-y-5 w-full">
+              <div className="flex justify-between items-center text-[10px] text-zinc-500 font-mono">
+                <span>2B: SERIES CONTRAST</span>
+                <span>Group {seriesIdx + 1}/{seriesQuestions.length}</span>
               </div>
-
-              <div className="py-4">
+              
+              <div className="flex items-center gap-4">
                 <button 
                   onClick={() => speakWord(seriesQuestions[seriesIdx]?.correct_syllable)}
-                  className="p-6 bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 border border-purple-500/20 rounded-full mx-auto transition flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 cursor-pointer animate-bounce"
-                  style={{ animationDuration: "4s" }}
+                  className="p-5 bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 border border-purple-500/20 rounded-full transition flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 cursor-pointer"
                 >
-                  <Volume2 className="w-10 h-10" />
+                  <Volume2 className="w-7 h-7" />
                 </button>
+                <span className="text-sm text-zinc-400 font-bold">Play triple sound</span>
               </div>
 
-              <div className="grid grid-cols-3 gap-3">
-                {seriesQuestions[seriesIdx]?.options.map((opt: any) => (
-                  <button
-                    key={opt.symbol}
-                    onClick={() => !seriesChecked && setSeriesSelected(opt.symbol)}
-                    disabled={seriesChecked}
-                    className={`p-4 rounded-2xl border text-left space-y-1 transition ${
-                      seriesSelected === opt.symbol
-                        ? "border-brand-500 bg-brand-500/10 text-white"
-                        : "border-white/5 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-300"
-                    } ${seriesChecked && opt.symbol === seriesQuestions[seriesIdx]?.correct_answer ? "border-accent-teal bg-accent-teal/10" : ""}`}
-                  >
-                    <div className="text-2xl font-black text-white text-center">{opt.symbol}</div>
-                    <div className="text-[10px] text-zinc-400 text-center">{opt.label.split(" - ").pop()}</div>
-                  </button>
-                ))}
+              <div className="grid grid-cols-3 gap-2">
+                {seriesQuestions[seriesIdx]?.options.map((opt: any) => {
+                  const isSelected = seriesSelected === opt.symbol;
+                  const isCorrectAnswer = opt.symbol === seriesQuestions[seriesIdx]?.correct_answer;
+                  return (
+                    <button
+                      key={opt.symbol}
+                      onClick={() => !seriesChecked && setSeriesSelected(opt.symbol)}
+                      disabled={seriesChecked}
+                      className={`p-3 rounded-xl border text-left space-y-1 transition ${
+                        isSelected
+                          ? "border-brand-500 bg-brand-500/10 text-white"
+                          : "border-white/5 bg-zinc-955/60 hover:bg-zinc-900 text-zinc-300"
+                      } ${seriesChecked && isCorrectAnswer ? "border-accent-teal bg-accent-teal/10 text-white" : ""} ${
+                        seriesChecked && isSelected && !isCorrectAnswer ? "border-red-500 bg-red-500/10 text-red-400" : ""
+                      }`}
+                    >
+                      <span className="text-lg font-black text-white block text-center">{opt.symbol}</span>
+                      <span className="text-[9px] text-zinc-400 block text-center line-clamp-1">{opt.label.split(" - ").pop()}</span>
+                    </button>
+                  );
+                })}
               </div>
 
               {seriesChecked && (
-                <div className={`p-4 rounded-xl border text-xs text-left space-y-1 ${
+                <div className={`p-4 rounded-xl border text-sm leading-relaxed ${
                   seriesCorrect ? "bg-accent-teal/5 border-accent-teal/20 text-accent-teal" : "bg-red-500/5 border-red-500/10 text-red-400"
                 }`}>
-                  <p className="font-extrabold">{seriesCorrect ? "Fantastic! You captured the tension and air differences." : "Oops!"}</p>
+                  <p className="font-extrabold text-base">{seriesCorrect ? "Excellent!" : "Acoustic mismatch."}</p>
                   <p>{seriesQuestions[seriesIdx]?.explanation}</p>
                 </div>
               )}
 
-              <div className="flex justify-between items-center pt-4 border-t border-white/5">
-                <button onClick={() => setStep(4)} className="glass-panel px-4 py-2.5 rounded-xl hover:bg-white/5 text-zinc-400 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
-                
+              <div className="flex justify-between items-center">
+                {seriesIdx === seriesQuestions.length - 1 && seriesChecked && !hardestSeries && (
+                  <div className="flex flex-col text-left gap-1.5">
+                    <span className="text-[10px] text-zinc-500 font-extrabold uppercase">Which series is hardest?</span>
+                    <div className="flex gap-1.5">
+                      {["ㄱ/ㅋ/ㄲ", "ㄷ/ㅌ/ㄸ", "ㅂ/ㅍ/ㅃ", "ㅈ/ㅊ/ㅉ"].map(p => (
+                        <button key={p} onClick={() => setHardestSeries(p)} className="px-3 py-1.5 bg-zinc-955 hover:bg-zinc-900 border border-white/5 text-[10px] font-extrabold rounded text-zinc-400 hover:text-white cursor-pointer">{p}</button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {hardestSeries && <span className="text-xs text-brand-300 font-bold">Hardest: {hardestSeries} logged!</span>}
+
                 {!seriesChecked ? (
                   <button
-                    onClick={handleCheckSeries}
+                    onClick={handleCheckSeriesAnswer}
                     disabled={!seriesSelected}
-                    className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white px-5 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer"
+                    className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer"
                   >
-                    Check Answer
+                    Verify Series
                   </button>
                 ) : (
                   <button
@@ -549,223 +875,220 @@ export default function Phase2ConsonantWizard({ activeLesson, speakWord, onCompl
                       if (seriesIdx < seriesQuestions.length - 1) {
                         setSeriesIdx(seriesIdx + 1);
                       } else {
-                        setStep(6);
+                        setStep(9);
                       }
                     }}
-                    className="bg-accent-teal text-zinc-950 hover:bg-accent-teal/90 px-5 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer"
+                    className="bg-accent-teal text-zinc-955 hover:bg-accent-teal/90 px-4 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer"
                   >
-                    {seriesIdx < seriesQuestions.length - 1 ? "Next Pair" : "Move to Activity 4"}
+                    {seriesIdx < seriesQuestions.length - 1 ? "Next Series" : "Move to Activity 3"}
                   </button>
                 )}
               </div>
             </div>
-          )}
-        </div>
-      )}
-
-      {/* Screen 6: Activity 4 (Syllable Reading) */}
-      {step === 6 && (
-        <div className="glass-panel neon-border p-8 rounded-3xl shadow-2xl w-full space-y-6 flex-grow flex flex-col justify-center">
-          <div className="flex justify-between items-center border-b border-white/5 pb-4">
-            <h2 className="text-xl font-black text-white flex items-center gap-2">
-              <BookOpen className="w-5 h-5 text-brand-400" />
-              <span>Activity 4 – Syllable Combining & Reading</span>
-            </h2>
-            <span className="text-xs text-zinc-500 font-bold">Step 6 of 8</span>
           </div>
 
-          {!syllableData ? (
-            <div className="text-center py-10"><Loader2 className="w-8 h-8 animate-spin mx-auto text-brand-400" /></div>
-          ) : (
-            <div className="space-y-6 max-w-2xl mx-auto w-full">
-              {/* Mode switch */}
-              <div className="flex justify-center gap-2 border-b border-white/5 pb-4">
-                <button 
-                  onClick={() => { setSyllableMode("grid"); setSyllableChecked(false); setSyllableSelected(null); }}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${syllableMode === "grid" ? "bg-brand-500 text-white" : "bg-zinc-900 text-zinc-400"}`}
-                >
-                  CV Grid Reader
-                </button>
-                <button 
-                  onClick={() => { setSyllableMode("identify"); setSyllableTaskIdx(0); setSyllableChecked(false); setSyllableSelected(null); }}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${syllableMode === "identify" ? "bg-brand-500 text-white" : "bg-zinc-900 text-zinc-400"}`}
-                >
-                  Identify Starts
-                </button>
-                <button 
-                  onClick={() => { setSyllableMode("build"); setSyllableTaskIdx(0); setSyllableChecked(false); setSyllableSelected(null); }}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${syllableMode === "build" ? "bg-brand-500 text-white" : "bg-zinc-900 text-zinc-400"}`}
-                >
-                  Build Syllables
-                </button>
-              </div>
-
-              {/* Grid Mode */}
-              {syllableMode === "grid" && (
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs text-zinc-400">Click any syllable to hear its pronunciation and verify layout combining rules.</span>
-                    <button 
-                      onClick={() => setShowRomanizations(!showRomanizations)}
-                      className="px-2.5 py-1 bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-white/10 rounded-md text-[10px] font-bold"
-                    >
-                      {showRomanizations ? "Hide Romanization Hints" : "Show Romanization Hints"}
-                    </button>
-                  </div>
-                  <div className="grid grid-cols-4 md:grid-cols-7 gap-3">
-                    {syllableData.grid.map((item: any) => (
-                      <div 
-                        key={item.syllable}
-                        onClick={() => speakWord(item.syllable)}
-                        className="bg-zinc-950 border border-white/5 hover:border-brand-500/30 p-4 rounded-xl flex flex-col items-center justify-center cursor-pointer group transition transform hover:-translate-y-0.5 active:scale-95"
-                      >
-                        <span className="text-2xl font-black text-white group-hover:text-brand-300 transition">{item.syllable}</span>
-                        {showRomanizations && (
-                          <span className="text-[10px] text-zinc-500 font-mono mt-1 font-semibold">{item.romanization}</span>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Identify Mode */}
-              {syllableMode === "identify" && (
-                <div className="space-y-5 text-center py-2">
-                  <span className="text-[10px] font-mono font-bold text-zinc-500 uppercase tracking-widest block">Syllable Start Challenge ({syllableTaskIdx + 1}/{syllableData.identification_tasks.length})</span>
-                  <div className="text-5xl font-black text-white py-2">{syllableData.identification_tasks[syllableTaskIdx]?.syllable}</div>
-                  
-                  <h3 className="text-sm font-semibold text-zinc-300">
-                    {syllableData.identification_tasks[syllableTaskIdx]?.question}
-                  </h3>
-
-                  <div className="grid grid-cols-4 gap-2 pt-2 max-w-sm mx-auto">
-                    {syllableData.identification_tasks[syllableTaskIdx]?.options.map((opt: string) => (
-                      <button
-                        key={opt}
-                        onClick={() => !syllableChecked && setSyllableSelected(opt)}
-                        disabled={syllableChecked}
-                        className={`p-3 rounded-xl font-black text-lg border transition ${
-                          syllableSelected === opt
-                            ? "border-brand-500 bg-brand-500/10 text-white"
-                            : "border-white/5 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-300"
-                        } ${syllableChecked && opt === syllableData.identification_tasks[syllableTaskIdx]?.correct_answer ? "border-accent-teal bg-accent-teal/10 text-white" : ""}`}
-                      >
-                        {opt}
-                      </button>
-                    ))}
-                  </div>
-
-                  {syllableChecked && (
-                    <div className={`p-4 rounded-xl border text-xs text-left max-w-sm mx-auto ${
-                      syllableCorrect ? "bg-accent-teal/5 border-accent-teal/20 text-accent-teal" : "bg-red-500/5 border-red-500/10 text-red-400"
-                    }`}>
-                      <p className="font-extrabold">{syllableCorrect ? "Correct!" : "Oops! Incorrect."}</p>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Build Mode */}
-              {syllableMode === "build" && (
-                <div className="space-y-5 text-center py-2">
-                  <span className="text-[10px] font-mono font-bold text-zinc-500 uppercase tracking-widest block">Block Assembly Challenge ({syllableTaskIdx + 1}/{syllableData.build_tasks.length})</span>
-                  
-                  <h3 className="text-sm font-semibold text-zinc-300 py-3">
-                    {syllableData.build_tasks[syllableTaskIdx]?.prompt}
-                  </h3>
-
-                  <div className="grid grid-cols-2 gap-3 pt-2 max-w-xs mx-auto">
-                    {syllableData.build_tasks[syllableTaskIdx]?.options.map((opt: string) => (
-                      <button
-                        key={opt}
-                        onClick={() => !syllableChecked && setSyllableSelected(opt)}
-                        disabled={syllableChecked}
-                        className={`p-4 rounded-xl font-black text-2xl border transition ${
-                          syllableSelected === opt
-                            ? "border-brand-500 bg-brand-500/10 text-white"
-                            : "border-white/5 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-300"
-                        } ${syllableChecked && opt === syllableData.build_tasks[syllableTaskIdx]?.correct_answer ? "border-accent-teal bg-accent-teal/10 text-white" : ""}`}
-                      >
-                        {opt}
-                      </button>
-                    ))}
-                  </div>
-
-                  {syllableChecked && (
-                    <div className={`p-4 rounded-xl border text-xs text-left max-w-xs mx-auto ${
-                      syllableCorrect ? "bg-accent-teal/5 border-accent-teal/20 text-accent-teal" : "bg-red-500/5 border-red-500/10 text-red-400"
-                    }`}>
-                      <p className="font-extrabold">{syllableCorrect ? "Correct!" : "Oops! Incorrect."}</p>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              <div className="flex justify-between items-center pt-4 border-t border-white/5">
-                <button onClick={() => setStep(5)} className="glass-panel px-4 py-2.5 rounded-xl hover:bg-white/5 text-zinc-400 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
-                
-                {syllableMode === "grid" ? (
-                  <button onClick={() => setStep(7)} className="bg-brand-500 hover:bg-brand-600 text-white px-5 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer">Move to Mini-Quiz <ChevronRight className="w-4 h-4" /></button>
-                ) : !syllableChecked ? (
-                  <button
-                    onClick={handleCheckSyllable}
-                    disabled={!syllableSelected}
-                    className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white px-5 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer"
-                  >
-                    Check Answer
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => {
-                      setSyllableChecked(false);
-                      setSyllableCorrect(null);
-                      setSyllableSelected(null);
-                      const maxIdx = syllableMode === "identify" ? syllableData.identification_tasks.length : syllableData.build_tasks.length;
-                      if (syllableTaskIdx < maxIdx - 1) {
-                        setSyllableTaskIdx(syllableTaskIdx + 1);
-                      } else {
-                        // Switch modes or progress
-                        if (syllableMode === "identify") {
-                          setSyllableMode("build");
-                          setSyllableTaskIdx(0);
-                        } else {
-                          setStep(7);
-                        }
-                      }
-                    }}
-                    className="bg-accent-teal text-zinc-950 hover:bg-accent-teal/90 px-5 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer"
-                  >
-                    Continue
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
+          <div className="flex justify-between items-center pt-4 border-t border-white/5">
+            <button onClick={() => setStep(7)} className="glass-panel px-4 py-2.5 rounded-xl hover:bg-white/5 text-zinc-400 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
+            <button onClick={() => setStep(9)} className="glass-panel px-4 py-2.5 rounded-xl hover:bg-white/5 text-zinc-400 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer">Skip to Step 9 <ChevronRight className="w-4 h-4" /></button>
+          </div>
         </div>
       )}
 
-      {/* Screen 7: Mini-Quiz (Checkpoint) */}
-      {step === 7 && (
-        <div className="glass-panel neon-border p-8 rounded-3xl shadow-2xl w-full space-y-6 flex-grow flex flex-col justify-center">
+      {/* Step 9: Activity 3 – Syllables combines & Reading */}
+      {step === 9 && (
+        <div className="glass-panel neon-border p-8 rounded-3xl shadow-2xl w-full space-y-6 flex-grow flex flex-col justify-center max-w-3xl mx-auto">
           <div className="flex justify-between items-center border-b border-white/5 pb-4">
             <h2 className="text-xl font-black text-white flex items-center gap-2">
-              <Award className="w-5 h-5 text-brand-400" />
-              <span>Step 7 – Mini‑Quiz (Phase 2 Checkpoint)</span>
+              <BookMarked className="w-5 h-5 text-brand-400" />
+              <span>Activity 3: Assembling & Reading Syllables</span>
             </h2>
-            <span className="text-xs text-zinc-500 font-bold">Step 7 of 8</span>
+            <span className="text-xs text-zinc-500 font-bold">Step 9 of {totalSteps}</span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start text-left">
+            {/* 3A: Syllable building */}
+            <div className="bg-zinc-900/40 p-5 rounded-2xl border border-white/5 space-y-4 w-full">
+              <div className="flex justify-between items-center text-[10px] text-zinc-500 font-mono">
+                <span>3A: BLOCK ASSEMBLY</span>
+                <span>Task {syllableBuildIdx + 1}/{syllableData?.build_tasks?.length || 2}</span>
+              </div>
+
+              {syllableData?.build_tasks?.length > 0 && (
+                <div className="space-y-4">
+                  <h3 className="text-sm font-semibold text-zinc-300">
+                    {syllableData.build_tasks[syllableBuildIdx]?.prompt}
+                  </h3>
+                  <div className="grid grid-cols-2 gap-2">
+                    {syllableData.build_tasks[syllableBuildIdx]?.options.map((opt: string) => {
+                      const isSelected = syllableBuildSelected === opt;
+                      const isCorrect = opt === syllableData.build_tasks[syllableBuildIdx]?.correct_answer;
+                      return (
+                        <button
+                          key={opt}
+                          onClick={() => !syllableBuildChecked && setSyllableBuildSelected(opt)}
+                          disabled={syllableBuildChecked}
+                          className={`p-3.5 rounded-xl font-black text-2xl border transition ${
+                            isSelected
+                              ? "border-brand-500 bg-brand-500/10 text-white"
+                              : "border-white/5 bg-zinc-955/60 hover:bg-zinc-900 text-zinc-400"
+                          } ${syllableBuildChecked && isCorrect ? "border-accent-teal bg-accent-teal/10 text-accent-teal" : ""} ${
+                            syllableBuildChecked && isSelected && !isCorrect ? "border-red-500 bg-red-500/10 text-red-400" : ""
+                          }`}
+                        >
+                          {opt}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {syllableBuildChecked && (
+                    <div className={`p-3 rounded-xl border text-[11px] ${
+                      syllableBuildCorrect ? "bg-accent-teal/5 border-accent-teal/20 text-accent-teal" : "bg-red-500/5 border-red-500/10 text-red-400"
+                    }`}>
+                      <p className="font-extrabold">{syllableBuildCorrect ? "Correct!" : "Incorrect."}</p>
+                      <p>Visual mapping successfully assembled.</p>
+                    </div>
+                  )}
+
+                  <div className="flex justify-end">
+                    {!syllableBuildChecked ? (
+                      <button
+                        onClick={handleCheckSyllableBuildAnswer}
+                        disabled={!syllableBuildSelected}
+                        className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer"
+                      >
+                        Verify Block
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => {
+                          setSyllableBuildChecked(false);
+                          setSyllableBuildCorrect(null);
+                          setSyllableBuildSelected(null);
+                          if (syllableBuildIdx < syllableData.build_tasks.length - 1) {
+                            setSyllableBuildIdx(syllableBuildIdx + 1);
+                          } else {
+                            setSyllableBuildIdx(0);
+                          }
+                        }}
+                        className="bg-accent-teal text-zinc-955 hover:bg-accent-teal/90 px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer"
+                      >
+                        {syllableBuildIdx < syllableData.build_tasks.length - 1 ? "Next Block" : "Repeat Assembly"}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* 3B: Read out loud self check */}
+            <div className="bg-zinc-900/40 p-5 rounded-2xl border border-white/5 space-y-4 w-full">
+              <div className="flex justify-between items-center text-[10px] text-zinc-500 font-mono">
+                <span>3B: READ OUT LOUD</span>
+                <span>Syllable {syllableReadIdx + 1}/{syllableData?.grid?.length || 13}</span>
+              </div>
+
+              {syllableData?.grid?.length > 0 && (
+                <div className="space-y-4 text-center">
+                  <span className="text-[10px] text-zinc-500 font-mono uppercase tracking-widest block">Read this block:</span>
+                  <span className="text-5xl font-black text-white block">{syllableData.grid[syllableReadIdx]?.syllable}</span>
+                  
+                  <div className="flex flex-col gap-2.5">
+                    <button
+                      onClick={() => {
+                        speakWord(syllableData.grid[syllableReadIdx]?.syllable);
+                        setSyllableReadPlayed(true);
+                      }}
+                      className="w-full bg-zinc-955 hover:bg-zinc-900 border border-white/10 text-zinc-300 font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-2 cursor-pointer"
+                    >
+                      <Volume2 className="w-4 h-4 text-brand-400" />
+                      <span>Hear Native Model Accent</span>
+                    </button>
+
+                    {syllableReadPlayed && (
+                      <div className="space-y-3 pt-2">
+                        <p className="text-[10px] text-zinc-400 font-sans">Did your spoken pitch/tone match the native model?</p>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => {
+                              setSyllableReadSelfCheck("matched");
+                              playCorrectSound();
+                            }}
+                            className={`flex-1 py-2 rounded-lg text-xs font-bold transition border cursor-pointer ${
+                              syllableReadSelfCheck === "matched" 
+                                ? "bg-accent-teal/10 border-accent-teal text-accent-teal" 
+                                : "bg-zinc-950 border-white/5 text-zinc-400"
+                            }`}
+                          >
+                            ✓ Matched
+                          </button>
+                          <button
+                            onClick={() => {
+                              setSyllableReadSelfCheck("different");
+                              playWrongSound();
+                            }}
+                            className={`flex-1 py-2 rounded-lg text-xs font-bold transition border cursor-pointer ${
+                              syllableReadSelfCheck === "different" 
+                                ? "bg-red-500/10 border-red-500 text-red-400" 
+                                : "bg-zinc-955 border-white/5 text-zinc-400"
+                            }`}
+                          >
+                            ✗ Different
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex justify-end pt-2">
+                    <button
+                      onClick={() => {
+                        setSyllableReadPlayed(false);
+                        setSyllableReadSelfCheck(null);
+                        if (syllableReadIdx < syllableData.grid.length - 1) {
+                          setSyllableReadIdx(syllableReadIdx + 1);
+                        } else {
+                          setStep(10);
+                        }
+                      }}
+                      disabled={!syllableReadPlayed}
+                      className="bg-brand-500 hover:bg-brand-600 disabled:opacity-40 text-white px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer"
+                    >
+                      {syllableReadIdx < syllableData.grid.length - 1 ? "Next Syllable" : "Move to Checkpoint Quiz"}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="flex justify-between items-center pt-4 border-t border-white/5">
+            <button onClick={() => setStep(8)} className="glass-panel px-4 py-2.5 rounded-xl hover:bg-white/5 text-zinc-400 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
+            <button onClick={() => setStep(10)} className="glass-panel px-4 py-2.5 rounded-xl hover:bg-white/5 text-zinc-400 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer">Skip to Step 10 <ChevronRight className="w-4 h-4" /></button>
+          </div>
+        </div>
+      )}
+
+      {/* Screen 10: Checkpoint Quiz */}
+      {step === 10 && (
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center">
+          <div className="flex justify-between items-center border-b border-white/5 pb-4">
+            <h2 className="text-2xl font-black text-white flex items-center gap-2">
+              <Award className="w-6 h-6 text-brand-400" />
+              <span>Step 10: Checkpoint Graduation Mini-Quiz</span>
+            </h2>
+            <span className="text-xs text-zinc-500 font-bold">Step 10 of {totalSteps}</span>
           </div>
 
           {quizQuestions.length === 0 ? (
-            <div className="text-center py-10 max-w-sm mx-auto space-y-6">
-              <div className="p-3 bg-brand-500/10 rounded-full border border-brand-500/25 w-fit mx-auto text-brand-400">
-                <BrainCircuit className="w-10 h-10 animate-pulse" />
+            <div className="text-center py-10 max-w-2xl mx-auto space-y-8">
+              <div className="p-4 bg-brand-500/10 rounded-full border border-brand-500/25 w-fit mx-auto text-brand-400">
+                <BrainCircuit className="w-16 h-16 animate-pulse" />
               </div>
               <div>
-                <h3 className="text-lg font-black text-white">Generate Phase 2 Checkpoint</h3>
-                <p className="text-xs text-zinc-500 mt-1">Select standard static checkpoint questions, or dynamically generate a custom quiz via Gwan-Sik using Llama AI on demand.</p>
+                <h3 className="text-3xl font-black text-white">Generate Phase 2 Checkpoint</h3>
               </div>
-              <div className="flex flex-col gap-2 pt-2">
+              <div className="flex flex-col gap-4 pt-2 w-full max-w-md mx-auto">
                 <button
                   onClick={async () => {
                     setLoadingQuiz(true);
@@ -778,7 +1101,7 @@ export default function Phase2ConsonantWizard({ activeLesson, speakWord, onCompl
                       setLoadingQuiz(false);
                     }
                   }}
-                  className="w-full bg-zinc-900 hover:bg-zinc-800 border border-white/10 text-zinc-300 font-bold py-3 rounded-xl transition text-xs flex items-center justify-center gap-2 cursor-pointer"
+                  className="w-full bg-zinc-900 hover:bg-zinc-800 border border-white/10 text-zinc-300 font-bold py-4 rounded-xl transition text-sm flex items-center justify-center gap-2 cursor-pointer"
                   disabled={loadingQuiz}
                 >
                   {loadingQuiz ? <Loader2 className="w-4 h-4 animate-spin" /> : "Load Pre-Authored static Quiz"}
@@ -796,68 +1119,74 @@ export default function Phase2ConsonantWizard({ activeLesson, speakWord, onCompl
                       setLoadingQuiz(false);
                     }
                   }}
-                  className="w-full bg-gradient-to-r from-brand-500 to-amber-500 hover:from-brand-600 text-zinc-950 font-black py-3 rounded-xl transition text-xs flex items-center justify-center gap-2 shadow shadow-brand-500/20 cursor-pointer"
+                  className="w-full bg-gradient-to-r from-brand-500 to-amber-500 hover:from-brand-600 text-zinc-955 font-black py-4 rounded-xl transition text-sm flex items-center justify-center gap-2 shadow shadow-brand-500/20 cursor-pointer"
                   disabled={loadingQuiz}
                 >
-                  {loadingQuiz ? <Loader2 className="w-4 h-4 animate-spin text-zinc-950" /> : <Sparkles className="w-4 h-4 text-zinc-950" />}
+                  {loadingQuiz ? <Loader2 className="w-4 h-4 animate-spin text-zinc-955" /> : <Sparkles className="w-4 h-4 text-zinc-955" />}
                   <span>Generate dynamic Quiz via Llama AI</span>
                 </button>
               </div>
             </div>
           ) : quizScore === null ? (
-            <div className="space-y-6 max-w-xl mx-auto w-full">
+            <div className="space-y-6 w-full text-left">
               <div className="flex justify-between text-xs text-zinc-500 font-mono">
                 <span>Quiz Question {quizIdx + 1} of {quizQuestions.length}</span>
-                <span>Level: Consonant Bootcamp</span>
+                <span>Level: Beginner</span>
               </div>
 
-              <h3 className="text-lg font-black text-white text-center leading-relaxed">
+              <h3 className="text-xl md:text-2xl font-black text-white text-center leading-relaxed py-4">
                 {quizQuestions[quizIdx]?.question}
               </h3>
 
               {quizQuestions[quizIdx]?.type === "choice" ? (
-                <div className="grid grid-cols-2 gap-3">
-                  {quizQuestions[quizIdx]?.options.map((opt: string) => (
-                    <button
-                      key={opt}
-                      onClick={() => !quizChecked && setQuizSelected(opt)}
-                      disabled={quizChecked}
-                      className={`p-4 rounded-xl font-black text-sm border transition ${
-                        quizSelected === opt
-                          ? "border-brand-500 bg-brand-500/10 text-white"
-                          : "border-white/5 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-300"
-                      } ${quizChecked && opt === quizQuestions[quizIdx]?.correct_answer ? "border-accent-teal bg-accent-teal/10 text-white" : ""}`}
-                    >
-                      {opt}
-                    </button>
-                  ))}
+                <div className="grid grid-cols-2 gap-4 max-w-4xl mx-auto">
+                  {quizQuestions[quizIdx]?.options.map((opt: string) => {
+                    const isSelected = quizSelected === opt;
+                    const isCorrectAnswer = opt === quizQuestions[quizIdx]?.correct_answer;
+                    return (
+                      <button
+                        key={opt}
+                        onClick={() => !quizChecked && setQuizSelected(opt)}
+                        disabled={quizChecked}
+                        className={`p-5 rounded-xl font-black text-lg md:text-xl border transition ${
+                          isSelected
+                            ? "border-brand-500 bg-brand-500/10 text-white"
+                            : "border-white/5 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-300"
+                        } ${quizChecked && isCorrectAnswer ? "border-accent-teal bg-accent-teal/10 text-white" : ""} ${
+                          quizChecked && isSelected && !isCorrectAnswer ? "border-red-500 bg-red-500/10 text-red-400" : ""
+                        }`}
+                      >
+                        {opt}
+                      </button>
+                    );
+                  })}
                 </div>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-4 max-w-xl mx-auto w-full">
                   <input
                     type="text"
                     value={quizWriting}
                     onChange={(e) => setQuizWriting(e.target.value)}
-                    placeholder="Type your answer here..."
-                    className="w-full bg-zinc-900/60 p-4 rounded-xl border border-white/10 outline-none focus:border-brand-500 text-center font-sans text-lg text-white"
+                    placeholder="Type Hangeul consonant here..."
+                    className="w-full bg-zinc-900/60 p-5 rounded-xl border border-white/10 outline-none focus:border-brand-500 text-center font-sans text-xl text-white"
                     disabled={quizChecked}
                     onKeyDown={(e) => e.key === "Enter" && !quizChecked && handleCheckQuiz()}
                   />
                   {/* keyboard row */}
                   {!quizChecked && (
                     <div className="flex flex-wrap gap-1.5 justify-center bg-zinc-900/30 p-4 rounded-2xl border border-white/5">
-                      {["ㄱ", "ㄲ", "ㅋ", "ㄷ", "ㄸ", "ㅌ", "ㅂ", "ㅃ", "ㅍ", "ㅈ", "ㅉ", "ㅊ", "ㅅ", "ㅆ", "ㅇ", "ㅎ"].map(char => (
+                      {["ㄱ", "ㄲ", "ㅋ", "ㄷ", "ㄸ", "ㅌ", "ㅂ", "ㅃ", "ㅍ", "ㅅ", "ㅆ", "ㅈ", "ㅉ", "ㅊ", "ㅇ", "ㅎ"].map((char) => (
                         <button
                           key={char}
-                          onClick={() => setQuizWriting(prev => prev + char)}
-                          className="px-3 py-1.5 bg-zinc-850 hover:bg-zinc-750 text-xs font-bold text-white rounded-lg border border-white/5"
+                          onClick={() => setQuizWriting((prev) => prev + char)}
+                          className="px-3.5 py-2 bg-zinc-850 hover:bg-zinc-750 text-sm font-bold text-white rounded-lg border border-white/5 cursor-pointer"
                         >
                           {char}
                         </button>
                       ))}
                       <button
-                        onClick={() => setQuizWriting(prev => prev.slice(0, -1))}
-                        className="px-3 py-1.5 bg-red-950/20 text-red-400 hover:bg-red-950/40 text-xs font-bold rounded-lg border border-red-500/10"
+                        onClick={() => setQuizWriting((prev) => prev.slice(0, -1))}
+                        className="px-3.5 py-2 bg-red-955/20 text-red-400 hover:bg-red-955/40 text-sm font-bold rounded-lg border border-red-500/10 cursor-pointer"
                       >
                         Del
                       </button>
@@ -867,28 +1196,28 @@ export default function Phase2ConsonantWizard({ activeLesson, speakWord, onCompl
               )}
 
               {quizChecked && (
-                <div className={`p-4 rounded-xl border text-xs text-left space-y-1 ${
+                <div className={`p-5 rounded-xl border text-sm text-left space-y-1.5 max-w-4xl mx-auto w-full ${
                   quizCorrect ? "bg-accent-teal/5 border-accent-teal/20 text-accent-teal" : "bg-red-500/5 border-red-500/10 text-red-400"
                 }`}>
-                  <p className="font-extrabold">{quizCorrect ? "Correct! Excellent." : "Incorrect."}</p>
+                  <p className="font-extrabold text-base">{quizCorrect ? "Correct! Excellent." : "Incorrect."}</p>
                   <p>{quizQuestions[quizIdx]?.explanation}</p>
                   {!quizCorrect && <p className="font-mono mt-1 text-zinc-300">Correct Answer: {quizQuestions[quizIdx]?.correct_answer}</p>}
                 </div>
               )}
 
-              <div className="flex justify-between items-center pt-4 border-t border-white/5">
-                <div />
+              <div className="flex justify-between items-center pt-6 border-t border-white/5 max-w-4xl mx-auto w-full">
+                <button onClick={() => setStep(9)} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
                 {!quizChecked ? (
                   <button
                     onClick={handleCheckQuiz}
                     disabled={quizQuestions[quizIdx]?.type === "choice" ? !quizSelected : !quizWriting.trim()}
-                    className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white px-5 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer"
+                    className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white px-6 py-3 rounded-xl text-xs font-bold transition cursor-pointer"
                   >
-                    Check Answer
+                    Check Checkpoint
                   </button>
                 ) : (
                   <button
-                    onClick={() => {
+                    onClick={async () => {
                       setQuizChecked(false);
                       setQuizCorrect(null);
                       setQuizSelected(null);
@@ -898,13 +1227,13 @@ export default function Phase2ConsonantWizard({ activeLesson, speakWord, onCompl
                       } else {
                         const score = Math.round(((quizQuestions.length - quizMistakes.length) / quizQuestions.length) * 100);
                         setQuizScore(score);
-                        apiRequest("/lessons/quiz/phase2/submit", {
+                        await apiRequest("/lessons/quiz/phase2/submit", {
                           method: "POST",
                           body: JSON.stringify({ answers: [], score: score })
                         });
                       }
                     }}
-                    className="bg-accent-teal text-zinc-950 hover:bg-accent-teal/90 px-5 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer"
+                    className="bg-accent-teal text-zinc-955 hover:bg-accent-teal/90 px-6 py-3 rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer"
                   >
                     {quizIdx < quizQuestions.length - 1 ? "Next Item" : "See Final Score"}
                   </button>
@@ -912,29 +1241,29 @@ export default function Phase2ConsonantWizard({ activeLesson, speakWord, onCompl
               </div>
             </div>
           ) : (
-            /* Results View */
-            <div className="space-y-6 max-w-xl mx-auto w-full text-center py-6">
-              <div className="p-4 bg-zinc-900/60 rounded-3xl border border-white/5 space-y-4">
-                <span className="text-[10px] font-mono font-bold text-zinc-500 uppercase tracking-widest block">Consonants Checkpoint Complete</span>
-                <h3 className="text-6xl font-black bg-gradient-to-r from-amber-400 to-yellow-300 bg-clip-text text-transparent">{quizScore}%</h3>
-                <p className="text-zinc-300 text-xs leading-normal">
-                  {quizScore >= 80 ? "Superb! You have mastered Hangeul basic and complex consonants." : "Good attempt! Let's do additional reviews."}
+            /* Quiz Score Results View */
+            <div className="space-y-6 w-full text-center py-6">
+              <div className="p-6 bg-zinc-900/60 rounded-3xl border border-white/5 space-y-4 max-w-2xl mx-auto w-full">
+                <span className="text-[10px] font-mono font-bold text-zinc-500 uppercase tracking-widest block">Checkpoint Complete</span>
+                <h3 className="text-7xl font-black bg-gradient-to-r from-amber-400 to-yellow-300 bg-clip-text text-transparent font-mono">{quizScore}%</h3>
+                <p className="text-zinc-200 text-sm leading-normal">
+                  {quizScore >= 80 ? "Superb! You have mastered Hangeul consonants and CV combining." : "Good attempt! Let's do additional revisions."}
                 </p>
 
-                {/* Llama feedback summaries called strictly on-demand */}
-                <div className="pt-2">
+                {/* dynamic Gwan-Sik AI report */}
+                <div className="pt-2 text-left">
                   {tutorSummary ? (
-                    <div className="bg-zinc-950 p-4 rounded-xl border border-brand-500/20 text-left text-xs leading-relaxed text-zinc-300">
-                      <span className="text-[9px] font-black text-brand-400 block mb-1 uppercase tracking-widest font-sans">Gwan-Sik AI Feedback</span>
+                    <div className="bg-zinc-955 p-5 rounded-xl border border-brand-500/20 text-left text-sm leading-relaxed text-zinc-300">
+                      <span className="text-[10px] font-black text-brand-400 block mb-1 uppercase tracking-widest font-sans">Gwan-Sik AI Feedback</span>
                       <p className="font-serif italic font-medium">"{tutorSummary}"</p>
                     </div>
                   ) : (
                     <button
-                      onClick={handleGetTutorFeedback}
-                      className="bg-zinc-950 hover:bg-zinc-900 border border-brand-500/20 text-brand-400 hover:text-brand-300 font-bold px-4 py-2 rounded-xl text-xs transition flex items-center justify-center gap-2 mx-auto cursor-pointer"
-                      disabled={loadingTutor}
+                      onClick={handleGenerateTutorSummary}
+                      className="bg-zinc-950 hover:bg-zinc-900 border border-brand-500/20 text-brand-400 hover:text-brand-300 font-bold px-5 py-3 rounded-xl text-xs transition flex items-center justify-center gap-2 mx-auto cursor-pointer"
+                      disabled={loadingTutorSummary}
                     >
-                      {loadingTutor ? (
+                      {loadingTutorSummary ? (
                         <>
                           <Loader2 className="w-3.5 h-3.5 animate-spin" />
                           <span>Generating AI report...</span>
@@ -950,7 +1279,7 @@ export default function Phase2ConsonantWizard({ activeLesson, speakWord, onCompl
                 </div>
               </div>
 
-              <div className="flex justify-between items-center pt-4 border-t border-white/5">
+              <div className="flex justify-between items-center pt-4 border-t border-white/5 max-w-2xl mx-auto w-full">
                 <button 
                   onClick={() => {
                     setQuizQuestions([]);
@@ -959,15 +1288,15 @@ export default function Phase2ConsonantWizard({ activeLesson, speakWord, onCompl
                     setQuizMistakes([]);
                     setTutorSummary(null);
                   }} 
-                  className="glass-panel px-4 py-2.5 rounded-xl hover:bg-white/5 text-zinc-400 text-xs font-bold transition cursor-pointer"
+                  className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-xs font-bold transition cursor-pointer"
                 >
-                  Retake Quiz
+                  Retake Checkpoint
                 </button>
                 <button 
-                  onClick={() => setStep(8)} 
-                  className="bg-brand-500 hover:bg-brand-600 text-white px-6 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer"
+                  onClick={() => setStep(11)} 
+                  className="bg-brand-500 hover:bg-brand-600 text-white px-8 py-3 rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer"
                 >
-                  Go to Homework <ChevronRight className="w-4 h-4" />
+                  Go to homework <ChevronRight className="w-4 h-4" />
                 </button>
               </div>
             </div>
@@ -975,49 +1304,54 @@ export default function Phase2ConsonantWizard({ activeLesson, speakWord, onCompl
         </div>
       )}
 
-      {/* Screen 8: Homework */}
-      {step === 8 && (
-        <div className="glass-panel neon-border p-8 rounded-3xl shadow-2xl w-full space-y-6 flex-grow flex flex-col justify-center text-center max-w-xl mx-auto">
-          <div className="p-3 bg-brand-500/10 rounded-full border border-brand-500/25 w-fit mx-auto text-brand-400">
-            <Award className="w-10 h-10 animate-bounce" />
+      {/* Screen 11: Complete Panel / Recommendations */}
+      {step === 11 && (
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center text-center">
+          <div className="p-4 bg-brand-500/10 rounded-full border border-brand-500/25 w-fit mx-auto text-brand-400">
+            <Award className="w-12 h-12 animate-bounce" />
           </div>
           
           <div>
-            <h2 className="text-2xl font-black text-white font-sans">Consonant Bootcamp Complete! 🇰🇷✨</h2>
-            <p className="text-zinc-400 text-xs mt-1">You are now ready to start assembling consonants and vowels into blocks.</p>
+            <h2 className="text-3xl md:text-4xl font-black text-white font-sans">Consonants Bootcamp Complete! 🇰🇷✨</h2>
+            <p className="text-zinc-300 text-sm md:text-base mt-2 font-medium">You are fully equipped to launch into syllable blocks construction next.</p>
           </div>
 
           {recommendations && (
-            <div className="bg-zinc-900/60 p-5 rounded-2xl border border-white/5 text-left text-xs space-y-3.5 font-sans leading-relaxed">
+            <div className="bg-zinc-900/60 p-6 rounded-2xl border border-white/5 text-left text-sm space-y-4 font-sans leading-relaxed max-w-4xl mx-auto w-full">
               <div>
-                <span className="text-[9px] font-black uppercase tracking-wider text-green-400 block mb-0.5 font-sans">Strengths</span>
-                <p className="text-zinc-300 font-medium">{recommendations.strength}</p>
+                <span className="text-[10px] font-black uppercase tracking-wider text-green-400 block mb-1 font-sans">Strengths</span>
+                <p className="text-zinc-200 font-medium text-sm md:text-base">{recommendations.strength}</p>
               </div>
               <div>
-                <span className="text-[9px] font-black uppercase tracking-wider text-yellow-400 block mb-0.5 font-sans">Focus revisions</span>
-                <p className="text-zinc-300 font-medium">{recommendations.weakness}</p>
+                <span className="text-[10px] font-black uppercase tracking-wider text-yellow-400 block mb-1 font-sans">Focus revisions</span>
+                <p className="text-zinc-200 font-medium text-sm md:text-base">
+                  {hardestSeries ? `Review series contrasts for ${hardestSeries}. ` : ""}
+                  {recommendations.weakness}
+                </p>
               </div>
-              <div className="bg-zinc-950 p-4 rounded-xl border border-white/[0.03] space-y-2">
-                <span className="text-[9px] font-black uppercase tracking-widest text-brand-400 block font-sans">Recommended Study Tasks:</span>
-                <ul className="list-decimal list-inside space-y-1.5 text-zinc-400 pl-1">
+              <div className="bg-zinc-955 p-5 rounded-xl border border-white/[0.03] space-y-3">
+                <span className="text-[10px] font-black uppercase tracking-widest text-brand-400 block font-sans">Recommended Practice Tasks:</span>
+                <ul className="list-decimal list-inside space-y-2 text-zinc-400 pl-1 text-xs md:text-sm">
                   <li>
-                    Search YouTube for: <strong className="text-white select-all">"{recommendations.youtube_search}"</strong> and practice plain-aspirated-tense breath release.
+                    Search YouTube for: <strong className="text-white select-all">"{recommendations.youtube_search}"</strong> and observe mouth alignments.
                   </li>
                   <li>
-                    Self-test dialogue request: Ask Gwan-Sik tomorrow: <strong className="text-brand-300">"Give me a 10-question minimal-pair quiz for ㄱ–ㅋ–ㄲ and ㄷ–ㅌ–ㄸ"</strong>.
+                    Ask Gwan-Sik tomorrow: <strong className="text-brand-300">"Give me a 10-item consonants dictation quiz"</strong>.
                   </li>
                 </ul>
               </div>
             </div>
           )}
 
-          <button
-            onClick={onComplete}
-            className="bg-gradient-to-r from-brand-500 to-amber-500 hover:from-brand-600 text-zinc-950 font-black py-4 px-8 rounded-2xl transition text-sm flex items-center justify-center gap-2 mx-auto shadow-lg shadow-brand-500/20 cursor-pointer"
-          >
-            <span>Mark Phase 2 complete & continue</span>
-            <ChevronRight className="w-4 h-4 text-zinc-950" />
-          </button>
+          <div className="flex gap-3 justify-center pt-2">
+            <button
+              onClick={onComplete}
+              className="bg-gradient-to-r from-brand-500 to-amber-500 hover:from-brand-600 text-zinc-955 font-black py-4 px-10 rounded-2xl transition text-base flex items-center justify-center gap-2.5 shadow-lg shadow-brand-500/20 cursor-pointer"
+            >
+              <span>Mark Phase 2 complete & continue</span>
+              <ChevronRight className="w-5 h-5 text-zinc-955" />
+            </button>
+          </div>
         </div>
       )}
     </div>

@@ -48,14 +48,14 @@ PHASE_4_DATA = {
     "quizzes": [
         {
             "type": "choice",
-            "question": "What is the English meaning of the loanword '택시'?",
+            "question": "What is the English meaning of the loanword that sounds like [taek-si]?",
             "options": ["Taxi", "Bus", "Ticket", "Text"],
             "correct_answer": "Taxi",
             "explanation": "택시 is the phonetic Hangeul spelling for taxi."
         },
         {
             "type": "choice",
-            "question": "Which country name is represented by '독일'?",
+            "question": "Which country name is represented by the word pronounced [dog-il]?",
             "options": ["Germany", "Denmark", "USA", "France"],
             "correct_answer": "Germany",
             "explanation": "독일 (dog-il) is the Korean name for Germany."

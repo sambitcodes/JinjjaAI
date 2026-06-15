@@ -54,7 +54,7 @@ PHASE_3_DATA = {
         },
         {
             "type": "writing",
-            "question": "Decompose '집' into its 3 constituent letters (initial, vowel, final) separated by spaces:",
+            "question": "Decompose the block that sounds like [jip] (meaning house) into its 3 constituent letters (initial, vowel, final) separated by spaces:",
             "options": None,
             "correct_answer": "ㅈ ㅣ ㅂ",
             "explanation": "집 consists of initial ㅈ, middle vowel ㅣ, and final consonant ㅂ."

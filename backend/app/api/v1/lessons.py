@@ -529,13 +529,14 @@ async def get_phase2_content(current_user: User = Depends(get_current_user)):
 @router.get("/practice/consonants/visual")
 async def get_consonants_visual(current_user: User = Depends(get_current_user)):
     return [
-        {"id": "cv1", "type": "choice", "question": "Which of these best matches ㄱ?", "options": ["g/k as in 'go' (unaspirated)", "t as in 'top' (aspirated)", "m as in 'mother'", "s as in 'show'"], "correct_answer": "g/k as in 'go' (unaspirated)"},
-        {"id": "cv2", "type": "choice", "question": "Which of these best matches ㅋ?", "options": ["k (with strong puff of air)", "p (with strong puff of air)", "t as in 'top' (aspirated)", "h as in 'home'"], "correct_answer": "k (with strong puff of air)"},
-        {"id": "cv3", "type": "choice", "question": "Which group does 'ㅁ' belong to?", "options": ["Stops", "Nasals", "Liquids", "Other"], "correct_answer": "Nasals"},
-        {"id": "cv4", "type": "choice", "question": "Which group does 'ㄷ' belong to?", "options": ["Stops", "Nasals", "Liquids", "Other"], "correct_answer": "Stops"},
-        {"id": "cv5", "type": "choice", "question": "What is 'ㅇ' at the start of a syllable block?", "options": ["Silent placeholder", "Pronounced as 'ng'", "Pronounced as 'h'", "Pronounced as 'y'"], "correct_answer": "Silent placeholder"},
-        {"id": "cv6", "type": "choice", "question": "What is 'ㅇ' at the end of a syllable block?", "options": ["Silent placeholder", "Pronounced as 'ng' in 'king'", "Pronounced as 'h'", "Pronounced as 'n'"], "correct_answer": "Pronounced as 'ng' in 'king'"}
+        {"id": "cv1", "type": "choice", "question": "Choose the plain/unaspirated consonant that sounds like a soft 'g/k' at the start of a word.", "options": ["ㄱ", "ㅋ", "ㄲ", "ㄴ"], "correct_answer": "ㄱ", "explanation": "ㄱ is the plain/unaspirated consonant representing a soft 'g/k' sound."},
+        {"id": "cv2", "type": "choice", "question": "Choose the aspirated consonant that is pronounced with a strong puff of air (sounds like 'k' in 'key').", "options": ["ㄱ", "ㅋ", "ㄲ", "ㄴ"], "correct_answer": "ㅋ", "explanation": "ㅋ is the aspirated consonant, pronounced with a strong burst of air."},
+        {"id": "cv3", "type": "choice", "question": "Identify the nasal consonant that represents the 'm' sound (looks like closed lips/box shape).", "options": ["ㄴ", "ㅁ", "ㄱ", "ㅇ"], "correct_answer": "ㅁ", "explanation": "ㅁ is the nasal consonant representing the 'm' sound (outline of lips)."},
+        {"id": "cv4", "type": "choice", "question": "Choose the plain consonant that sounds like a soft 'd/t' (looks like front of tongue touching top of mouth).", "options": ["ㄷ", "ㄴ", "ㄹ", "ㅁ"], "correct_answer": "ㄷ", "explanation": "ㄷ is the plain consonant representing a soft 'd/t' sound."},
+        {"id": "cv5", "type": "choice", "question": "What role does the circular consonant play when placed at the start of a syllable block (e.g. before a vowel)?", "options": ["Silent placeholder", "Pronounced as 'ng'", "Pronounced as 'h'", "Pronounced as 'y'"], "correct_answer": "Silent placeholder", "explanation": "At the start of a block, ㅇ is a silent placeholder so the syllable starts with the vowel's sound."},
+        {"id": "cv6", "type": "choice", "question": "What role does the circular consonant play when placed at the bottom (final position / batchim) of a syllable block?", "options": ["Silent placeholder", "Pronounced as 'ng' in 'king'", "Pronounced as 'h'", "Pronounced as 'n'"], "correct_answer": "Pronounced as 'ng' in 'king'", "explanation": "At the bottom/final position of a block, ㅇ is pronounced like 'ng'."}
     ]
+
 
 @router.post("/practice/consonants/visual/answer")
 async def submit_consonants_visual_answer(body: AnswerSubmit, current_user: User = Depends(get_current_user)):
@@ -653,12 +654,12 @@ async def submit_basic_syllables_answer(body: AnswerSubmit, current_user: User =
 @router.post("/quiz/phase2/generate")
 async def generate_phase2_quiz(use_ai: bool = False, current_user: User = Depends(get_current_user)):
     static_quiz = [
-        {"id": "pq1", "type": "choice", "question": "Which of these consonants is a tense (strong) consonant?", "options": ["ㄲ", "ㅋ", "ㄱ", "ㄴ"], "correct_answer": "ㄲ", "explanation": "ㄲ is a tense consonant."},
-        {"id": "pq2", "type": "choice", "question": "What is the function of the consonant 'ㅇ' at the start of a syllable (e.g. '어')?", "options": ["It is silent", "It sounds like 'ng'", "It sounds like 'h'", "It sounds like 'y'"], "correct_answer": "It is silent", "explanation": "At the start of a syllable block, ㅇ is silent."},
-        {"id": "pq3", "type": "choice", "question": "Which consonant is aspirated (pronounced with a puff of air)?", "options": ["ㄱ", "ㅋ", "ㄲ", "ㄴ"], "correct_answer": "ㅋ", "explanation": "ㅋ is the aspirated version of ㄱ."},
-        {"id": "pq4", "type": "choice", "question": "Which sound group does the consonant 'ㅁ' belong to?", "options": ["Stops", "Nasals", "Liquids", "Other"], "correct_answer": "Nasals", "explanation": "ㅁ is a nasal consonant (m)."},
-        {"id": "pq5", "type": "writing", "question": "Type the tense consonant equivalent of 'ㄷ' (d/t):", "correct_answer": "ㄸ", "explanation": "ㄸ is the double/tense counterpart of ㄷ."},
-        {"id": "pq6", "type": "writing", "question": "Type the aspirated consonant equivalent of 'ㅂ' (b/p):", "correct_answer": "ㅍ", "explanation": "ㅍ is the aspirated counterpart of ㅂ."}
+        {"id": "pq1", "type": "choice", "question": "Which of these consonants is a tense (strong) consonant?", "options": ["ㄲ", "ㅋ", "ㄱ", "ㄴ"], "correct_answer": "ㄲ", "explanation": "ㄲ is the tense counterpart of ㄱ, pronounced with high vocal cord tension."},
+        {"id": "pq2", "type": "choice", "question": "What is the function of the circular placeholder consonant when it sits at the start of a syllable block?", "options": ["It is silent", "It sounds like 'ng'", "It sounds like 'h'", "It sounds like 'y'"], "correct_answer": "It is silent", "explanation": "At the start of a syllable block, the circular placeholder is silent so the syllable sounds like the vowel."},
+        {"id": "pq3", "type": "choice", "question": "Which consonant is aspirated (pronounced with a strong puff of air)?", "options": ["ㄱ", "ㅋ", "ㄲ", "ㄴ"], "correct_answer": "ㅋ", "explanation": "ㅋ is the aspirated counterpart of ㄱ, pronounced with a strong burst of air."},
+        {"id": "pq4", "type": "choice", "question": "Which sound group does the box-shaped nasal consonant (m-sound) belong to?", "options": ["Stops", "Nasals", "Liquids", "Other"], "correct_answer": "Nasals", "explanation": "ㅁ is a nasal consonant representing the m-sound."},
+        {"id": "pq5", "type": "writing", "question": "Type the tense consonant equivalent of the plain d/t sound (looks like a double tongue-front shape):", "correct_answer": "ㄸ", "explanation": "ㄸ is the double/tense counterpart of ㄷ."},
+        {"id": "pq6", "type": "writing", "question": "Type the aspirated consonant equivalent of the plain b/p sound (looks like a jar shape with horizontal ears):", "correct_answer": "ㅍ", "explanation": "ㅍ is the aspirated counterpart of ㅂ."}
     ]
 
     if not use_ai:
@@ -676,7 +677,10 @@ async def generate_phase2_quiz(use_ai: bool = False, current_user: User = Depend
         "  \"correct_answer\": \"string\",\n"
         "  \"explanation\": \"string\"\n"
         "}\n"
-        "Cover consonants: ㄱ, ㄲ, ㅋ, ㄷ, ㄸ, ㅌ, ㅂ, ㅃ, ㅍ, ㅇ, and liquid ㄹ."
+        "Cover consonants: ㄱ, ㄲ, ㅋ, ㄷ, ㄸ, ㅌ, ㅂ, ㅃ, ㅍ, ㅇ, and liquid ㄹ.\n"
+        "IMPORTANT RULES:\n"
+        "1. Do not include the actual correct consonant glyph or syllable in the question stem. Only show it in the answer options and explanation.\n"
+        "2. Always provide a one-sentence explanation to show after the user answers, explaining why the correct option is correct."
     )
     import json
     ai_output = await call_llama_groq(prompt)
@@ -827,11 +831,11 @@ async def submit_words_reading_basic_answer(body: AnswerSubmit, current_user: Us
 async def generate_phase3_quiz(use_ai: bool = False, current_user: User = Depends(get_current_user)):
     static_quiz = [
         {"id": "p3q1", "type": "choice", "question": "Combine ㄱ + ㅏ + ㅁ to form a single syllable:", "options": ["감", "갑", "갔", "갓"], "correct_answer": "감", "explanation": "ㄱ (initial) + ㅏ (vowel) + ㅁ (final/받침) combines into the square block '감'."},
-        {"id": "p3q2", "type": "choice", "question": "Identify the final consonant (받침) in the syllable '문':", "options": ["ㅁ", "ㅜ", "ㄴ", "ㅇ"], "correct_answer": "ㄴ", "explanation": "ㄴ is positioned at the bottom of '문' and is the final consonant (종성/받침)."},
+        {"id": "p3q2", "type": "choice", "question": "Identify the final consonant (받침) in the syllable that starts with ㅁ and has vowel ㅜ (sounds like [mun]):", "options": ["ㅁ", "ㅜ", "ㄴ", "ㅇ"], "correct_answer": "ㄴ", "explanation": "ㄴ is positioned at the bottom and is the final consonant (종성/받침)."},
         {"id": "p3q3", "type": "choice", "question": "Which of these words means 'tree' in Korean?", "options": ["나무", "머리", "고기", "바다"], "correct_answer": "나무", "explanation": "나무 is the Korean word for tree."},
         {"id": "p3q4", "type": "choice", "question": "Which of these words means 'friend' in Korean?", "options": ["친구", "바다", "버스", "택시"], "correct_answer": "친구", "explanation": "친구 is the Korean word for friend."},
-        {"id": "p3q5", "type": "writing", "question": "Write/Type the Hangeul block for 'bus' (버스):", "correct_answer": "버스", "explanation": "버스 is the Hangeul spelling for the loanword bus."},
-        {"id": "p3q6", "type": "writing", "question": "Write/Type the Hangeul block for 'taxi' (택시):", "correct_answer": "택시", "explanation": "택시 is the Hangeul spelling for taxi."}
+        {"id": "p3q5", "type": "writing", "question": "Write/Type the Hangeul block for the loanword meaning 'bus' (pronounced beo-seu):", "correct_answer": "버스", "explanation": "버스 is the Hangeul spelling for the loanword bus."},
+        {"id": "p3q6", "type": "writing", "question": "Write/Type the Hangeul block for the loanword meaning 'taxi' (pronounced taek-si):", "correct_answer": "택시", "explanation": "택시 is the Hangeul spelling for taxi."}
     ]
 
     if not use_ai:
@@ -849,7 +853,10 @@ async def generate_phase3_quiz(use_ai: bool = False, current_user: User = Depend
         "  \"correct_answer\": \"string\",\n"
         "  \"explanation\": \"string\"\n"
         "}\n"
-        "Cover syllable block structures, visual placements, simple CV/CVC reading, and basic vocabulary words like 나무, 머리, 버스, 친구."
+        "Cover syllable block structures, visual placements, simple CV/CVC reading, and basic vocabulary words like 나무, 머리, 버스, 친구.\n"
+        "CONSTRAINTS:\n"
+        "1. Do not show the correct block or syllable in the question stem. Describe it via parts (initial, vowel, final) or pronunciation/meaning.\n"
+        "2. Always include a one-sentence explanation explaining why the correct answer is correct and, if applicable, how it differs from common wrong options."
     )
     import json
     ai_output = await call_llama_groq(prompt)
@@ -1067,14 +1074,14 @@ async def submit_phrases_basic_answer(body: AnswerSubmit, current_user: User = D
 @router.post("/quiz/phase4/generate")
 async def generate_phase4_quiz(use_ai: bool = False, current_user: User = Depends(get_current_user)):
     static_quiz = [
-        {"id": "p4q1", "type": "choice", "question": "Select the correct English translation for '버스':", "options": ["Bus", "Taxi", "Coffee", "Pizza"], "correct_answer": "Bus", "explanation": "버스 (beo-seu) is the loanword for bus."},
-        {"id": "p4q2", "type": "choice", "question": "Select the correct English translation for '피자':", "options": ["Pizza", "Hamburger", "Sandwich", "Cake"], "correct_answer": "Pizza", "explanation": "피자 (pi-ja) is the loanword for pizza."},
-        {"id": "p4q3", "type": "choice", "question": "Which country is represented by '일본'?", "options": ["Japan", "China", "USA", "France"], "correct_answer": "Japan", "explanation": "일본 (il-bon) means Japan."},
-        {"id": "p4q4", "type": "choice", "question": "Which city is represented by '파리'?", "options": ["Paris", "London", "Rome", "Tokyo"], "correct_answer": "Paris", "explanation": "파리 (pa-ri) means Paris."},
-        {"id": "p4q5", "type": "choice", "question": "How is the common Korean name '김민수' romanized?", "options": ["Kim Minsu", "Lee Minsu", "Park Minsu", "Choi Minsu"], "correct_answer": "Kim Minsu", "explanation": "김민수 is Kim Minsu."},
-        {"id": "p4q6", "type": "choice", "question": "Which of these means 'Hello'?", "options": ["안녕하세요", "감사합니다", "죄송합니다", "따라하세요"], "correct_answer": "안녕하세요", "explanation": "안녕하세요 is Hello (polite)."},
-        {"id": "p4q7", "type": "choice", "question": "Which of these means 'Thank you'?", "options": ["안녕하세요", "감사합니다", "죄송합니다", "잘 들으세요"], "correct_answer": "감사합니다", "explanation": "감사합니다 is Thank you."},
-        {"id": "p4q8", "type": "choice", "question": "Which option is 'Lisa' in Hangeul?", "options": ["리사", "미사", "리수", "기사"], "correct_answer": "리사", "explanation": "리사 is Lisa."}
+        {"id": "p4q1", "type": "choice", "question": "Select the correct English translation for the loanword that sounds like [beo-seu]:", "options": ["Bus", "Taxi", "Coffee", "Pizza"], "correct_answer": "Bus", "explanation": "버스 (beo-seu) is the loanword for bus."},
+        {"id": "p4q2", "type": "choice", "question": "Select the correct English translation for the loanword that sounds like [pi-ja]:", "options": ["Pizza", "Hamburger", "Sandwich", "Cake"], "correct_answer": "Pizza", "explanation": "피자 (pi-ja) is the loanword for pizza."},
+        {"id": "p4q3", "type": "choice", "question": "Which country is represented by the word pronounced [il-bon]?", "options": ["Japan", "China", "USA", "France"], "correct_answer": "Japan", "explanation": "일본 (il-bon) means Japan."},
+        {"id": "p4q4", "type": "choice", "question": "Which city is represented by the word that sounds like [pa-ri]?", "options": ["Paris", "London", "Rome", "Tokyo"], "correct_answer": "Paris", "explanation": "파리 (pa-ri) means Paris (the capital of France)."},
+        {"id": "p4q5", "type": "choice", "question": "How is the common Korean name pronounced [Kim Min-su] romanized?", "options": ["Kim Minsu", "Lee Minsu", "Park Minsu", "Choi Minsu"], "correct_answer": "Kim Minsu", "explanation": "김민수 is romanized as Kim Minsu."},
+        {"id": "p4q6", "type": "choice", "question": "Which Hangeul phrase is the polite greeting meaning 'Hello'?", "options": ["안녕하세요", "감사합니다", "죄송합니다", "따라하세요"], "correct_answer": "안녕하세요", "explanation": "안녕하세요 is Hello (polite)."},
+        {"id": "p4q7", "type": "choice", "question": "Which Hangeul phrase is the polite expression for 'Thank you'?", "options": ["안녕하세요", "감사합니다", "죄송합니다", "잘 들으세요"], "correct_answer": "감사합니다", "explanation": "감사합니다 is Thank you."},
+        {"id": "p4q8", "type": "choice", "question": "Which Hangeul spelling matches the English name 'Lisa'?", "options": ["리사", "미사", "리수", "기사"], "correct_answer": "리사", "explanation": "리사 matches the name Lisa."}
     ]
 
     if not use_ai:
@@ -1096,7 +1103,11 @@ async def generate_phase4_quiz(use_ai: bool = False, current_user: User = Depend
         "  \"options\": [\"string\"] (or null for writing),\n"
         "  \"correct_answer\": \"string\",\n"
         "  \"explanation\": \"string\"\n"
-        "}"
+        "}\n"
+        "CONSTRAINTS:\n"
+        "1. Do not include the correct Hangeul or English answer string inside the question stem. Describe it via pronunciation, spelling components, or meanings.\n"
+        "2. Only show the correct answer in the options and explanation.\n"
+        "3. Provide a short explanation for each question to show after the user answers."
     )
     import json
     ai_output = await call_llama_groq(prompt)

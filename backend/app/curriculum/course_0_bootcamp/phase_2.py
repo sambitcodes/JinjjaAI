@@ -47,14 +47,14 @@ PHASE_2_DATA = {
         },
         {
             "type": "choice",
-            "question": "What is the function of the consonant 'ㅇ' at the start of a syllable (e.g. '어')?",
+            "question": "What is the function of the circular placeholder consonant when it sits at the start of a syllable block?",
             "options": ["It is silent", "It sounds like 'ng'", "It sounds like 'h'", "It sounds like 'y'"],
             "correct_answer": "It is silent",
-            "explanation": "When positioned at the start of a syllable block, 'ㅇ' is silent and serves as a placeholder."
+            "explanation": "When positioned at the start of a syllable block, the circular placeholder is silent."
         },
         {
             "type": "writing",
-            "question": "Type the tense consonant equivalent of 'ㄷ' (d/t):",
+            "question": "Type the tense consonant equivalent of the plain d/t sound (looks like a double tongue-front shape):",
             "options": None,
             "correct_answer": "ㄸ",
             "explanation": "ㄸ is the double/tense counterpart of ㄷ."

@@ -1,8 +1,62 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ChevronLeft, ChevronRight, Volume2, Sparkles, BookOpen, Award, Loader2, CheckCircle2, RotateCcw, HelpCircle } from "lucide-react";
+import { 
+  ChevronLeft, 
+  ChevronRight, 
+  Volume2, 
+  Sparkles, 
+  BookOpen, 
+  Award, 
+  Loader2, 
+  CheckCircle2, 
+  RotateCcw, 
+  HelpCircle,
+  BrainCircuit,
+  BookMarked
+} from "lucide-react";
 import { apiRequest } from "../lib/api";
+
+// Web Audio API Sound synthesizers
+const playCorrectSound = () => {
+  if (typeof window === "undefined") return;
+  try {
+    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(523.25, ctx.currentTime); // C5
+    gain.gain.setValueAtTime(0.1, ctx.currentTime);
+    osc.start();
+    
+    osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.08); // E5
+    osc.stop(ctx.currentTime + 0.22);
+  } catch (e) {
+    console.warn("Audio synthesis error:", e);
+  }
+};
+
+const playWrongSound = () => {
+  if (typeof window === "undefined") return;
+  try {
+    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    
+    osc.type = "sawtooth";
+    osc.frequency.setValueAtTime(140, ctx.currentTime);
+    gain.gain.setValueAtTime(0.1, ctx.currentTime);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.28);
+  } catch (e) {
+    console.warn("Audio synthesis error:", e);
+  }
+};
 
 interface Phase4RealWordsWizardProps {
   activeLesson: any;
@@ -10,13 +64,98 @@ interface Phase4RealWordsWizardProps {
   onComplete: () => void;
 }
 
+interface MicroQuestion {
+  question: string;
+  options: { id: string; text: string }[];
+  correctId: string;
+  explanation: string;
+}
+
 export default function Phase4RealWordsWizard({ activeLesson, speakWord, onComplete }: Phase4RealWordsWizardProps) {
   const [step, setStep] = useState(1);
   const [showOutline, setShowOutline] = useState(false);
+  const totalSteps = 13;
   const [metadata, setMetadata] = useState<any>(null);
   const [content, setContent] = useState<any>(null);
 
-  // Step 3 (Activity 1 - Loanwords)
+  // Micro-question states for C1-C6
+  const [cSelected, setCSelected] = useState<string | null>(null);
+  const [cChecked, setCChecked] = useState(false);
+  const [cCorrect, setCCorrect] = useState<boolean | null>(null);
+
+  // Reset micro-question state when moving between concept screens
+  useEffect(() => {
+    if (step >= 2 && step <= 7) {
+      setCSelected(null);
+      setCChecked(false);
+      setCCorrect(null);
+    }
+  }, [step]);
+
+  // Concept Micro-questions definitions
+  const conceptQuestions: Record<number, MicroQuestion> = {
+    2: {
+      question: "Which category does the word 버스 (bus) belong to?",
+      options: [
+        { id: "A", text: "Native Korean" },
+        { id: "B", text: "Sino-Korean" },
+        { id: "C", text: "Foreign loanword" }
+      ],
+      correctId: "C",
+      explanation: "버스 (beo-seu) is borrowed directly from English 'bus' phonetically, making it a foreign loanword (외래어)."
+    },
+    3: {
+      question: "Which of these Hangeul words phonetically represents 'bus'?",
+      options: [
+        { id: "A", text: "버스" },
+        { id: "B", text: "포스" },
+        { id: "C", text: "비스" }
+      ],
+      correctId: "A",
+      explanation: "버스 is read as beo-seu, which is the standard Hangeul transliteration for English 'bus'."
+    },
+    4: {
+      question: "Which of these cities means 'New York' in Hangeul?",
+      options: [
+        { id: "A", text: "서울" },
+        { id: "B", text: "도쿄" },
+        { id: "C", text: "뉴욕" }
+      ],
+      correctId: "C",
+      explanation: "뉴욕 represents 'New York' phonetically (뉴 = New, 역 = York)."
+    },
+    5: {
+      question: "In the Korean personal name 박지민 (Park Jimin), which syllable represents the family name?",
+      options: [
+        { id: "A", text: "박 (Park)" },
+        { id: "B", text: "지 (Ji)" },
+        { id: "C", text: "민 (Min)" }
+      ],
+      correctId: "A",
+      explanation: "Korean personal names put the family name first. In 박지민, 박 is the surname and 지민 is the given name."
+    },
+    6: {
+      question: "Which Hangeul transliteration sounds phonetically identical to the name 'Lisa'?",
+      options: [
+        { id: "A", text: "리사" },
+        { id: "B", text: "라이스" },
+        { id: "C", text: "리즈" }
+      ],
+      correctId: "A",
+      explanation: "리사 is pronounced 'ri-sa', representing 'Lisa'."
+    },
+    7: {
+      question: "Which greeting phrase do you use when you are leaving a place and other people are staying?",
+      options: [
+        { id: "A", text: "안녕히 계세요 (Stay peacefully)" },
+        { id: "B", text: "안녕히 가세요 (Go peacefully)" }
+      ],
+      correctId: "A",
+      explanation: "Use '안녕히 계세요' (Stay peacefully) when leaving others behind. Use '안녕히 가세요' (Go peacefully) when they are leaving."
+    }
+  };
+
+  // Step 8 (Activity 1 - Loanwords)
   const [loanwordList, setLoanwordList] = useState<any[]>([]);
   const [loanwordIdx, setLoanwordIdx] = useState(0);
   const [loanwordSelected, setLoanwordSelected] = useState<string | null>(null);
@@ -24,9 +163,14 @@ export default function Phase4RealWordsWizard({ activeLesson, speakWord, onCompl
   const [loanwordCorrect, setLoanwordCorrect] = useState<boolean | null>(null);
   const [loanwordsMatched, setLoanwordsMatched] = useState<Record<string, string>>({});
   const [selectedLeftLoanword, setSelectedLeftLoanword] = useState<string | null>(null);
-  const [loanwordsSubMode, setLoanwordsSubMode] = useState<"guess" | "match">("guess");
+  const [loanwordsSubMode, setLoanwordsSubMode] = useState<"guess" | "match" | "speed">("guess");
+  
+  // Speed check timer & reflection
+  const [speedTimer, setSpeedTimer] = useState<number | null>(null);
+  const [speedFinished, setSpeedFinished] = useState(false);
+  const [hardestWordSelection, setHardestWordSelection] = useState<string | null>(null);
 
-  // Step 4 (Activity 2 - Countries & Cities)
+  // Step 9 (Activity 2 - Countries & Cities)
   const [ccData, setCcData] = useState<any>(null);
   const [countryIdx, setCountryIdx] = useState(0);
   const [countrySelected, setCountrySelected] = useState<string | null>(null);
@@ -36,7 +180,7 @@ export default function Phase4RealWordsWizard({ activeLesson, speakWord, onCompl
   const [selectedLeftCc, setSelectedLeftCc] = useState<string | null>(null);
   const [ccSubMode, setCcSubMode] = useState<"guess" | "match">("guess");
 
-  // Step 5 (Activity 3 - Names & Transliteration)
+  // Step 10 (Activity 3 - Names & Transliteration)
   const [namesData, setNamesData] = useState<any>(null);
   const [nameIdx, setNameIdx] = useState(0);
   const [nameSelected, setNameSelected] = useState<string | null>(null);
@@ -44,33 +188,27 @@ export default function Phase4RealWordsWizard({ activeLesson, speakWord, onCompl
   const [nameCorrect, setNameCorrect] = useState<boolean | null>(null);
   const [namesMatched, setNamesMatched] = useState<Record<string, string>>({});
   const [selectedLeftName, setSelectedLeftName] = useState<string | null>(null);
-  
-  // Transliteration states
   const [transInput, setTransInput] = useState("");
   const [transResults, setTransResults] = useState<string[]>([]);
   const [transExplanation, setTransExplanation] = useState("");
   const [loadingTrans, setLoadingTrans] = useState(false);
   const [savedName, setSavedName] = useState<string | null>(null);
-  
-  const [namesSubMode, setNamesSubMode] = useState<"match" | "guess" | "transliterate">("match");
+  const [namesSubMode, setNamesSubMode] = useState<"guess" | "match" | "transliterate">("match");
 
-  // Step 6 (Activity 4 - Phrases)
+  // Step 11 (Activity 4 - Phrases)
   const [phrasesData, setPhrasesData] = useState<any>(null);
   const [phraseIdx, setPhraseIdx] = useState(0);
   const [showPhraseGloss, setShowPhraseGloss] = useState(false);
   const [phraseSelfChecks, setPhraseSelfChecks] = useState<Record<number, string>>({});
   const [phrasesMatched, setPhrasesMatched] = useState<Record<string, string>>({});
   const [selectedLeftPhrase, setSelectedLeftPhrase] = useState<string | null>(null);
-  
-  // Cloze states
   const [clozeIdx, setClozeIdx] = useState(0);
   const [clozeSelected, setClozeSelected] = useState<string | null>(null);
   const [clozeChecked, setClozeChecked] = useState(false);
   const [clozeCorrect, setClozeCorrect] = useState<boolean | null>(null);
-  
   const [phrasesSubMode, setPhrasesSubMode] = useState<"read" | "match" | "cloze">("read");
 
-  // Step 7 (Mini-Quiz)
+  // Step 12 (Mini-Quiz)
   const [quizQuestions, setQuizQuestions] = useState<any[]>([]);
   const [quizIdx, setQuizIdx] = useState(0);
   const [quizSelected, setQuizSelected] = useState<string | null>(null);
@@ -82,7 +220,7 @@ export default function Phase4RealWordsWizard({ activeLesson, speakWord, onCompl
   const [loadingTutor, setLoadingTutor] = useState(false);
   const [loadingQuiz, setLoadingQuiz] = useState(false);
 
-  // Step 8 (Recommendations)
+  // Step 13 (Recommendations)
   const [recommendations, setRecommendations] = useState<any>(null);
 
   // Fetch Step Data Dynamically
@@ -92,22 +230,22 @@ export default function Phase4RealWordsWizard({ activeLesson, speakWord, onCompl
         if (step === 1 && !metadata) {
           const res = await apiRequest("/lessons/lesson/phase4/metadata");
           setMetadata(res);
-        } else if (step === 2 && !content) {
+        } else if (step >= 2 && step <= 7 && !content) {
           const res = await apiRequest("/lessons/lesson/phase4/content");
           setContent(res);
-        } else if (step === 3 && loanwordList.length === 0) {
+        } else if (step === 8 && loanwordList.length === 0) {
           const res = await apiRequest("/lessons/practice/loanwords/basic");
           setLoanwordList(res || []);
-        } else if (step === 4 && !ccData) {
+        } else if (step === 9 && !ccData) {
           const res = await apiRequest("/lessons/practice/countries-cities/basic");
           setCcData(res);
-        } else if (step === 5 && !namesData) {
+        } else if (step === 10 && !namesData) {
           const res = await apiRequest("/lessons/practice/names/basic");
           setNamesData(res);
-        } else if (step === 6 && !phrasesData) {
+        } else if (step === 11 && !phrasesData) {
           const res = await apiRequest("/lessons/practice/phrases/basic");
           setPhrasesData(res);
-        } else if (step === 8 && !recommendations) {
+        } else if (step === 13 && !recommendations) {
           const res = await apiRequest("/lessons/recommendations/hangeul/phase4");
           setRecommendations(res);
         }
@@ -118,13 +256,39 @@ export default function Phase4RealWordsWizard({ activeLesson, speakWord, onCompl
     loadStepData();
   }, [step]);
 
-  // Activity 1 Handlers
+  // Audio reflection timer
+  useEffect(() => {
+    let interval: any;
+    if (step === 8 && loanwordsSubMode === "speed" && speedTimer !== null && speedTimer > 0) {
+      interval = setInterval(() => {
+        setSpeedTimer(prev => (prev !== null ? prev - 1 : null));
+      }, 1000);
+    } else if (speedTimer === 0) {
+      setSpeedFinished(true);
+      setSpeedTimer(null);
+    }
+    return () => clearInterval(interval);
+  }, [step, loanwordsSubMode, speedTimer]);
+
+  const handleCheckConceptQuestion = () => {
+    const q = conceptQuestions[step];
+    if (!q || !cSelected) return;
+    const isCorrect = cSelected === q.correctId;
+    setCChecked(true);
+    setCCorrect(isCorrect);
+    if (isCorrect) playCorrectSound();
+    else playWrongSound();
+  };
+
   const handleCheckLoanword = async () => {
     const current = loanwordList[loanwordIdx];
     if (!current) return;
     const correct = loanwordSelected === current.correct;
     setLoanwordChecked(true);
     setLoanwordCorrect(correct);
+    if (correct) playCorrectSound();
+    else playWrongSound();
+
     await apiRequest("/lessons/practice/loanwords/basic/answer", {
       method: "POST",
       body: JSON.stringify({ question_id: current.id, correct, answer: loanwordSelected || "" })
@@ -132,14 +296,10 @@ export default function Phase4RealWordsWizard({ activeLesson, speakWord, onCompl
   };
 
   const handleMatchLoanword = (left: string, right: string) => {
-    setLoanwordsMatched(prev => ({
-      ...prev,
-      [left]: right
-    }));
+    setLoanwordsMatched(prev => ({ ...prev, [left]: right }));
     setSelectedLeftLoanword(null);
   };
 
-  // Activity 2 Handlers
   const handleCheckCountry = async () => {
     if (!ccData) return;
     const current = ccData.countries[countryIdx];
@@ -147,6 +307,9 @@ export default function Phase4RealWordsWizard({ activeLesson, speakWord, onCompl
     const correct = countrySelected === current.correct;
     setCountryChecked(true);
     setCountryCorrect(correct);
+    if (correct) playCorrectSound();
+    else playWrongSound();
+
     await apiRequest("/lessons/practice/countries-cities/basic/answer", {
       method: "POST",
       body: JSON.stringify({ question_id: current.id, correct, answer: countrySelected || "" })
@@ -154,14 +317,10 @@ export default function Phase4RealWordsWizard({ activeLesson, speakWord, onCompl
   };
 
   const handleMatchCc = (left: string, right: string) => {
-    setCcMatched(prev => ({
-      ...prev,
-      [left]: right
-    }));
+    setCcMatched(prev => ({ ...prev, [left]: right }));
     setSelectedLeftCc(null);
   };
 
-  // Activity 3 Handlers
   const handleCheckName = async () => {
     if (!namesData) return;
     const current = namesData.mcq[nameIdx];
@@ -169,6 +328,9 @@ export default function Phase4RealWordsWizard({ activeLesson, speakWord, onCompl
     const correct = nameSelected === current.correct;
     setNameChecked(true);
     setNameCorrect(correct);
+    if (correct) playCorrectSound();
+    else playWrongSound();
+
     await apiRequest("/lessons/practice/names/basic/answer", {
       method: "POST",
       body: JSON.stringify({ question_id: current.id, correct, answer: nameSelected || "" })
@@ -176,10 +338,7 @@ export default function Phase4RealWordsWizard({ activeLesson, speakWord, onCompl
   };
 
   const handleMatchName = (left: string, right: string) => {
-    setNamesMatched(prev => ({
-      ...prev,
-      [left]: right
-    }));
+    setNamesMatched(prev => ({ ...prev, [left]: right }));
     setSelectedLeftName(null);
   };
 
@@ -200,12 +359,8 @@ export default function Phase4RealWordsWizard({ activeLesson, speakWord, onCompl
     }
   };
 
-  // Activity 4 Handlers
   const handleMatchPhrase = (left: string, right: string) => {
-    setPhrasesMatched(prev => ({
-      ...prev,
-      [left]: right
-    }));
+    setPhrasesMatched(prev => ({ ...prev, [left]: right }));
     setSelectedLeftPhrase(null);
   };
 
@@ -216,13 +371,15 @@ export default function Phase4RealWordsWizard({ activeLesson, speakWord, onCompl
     const correct = clozeSelected === current.correct;
     setClozeChecked(true);
     setClozeCorrect(correct);
+    if (correct) playCorrectSound();
+    else playWrongSound();
+
     await apiRequest("/lessons/practice/phrases/basic/answer", {
       method: "POST",
       body: JSON.stringify({ question_id: current.id, correct, answer: clozeSelected || "" })
     });
   };
 
-  // Quiz Handlers
   const handleGenerateQuiz = async (useAi: boolean) => {
     setLoadingQuiz(true);
     setTutorSummary(null);
@@ -245,13 +402,15 @@ export default function Phase4RealWordsWizard({ activeLesson, speakWord, onCompl
     const correct = quizSelected === current.correct_answer;
     setQuizChecked(true);
     setQuizCorrect(correct);
-    if (!correct) {
+    if (correct) {
+      playCorrectSound();
+    } else {
+      playWrongSound();
       setQuizMistakes(prev => [...prev, current.question]);
     }
   };
 
   const handleSubmitQuiz = async () => {
-    // Calculate score
     const correctCount = quizQuestions.length - quizMistakes.length;
     const score = Math.round((correctCount / quizQuestions.length) * 100);
     setQuizScore(score);
@@ -276,192 +435,375 @@ export default function Phase4RealWordsWizard({ activeLesson, speakWord, onCompl
     }
   };
 
+  const outlineSteps = [
+    { num: 1, label: "Welcome & Overview" },
+    { num: 2, label: "C1: Word Types" },
+    { num: 3, label: "C2: Writing Loanwords" },
+    { num: 4, label: "C3: Geography & Places" },
+    { num: 5, label: "C4: Personal Names" },
+    { num: 6, label: "C5: Transliterating Names" },
+    { num: 7, label: "C6: Greeting Units" },
+    { num: 8, label: "Act 1: Loanword Reading" },
+    { num: 9, label: "Act 2: Places Match" },
+    { num: 10, label: "Act 3: Names Match" },
+    { num: 11, label: "Act 4: Phrases Cloze" },
+    { num: 12, label: "Checkpoint Quiz" },
+    { num: 13, label: "Badge Claim & Homework" }
+  ];
+
   return (
-    <div className="flex-grow flex flex-col justify-between">
+    <div className="flex-grow flex flex-col justify-between max-w-5xl mx-auto w-full px-4">
       {/* Top Header tracking */}
-      <header className="flex justify-between items-center py-4 border-b border-white/5 mb-6">
-        <div className="flex items-center space-x-3">
-          <div className="p-2 rounded-xl bg-zinc-900 border border-white/10">
-            <BookOpen className="w-5 h-5 text-brand-400" />
+      <header className="flex flex-col md:flex-row justify-between items-start md:items-center py-5 border-b border-white/5 mb-8 gap-4">
+        <div className="flex items-center space-x-4">
+          <div className="p-3 rounded-2xl bg-zinc-950 border border-white/10 shadow-lg">
+            <BookMarked className="w-6 h-6 text-brand-400" />
           </div>
           <div>
-            <h2 className="font-extrabold text-lg flex items-center gap-2">
-              <span>{activeLesson?.title || "Hangeul Real-Word Reading & Names"}</span>
+            <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 font-mono">Phase 4</span>
+            <h2 className="font-black text-xl text-white tracking-tight flex items-center gap-2">
+              <span>Real Words Reading Bootcamp</span>
             </h2>
-            <p className="text-xs text-zinc-500">Curated Topic: {activeLesson?.topic || "Real-world Practice"}</p>
+            <p className="text-xs text-zinc-400">Curated Topic: {activeLesson?.topic || "Vocabulary & Phrases"}</p>
           </div>
         </div>
         
         {/* Active progress bar */}
-        <div className="flex items-center space-x-4">
-          <div className="w-32 h-2.5 bg-zinc-800 rounded-full overflow-hidden">
+        <div className="flex items-center space-x-4 w-full md:w-auto">
+          <div className="flex-grow md:w-48 h-3 bg-zinc-900/80 rounded-full overflow-hidden border border-white/5 p-[2px]">
             <div 
-              className="h-full bg-gradient-to-r from-yellow-500 via-orange-500 to-indigo-500 rounded-full transition-all duration-500" 
-              style={{ width: `${(step / 8) * 100}%` }}
+              className="h-full bg-gradient-to-r from-brand-500 via-orange-500 to-amber-500 rounded-full transition-all duration-500" 
+              style={{ width: `${(step / totalSteps) * 100}%` }}
             />
           </div>
-          <span className="text-xs text-zinc-400 font-bold">{Math.round((step / 8) * 100)}%</span>
+          <div className="text-right shrink-0">
+            <span className="text-xs font-mono font-black text-white">{Math.round((step / totalSteps) * 100)}%</span>
+            <span className="text-[10px] text-zinc-500 font-bold block">Step {step} of {totalSteps}</span>
+          </div>
           <button 
             onClick={() => setShowOutline(!showOutline)}
-            className="text-[10px] bg-zinc-900 border border-white/10 hover:bg-zinc-800 text-zinc-300 px-2.5 py-1 rounded transition cursor-pointer"
+            className="text-[10px] bg-zinc-950 border border-white/10 hover:bg-zinc-900 text-zinc-300 px-3 py-1.5 rounded-lg transition duration-200 cursor-pointer uppercase tracking-wider font-bold shrink-0"
           >
-            {showOutline ? "Hide Outline" : "View Outline"}
+            {showOutline ? "Hide Maps" : "View Outline"}
           </button>
         </div>
       </header>
 
-      {/* Screen 1: Welcome/Overview */}
-      {step === 1 && (
-        <div className="glass-panel neon-border p-8 rounded-3xl shadow-2xl w-full space-y-6 flex-grow flex flex-col justify-center text-center max-w-xl mx-auto">
-          <div className="p-3 bg-brand-500/10 rounded-full border border-brand-500/25 w-fit mx-auto text-brand-400 shrink-0">
-            <Sparkles className="w-8 h-8 animate-pulse shrink-0" />
+      {/* Expanded Quick Outline Map Panel */}
+      {showOutline && (
+        <div className="mb-6 p-5 bg-zinc-950/80 rounded-3xl border border-white/5 shadow-2xl animate-in fade-in slide-in-from-top-4 duration-300">
+          <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest block mb-3 font-mono">Curriculum Syllabus Map</span>
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
+            {outlineSteps.map(s => (
+              <button
+                key={s.num}
+                onClick={() => {
+                  setStep(s.num);
+                  setShowOutline(false);
+                }}
+                className={`p-2.5 rounded-xl border text-left transition ${
+                  step === s.num
+                    ? "border-brand-500 bg-brand-500/10 text-white"
+                    : "border-white/5 bg-zinc-900/40 text-zinc-400 hover:border-white/10 hover:text-white"
+                }`}
+              >
+                <div className="text-[9px] font-black font-mono text-zinc-500">STEP {s.num}</div>
+                <div className="text-xs font-bold truncate">{s.label}</div>
+              </button>
+            ))}
           </div>
-          <h2 className="text-4xl font-black text-white">Hangeul 0.4</h2>
-          <h3 className="text-xl font-bold text-brand-400 mt-1">Real‑Word Reading Bootcamp</h3>
-          <p className="text-zinc-300 text-sm leading-relaxed">
-            {metadata?.goals || "Practice reading real Korean words: loanwords, countries, cities, and names. Build reading fluency before grammar."}
+        </div>
+      )}
+
+      {/* Step 1: Welcome/Overview */}
+      {step === 1 && (
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center text-center max-w-xl mx-auto my-4 transition duration-300">
+          <div className="p-4 bg-brand-500/10 rounded-3xl border border-brand-500/25 w-fit mx-auto text-brand-400 shadow-inner animate-pulse">
+            <Sparkles className="w-10 h-10" />
+          </div>
+          <div className="space-y-2">
+            <h2 className="text-5xl font-black text-white tracking-tight">Bootcamp A0→A1</h2>
+            <h3 className="text-2xl font-extrabold text-brand-400">Real Words Reading Bootcamp</h3>
+          </div>
+          <p className="text-zinc-300 text-sm md:text-base leading-relaxed font-sans">
+            {metadata?.goals || "Transition from letters to real-world context. Practice decoding loanwords, geography, names, and greetings smoothly."}
           </p>
-          <div className="bg-zinc-900/60 p-4 rounded-xl border border-white/5 text-left text-xs text-zinc-400 space-y-2">
-            <p><strong>🎯 Objectives:</strong> Recognize common loanwords, identify country and city names, transliterate foreign names, read classroom greetings.</p>
-            <p><strong>📋 Prerequisites:</strong> Completion of phases 1–3 is highly recommended.</p>
+          <div className="bg-zinc-950/80 p-5 rounded-2xl border border-white/5 text-left text-xs text-zinc-400 space-y-3 shadow-inner">
+            <div className="flex items-center gap-2 border-b border-white/5 pb-2 text-white font-bold">
+              <BookOpen className="w-4 h-4 text-brand-400" />
+              <span>Syllabus Objectives</span>
+            </div>
+            <ul className="space-y-1.5 list-disc list-inside">
+              <li>Read core loanwords written in Hangeul</li>
+              <li>Recognise world country and city names</li>
+              <li>Understand the 3-syllable Korean name structure</li>
+              <li>Transliterate foreign names to Hangeul</li>
+              <li>Read standard classroom and greeting phrases</li>
+            </ul>
           </div>
           <button 
             onClick={() => setStep(2)}
-            className="bg-brand-500 hover:bg-brand-600 text-white font-bold py-3 px-8 rounded-xl transition text-sm flex items-center justify-center gap-2 mx-auto cursor-pointer"
+            className="bg-brand-500 hover:bg-brand-600 text-zinc-950 font-black py-4 px-10 rounded-2xl transition duration-200 text-sm flex items-center justify-center gap-2 mx-auto cursor-pointer shadow-lg shadow-brand-500/20 active:scale-95"
           >
-            <span>Start Real‑Word Reading</span>
-            <ChevronRight className="w-4 h-4" />
+            <span>Begin Proper Noun Bootcamp</span>
+            <ChevronRight className="w-4 h-4 text-zinc-950" />
           </button>
         </div>
       )}
 
-      {/* Screen 2: Concept Explanation */}
-      {step === 2 && (
-        <div className="glass-panel neon-border p-8 rounded-3xl shadow-2xl w-full space-y-6 flex-grow flex flex-col justify-center">
+      {/* Concept Screens C1-C6 Template with Embedded Micro-questions */}
+      {step >= 2 && step <= 7 && (
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center max-w-3xl mx-auto my-4 transition duration-300">
+          
+          {/* Concept Header */}
           <div className="flex justify-between items-center border-b border-white/5 pb-4">
-            <h2 className="text-xl font-black text-white flex items-center gap-2 font-sans">
-              <BookOpen className="w-5 h-5 text-brand-400" />
-              <span>Concept: Sino-Korean, Native & Loanwords</span>
+            <h2 className="text-2xl font-black text-white flex items-center gap-2 font-sans tracking-tight">
+              <BookOpen className="w-6 h-6 text-brand-400" />
+              <span>
+                {step === 2 && "C1: Three Categories of Korean Words"}
+                {step === 3 && "C2: Transcribing Loanwords Phonetically"}
+                {step === 4 && "C3: Countries & Cities in Hangeul"}
+                {step === 5 && "C4: Korean Personal Name Structure"}
+                {step === 6 && "C5: Foreign Names in Hangeul"}
+                {step === 7 && "C6: Whole Phrases as Reading Units"}
+              </span>
             </h2>
-            <span className="text-xs text-zinc-500 font-bold font-sans">Step 2 of 8</span>
+            <span className="text-xs text-zinc-500 font-mono font-black uppercase">Theory Screen {step - 1} of 6</span>
           </div>
 
-          {!content ? (
-            <div className="text-center py-10"><Loader2 className="w-8 h-8 animate-spin mx-auto text-brand-400" /></div>
-          ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-              <div className="space-y-4 text-xs md:text-sm text-zinc-300">
-                <div className="bg-zinc-900/40 p-4 rounded-xl border border-white/5 space-y-2">
-                  <h4 className="font-extrabold text-white text-sm">Understanding Korean Words Categories</h4>
-                  <p className="text-zinc-400 leading-relaxed">
-                    Korean vocabulary consists of native Korean words, Sino-Korean words (derived from Chinese characters), and foreign loanwords (mainly English, known as Konglish).
-                  </p>
-                  <p className="text-zinc-400 leading-relaxed">
-                    Reading foreign loanwords (외래어) is a fun way to gain fluency, because when you read them phonetically, you instantly understand the meaning!
-                  </p>
-                </div>
-                <div className="bg-zinc-900/40 p-4 rounded-xl border border-white/5 space-y-2 text-zinc-400">
-                  <h4 className="font-extrabold text-white text-sm">Korean Name Patterns</h4>
-                  <p className="leading-relaxed">
-                    Korean names usually consist of 3 syllables: Family Name (1 syllable) + Given Name (2 syllables). e.g., <strong>김민수</strong> (Kim Min-su), where <strong>김</strong> is the surname.
-                  </p>
-                </div>
-              </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-stretch">
+            {/* Concept Content Column */}
+            <div className="space-y-5 text-sm leading-relaxed text-zinc-300 flex flex-col justify-between">
+              <div className="space-y-4">
+                {step === 2 && (
+                  <>
+                    <p className="font-medium">
+                      Korean vocabulary comes from three distinct lexical classes:
+                    </p>
+                    <div className="bg-zinc-950/80 p-4 rounded-xl border border-white/5 text-xs text-zinc-400 space-y-2">
+                      <p>• <strong>고유어 (Native Korean):</strong> Core concepts (e.g. <strong>사람</strong> person, <strong>집</strong> house, <strong>하늘</strong> sky).</p>
+                      <p>• <strong>한자어 (Sino-Korean):</strong> Words rooted in Chinese characters (e.g. <strong>학교</strong> school, <strong>전화</strong> telephone).</p>
+                      <p>• <strong>외래어 (Foreign Loanwords):</strong> Mostly from English (e.g. <strong>콜라</strong> cola, <strong>컴퓨터</strong> computer).</p>
+                    </div>
+                  </>
+                )}
 
-              {/* Sample Cards Playground */}
-              <div className="bg-zinc-900/40 p-5 rounded-2xl border border-white/5 space-y-4">
-                <h3 className="text-xs font-black uppercase text-amber-400 tracking-wider">Example Gloss Cards (Click to Pronounce)</h3>
-                
-                <div className="grid grid-cols-2 gap-2.5">
-                  {content.loanwords.slice(0, 2).map((item: any, idx: number) => (
-                    <div 
-                      key={idx} 
-                      onClick={() => speakWord(item.korean)}
-                      className="p-3 bg-zinc-950 hover:bg-zinc-900 border border-white/5 rounded-xl text-center cursor-pointer transition"
-                    >
-                      <div className="text-xs text-brand-400 font-mono">Loanword</div>
-                      <div className="text-xl font-bold text-white my-1">{item.korean}</div>
-                      <div className="text-xs text-zinc-400">&rarr; {item.english}</div>
+                {step === 3 && (
+                  <>
+                    <p className="font-medium">
+                      Foreign words are adapted phonetically to Korean sounds. They do not follow the exact Roman spelling:
+                    </p>
+                    <div className="bg-zinc-950/80 p-4 rounded-xl border border-white/5 text-xs text-zinc-400 space-y-2">
+                      <p>• <strong>/f/ sounds</strong> map to <strong>ㅍ</strong> (e.g., coffee → <strong>커피</strong>).</p>
+                      <p>• <strong>/v/ sounds</strong> map to <strong>ㅂ</strong> (e.g., video → <strong>비디오</strong>).</p>
+                      <p>• Consonant clusters are broken into individual syllables (e.g. chocolate → <strong>초콜릿</strong>).</p>
                     </div>
-                  ))}
-                  {content.countries.slice(0, 2).map((item: any, idx: number) => (
-                    <div 
-                      key={idx} 
-                      onClick={() => speakWord(item.korean)}
-                      className="p-3 bg-zinc-950 hover:bg-zinc-900 border border-white/5 rounded-xl text-center cursor-pointer transition"
-                    >
-                      <div className="text-xs text-accent-teal font-mono">Country</div>
-                      <div className="text-xl font-bold text-white my-1">{item.korean}</div>
-                      <div className="text-xs text-zinc-400">&rarr; {item.english}</div>
+                  </>
+                )}
+
+                {step === 4 && (
+                  <>
+                    <p className="font-medium">
+                      Countries and cities are written either as older Sino-Korean terms or phonetic modern loanwords:
+                    </p>
+                    <div className="bg-zinc-950/80 p-4 rounded-xl border border-white/5 text-xs text-zinc-400 space-y-2">
+                      <p>• <strong>Countries:</strong> <strong>한국</strong> (Korea), <strong>미국</strong> (USA), <strong>영국</strong> (UK), <strong>일본</strong> (Japan), <strong>중국</strong> (China).</p>
+                      <p>• <strong>Cities:</strong> <strong>서울</strong> (Seoul), <strong>도쿄</strong> (Tokyo), <strong>뉴욕</strong> (New York), <strong>런던</strong> (London).</p>
                     </div>
-                  ))}
-                </div>
+                  </>
+                )}
+
+                {step === 5 && (
+                  <>
+                    <p className="font-medium">
+                      Most Korean personal names follow a very strict 3-syllable pattern:
+                    </p>
+                    <div className="bg-zinc-950/80 p-4 rounded-xl border border-white/5 text-xs text-zinc-400 space-y-2">
+                      <p>• <strong>Family Name (1 syllable)</strong> + <strong>Given Name (2 syllables)</strong>.</p>
+                      <p>• Example: <strong>김민수</strong> (Kim Minsu) → <strong>김</strong> (family name) + <strong>민수</strong> (given name).</p>
+                      <p>• Common family names: <strong>김</strong> (Kim), <strong>이</strong> (Lee), <strong>박</strong> (Park), <strong>최</strong> (Choi).</p>
+                    </div>
+                  </>
+                )}
+
+                {step === 6 && (
+                  <>
+                    <p className="font-medium">
+                      Western names are transcribed phonetically to preserve their original sound:
+                    </p>
+                    <div className="bg-zinc-950/80 p-4 rounded-xl border border-white/5 text-xs text-zinc-400 space-y-2">
+                      <p>• Lisa maps to <strong>리사</strong>.</p>
+                      <p>• James maps to <strong>제임스</strong>.</p>
+                      <p>• Michael maps to <strong>마이클</strong>.</p>
+                      <p>Later in this phase, you can type your own name to see its custom Hangeul mapping!</p>
+                    </div>
+                  </>
+                )}
+
+                {step === 7 && (
+                  <>
+                    <p className="font-medium">
+                      Some highly repetitive phrases are best learned as whole visual reading units:
+                    </p>
+                    <div className="bg-zinc-950/80 p-4 rounded-xl border border-white/5 text-xs text-zinc-400 space-y-2">
+                      <p>• <strong>안녕하세요</strong> (Hello)</p>
+                      <p>• <strong>감사합니다</strong> (Thank you)</p>
+                      <p>• <strong>죄송합니다</strong> (I'm sorry)</p>
+                      <p>• <strong>처음 뵙겠습니다</strong> (Nice to meet you)</p>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
-          )}
 
-          <div className="flex justify-between items-center pt-4 border-t border-white/5">
-            <button onClick={() => setStep(1)} className="glass-panel px-4 py-2.5 rounded-xl hover:bg-white/5 text-zinc-400 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
-            <button onClick={() => setStep(3)} className="bg-brand-500 hover:bg-brand-600 text-white px-5 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer">Next Step <ChevronRight className="w-4 h-4" /></button>
+            {/* Embedded Micro-Question Column */}
+            <div className="bg-zinc-950/80 p-6 rounded-3xl border border-white/5 flex flex-col justify-between shadow-inner">
+              <div className="space-y-4">
+                <div className="flex items-center space-x-2 text-zinc-400">
+                  <HelpCircle className="w-4 h-4 text-brand-400 animate-pulse" />
+                  <span className="text-[10px] font-black uppercase tracking-wider">Concept Checkpoint</span>
+                </div>
+                
+                <h4 className="text-sm font-black text-white leading-snug">
+                  {conceptQuestions[step]?.question}
+                </h4>
+
+                <div className="space-y-2">
+                  {conceptQuestions[step]?.options.map((opt) => (
+                    <button
+                      key={opt.id}
+                      disabled={cChecked}
+                      onClick={() => setCSelected(opt.id)}
+                      className={`w-full p-3.5 rounded-xl text-left text-xs font-bold border transition duration-200 ${
+                        cSelected === opt.id
+                          ? "border-brand-500 bg-brand-500/10 text-white"
+                          : "border-white/5 bg-zinc-900/60 text-zinc-300 hover:bg-zinc-900"
+                      } ${
+                        cChecked && opt.id === conceptQuestions[step]?.correctId
+                          ? "border-accent-teal bg-accent-teal/10 text-white"
+                          : ""
+                      } ${
+                        cChecked && cSelected === opt.id && cSelected !== conceptQuestions[step]?.correctId
+                          ? "border-red-500 bg-red-500/10 text-red-400"
+                          : ""
+                      }`}
+                    >
+                      <span className="inline-block mr-2 text-brand-400">{opt.id}.</span>
+                      {opt.text}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="pt-4 space-y-4">
+                {!cChecked ? (
+                  <button
+                    onClick={handleCheckConceptQuestion}
+                    disabled={!cSelected}
+                    className="w-full bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-zinc-950 font-black py-3 rounded-xl text-xs transition duration-200 uppercase tracking-widest shadow-md shadow-brand-500/15 cursor-pointer"
+                  >
+                    Submit Answer
+                  </button>
+                ) : (
+                  <div className={`p-4 rounded-xl border text-xs text-left animate-in slide-in-from-bottom-2 duration-200 ${
+                    cCorrect ? "bg-accent-teal/5 border-accent-teal/20 text-accent-teal" : "bg-red-500/5 border-red-500/10 text-red-400"
+                  }`}>
+                    <div className="flex items-center gap-1.5 font-bold mb-1">
+                      <span className="uppercase text-[9px] tracking-wider px-2 py-0.5 rounded bg-zinc-900 border border-white/5">
+                        {cCorrect ? "맞아요 (Correct)" : "틀렸어요 (Incorrect)"}
+                      </span>
+                    </div>
+                    <p className="text-zinc-300 leading-normal">{conceptQuestions[step]?.explanation}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Navigation Controls */}
+          <div className="flex justify-between items-center pt-6 border-t border-white/5">
+            <button 
+              onClick={() => setStep(step - 1)} 
+              className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
+            >
+              <ChevronLeft className="w-4 h-4" /> 
+              <span>Back</span>
+            </button>
+            <button 
+              onClick={() => setStep(step + 1)}
+              disabled={!cChecked}
+              className="bg-brand-500 hover:bg-brand-600 disabled:opacity-30 disabled:hover:bg-brand-500 text-zinc-950 px-6 py-3 rounded-xl text-xs font-black transition flex items-center gap-1.5 cursor-pointer"
+            >
+              <span>Next</span>
+              <ChevronRight className="w-4 h-4 text-zinc-950" />
+            </button>
           </div>
         </div>
       )}
 
-      {/* Screen 3: Activity 1 (Loanwords guessing & matching) */}
-      {step === 3 && (
-        <div className="glass-panel neon-border p-8 rounded-3xl shadow-2xl w-full space-y-6 flex-grow flex flex-col justify-center">
+      {/* Screen 8: Activity 1 (Loanwords drills + Speed Check) */}
+      {step === 8 && (
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center max-w-3xl mx-auto my-4 transition duration-300">
           <div className="flex justify-between items-center border-b border-white/5 pb-4">
-            <h2 className="text-xl font-black text-white flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-brand-400" />
-              <span>Activity 1 – Loanword Reading & Guessing</span>
+            <h2 className="text-2xl font-black text-white flex items-center gap-2 tracking-tight">
+              <Sparkles className="w-6 h-6 text-brand-400 animate-pulse" />
+              <span>Activity 1 – Loanword Reading Drills</span>
             </h2>
-            <span className="text-xs text-zinc-500 font-bold">Step 3 of 8</span>
+            <span className="text-xs text-zinc-500 font-mono font-black">Step 8 of 13</span>
           </div>
 
-          <div className="flex justify-center gap-2 border-b border-white/5 pb-4">
-            <button 
-              onClick={() => setLoanwordsSubMode("guess")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${loanwordsSubMode === "guess" ? "bg-brand-500 text-white" : "bg-zinc-900 text-zinc-400"}`}
-            >
-              Stage A: Guess The Word
-            </button>
-            <button 
-              onClick={() => setLoanwordsSubMode("match")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${loanwordsSubMode === "match" ? "bg-brand-500 text-white" : "bg-zinc-900 text-zinc-400"}`}
-            >
-              Stage B: Match Columns
-            </button>
+          {/* Submode select */}
+          <div className="flex justify-center gap-2 bg-zinc-950/80 p-2 rounded-2xl border border-white/5 max-w-md mx-auto shadow-inner">
+            {["guess", "match", "speed"].map((mode) => (
+              <button 
+                key={mode}
+                onClick={() => setLoanwordsSubMode(mode as any)}
+                className={`flex-1 px-4 py-2.5 rounded-xl text-xs font-bold transition duration-200 capitalize ${loanwordsSubMode === mode ? "bg-brand-500 text-zinc-950 font-black shadow-md shadow-brand-500/10" : "text-zinc-400 hover:text-white bg-transparent"}`}
+              >
+                {mode === "guess" && "Stage A: Guess"}
+                {mode === "match" && "Stage B: Match"}
+                {mode === "speed" && "Stage C: Speed"}
+              </button>
+            ))}
           </div>
 
           {loanwordList.length === 0 ? (
             <div className="text-center py-10"><Loader2 className="w-8 h-8 animate-spin mx-auto text-brand-400" /></div>
           ) : (
-            <div className="space-y-6 max-w-xl mx-auto w-full text-center">
-              {loanwordsSubMode === "guess" ? (
-                <div className="space-y-4">
-                  <div className="glass-panel p-8 rounded-2xl border border-white/5 bg-zinc-900/40 space-y-4 max-w-xs mx-auto">
+            <div className="w-full text-center">
+              {loanwordsSubMode === "guess" && (
+                <div className="space-y-6 max-w-xl mx-auto w-full animate-in fade-in duration-200">
+                  <div className="glass-panel p-8 rounded-3xl border border-white/5 bg-zinc-900/40 space-y-4 max-w-xs mx-auto shadow-xl">
                     <span className="text-xs text-zinc-500 block">Read and guess the English equivalent:</span>
                     <div className="text-5xl font-black text-white">{loanwordList[loanwordIdx]?.korean}</div>
                     
                     <button 
                       onClick={() => speakWord(loanwordList[loanwordIdx]?.korean)}
-                      className="mx-auto p-2.5 rounded-xl bg-zinc-950 text-brand-400 hover:text-white border border-white/5 transition flex items-center gap-1 text-xs font-bold cursor-pointer"
+                      className="mx-auto p-2.5 rounded-xl bg-zinc-950 text-brand-400 hover:text-white border border-white/10 transition flex items-center gap-1.5 text-xs font-bold cursor-pointer"
                     >
-                      <Volume2 className="w-4 h-4" />
+                      <Volume2 className="w-4 h-4 animate-bounce" />
                       <span>Play Audio</span>
                     </button>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-3 gap-3">
                     {loanwordList[loanwordIdx]?.english_options.map((opt: string) => (
                       <button
                         key={opt}
                         onClick={() => !loanwordChecked && setLoanwordSelected(opt)}
                         disabled={loanwordChecked}
-                        className={`p-3 rounded-xl border text-xs font-bold transition ${
+                        className={`p-4 rounded-xl border font-bold transition duration-150 ${
                           loanwordSelected === opt 
                             ? "border-brand-500 bg-brand-500/10 text-white"
                             : "border-white/5 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-300"
+                        } ${
+                          loanwordChecked && opt === loanwordList[loanwordIdx]?.correct
+                            ? "border-accent-teal bg-accent-teal/10 text-white"
+                            : ""
+                        } ${
+                          loanwordChecked && loanwordSelected === opt && loanwordSelected !== loanwordList[loanwordIdx]?.correct
+                            ? "border-red-500 bg-red-500/10 text-red-400"
+                            : ""
                         }`}
                       >
                         {opt}
@@ -470,21 +812,21 @@ export default function Phase4RealWordsWizard({ activeLesson, speakWord, onCompl
                   </div>
 
                   {loanwordChecked && (
-                    <div className={`p-4 rounded-xl border text-xs text-left space-y-1 ${
+                    <div className={`p-4 rounded-xl border text-xs text-left space-y-1 animate-in slide-in-from-bottom-2 duration-200 ${
                       loanwordCorrect ? "bg-accent-teal/5 border-accent-teal/20 text-accent-teal" : "bg-red-500/5 border-red-500/10 text-red-400"
                     }`}>
                       <p className="font-extrabold">{loanwordCorrect ? `맞아요! ${loanwordList[loanwordIdx]?.korean} = ${loanwordList[loanwordIdx]?.correct}.` : `거의 맞았어요. Listen again: ${loanwordList[loanwordIdx]?.korean}. It's closer to '${loanwordList[loanwordIdx]?.correct}'.`}</p>
                     </div>
                   )}
 
-                  <div className="flex justify-between items-center pt-4 border-t border-white/5">
-                    <button onClick={() => setStep(2)} className="glass-panel px-4 py-2.5 rounded-xl hover:bg-white/5 text-zinc-400 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
+                  <div className="flex justify-between items-center pt-6 border-t border-white/5">
+                    <button onClick={() => setStep(7)} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
                     
                     {!loanwordChecked ? (
                       <button
                         onClick={handleCheckLoanword}
                         disabled={!loanwordSelected}
-                        className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white px-5 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer"
+                        className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-zinc-950 font-black px-6 py-3 rounded-xl text-xs transition duration-200 cursor-pointer"
                       >
                         Check Answer
                       </button>
@@ -500,34 +842,35 @@ export default function Phase4RealWordsWizard({ activeLesson, speakWord, onCompl
                             setLoanwordsSubMode("match");
                           }
                         }}
-                        className="bg-accent-teal text-zinc-950 hover:bg-accent-teal/90 px-5 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer"
+                        className="bg-accent-teal text-zinc-950 hover:bg-accent-teal/90 px-6 py-3 rounded-xl text-xs font-black transition flex items-center gap-1 cursor-pointer"
                       >
                         {loanwordIdx < loanwordList.length - 1 ? "Next Word" : "Go to Stage B"}
                       </button>
                     )}
                   </div>
                 </div>
-              ) : (
-                /* Matching Column Game */
-                <div className="space-y-4">
-                  <p className="text-xs text-zinc-400">Match the Korean loanword to its English meaning:</p>
+              )}
+
+              {loanwordsSubMode === "match" && (
+                <div className="space-y-6 max-w-xl mx-auto w-full animate-in fade-in duration-200">
+                  <p className="text-xs text-zinc-400">Match the Korean loanwords to their English meaning:</p>
                   
                   <div className="grid grid-cols-2 gap-8 items-start">
                     {/* Left Hangeul Column */}
                     <div className="space-y-2">
                       <span className="text-[10px] text-zinc-500 uppercase tracking-widest block font-bold">Hangeul Loanwords</span>
-                      {loanwordList.slice(0, 4).map(item => {
+                      {loanwordList.slice(0, 5).map(item => {
                         const isMatched = loanwordsMatched[item.korean] !== undefined;
                         return (
                           <button
                             key={item.korean}
                             disabled={isMatched}
                             onClick={() => setSelectedLeftLoanword(item.korean)}
-                            className={`w-full p-3 rounded-xl border text-sm font-black transition text-center ${
+                            className={`w-full p-3.5 rounded-xl border text-sm font-black transition text-center ${
                               isMatched 
                                 ? "bg-accent-teal/5 border-accent-teal/20 text-accent-teal/40 line-through" 
                                 : selectedLeftLoanword === item.korean 
-                                ? "border-brand-500 bg-brand-500/10 text-white shadow-[0_0_15px_rgba(79,70,229,0.3)]" 
+                                ? "border-brand-500 bg-brand-500/10 text-white shadow-[0_0_15px_rgba(79,70,229,0.2)]" 
                                 : "border-white/5 bg-zinc-900 hover:bg-zinc-800 text-zinc-300"
                             }`}
                           >
@@ -539,9 +882,8 @@ export default function Phase4RealWordsWizard({ activeLesson, speakWord, onCompl
 
                     {/* Right English Column */}
                     <div className="space-y-2">
-                      <span className="text-[10px] text-zinc-500 uppercase tracking-widest block font-bold">English Original</span>
-                      {["pizza", "bus", "taxi", "camera"].map(englishOpt => {
-                        // Check if any left element has matched to this englishOpt
+                      <span className="text-[10px] text-zinc-500 uppercase tracking-widest block font-bold">English Meaning</span>
+                      {["coffee", "bus", "taxi", "camera", "pizza"].map(englishOpt => {
                         const matches = Object.entries(loanwordsMatched).find(([_, enVal]) => enVal === englishOpt);
                         const isMatched = matches !== undefined;
                         
@@ -550,15 +892,15 @@ export default function Phase4RealWordsWizard({ activeLesson, speakWord, onCompl
                             key={englishOpt}
                             disabled={isMatched || !selectedLeftLoanword}
                             onClick={() => {
-                              // Verify if matches correctly
                               const mappedObject = loanwordList.find(i => i.korean === selectedLeftLoanword);
                               if (mappedObject && mappedObject.correct === englishOpt) {
                                 handleMatchLoanword(selectedLeftLoanword!, englishOpt);
+                                playCorrectSound();
                               } else {
-                                alert("Not a match! Try again.");
+                                playWrongSound();
                               }
                             }}
-                            className={`w-full p-3 rounded-xl border text-sm font-bold transition text-center ${
+                            className={`w-full p-3.5 rounded-xl border text-sm font-bold transition text-center ${
                               isMatched 
                                 ? "bg-accent-teal/5 border-accent-teal/20 text-accent-teal/40 line-through" 
                                 : selectedLeftLoanword 
@@ -574,15 +916,76 @@ export default function Phase4RealWordsWizard({ activeLesson, speakWord, onCompl
                   </div>
 
                   <div className="flex justify-between items-center pt-6 border-t border-white/5">
-                    <button onClick={() => setLoanwordsSubMode("guess")} className="glass-panel px-4 py-2.5 rounded-xl hover:bg-white/5 text-zinc-400 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Stage A</button>
+                    <button onClick={() => setLoanwordsSubMode("guess")} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Stage A</button>
                     
                     <button
-                      onClick={() => setStep(4)}
+                      onClick={() => {
+                        setLoanwordsSubMode("speed");
+                        setSpeedTimer(8);
+                        setSpeedFinished(false);
+                      }}
                       disabled={Object.keys(loanwordsMatched).length < 4}
-                      className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white px-5 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
+                      className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-zinc-950 font-black px-6 py-3 rounded-xl text-xs transition flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <span>Stage C: Speed Check</span>
+                      <ChevronRight className="w-4 h-4 text-zinc-950" />
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {loanwordsSubMode === "speed" && (
+                <div className="space-y-6 max-w-xl mx-auto w-full animate-in fade-in duration-200">
+                  <h3 className="text-sm font-semibold text-zinc-400">Quick Speed Check: Read all 5 words before the timer runs out!</h3>
+                  
+                  {speedTimer !== null && (
+                    <div className="text-4xl font-black text-amber-500 font-mono animate-pulse">{speedTimer}s</div>
+                  )}
+
+                  <div className="flex flex-wrap justify-center gap-3 py-4">
+                    {["커피", "피자", "택시", "콜라", "호텔"].map((w, idx) => (
+                      <button 
+                        key={idx} 
+                        onClick={() => speakWord(w)}
+                        className="px-5 py-3 bg-zinc-950 border border-white/10 text-sm font-bold text-white rounded-xl hover:bg-zinc-900 flex items-center gap-2 cursor-pointer shadow-md"
+                      >
+                        <Volume2 className="w-3.5 h-3.5" />
+                        <span>{w}</span>
+                      </button>
+                    ))}
+                  </div>
+
+                  {speedFinished && (
+                    <div className="space-y-4 animate-in slide-in-from-bottom-2 duration-200">
+                      <p className="text-xs text-zinc-400">Reflective Check: Which word felt hardest to read smoothly?</p>
+                      <div className="flex flex-wrap justify-center gap-2">
+                        {["커피", "택시", "호텔", "none"].map(w => (
+                          <button
+                            key={w}
+                            onClick={() => setHardestWordSelection(w)}
+                            className={`px-4 py-2 rounded-xl text-xs font-bold border transition duration-150 capitalize ${
+                              hardestWordSelection === w 
+                                ? "bg-brand-500 border-brand-500 text-zinc-950 font-black" 
+                                : "bg-zinc-900 border-white/5 text-zinc-300"
+                            }`}
+                          >
+                            {w}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex justify-between items-center pt-6 border-t border-white/5">
+                    <button onClick={() => setLoanwordsSubMode("match")} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Stage B</button>
+                    
+                    <button
+                      onClick={() => setStep(9)}
+                      disabled={speedTimer !== null && !speedFinished}
+                      className="bg-brand-500 hover:bg-brand-600 text-zinc-950 font-black px-6 py-3 rounded-xl text-xs transition flex items-center gap-1.5 cursor-pointer"
                     >
                       <span>Move to Activity 2</span>
-                      <ChevronRight className="w-4 h-4" />
+                      <ChevronRight className="w-4 h-4 text-zinc-950" />
                     </button>
                   </div>
                 </div>
@@ -592,27 +995,28 @@ export default function Phase4RealWordsWizard({ activeLesson, speakWord, onCompl
         </div>
       )}
 
-      {/* Screen 4: Activity 2 (Country & City names) */}
-      {step === 4 && (
-        <div className="glass-panel neon-border p-8 rounded-3xl shadow-2xl w-full space-y-6 flex-grow flex flex-col justify-center">
+      {/* Screen 9: Activity 2 (Countries & Cities) */}
+      {step === 9 && (
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center max-w-3xl mx-auto my-4 transition duration-300">
           <div className="flex justify-between items-center border-b border-white/5 pb-4">
-            <h2 className="text-xl font-black text-white flex items-center gap-2">
-              <BookOpen className="w-5 h-5 text-brand-400" />
-              <span>Activity 2 – Countries & City Names</span>
+            <h2 className="text-2xl font-black text-white flex items-center gap-2 tracking-tight">
+              <BookOpen className="w-6 h-6 text-brand-400" />
+              <span>Activity 2 – Geography (Countries & Cities)</span>
             </h2>
-            <span className="text-xs text-zinc-500 font-bold">Step 4 of 8</span>
+            <span className="text-xs text-zinc-500 font-mono font-black">Step 9 of 13</span>
           </div>
 
-          <div className="flex justify-center gap-2 border-b border-white/5 pb-4">
+          {/* Submode toggle */}
+          <div className="flex justify-center gap-2 bg-zinc-950/80 p-2 rounded-2xl border border-white/5 max-w-md mx-auto shadow-inner">
             <button 
               onClick={() => setCcSubMode("guess")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${ccSubMode === "guess" ? "bg-brand-500 text-white" : "bg-zinc-900 text-zinc-400"}`}
+              className={`flex-1 px-4 py-2.5 rounded-xl text-xs font-bold transition duration-200 ${ccSubMode === "guess" ? "bg-brand-500 text-zinc-950 font-black shadow-md shadow-brand-500/10" : "text-zinc-400 hover:text-white bg-transparent"}`}
             >
-              Stage A: Guess The Country
+              Stage A: Guess
             </button>
             <button 
               onClick={() => setCcSubMode("match")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${ccSubMode === "match" ? "bg-brand-500 text-white" : "bg-zinc-900 text-zinc-400"}`}
+              className={`flex-1 px-4 py-2.5 rounded-xl text-xs font-bold transition duration-200 ${ccSubMode === "match" ? "bg-brand-500 text-zinc-950 font-black shadow-md shadow-brand-500/10" : "text-zinc-400 hover:text-white bg-transparent"}`}
             >
               Stage B: Match Columns
             </button>
@@ -621,32 +1025,40 @@ export default function Phase4RealWordsWizard({ activeLesson, speakWord, onCompl
           {!ccData ? (
             <div className="text-center py-10"><Loader2 className="w-8 h-8 animate-spin mx-auto text-brand-400" /></div>
           ) : (
-            <div className="space-y-6 max-w-xl mx-auto w-full text-center">
+            <div className="w-full text-center">
               {ccSubMode === "guess" ? (
-                <div className="space-y-4">
-                  <div className="glass-panel p-8 rounded-2xl border border-white/5 bg-zinc-900/40 space-y-4 max-w-xs mx-auto">
-                    <span className="text-xs text-zinc-500 block">Read and guess the country name:</span>
+                <div className="space-y-6 max-w-xl mx-auto w-full animate-in fade-in duration-200">
+                  <div className="glass-panel p-8 rounded-3xl border border-white/5 bg-zinc-900/40 space-y-4 max-w-xs mx-auto shadow-xl">
+                    <span className="text-xs text-zinc-500 block">Read and guess the country:</span>
                     <div className="text-5xl font-black text-white">{ccData.countries[countryIdx]?.korean}</div>
                     
                     <button 
                       onClick={() => speakWord(ccData.countries[countryIdx]?.korean)}
-                      className="mx-auto p-2.5 rounded-xl bg-zinc-950 text-brand-400 hover:text-white border border-white/5 transition flex items-center gap-1 text-xs font-bold cursor-pointer"
+                      className="mx-auto p-2.5 rounded-xl bg-zinc-950 text-brand-400 hover:text-white border border-white/10 transition flex items-center gap-1.5 text-xs font-bold cursor-pointer"
                     >
-                      <Volume2 className="w-4 h-4" />
+                      <Volume2 className="w-4 h-4 animate-bounce" />
                       <span>Play Audio</span>
                     </button>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-3 gap-3">
                     {ccData.countries[countryIdx]?.english_options.map((opt: string) => (
                       <button
                         key={opt}
                         onClick={() => !countryChecked && setCountrySelected(opt)}
                         disabled={countryChecked}
-                        className={`p-3 rounded-xl border text-xs font-bold transition ${
+                        className={`p-4 rounded-xl border font-bold transition duration-150 ${
                           countrySelected === opt 
                             ? "border-brand-500 bg-brand-500/10 text-white"
                             : "border-white/5 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-300"
+                        } ${
+                          countryChecked && opt === ccData.countries[countryIdx]?.correct
+                            ? "border-accent-teal bg-accent-teal/10 text-white"
+                            : ""
+                        } ${
+                          countryChecked && countrySelected === opt && countrySelected !== ccData.countries[countryIdx]?.correct
+                            ? "border-red-500 bg-red-500/10 text-red-400"
+                            : ""
                         }`}
                       >
                         {opt}
@@ -655,21 +1067,21 @@ export default function Phase4RealWordsWizard({ activeLesson, speakWord, onCompl
                   </div>
 
                   {countryChecked && (
-                    <div className={`p-4 rounded-xl border text-xs text-left space-y-1 ${
+                    <div className={`p-4 rounded-xl border text-xs text-left space-y-1 animate-in slide-in-from-bottom-2 duration-200 ${
                       countryCorrect ? "bg-accent-teal/5 border-accent-teal/20 text-accent-teal" : "bg-red-500/5 border-red-500/10 text-red-400"
                     }`}>
-                      <p className="font-extrabold">{countryCorrect ? `맞아요! Correct!` : `Oops! Incorrect.`}</p>
+                      <p className="font-extrabold">{countryCorrect ? `맞아요! Correct! ${ccData.countries[countryIdx]?.korean} = ${ccData.countries[countryIdx]?.correct}` : `Oops! Incorrect.`}</p>
                     </div>
                   )}
 
-                  <div className="flex justify-between items-center pt-4 border-t border-white/5">
-                    <button onClick={() => setStep(3)} className="glass-panel px-4 py-2.5 rounded-xl hover:bg-white/5 text-zinc-400 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
+                  <div className="flex justify-between items-center pt-6 border-t border-white/5">
+                    <button onClick={() => setStep(8)} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
                     
                     {!countryChecked ? (
                       <button
                         onClick={handleCheckCountry}
                         disabled={!countrySelected}
-                        className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white px-5 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer"
+                        className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-zinc-950 font-black px-6 py-3 rounded-xl text-xs transition duration-200 cursor-pointer"
                       >
                         Check Country
                       </button>
@@ -685,7 +1097,7 @@ export default function Phase4RealWordsWizard({ activeLesson, speakWord, onCompl
                             setCcSubMode("match");
                           }
                         }}
-                        className="bg-accent-teal text-zinc-950 hover:bg-accent-teal/90 px-5 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer"
+                        className="bg-accent-teal text-zinc-950 hover:bg-accent-teal/90 px-6 py-3 rounded-xl text-xs font-black transition flex items-center gap-1 cursor-pointer"
                       >
                         {countryIdx < ccData.countries.length - 1 ? "Next Country" : "Go to Stage B"}
                       </button>
@@ -694,11 +1106,11 @@ export default function Phase4RealWordsWizard({ activeLesson, speakWord, onCompl
                 </div>
               ) : (
                 /* Matching exercise for countries */
-                <div className="space-y-4">
+                <div className="space-y-6 max-w-xl mx-auto w-full animate-in fade-in duration-200">
                   <p className="text-xs text-zinc-400">Match the country/city name to its English value:</p>
 
                   <div className="grid grid-cols-2 gap-8 items-start">
-                    {/* Left column Hangeul */}
+                    {/* Left Hangeul Column */}
                     <div className="space-y-2">
                       <span className="text-[10px] text-zinc-500 uppercase tracking-widest block font-bold">Hangeul Name</span>
                       {ccData.matching.map((item: any) => {
@@ -708,11 +1120,11 @@ export default function Phase4RealWordsWizard({ activeLesson, speakWord, onCompl
                             key={item.ko}
                             disabled={isMatched}
                             onClick={() => setSelectedLeftCc(item.ko)}
-                            className={`w-full p-2.5 rounded-xl border text-sm font-black transition text-center ${
+                            className={`w-full p-3.5 rounded-xl border text-sm font-black transition text-center ${
                               isMatched 
                                 ? "bg-accent-teal/5 border-accent-teal/20 text-accent-teal/40 line-through" 
                                 : selectedLeftCc === item.ko 
-                                ? "border-brand-500 bg-brand-500/10 text-white shadow-[0_0_15px_rgba(79,70,229,0.3)]" 
+                                ? "border-brand-500 bg-brand-500/10 text-white shadow-[0_0_15px_rgba(79,70,229,0.2)]" 
                                 : "border-white/5 bg-zinc-900 hover:bg-zinc-800 text-zinc-300"
                             }`}
                           >
@@ -722,7 +1134,7 @@ export default function Phase4RealWordsWizard({ activeLesson, speakWord, onCompl
                       })}
                     </div>
 
-                    {/* Right column English */}
+                    {/* Right English Column */}
                     <div className="space-y-2">
                       <span className="text-[10px] text-zinc-500 uppercase tracking-widest block font-bold">English Meaning</span>
                       {ccData.matching.map((item: any) => {
@@ -734,15 +1146,15 @@ export default function Phase4RealWordsWizard({ activeLesson, speakWord, onCompl
                             key={item.en}
                             disabled={isMatched || !selectedLeftCc}
                             onClick={() => {
-                              // Verify if matches correctly
                               const correctVal = ccData.matching.find((i: any) => i.ko === selectedLeftCc);
                               if (correctVal && correctVal.en === item.en) {
                                 handleMatchCc(selectedLeftCc!, item.en);
+                                playCorrectSound();
                               } else {
-                                alert("Not a match! Try again.");
+                                playWrongSound();
                               }
                             }}
-                            className={`w-full p-2.5 rounded-xl border text-sm font-bold transition text-center ${
+                            className={`w-full p-3.5 rounded-xl border text-sm font-bold transition text-center ${
                               isMatched 
                                 ? "bg-accent-teal/5 border-accent-teal/20 text-accent-teal/40 line-through" 
                                 : selectedLeftCc 
@@ -758,15 +1170,15 @@ export default function Phase4RealWordsWizard({ activeLesson, speakWord, onCompl
                   </div>
 
                   <div className="flex justify-between items-center pt-6 border-t border-white/5">
-                    <button onClick={() => setCcSubMode("guess")} className="glass-panel px-4 py-2.5 rounded-xl hover:bg-white/5 text-zinc-400 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Stage A</button>
+                    <button onClick={() => setCcSubMode("guess")} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Stage A</button>
                     
                     <button
-                      onClick={() => setStep(5)}
+                      onClick={() => setStep(10)}
                       disabled={Object.keys(ccMatched).length < 4}
-                      className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white px-5 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
+                      className="bg-brand-500 hover:bg-brand-600 text-zinc-950 font-black px-6 py-3 rounded-xl text-xs transition flex items-center gap-1.5 cursor-pointer"
                     >
                       <span>Move to Activity 3</span>
-                      <ChevronRight className="w-4 h-4" />
+                      <ChevronRight className="w-4 h-4 text-zinc-950" />
                     </button>
                   </div>
                 </div>
@@ -776,46 +1188,40 @@ export default function Phase4RealWordsWizard({ activeLesson, speakWord, onCompl
         </div>
       )}
 
-      {/* Screen 5: Activity 3 (Korean and foreign names & transliteration) */}
-      {step === 5 && (
-        <div className="glass-panel neon-border p-8 rounded-3xl shadow-2xl w-full space-y-6 flex-grow flex flex-col justify-center">
+      {/* Screen 10: Activity 3 (Names & Transliteration) */}
+      {step === 10 && (
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center max-w-3xl mx-auto my-4 transition duration-300">
           <div className="flex justify-between items-center border-b border-white/5 pb-4">
-            <h2 className="text-xl font-black text-white flex items-center gap-2">
-              <Award className="w-5 h-5 text-brand-400" />
-              <span>Activity 3 – Names & Transliteration</span>
+            <h2 className="text-2xl font-black text-white flex items-center gap-2 tracking-tight">
+              <Award className="w-6 h-6 text-brand-400 animate-bounce" />
+              <span>Activity 3 – Names & Transliteration drills</span>
             </h2>
-            <span className="text-xs text-zinc-500 font-bold">Step 5 of 8</span>
+            <span className="text-xs text-zinc-500 font-mono font-black">Step 10 of 13</span>
           </div>
 
-          <div className="flex justify-center gap-2 border-b border-white/5 pb-4">
-            <button 
-              onClick={() => setNamesSubMode("match")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${namesSubMode === "match" ? "bg-brand-500 text-white" : "bg-zinc-900 text-zinc-400"}`}
-            >
-              Stage A: Name Match
-            </button>
-            <button 
-              onClick={() => setNamesSubMode("guess")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${namesSubMode === "guess" ? "bg-brand-500 text-white" : "bg-zinc-900 text-zinc-400"}`}
-            >
-              Stage B: Guess Name Sound
-            </button>
-            <button 
-              onClick={() => setNamesSubMode("transliterate")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${namesSubMode === "transliterate" ? "bg-brand-500 text-white" : "bg-zinc-900 text-zinc-400"}`}
-            >
-              Stage C: Hangeulize My Name
-            </button>
+          {/* Submode tabs */}
+          <div className="flex justify-center gap-2 bg-zinc-950/80 p-2 rounded-2xl border border-white/5 max-w-md mx-auto shadow-inner">
+            {["match", "guess", "transliterate"].map((mode) => (
+              <button 
+                key={mode}
+                onClick={() => setNamesSubMode(mode as any)}
+                className={`flex-1 px-4 py-2.5 rounded-xl text-xs font-bold transition duration-200 capitalize ${namesSubMode === mode ? "bg-brand-500 text-zinc-950 font-black shadow-md shadow-brand-500/10" : "text-zinc-400 hover:text-white bg-transparent"}`}
+              >
+                {mode === "match" && "Stage A: Match"}
+                {mode === "guess" && "Stage B: Guess"}
+                {mode === "transliterate" && "Stage C: Transliterate"}
+              </button>
+            ))}
           </div>
 
           {!namesData ? (
             <div className="text-center py-10"><Loader2 className="w-8 h-8 animate-spin mx-auto text-brand-400" /></div>
           ) : (
-            <div className="space-y-6 max-w-xl mx-auto w-full text-center">
+            <div className="w-full text-center">
               {/* Stage A: Name matching */}
               {namesSubMode === "match" && (
-                <div className="space-y-4">
-                  <p className="text-xs text-zinc-400">Match transliterated Hangeul names to Romanization:</p>
+                <div className="space-y-6 max-w-xl mx-auto w-full animate-in fade-in duration-200">
+                  <p className="text-xs text-zinc-400 font-sans">Match Hangeul names to their English equivalent:</p>
                   
                   <div className="grid grid-cols-2 gap-8 items-start">
                     {/* Left Column */}
@@ -827,11 +1233,11 @@ export default function Phase4RealWordsWizard({ activeLesson, speakWord, onCompl
                             key={item.ko}
                             disabled={isMatched}
                             onClick={() => setSelectedLeftName(item.ko)}
-                            className={`w-full p-2.5 rounded-xl border text-sm font-black transition text-center ${
+                            className={`w-full p-3.5 rounded-xl border text-sm font-black transition text-center ${
                               isMatched 
                                 ? "bg-accent-teal/5 border-accent-teal/20 text-accent-teal/40 line-through" 
                                 : selectedLeftName === item.ko 
-                                ? "border-brand-500 bg-brand-500/10 text-white shadow-[0_0_15px_rgba(79,70,229,0.3)]" 
+                                ? "border-brand-500 bg-brand-500/10 text-white shadow-[0_0_15px_rgba(79,70,229,0.2)]" 
                                 : "border-white/5 bg-zinc-900 hover:bg-zinc-800 text-zinc-300"
                             }`}
                           >
@@ -855,11 +1261,12 @@ export default function Phase4RealWordsWizard({ activeLesson, speakWord, onCompl
                               const correctVal = namesData.matching.find((i: any) => i.ko === selectedLeftName);
                               if (correctVal && correctVal.en === item.en) {
                                 handleMatchName(selectedLeftName!, item.en);
+                                playCorrectSound();
                               } else {
-                                alert("Not a match! Try again.");
+                                playWrongSound();
                               }
                             }}
-                            className={`w-full p-2.5 rounded-xl border text-sm font-bold transition text-center ${
+                            className={`w-full p-3.5 rounded-xl border text-sm font-bold transition text-center ${
                               isMatched 
                                 ? "bg-accent-teal/5 border-accent-teal/20 text-accent-teal/40 line-through" 
                                 : selectedLeftName 
@@ -875,15 +1282,15 @@ export default function Phase4RealWordsWizard({ activeLesson, speakWord, onCompl
                   </div>
 
                   <div className="flex justify-between items-center pt-6 border-t border-white/5">
-                    <button onClick={() => setStep(4)} className="glass-panel px-4 py-2.5 rounded-xl hover:bg-white/5 text-zinc-400 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
+                    <button onClick={() => setStep(9)} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
                     
                     <button
                       onClick={() => setNamesSubMode("guess")}
-                      disabled={Object.keys(namesMatched).length < 4}
-                      className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white px-5 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
+                      disabled={Object.keys(namesMatched).length < 3}
+                      className="bg-brand-500 hover:bg-brand-600 text-zinc-950 font-black px-6 py-3 rounded-xl text-xs transition flex items-center gap-1.5 cursor-pointer"
                     >
-                      <span>Next Stage</span>
-                      <ChevronRight className="w-4 h-4" />
+                      <span>Stage B: Guess</span>
+                      <ChevronRight className="w-4 h-4 text-zinc-950" />
                     </button>
                   </div>
                 </div>
@@ -891,30 +1298,38 @@ export default function Phase4RealWordsWizard({ activeLesson, speakWord, onCompl
 
               {/* Stage B: MCQ names */}
               {namesSubMode === "guess" && (
-                <div className="space-y-4">
-                  <div className="glass-panel p-8 rounded-2xl border border-white/5 bg-zinc-900/40 space-y-4 max-w-xs mx-auto">
+                <div className="space-y-6 max-w-xl mx-auto w-full animate-in fade-in duration-200">
+                  <div className="glass-panel p-8 rounded-3xl border border-white/5 bg-zinc-900/40 space-y-4 max-w-xs mx-auto shadow-xl">
                     <span className="text-xs text-zinc-500 block">Read and guess the romanization:</span>
                     <div className="text-4xl font-black text-white">{namesData.mcq[nameIdx]?.korean}</div>
                     
                     <button 
                       onClick={() => speakWord(namesData.mcq[nameIdx]?.korean)}
-                      className="mx-auto p-2.5 rounded-xl bg-zinc-950 text-brand-400 hover:text-white border border-white/5 transition flex items-center gap-1 text-xs font-bold cursor-pointer"
+                      className="mx-auto p-2.5 rounded-xl bg-zinc-950 text-brand-400 hover:text-white border border-white/10 transition flex items-center gap-1.5 text-xs font-bold cursor-pointer"
                     >
-                      <Volume2 className="w-4 h-4" />
+                      <Volume2 className="w-4 h-4 animate-bounce" />
                       <span>Play Audio</span>
                     </button>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-3 gap-3">
                     {namesData.mcq[nameIdx]?.english_options.map((opt: string) => (
                       <button
                         key={opt}
                         onClick={() => !nameChecked && setNameSelected(opt)}
                         disabled={nameChecked}
-                        className={`p-3 rounded-xl border text-xs font-bold transition ${
+                        className={`p-4 rounded-xl border font-bold transition duration-150 ${
                           nameSelected === opt 
                             ? "border-brand-500 bg-brand-500/10 text-white"
                             : "border-white/5 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-300"
+                        } ${
+                          nameChecked && opt === namesData.mcq[nameIdx]?.correct
+                            ? "border-accent-teal bg-accent-teal/10 text-white"
+                            : ""
+                        } ${
+                          nameChecked && nameSelected === opt && nameSelected !== namesData.mcq[nameIdx]?.correct
+                            ? "border-red-500 bg-red-500/10 text-red-400"
+                            : ""
                         }`}
                       >
                         {opt}
@@ -923,21 +1338,21 @@ export default function Phase4RealWordsWizard({ activeLesson, speakWord, onCompl
                   </div>
 
                   {nameChecked && (
-                    <div className={`p-4 rounded-xl border text-xs text-left space-y-1 ${
+                    <div className={`p-4 rounded-xl border text-xs text-left space-y-1 animate-in slide-in-from-bottom-2 duration-200 ${
                       nameCorrect ? "bg-accent-teal/5 border-accent-teal/20 text-accent-teal" : "bg-red-500/5 border-red-500/10 text-red-400"
                     }`}>
-                      <p className="font-extrabold">{nameCorrect ? `Correct!` : `Incorrect.`}</p>
+                      <p className="font-extrabold">{nameCorrect ? `Correct! Match found.` : `Incorrect.`}</p>
                     </div>
                   )}
 
-                  <div className="flex justify-between items-center pt-4 border-t border-white/5">
-                    <button onClick={() => setNamesSubMode("match")} className="glass-panel px-4 py-2.5 rounded-xl hover:bg-white/5 text-zinc-400 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
+                  <div className="flex justify-between items-center pt-6 border-t border-white/5">
+                    <button onClick={() => setNamesSubMode("match")} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Stage A</button>
                     
                     {!nameChecked ? (
                       <button
                         onClick={handleCheckName}
                         disabled={!nameSelected}
-                        className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white px-5 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer"
+                        className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-zinc-950 font-black px-6 py-3 rounded-xl text-xs transition duration-200 cursor-pointer"
                       >
                         Check Answer
                       </button>
@@ -953,7 +1368,7 @@ export default function Phase4RealWordsWizard({ activeLesson, speakWord, onCompl
                             setNamesSubMode("transliterate");
                           }
                         }}
-                        className="bg-accent-teal text-zinc-950 hover:bg-accent-teal/90 px-5 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer"
+                        className="bg-accent-teal text-zinc-950 hover:bg-accent-teal/90 px-6 py-3 rounded-xl text-xs font-black transition flex items-center gap-1 cursor-pointer"
                       >
                         {nameIdx < namesData.mcq.length - 1 ? "Next Name" : "Go to Stage C"}
                       </button>
@@ -962,14 +1377,13 @@ export default function Phase4RealWordsWizard({ activeLesson, speakWord, onCompl
                 </div>
               )}
 
-              {/* Stage C: Custom Transliterate (Calling Groq/Llama on demand ONLY when button clicked) */}
+              {/* Stage C: Custom Transliterate */}
               {namesSubMode === "transliterate" && (
-                <div className="space-y-4 text-left">
-                  <div className="bg-zinc-900/40 p-4 rounded-xl border border-white/5 space-y-2">
-                    <h4 className="font-extrabold text-white text-xs">How do you write your name in Hangeul?</h4>
+                <div className="space-y-6 text-left max-w-xl mx-auto animate-in fade-in duration-200">
+                  <div className="bg-zinc-900/40 p-5 rounded-2xl border border-white/5 space-y-2.5">
+                    <h4 className="font-black text-white text-sm">Hangeulize Your Name!</h4>
                     <p className="text-zinc-400 text-xs leading-relaxed">
-                      Korean writes names phonetically. For example, Lisa becomes <strong>리사</strong> and James becomes <strong>제임스</strong>.
-                      Type your name below to get a custom Hangeul version!
+                      Korean writes names phonetically. Enter your English name below, and our system will map it to Hangeul syllables with Gwan-Sik's advice:
                     </p>
                   </div>
 
@@ -978,14 +1392,14 @@ export default function Phase4RealWordsWizard({ activeLesson, speakWord, onCompl
                       type="text"
                       value={transInput}
                       onChange={e => setTransInput(e.target.value)}
-                      placeholder="Enter your name (e.g. Aditi, Rahul, John)..."
-                      className="flex-grow bg-zinc-950 p-3 rounded-xl border border-white/10 outline-none focus:border-brand-500 font-sans text-sm text-white"
+                      placeholder="Type your name (e.g. Liam, Arya, Jin)..."
+                      className="flex-grow bg-zinc-950 p-4 rounded-xl border border-white/10 outline-none focus:border-brand-500 font-sans text-sm text-white"
                       disabled={loadingTrans}
                     />
                     <button
                       onClick={handleTransliterate}
                       disabled={loadingTrans || !transInput.trim()}
-                      className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white font-bold px-4 py-3 rounded-xl transition text-xs flex items-center justify-center gap-1.5 cursor-pointer"
+                      className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-zinc-950 font-black px-5 py-4 rounded-xl transition duration-200 text-xs flex items-center justify-center gap-1.5 cursor-pointer"
                     >
                       {loadingTrans ? (
                         <>
@@ -999,62 +1413,66 @@ export default function Phase4RealWordsWizard({ activeLesson, speakWord, onCompl
                   </div>
 
                   {transResults.length > 0 && (
-                    <div className="bg-zinc-900/40 p-4 rounded-xl border border-white/5 space-y-3">
-                      <div className="text-[10px] text-zinc-500 uppercase tracking-widest font-black">Hangeul Suggestions:</div>
+                    <div className="bg-zinc-950 p-6 rounded-3xl border border-white/5 space-y-4 shadow-inner">
+                      <span className="text-[10px] text-zinc-500 uppercase tracking-widest font-black block">Hangeul Suggestions:</span>
                       
                       <div className="flex flex-wrap gap-2">
                         {transResults.map((sug, sIdx) => (
                           <div 
                             key={sIdx}
-                            className="bg-zinc-950 p-3.5 rounded-xl border border-white/5 flex items-center justify-between gap-4 flex-grow max-w-xs"
+                            className="bg-zinc-900/40 p-4 rounded-xl border border-white/5 flex items-center justify-between gap-4 flex-grow"
                           >
                             <div>
-                              <div className="text-2xl font-black text-white">{sug}</div>
+                              <div className="text-3xl font-black text-white">{sug}</div>
                               <button 
                                 onClick={() => speakWord(sug)}
-                                className="mt-1 text-[10px] text-brand-400 hover:text-white flex items-center gap-1 cursor-pointer"
+                                className="mt-1.5 text-[10px] text-brand-400 hover:text-white flex items-center gap-1 cursor-pointer font-bold"
                               >
-                                <Volume2 className="w-3 h-3" />
-                                <span>Pronounce</span>
+                                <Volume2 className="w-3.5 h-3.5" />
+                                <span>Pronounce suggestion</span>
                               </button>
                             </div>
                             <button
                               onClick={() => setSavedName(sug)}
-                              className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition cursor-pointer ${
+                              className={`px-3 py-1.5 rounded-lg text-[10px] font-black transition cursor-pointer ${
                                 savedName === sug 
                                   ? "bg-accent-teal text-zinc-950" 
                                   : "bg-zinc-900 hover:bg-zinc-800 text-zinc-300"
                               }`}
                             >
-                              {savedName === sug ? "My saved name" : "Save Name"}
+                              {savedName === sug ? "Saved" : "Save Name"}
                             </button>
                           </div>
                         ))}
                       </div>
 
                       {transExplanation && (
-                        <p className="text-zinc-400 text-xs italic bg-zinc-950 p-2.5 rounded-lg border border-white/[0.03] mt-2">
+                        <p className="text-zinc-400 text-xs italic bg-zinc-900/20 p-3 rounded-xl border border-white/[0.03] mt-2 leading-relaxed">
                           <strong>Why?</strong> {transExplanation}
                         </p>
                       )}
+                      
+                      <div className="pt-2 text-center">
+                        <p className="text-[10px] text-zinc-500 italic">Practice speaking your name out loud 3 times!</p>
+                      </div>
                     </div>
                   )}
 
                   {savedName && (
-                    <div className="bg-accent-teal/5 border border-accent-teal/20 text-accent-teal p-3.5 rounded-xl text-xs font-bold text-center">
-                      Saved "{savedName}" as your official bootcamp Korean name!
+                    <div className="bg-accent-teal/5 border border-accent-teal/20 text-accent-teal p-4 rounded-xl text-xs font-bold text-center">
+                      Saved "{savedName}" as your profile Hangeul name!
                     </div>
                   )}
 
-                  <div className="flex justify-between items-center pt-4 border-t border-white/5">
-                    <button onClick={() => setNamesSubMode("guess")} className="glass-panel px-4 py-2.5 rounded-xl hover:bg-white/5 text-zinc-400 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
+                  <div className="flex justify-between items-center pt-6 border-t border-white/5">
+                    <button onClick={() => setNamesSubMode("guess")} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Stage B</button>
                     
                     <button
-                      onClick={() => setStep(6)}
-                      className="bg-brand-500 hover:bg-brand-600 text-white px-5 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
+                      onClick={() => setStep(11)}
+                      className="bg-brand-500 hover:bg-brand-600 text-zinc-950 font-black px-6 py-3 rounded-xl text-xs transition flex items-center gap-1.5 cursor-pointer"
                     >
                       <span>Move to Activity 4</span>
-                      <ChevronRight className="w-4 h-4" />
+                      <ChevronRight className="w-4 h-4 text-zinc-950" />
                     </button>
                   </div>
                 </div>
@@ -1064,94 +1482,95 @@ export default function Phase4RealWordsWizard({ activeLesson, speakWord, onCompl
         </div>
       )}
 
-      {/* Screen 6: Activity 4 (Short phrases) */}
-      {step === 6 && (
-        <div className="glass-panel neon-border p-8 rounded-3xl shadow-2xl w-full space-y-6 flex-grow flex flex-col justify-center">
+      {/* Screen 11: Activity 4 (Phrases & Cloze) */}
+      {step === 11 && (
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center max-w-3xl mx-auto my-4 transition duration-300">
           <div className="flex justify-between items-center border-b border-white/5 pb-4">
-            <h2 className="text-xl font-black text-white flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-brand-400" />
-              <span>Activity 4 – Short Phrase Reading</span>
+            <h2 className="text-2xl font-black text-white flex items-center gap-2 tracking-tight">
+              <Sparkles className="w-6 h-6 text-brand-400 animate-pulse" />
+              <span>Activity 4 – Whole Phrase Reading drills</span>
             </h2>
-            <span className="text-xs text-zinc-500 font-bold">Step 6 of 8</span>
+            <span className="text-xs text-zinc-500 font-mono font-black">Step 11 of 13</span>
           </div>
 
-          <div className="flex justify-center gap-2 border-b border-white/5 pb-4">
-            <button 
-              onClick={() => setPhrasesSubMode("read")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${phrasesSubMode === "read" ? "bg-brand-500 text-white" : "bg-zinc-900 text-zinc-400"}`}
-            >
-              Stage A: Card Reader
-            </button>
-            <button 
-              onClick={() => setPhrasesSubMode("match")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${phrasesSubMode === "match" ? "bg-brand-500 text-white" : "bg-zinc-900 text-zinc-400"}`}
-            >
-              Stage B: Match Meanings
-            </button>
-            <button 
-              onClick={() => setPhrasesSubMode("cloze")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${phrasesSubMode === "cloze" ? "bg-brand-500 text-white" : "bg-zinc-900 text-zinc-400"}`}
-            >
-              Stage C: Missing Block Cloze
-            </button>
+          {/* Submode Selection */}
+          <div className="flex justify-center gap-2 bg-zinc-950/80 p-2 rounded-2xl border border-white/5 max-w-md mx-auto shadow-inner">
+            {["read", "match", "cloze"].map(mode => (
+              <button 
+                key={mode}
+                onClick={() => setPhrasesSubMode(mode as any)}
+                className={`flex-1 px-4 py-2.5 rounded-xl text-xs font-bold transition duration-200 capitalize ${phrasesSubMode === mode ? "bg-brand-500 text-zinc-950 font-black shadow-md shadow-brand-500/10" : "text-zinc-400 hover:text-white bg-transparent"}`}
+              >
+                {mode === "read" && "Stage A: Read"}
+                {mode === "match" && "Stage B: Match"}
+                {mode === "cloze" && "Stage C: Cloze"}
+              </button>
+            ))}
           </div>
 
           {!phrasesData ? (
             <div className="text-center py-10"><Loader2 className="w-8 h-8 animate-spin mx-auto text-brand-400" /></div>
           ) : (
-            <div className="space-y-6 max-w-xl mx-auto w-full text-center">
+            <div className="w-full text-center">
               {/* Stage A: Card reading & self-assessments */}
               {phrasesSubMode === "read" && (
-                <div className="space-y-4">
-                  <div className="glass-panel p-8 rounded-2xl border border-white/5 bg-zinc-900/40 space-y-4 max-w-xs mx-auto">
+                <div className="space-y-6 max-w-xl mx-auto w-full animate-in fade-in duration-200">
+                  <div className="glass-panel p-8 rounded-3xl border border-white/5 bg-zinc-900/40 space-y-4 max-w-xs mx-auto shadow-xl">
                     <span className="text-xs text-zinc-500 block">Classroom / Greeting Phrase {phraseIdx + 1}:</span>
                     <div className="text-3xl font-black text-white">{phrasesData.phrases[phraseIdx]?.korean}</div>
                     
                     <div className="flex justify-center gap-2 pt-2">
                       <button 
                         onClick={() => speakWord(phrasesData.phrases[phraseIdx]?.korean)}
-                        className="p-2.5 rounded-xl bg-zinc-950 text-brand-400 hover:text-white border border-white/5 transition flex items-center gap-1 text-xs font-bold cursor-pointer"
+                        className="p-3 rounded-xl bg-zinc-950 text-brand-400 hover:text-white border border-white/10 transition flex items-center gap-1.5 text-xs font-bold cursor-pointer font-mono uppercase tracking-wider"
                       >
-                        <Volume2 className="w-4 h-4" />
+                        <Volume2 className="w-4 h-4 animate-bounce" />
                         <span>Speak</span>
                       </button>
                       <button 
                         onClick={() => setShowPhraseGloss(!showPhraseGloss)}
-                        className="p-2.5 rounded-xl bg-zinc-950 text-zinc-400 hover:text-white border border-white/5 transition text-xs font-bold"
+                        className="p-3 rounded-xl bg-zinc-950 text-zinc-400 hover:text-white border border-white/10 transition text-xs font-bold uppercase tracking-wider"
                       >
-                        {showPhraseGloss ? `Gloss: ${phrasesData.phrases[phraseIdx]?.english} (Literal: ${phrasesData.phrases[phraseIdx]?.literal})` : "Reveal Meaning"}
+                        {showPhraseGloss ? `Gloss: ${phrasesData.phrases[phraseIdx]?.english}` : "Reveal Meaning"}
                       </button>
                     </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <p className="text-xs text-zinc-500">How smoothly did you read this phrase?</p>
+                  {showPhraseGloss && (
+                    <div className="text-xs text-zinc-400 bg-zinc-900/30 p-3.5 rounded-xl border border-white/5 max-w-xs mx-auto animate-in slide-in-from-bottom-2 duration-150">
+                      <span className="font-semibold block text-zinc-300">Literal Translation:</span>
+                      "{phrasesData.phrases[phraseIdx]?.literal}"
+                    </div>
+                  )}
+
+                  <div className="space-y-2 max-w-xs mx-auto">
+                    <p className="text-xs text-zinc-500">Self Assessment: How smoothly did you read this phrase?</p>
                     <div className="flex justify-center gap-2">
                       <button
                         onClick={() => setPhraseSelfChecks(prev => ({ ...prev, [phraseIdx]: "smooth" }))}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition ${
+                        className={`flex-1 px-4 py-2.5 rounded-xl text-xs font-bold border transition ${
                           phraseSelfChecks[phraseIdx] === "smooth" 
                             ? "bg-accent-teal text-zinc-950 border-accent-teal" 
                             : "border-white/5 bg-zinc-900 hover:bg-zinc-800 text-zinc-300"
                         }`}
                       >
-                        I could read it smoothly
+                        Smoothly
                       </button>
                       <button
                         onClick={() => setPhraseSelfChecks(prev => ({ ...prev, [phraseIdx]: "struggled" }))}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition ${
+                        className={`flex-1 px-4 py-2.5 rounded-xl text-xs font-bold border transition ${
                           phraseSelfChecks[phraseIdx] === "struggled" 
                             ? "bg-red-500/10 border-red-500/30 text-red-400" 
                             : "border-white/5 bg-zinc-900 hover:bg-zinc-800 text-zinc-300"
                         }`}
                       >
-                        I struggled
+                        Struggled
                       </button>
                     </div>
                   </div>
 
-                  <div className="flex justify-between items-center pt-4 border-t border-white/5">
-                    <button onClick={() => setStep(5)} className="glass-panel px-4 py-2.5 rounded-xl hover:bg-white/5 text-zinc-400 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
+                  <div className="flex justify-between items-center pt-6 border-t border-white/5">
+                    <button onClick={() => setStep(10)} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
                     
                     <button
                       onClick={() => {
@@ -1162,7 +1581,7 @@ export default function Phase4RealWordsWizard({ activeLesson, speakWord, onCompl
                           setPhrasesSubMode("match");
                         }
                       }}
-                      className="bg-brand-500 hover:bg-brand-600 text-white px-5 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer"
+                      className="bg-brand-500 hover:bg-brand-600 text-zinc-950 font-black px-6 py-3 rounded-xl text-xs transition flex items-center gap-1 cursor-pointer"
                     >
                       {phraseIdx < phrasesData.phrases.length - 1 ? "Next Phrase" : "Go to Stage B"}
                     </button>
@@ -1172,12 +1591,12 @@ export default function Phase4RealWordsWizard({ activeLesson, speakWord, onCompl
 
               {/* Stage B: Meaning matching */}
               {phrasesSubMode === "match" && (
-                <div className="space-y-4">
+                <div className="space-y-6 max-w-xl mx-auto w-full animate-in fade-in duration-200">
                   <p className="text-xs text-zinc-400">Match the phrases to their standard English meanings:</p>
                   
                   <div className="grid grid-cols-2 gap-8 items-start font-sans">
                     {/* Left Column */}
-                    <div className="space-y-2 font-sans">
+                    <div className="space-y-2">
                       {phrasesData.matching.map((item: any) => {
                         const isMatched = phrasesMatched[item.ko] !== undefined;
                         return (
@@ -1185,11 +1604,11 @@ export default function Phase4RealWordsWizard({ activeLesson, speakWord, onCompl
                             key={item.ko}
                             disabled={isMatched}
                             onClick={() => setSelectedLeftPhrase(item.ko)}
-                            className={`w-full p-2.5 rounded-xl border text-sm font-black transition text-center ${
+                            className={`w-full p-3 rounded-xl border text-sm font-black transition text-center ${
                               isMatched 
                                 ? "bg-accent-teal/5 border-accent-teal/20 text-accent-teal/40 line-through" 
                                 : selectedLeftPhrase === item.ko 
-                                ? "border-brand-500 bg-brand-500/10 text-white shadow-[0_0_15px_rgba(79,70,229,0.3)]" 
+                                ? "border-brand-500 bg-brand-500/10 text-white shadow-[0_0_15px_rgba(79,70,229,0.2)]" 
                                 : "border-white/5 bg-zinc-900 hover:bg-zinc-800 text-zinc-300"
                             }`}
                           >
@@ -1213,11 +1632,12 @@ export default function Phase4RealWordsWizard({ activeLesson, speakWord, onCompl
                               const correctVal = phrasesData.matching.find((i: any) => i.ko === selectedLeftPhrase);
                               if (correctVal && correctVal.en === item.en) {
                                 handleMatchPhrase(selectedLeftPhrase!, item.en);
+                                playCorrectSound();
                               } else {
-                                alert("Not a match! Try again.");
+                                playWrongSound();
                               }
                             }}
-                            className={`w-full p-2.5 rounded-xl border text-sm font-bold transition text-center ${
+                            className={`w-full p-3 rounded-xl border text-sm font-bold transition text-center ${
                               isMatched 
                                 ? "bg-accent-teal/5 border-accent-teal/20 text-accent-teal/40 line-through" 
                                 : selectedLeftPhrase 
@@ -1233,15 +1653,15 @@ export default function Phase4RealWordsWizard({ activeLesson, speakWord, onCompl
                   </div>
 
                   <div className="flex justify-between items-center pt-6 border-t border-white/5">
-                    <button onClick={() => setPhrasesSubMode("read")} className="glass-panel px-4 py-2.5 rounded-xl hover:bg-white/5 text-zinc-400 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Stage A</button>
+                    <button onClick={() => setPhrasesSubMode("read")} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Stage A</button>
                     
                     <button
                       onClick={() => setPhrasesSubMode("cloze")}
                       disabled={Object.keys(phrasesMatched).length < 3}
-                      className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white px-5 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
+                      className="bg-brand-500 hover:bg-brand-600 text-zinc-950 font-black px-6 py-3 rounded-xl text-xs transition flex items-center gap-1.5 cursor-pointer"
                     >
-                      <span>Next Stage</span>
-                      <ChevronRight className="w-4 h-4" />
+                      <span>Stage C: Cloze</span>
+                      <ChevronRight className="w-4 h-4 text-zinc-950" />
                     </button>
                   </div>
                 </div>
@@ -1249,22 +1669,30 @@ export default function Phase4RealWordsWizard({ activeLesson, speakWord, onCompl
 
               {/* Stage C: Cloze test */}
               {phrasesSubMode === "cloze" && (
-                <div className="space-y-4">
-                  <div className="glass-panel p-8 rounded-2xl border border-white/5 bg-zinc-900/40 space-y-4 max-w-xs mx-auto">
-                    <span className="text-xs text-zinc-500 block">Fill in the missing block to complete the greeting/phrase:</span>
+                <div className="space-y-6 max-w-xl mx-auto w-full animate-in fade-in duration-200">
+                  <div className="glass-panel p-8 rounded-3xl border border-white/5 bg-zinc-900/40 space-y-4 max-w-xs mx-auto shadow-xl">
+                    <span className="text-xs text-zinc-500 block">Fill in the missing block to complete:</span>
                     <div className="text-3xl font-black text-white">{phrasesData.cloze[clozeIdx]?.question}</div>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-3 gap-3">
                     {phrasesData.cloze[clozeIdx]?.options.map((opt: string) => (
                       <button
                         key={opt}
                         onClick={() => !clozeChecked && setClozeSelected(opt)}
                         disabled={clozeChecked}
-                        className={`p-3 rounded-xl border text-sm font-black transition ${
+                        className={`p-4 rounded-2xl border font-black text-2xl transition duration-150 ${
                           clozeSelected === opt 
                             ? "border-brand-500 bg-brand-500/10 text-white"
                             : "border-white/5 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-300"
+                        } ${
+                          clozeChecked && opt === phrasesData.cloze[clozeIdx]?.correct
+                            ? "border-accent-teal bg-accent-teal/10 text-white"
+                            : ""
+                        } ${
+                          clozeChecked && clozeSelected === opt && clozeSelected !== phrasesData.cloze[clozeIdx]?.correct
+                            ? "border-red-500 bg-red-500/10 text-red-400"
+                            : ""
                         }`}
                       >
                         {opt}
@@ -1273,21 +1701,21 @@ export default function Phase4RealWordsWizard({ activeLesson, speakWord, onCompl
                   </div>
 
                   {clozeChecked && (
-                    <div className={`p-4 rounded-xl border text-xs text-left space-y-1 ${
+                    <div className={`p-4 rounded-xl border text-xs text-left space-y-1 animate-in slide-in-from-bottom-2 duration-200 ${
                       clozeCorrect ? "bg-accent-teal/5 border-accent-teal/20 text-accent-teal" : "bg-red-500/5 border-red-500/10 text-red-400"
                     }`}>
                       <p className="font-extrabold">{clozeCorrect ? `Correct!` : `Incorrect.`}</p>
                     </div>
                   )}
 
-                  <div className="flex justify-between items-center pt-4 border-t border-white/5">
-                    <button onClick={() => setPhrasesSubMode("match")} className="glass-panel px-4 py-2.5 rounded-xl hover:bg-white/5 text-zinc-400 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
+                  <div className="flex justify-between items-center pt-6 border-t border-white/5">
+                    <button onClick={() => setPhrasesSubMode("match")} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Stage B</button>
                     
                     {!clozeChecked ? (
                       <button
                         onClick={handleCheckCloze}
                         disabled={!clozeSelected}
-                        className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white px-5 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer"
+                        className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-zinc-950 font-black px-6 py-3 rounded-xl text-xs transition duration-200 cursor-pointer"
                       >
                         Verify Block
                       </button>
@@ -1300,12 +1728,12 @@ export default function Phase4RealWordsWizard({ activeLesson, speakWord, onCompl
                           if (clozeIdx < phrasesData.cloze.length - 1) {
                             setClozeIdx(clozeIdx + 1);
                           } else {
-                            setStep(7);
+                            setStep(12);
                           }
                         }}
-                        className="bg-accent-teal text-zinc-950 hover:bg-accent-teal/90 px-5 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer"
+                        className="bg-accent-teal text-zinc-950 hover:bg-accent-teal/90 px-6 py-3 rounded-xl text-xs font-black transition flex items-center gap-1 cursor-pointer"
                       >
-                        {clozeIdx < phrasesData.cloze.length - 1 ? "Next Phrase" : "Go to mini-quiz"}
+                        {clozeIdx < phrasesData.cloze.length - 1 ? "Next Cloze" : "Go to mini-quiz"}
                       </button>
                     )}
                   </div>
@@ -1316,83 +1744,107 @@ export default function Phase4RealWordsWizard({ activeLesson, speakWord, onCompl
         </div>
       )}
 
-      {/* Screen 7: Mini Quiz (Choice of static or AI generation button) */}
-      {step === 7 && (
-        <div className="glass-panel neon-border p-8 rounded-3xl shadow-2xl w-full space-y-6 flex-grow flex flex-col justify-center">
+      {/* Screen 12: Mini Quiz Checkpoint */}
+      {step === 12 && (
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center max-w-3xl mx-auto my-4 transition duration-300">
           <div className="flex justify-between items-center border-b border-white/5 pb-4">
-            <h2 className="text-xl font-black text-white flex items-center gap-2">
-              <HelpCircle className="w-5 h-5 text-brand-400" />
-              <span>Phase 4 Mini‑Quiz Mastery Checkpoint</span>
+            <h2 className="text-2xl font-black text-white flex items-center gap-2 tracking-tight">
+              <Award className="w-6 h-6 text-brand-400 animate-pulse" />
+              <span>Step 12 – Real Words Mastery checkpoint</span>
             </h2>
-            <span className="text-xs text-zinc-500 font-bold">Step 7 of 8</span>
+            <span className="text-xs text-zinc-500 font-mono font-black">Step 12 of {totalSteps}</span>
           </div>
 
           {quizQuestions.length === 0 ? (
-            <div className="space-y-4 max-w-md mx-auto text-center py-6">
-              <p className="text-zinc-300 text-xs">
-                To prevent unnecessary API usage, you can choose to generate a standardized quiz or run a dynamic AI quiz generated on-demand by Llama!
-              </p>
+            <div className="text-center py-10 max-w-md mx-auto space-y-6 animate-in fade-in duration-300">
+              <div className="p-4 bg-brand-500/10 rounded-3xl border border-brand-500/25 w-fit mx-auto text-brand-400">
+                <BrainCircuit className="w-12 h-12 animate-pulse" />
+              </div>
+              <div>
+                <h3 className="text-2xl font-black text-white tracking-tight">Generate Checkpoint Quiz</h3>
+                <p className="text-xs text-zinc-400 mt-1.5 leading-relaxed">Complete proper nouns and phrases check using pre-authored static items or dynamic Llama AI generation on-demand.</p>
+              </div>
               
-              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <div className="flex flex-col gap-3 pt-4">
                 <button
                   onClick={() => handleGenerateQuiz(false)}
                   disabled={loadingQuiz}
-                  className="bg-zinc-900 border border-white/10 hover:bg-zinc-800 text-white font-bold py-3 px-6 rounded-xl transition text-xs cursor-pointer"
+                  className="w-full bg-zinc-950 hover:bg-zinc-900 border border-white/10 text-zinc-300 font-bold py-4 rounded-2xl transition duration-200 text-xs flex items-center justify-center gap-2 cursor-pointer"
                 >
-                  Standard Quiz (No API call)
+                  Load Pre-Authored static Quiz
                 </button>
                 <button
                   onClick={() => handleGenerateQuiz(true)}
                   disabled={loadingQuiz}
-                  className="bg-brand-500 hover:bg-brand-600 text-white font-bold py-3 px-6 rounded-xl transition text-xs flex items-center justify-center gap-1.5 cursor-pointer"
+                  className="w-full bg-gradient-to-r from-brand-500 to-amber-500 hover:from-brand-600 text-zinc-950 font-black py-4 rounded-2xl transition duration-200 text-xs flex items-center justify-center gap-2 shadow-lg shadow-brand-500/15 cursor-pointer"
                 >
-                  {loadingQuiz ? <Loader2 className="w-4.5 h-4.5 animate-spin" /> : <Sparkles className="w-4.5 h-4.5" />}
-                  <span>Generate AI Quiz</span>
+                  {loadingQuiz ? <Loader2 className="w-4 h-4 animate-spin text-zinc-950" /> : <Sparkles className="w-4 h-4 text-zinc-950 animate-pulse" />}
+                  <span>Generate dynamic Quiz via Llama AI</span>
                 </button>
               </div>
             </div>
           ) : quizScore !== null ? (
-            /* Quiz Score Screen & Tutor feedback option */
-            <div className="max-w-xl mx-auto w-full text-center space-y-6">
-              <div className="inline-flex p-3 bg-brand-500/10 rounded-full border border-brand-500/20 text-brand-400 animate-bounce mb-2">
-                <Award className="w-8 h-8" />
+            /* Results View */
+            <div className="max-w-xl mx-auto w-full text-center space-y-6 animate-in fade-in duration-300">
+              <div className="p-6 bg-zinc-950/80 rounded-3xl border border-white/5 space-y-5 shadow-inner">
+                <span className="text-[10px] font-mono font-bold text-zinc-500 uppercase tracking-widest block font-mono">Proper Nouns Quiz Complete</span>
+                <h3 className="text-7xl font-black bg-gradient-to-r from-brand-500 to-amber-500 bg-clip-text text-transparent filter drop-shadow-[0_2px_10px_rgba(245,158,11,0.1)]">{quizScore}%</h3>
+                
+                <p className="text-zinc-300 text-xs md:text-sm leading-relaxed max-w-sm mx-auto">
+                  {quizScore >= 80 ? "Superb work! You can comfortably read Hangeul proper nouns, foreign names, and core greeting phrases." : "Good try! We suggest reviewing loanword adaptations and proper noun spelling components."}
+                </p>
+
+                {/* Tutor feedback summary */}
+                <div className="pt-3">
+                  {tutorSummary ? (
+                    <div className="bg-zinc-900/60 p-5 rounded-2xl border border-brand-500/20 text-left text-xs leading-relaxed text-zinc-300 max-w-md mx-auto shadow-inner animate-in fade-in duration-300">
+                      <span className="text-[9px] font-black text-brand-400 block mb-1.5 uppercase tracking-widest font-mono">Gwan-Sik AI Coach Report</span>
+                      <p className="font-serif italic font-medium">"{tutorSummary}"</p>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={handleGetTutorFeedback}
+                      className="bg-zinc-900 hover:bg-zinc-850 border border-brand-500/20 text-brand-400 hover:text-brand-300 font-bold px-5 py-3 rounded-xl text-xs transition duration-200 flex items-center justify-center gap-2 mx-auto cursor-pointer"
+                      disabled={loadingTutor}
+                    >
+                      {loadingTutor ? (
+                        <>
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          <span>Generating AI advice...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="w-3.5 h-3.5 text-brand-400" />
+                          <span>Get Tutor Advice Report via Llama AI</span>
+                        </>
+                      )}
+                    </button>
+                  )}
+                </div>
               </div>
-              <h3 className="text-2xl font-black text-white">Mastery Checkpoint Result</h3>
-              <p className="text-zinc-400 text-xs">
-                You successfully completed the Phase 4 real-word reading quiz!
-              </p>
-              <div className="text-5xl font-black text-brand-400 py-2">{quizScore}%</div>
 
-              {quizMistakes.length > 0 && (
-                <div className="bg-zinc-900/40 p-4 rounded-xl border border-white/5 text-left text-xs space-y-1 max-w-sm mx-auto text-zinc-400">
-                  <p className="font-extrabold text-white text-xs mb-1">Topics needing focus:</p>
-                  <ul className="list-disc list-inside space-y-0.5">
-                    {quizMistakes.slice(0, 3).map((m, idx) => (
-                      <li key={idx} className="truncate">{m}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {/* On-demand tutor feedback generation button */}
-              {!tutorSummary ? (
-                <button
-                  onClick={handleGetTutorFeedback}
-                  disabled={loadingTutor}
-                  className="bg-brand-500/10 hover:bg-brand-500/25 border border-brand-500/20 text-brand-400 font-bold py-2.5 px-6 rounded-xl transition text-xs flex items-center justify-center gap-1.5 mx-auto cursor-pointer"
+              <div className="flex justify-between items-center pt-6 border-t border-white/5">
+                <button 
+                  onClick={() => {
+                    setQuizQuestions([]);
+                    setQuizIdx(0);
+                    setQuizSelected(null);
+                    setQuizChecked(false);
+                    setQuizCorrect(null);
+                    setQuizScore(null);
+                    setQuizMistakes([]);
+                    setTutorSummary(null);
+                  }} 
+                  className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-xs font-bold transition cursor-pointer"
                 >
-                  {loadingTutor ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
-                  <span>Ask Tutor Gwan-Sik for Advice</span>
+                  Retake Quiz
                 </button>
-              ) : (
-                <div className="bg-zinc-950 p-4 rounded-xl border border-white/[0.03] text-left text-xs max-w-md mx-auto space-y-2">
-                  <span className="text-[9px] font-black text-brand-400 uppercase tracking-widest block font-sans">Tutor Gwan-Sik says:</span>
-                  <p className="text-zinc-300 leading-relaxed font-sans select-none">&ldquo;{tutorSummary}&rdquo;</p>
-                </div>
-              )}
-
-              <div className="flex justify-center pt-4 border-t border-white/5">
-                <button onClick={() => setStep(8)} className="bg-accent-teal text-zinc-950 hover:bg-accent-teal/90 px-6 py-3 rounded-xl text-xs font-bold transition cursor-pointer">Continue to Homework &amp; Summary</button>
+                <button 
+                  onClick={() => setStep(13)} 
+                  className="bg-brand-500 hover:bg-brand-600 text-zinc-950 px-6 py-3 rounded-xl text-xs font-black transition flex items-center gap-1 cursor-pointer"
+                >
+                  View Homework <ChevronRight className="w-4 h-4 text-zinc-950" />
+                </button>
               </div>
             </div>
           ) : (
@@ -1400,37 +1852,44 @@ export default function Phase4RealWordsWizard({ activeLesson, speakWord, onCompl
             <div className="max-w-xl mx-auto w-full text-center space-y-6">
               <div>
                 <span className="text-xs text-zinc-500 block">Question {quizIdx + 1} of {quizQuestions.length}</span>
-                <h3 className="text-xl font-bold text-white mt-1 leading-snug">{quizQuestions[quizIdx]?.question}</h3>
+                <h3 className="text-xl font-black text-white mt-1 leading-snug">{quizQuestions[quizIdx]?.question}</h3>
               </div>
 
-              <div className="space-y-2.5">
+              <div className="space-y-3">
                 {quizQuestions[quizIdx]?.options.map((opt: string) => (
                   <button
                     key={opt}
                     onClick={() => !quizChecked && setQuizSelected(opt)}
                     disabled={quizChecked}
-                    className={`w-full text-left p-3.5 rounded-xl font-medium transition flex items-center justify-between border ${
+                    className={`w-full p-4 rounded-xl font-bold transition flex items-center justify-between border ${
                       quizSelected === opt 
                         ? "border-brand-500 bg-brand-500/10 text-white shadow-inner" 
                         : "border-white/5 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-300"
-                    } ${quizChecked && opt === quizQuestions[quizIdx]?.correct_answer ? "border-accent-teal bg-accent-teal/10 text-white" : ""}`}
+                    } ${
+                      quizChecked && opt === quizQuestions[quizIdx]?.correct_answer 
+                        ? "border-accent-teal bg-accent-teal/10 text-white" 
+                        : ""
+                    } ${
+                      quizChecked && quizSelected === opt && quizSelected !== quizQuestions[quizIdx]?.correct_answer
+                        ? "border-red-500 bg-red-500/10 text-red-400"
+                        : ""
+                    }`}
                   >
                     <span>{opt}</span>
-                    {quizSelected === opt && <CheckCircle2 className="w-4 h-4 text-brand-400" />}
                   </button>
                 ))}
               </div>
 
               {quizChecked && (
-                <div className={`p-4 rounded-xl border text-xs text-left space-y-1 ${
+                <div className={`p-5 rounded-2xl border text-xs text-left space-y-2 animate-in slide-in-from-bottom-2 duration-200 ${
                   quizCorrect ? "bg-accent-teal/5 border-accent-teal/20 text-accent-teal" : "bg-red-500/5 border-red-500/10 text-red-400"
                 }`}>
-                  <p className="font-extrabold">{quizCorrect ? "Correct!" : "Incorrect."}</p>
-                  <p>{quizQuestions[quizIdx]?.explanation}</p>
+                  <p className="font-black text-sm">{quizCorrect ? "Correct!" : "Incorrect."}</p>
+                  <p className="text-zinc-300">{quizQuestions[quizIdx]?.explanation}</p>
                 </div>
               )}
 
-              <div className="flex justify-between items-center pt-4 border-t border-white/5">
+              <div className="flex justify-between items-center pt-6 border-t border-white/5">
                 <button 
                   onClick={() => {
                     setQuizQuestions([]);
@@ -1439,7 +1898,7 @@ export default function Phase4RealWordsWizard({ activeLesson, speakWord, onCompl
                     setQuizChecked(false);
                     setQuizCorrect(null);
                   }} 
-                  className="glass-panel px-4 py-2.5 rounded-xl hover:bg-white/5 text-zinc-400 text-xs font-bold transition cursor-pointer"
+                  className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-xs font-bold transition cursor-pointer"
                 >
                   Reset Quiz
                 </button>
@@ -1448,7 +1907,7 @@ export default function Phase4RealWordsWizard({ activeLesson, speakWord, onCompl
                   <button
                     onClick={handleCheckQuiz}
                     disabled={!quizSelected}
-                    className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white px-5 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer"
+                    className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-zinc-950 font-black px-6 py-3 rounded-xl text-xs transition duration-200 cursor-pointer"
                   >
                     Check Quiz Answer
                   </button>
@@ -1464,7 +1923,7 @@ export default function Phase4RealWordsWizard({ activeLesson, speakWord, onCompl
                         handleSubmitQuiz();
                       }
                     }}
-                    className="bg-accent-teal text-zinc-950 hover:bg-accent-teal/90 px-5 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer"
+                    className="bg-accent-teal text-zinc-950 hover:bg-accent-teal/90 px-6 py-3 rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer"
                   >
                     {quizIdx < quizQuestions.length - 1 ? "Next Question" : "Submit & Score Quiz"}
                   </button>
@@ -1475,68 +1934,49 @@ export default function Phase4RealWordsWizard({ activeLesson, speakWord, onCompl
         </div>
       )}
 
-      {/* Screen 8: Homework & Recommendations (Finish Bootcamp CTA) */}
-      {step === 8 && (
-        <div className="glass-panel neon-border p-8 rounded-3xl shadow-2xl w-full space-y-6 flex-grow flex flex-col justify-center">
-          <div className="flex justify-between items-center border-b border-white/5 pb-4">
-            <h2 className="text-xl font-black text-white flex items-center gap-2">
-              <Award className="w-5 h-5 text-brand-400" />
-              <span>Bootcamp Complete – Phase 4 Homework & Recommendations</span>
-            </h2>
-            <span className="text-xs text-zinc-500 font-bold">Step 8 of 8</span>
+      {/* Screen 13: Homework & Badge Completion */}
+      {step === 13 && (
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center text-center max-w-xl mx-auto my-4 transition duration-300">
+          <div className="p-4 bg-brand-500/10 rounded-3xl border border-brand-500/25 w-fit mx-auto text-brand-400 animate-bounce">
+            <Award className="w-12 h-12" />
+          </div>
+          
+          <div className="space-y-2">
+            <h2 className="text-3xl font-black text-white tracking-tight">Hangeul Bootcamp Complete! 🇰🇷✨</h2>
+            <p className="text-zinc-400 text-xs font-sans">You have finished all 4 phases of Course 0! You are ready to start Everyday Basics.</p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start text-xs md:text-sm text-zinc-300">
-            <div className="space-y-4">
-              <div className="bg-zinc-900/40 p-4 rounded-xl border border-white/5 space-y-2">
-                <h4 className="font-extrabold text-white text-xs">Bootcamp Reading Complete!</h4>
-                <p className="text-zinc-400 text-xs leading-relaxed">
-                  Congratulations! You've learned how vowels and consonants combine, decoded syllable structures, and practiced reading real Korean names, loanwords, and greeting phrases.
-                </p>
-                <p className="text-zinc-400 text-xs leading-relaxed">
-                  You are now fully prepared for **Korean 1: Everyday Basics (A1)**!
-                </p>
+          {recommendations && (
+            <div className="bg-zinc-950/80 p-6 rounded-2xl border border-white/5 text-left text-xs space-y-4 font-sans leading-relaxed shadow-inner">
+              <div>
+                <span className="text-[9px] font-black uppercase tracking-wider text-green-400 block mb-0.5 font-mono">Strengths</span>
+                <p className="text-zinc-300 font-medium">{recommendations.strength}</p>
               </div>
-
-              <div className="bg-zinc-900/40 p-4 rounded-xl border border-white/5 space-y-2 text-zinc-400 text-xs leading-relaxed">
-                <h4 className="font-extrabold text-white text-xs">Self-paced Challenge Tasks:</h4>
-                <ul className="list-disc list-inside space-y-1">
-                  <li>Find 5 items in your house and try spelling them phonetically in Hangeul!</li>
-                  <li>Search YouTube for basic Korean road signs or brand logos to practice reading.</li>
+              <div>
+                <span className="text-[9px] font-black uppercase tracking-wider text-yellow-400 block mb-0.5 font-mono">Revision Focus</span>
+                <p className="text-zinc-300 font-medium">{recommendations.weakness}</p>
+              </div>
+              <div className="bg-zinc-900/40 p-4 rounded-xl border border-white/[0.03] space-y-3">
+                <span className="text-[9px] font-black uppercase tracking-widest text-brand-400 block font-mono">Homework Routine:</span>
+                <ul className="list-decimal list-inside space-y-2 text-zinc-400 pl-1">
+                  <li>Read all Phase 4 Hangeul loanwords aloud once/day.</li>
+                  <li>Read proper noun country list (한국, 일본, 미국, 영국).</li>
+                  <li>Write your custom Hangeulized name 5 times.</li>
+                  <li>
+                    Search YouTube for: <strong className="text-white select-all">"{recommendations.youtube_search}"</strong>.
+                  </li>
                 </ul>
               </div>
             </div>
+          )}
 
-            {recommendations && (
-              <div className="bg-zinc-900/40 p-5 rounded-2xl border border-white/5 space-y-3.5">
-                <h3 className="text-xs font-black uppercase text-amber-400 tracking-wider">Your Mastery Profile:</h3>
-                
-                <div>
-                  <span className="text-[9px] font-black uppercase tracking-wider text-green-400 block mb-0.5 font-sans">Strengths</span>
-                  <p className="text-zinc-300 font-medium text-xs">{recommendations.strength}</p>
-                </div>
-                <div>
-                  <span className="text-[9px] font-black uppercase tracking-wider text-yellow-400 block mb-0.5 font-sans">Focus revisions</span>
-                  <p className="text-zinc-300 font-medium text-xs">{recommendations.weakness}</p>
-                </div>
-                
-                <div className="bg-zinc-950 p-4 rounded-xl border border-white/[0.03] space-y-2">
-                  <span className="text-[9px] font-black uppercase tracking-widest text-brand-400 block font-sans">Recommended Search Query:</span>
-                  <p className="text-white text-xs select-all bg-zinc-900 p-2 rounded border border-white/5 font-mono">"{recommendations.youtube_search}"</p>
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div className="flex justify-center pt-6 border-t border-white/5">
-            <button
-              onClick={onComplete}
-              className="bg-gradient-to-r from-brand-500 to-amber-500 hover:from-brand-600 text-zinc-950 font-black py-4 px-8 rounded-2xl transition text-sm flex items-center justify-center gap-2 shadow-lg shadow-brand-500/20 cursor-pointer"
-            >
-              <span>Finish Bootcamp &amp; Claim Badge</span>
-              <ChevronRight className="w-4 h-4 text-zinc-950" />
-            </button>
-          </div>
+          <button
+            onClick={onComplete}
+            className="bg-gradient-to-r from-brand-500 to-amber-500 hover:from-brand-600 text-zinc-950 font-black py-4.5 px-10 rounded-2xl transition duration-200 text-sm flex items-center justify-center gap-2 mx-auto shadow-lg shadow-brand-500/20 cursor-pointer active:scale-95"
+          >
+            <span>Finish Phase 4 &amp; Continue</span>
+            <ChevronRight className="w-4 h-4 text-zinc-950" />
+          </button>
         </div>
       )}
     </div>
