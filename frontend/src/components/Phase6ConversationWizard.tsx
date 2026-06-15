@@ -552,29 +552,29 @@ export default function Phase6ConversationWizard({
   const totalSteps = 10;
 
   return (
-    <div className="flex-grow flex flex-col justify-between max-w-2xl mx-auto w-full font-sans">
+    <div className="flex-grow flex flex-col justify-between">
       {/* Header */}
-      <header className="flex justify-between items-center py-4 border-b border-white/5 mb-6">
-        <div className="flex items-center space-x-3">
-          <div className="p-2 rounded-xl bg-zinc-900 border border-white/10">
-            <Trophy className="w-5 h-5 text-yellow-400" />
+      <header className="flex justify-between items-center py-5 border-b border-white/5 mb-8">
+        <div className="flex items-center space-x-4">
+          <div className="p-3 rounded-2xl bg-zinc-900 border border-white/10 shadow-lg">
+            <Trophy className="w-6 h-6 text-yellow-400" />
           </div>
           <div>
-            <h2 className="font-extrabold text-lg">{activeLesson?.title || "Phase 6 – Conversation Lab"}</h2>
-            <p className="text-xs text-zinc-500 font-medium">Topic: Guided Interactive Role-Plays</p>
+            <h2 className="font-black text-xl text-white tracking-tight">{activeLesson?.title || "Phase 6 – Conversation Lab"}</h2>
+            <p className="text-xs text-zinc-400">Topic: Guided Interactive Role-Plays</p>
           </div>
         </div>
         <div className="flex items-center space-x-4">
-          <div className="w-32 h-2.5 bg-zinc-800 rounded-full overflow-hidden">
+          <div className="w-40 h-3 bg-zinc-900/80 rounded-full overflow-hidden border border-white/5 p-[2px]">
             <div 
               className="h-full bg-gradient-to-r from-yellow-500 via-orange-500 to-indigo-500 rounded-full transition-all duration-500" 
               style={{ width: `${(step / totalSteps) * 100}%` }}
             />
           </div>
-          <span className="text-xs text-zinc-400 font-bold">{Math.round((step / totalSteps) * 100)}%</span>
+          <span className="text-xs text-zinc-350 font-bold">{Math.round((step / totalSteps) * 100)}%</span>
           <button 
             onClick={() => setShowOutline(!showOutline)}
-            className="text-[10px] bg-zinc-900 border border-white/10 hover:bg-zinc-800 text-zinc-300 px-2.5 py-1 rounded transition cursor-pointer"
+            className="text-[10px] bg-zinc-900 border border-white/10 hover:bg-zinc-855 text-zinc-300 px-3 py-1.5 rounded-lg transition duration-200 cursor-pointer uppercase tracking-wider font-bold"
           >
             {showOutline ? "Hide Outline" : "View Outline"}
           </button>
@@ -583,51 +583,51 @@ export default function Phase6ConversationWizard({
 
       {/* ====== Screen 1: Welcome & Mode Select ====== */}
       {step === 1 && (
-        <div className="glass-panel neon-border p-8 rounded-3xl shadow-2xl w-full space-y-6 flex-grow flex flex-col justify-center text-center animate-fade-in">
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center text-center animate-fade-in">
           <div className="relative mx-auto w-fit">
             <div className="p-4 bg-yellow-500/10 rounded-full border border-yellow-500/25 text-yellow-400">
-              <Trophy className="w-10 h-10" />
+              <Trophy className="w-12 h-12" />
             </div>
-            <div className="absolute -top-1 -right-1 p-1 bg-brand-500 rounded-full border-2 border-zinc-950">
-              <Star className="w-3 h-3 text-white fill-white" />
+            <div className="absolute -top-1 -right-1 p-1.5 bg-brand-500 rounded-full border-2 border-zinc-950">
+              <Star className="w-4 h-4 text-white fill-white" />
             </div>
           </div>
           <div>
-            <h2 className="text-3xl font-black text-white">Hangeul 0.6</h2>
-            <h3 className="text-xl font-bold text-yellow-400 mt-1">Conversation Lab – Guided Role‑Plays (Capstone)</h3>
+            <h2 className="text-5xl font-black text-white tracking-tight">Hangeul 0.6</h2>
+            <h3 className="text-2xl font-extrabold text-yellow-400 mt-2">Conversation Lab – Guided Role‑Plays (Capstone)</h3>
           </div>
-          <p className="text-zinc-300 text-sm leading-relaxed max-w-md mx-auto">
+          <p className="text-zinc-300 text-base leading-relaxed max-w-2xl mx-auto">
             {metadata?.description ||
               "Practice short, realistic Korean conversations (3–8 turns) with an AI partner tuned to your level."}
           </p>
 
-          <div className="bg-zinc-900/60 p-5 rounded-2xl border border-white/5 text-left text-xs space-y-2 max-w-md mx-auto w-full">
+          <div className="bg-zinc-900/60 p-6 rounded-2xl border border-white/5 text-left text-sm space-y-3 max-w-2xl mx-auto w-full">
             <p className="text-[10px] text-zinc-500 font-mono uppercase tracking-wider font-black">🎯 Capstone Goals:</p>
-            <ul className="list-disc list-inside space-y-1.5 text-zinc-300 pl-1">
+            <ul className="list-disc list-inside space-y-2 text-zinc-300 pl-1">
               <li>Combine greetings, self-intro, numbers, routines, and places</li>
               <li>Practice 3–5-turn conversations on familiar topics (home, daily life, plans)</li>
               <li>Build confidence for your first real conversations in Korean</li>
             </ul>
           </div>
 
-          <div className="flex flex-wrap gap-2 justify-center max-w-md mx-auto">
+          <div className="flex flex-wrap gap-2.5 justify-center max-w-2xl mx-auto">
             {["Scenario-based", "Beginner Speaking", "Basic Dialogues", "Interactive Tutor"].map(chip => (
-              <span key={chip} className="px-3 py-1 bg-yellow-500/10 border border-yellow-500/20 rounded-full text-[10px] text-yellow-300 font-bold">{chip}</span>
+              <span key={chip} className="px-4 py-1.5 bg-yellow-500/10 border border-yellow-500/20 rounded-full text-xs text-yellow-300 font-bold">{chip}</span>
             ))}
           </div>
 
           {/* Mode Selection */}
-          <div className="bg-zinc-950 p-4 rounded-2xl border border-white/5 max-w-sm mx-auto w-full space-y-3 text-left">
+          <div className="bg-zinc-950 p-6 rounded-2xl border border-white/5 max-w-xl mx-auto w-full space-y-4 text-left">
             <div className="flex justify-between items-center">
-              <span className="text-[9px] text-zinc-500 uppercase tracking-widest font-black">⏱️ CEFR Level</span>
-              <span className="text-xs font-bold text-zinc-300">{metadata?.cefr_band || "A1/A2 (Beginner)"}</span>
+              <span className="text-[10px] text-zinc-500 uppercase tracking-widest font-black">⏱️ CEFR Level</span>
+              <span className="text-sm font-bold text-zinc-300">{metadata?.cefr_band || "A1/A2 (Beginner)"}</span>
             </div>
-            <div className="border-t border-white/[0.03] pt-3 space-y-2">
-              <span className="text-[9px] text-zinc-500 uppercase tracking-widest font-black block">Choose Conversation Mode</span>
-              <div className="grid grid-cols-2 gap-2">
+            <div className="border-t border-white/[0.03] pt-4 space-y-3">
+              <span className="text-[10px] text-zinc-500 uppercase tracking-widest font-black block">Choose Conversation Mode</span>
+              <div className="grid grid-cols-2 gap-3">
                 <button
                   onClick={() => setMode("text")}
-                  className={`p-2.5 rounded-xl border text-xs font-bold transition ${
+                  className={`p-3.5 rounded-xl border text-sm font-bold transition ${
                     mode === "text"
                       ? "border-yellow-500 bg-yellow-500/10 text-white"
                       : "border-white/5 bg-zinc-900/60 text-zinc-400 hover:border-white/10"
@@ -637,29 +637,29 @@ export default function Phase6ConversationWizard({
                 </button>
                 <button
                   onClick={() => setMode("voice")}
-                  className={`p-2.5 rounded-xl border text-xs font-bold transition flex items-center justify-center gap-1.5 ${
+                  className={`p-3.5 rounded-xl border text-sm font-bold transition flex items-center justify-center gap-2 ${
                     mode === "voice"
                       ? "border-yellow-500 bg-yellow-500/10 text-white"
                       : "border-white/5 bg-zinc-900/60 text-zinc-400 hover:border-white/10"
                   }`}
                 >
-                  <Mic className="w-3.5 h-3.5" /> Voice + Text
+                  <Mic className="w-4 h-4" /> Voice + Text
                 </button>
               </div>
             </div>
           </div>
 
-          <div className="flex flex-col gap-3 max-w-xs mx-auto pt-2">
+          <div className="flex flex-col gap-3 max-w-sm mx-auto pt-4">
             <button
               onClick={() => setStep(2)}
-              className="bg-yellow-500 hover:bg-yellow-400 text-zinc-950 font-bold py-3 px-8 rounded-xl transition text-sm flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-yellow-500/20 animate-pulse"
+              className="bg-yellow-500 hover:bg-yellow-400 text-zinc-950 font-black py-4 px-10 rounded-2xl transition text-base flex items-center justify-center gap-2.5 cursor-pointer shadow-lg shadow-yellow-500/20 animate-pulse"
             >
-              <Trophy className="w-4 h-4" /> Start Capstone Phase
+              <Trophy className="w-5 h-5" /> Start Capstone Phase
             </button>
           </div>
 
           {showOutline && (
-            <div className="bg-zinc-950 p-4 rounded-xl border border-white/5 text-left text-xs text-zinc-400 space-y-1.5 animate-fade-in max-w-md mx-auto w-full font-mono">
+            <div className="bg-zinc-950 p-6 rounded-2xl border border-white/5 text-left text-xs text-zinc-400 space-y-2 animate-fade-in max-w-2xl mx-auto w-full font-mono">
               <p className="font-extrabold text-white text-center pb-2">Capstone Activities:</p>
               <p>✓ Screen 1 – Welcome / Phase Overview</p>
               <p>✓ Screen 2-6 – Concept Interactive Scaffolding</p>
@@ -677,24 +677,24 @@ export default function Phase6ConversationWizard({
         const concept = CONCEPT_SCREENS[step];
         if (!concept) return null;
         return (
-          <div className="glass-panel neon-border p-8 rounded-3xl shadow-2xl w-full space-y-6 flex-grow flex flex-col justify-between animate-fade-in text-left">
-            <div className="space-y-4">
+          <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-between animate-fade-in text-left">
+            <div className="space-y-5">
               <div className="flex items-center gap-2 text-yellow-400">
                 <BookOpen className="w-6 h-6" />
                 <span className="text-xs font-black uppercase tracking-wider">Concept {step - 1} of 5</span>
               </div>
-              <h2 className="text-2xl font-black text-white">{concept.title}</h2>
-              <p className="text-xs text-yellow-400 font-mono italic">{concept.subtitle}</p>
+              <h2 className="text-4xl font-black text-white tracking-tight">{concept.title}</h2>
+              <p className="text-sm text-yellow-400 font-mono italic">{concept.subtitle}</p>
 
-              <div className="space-y-3 pt-2">
+              <div className="space-y-4 pt-2">
                 {concept.paragraphs.map((para, idx) => (
-                  <p key={idx} className="text-zinc-300 text-sm leading-relaxed">{para}</p>
+                  <p key={idx} className="text-zinc-300 text-base leading-relaxed">{para}</p>
                 ))}
               </div>
 
-              <div className="bg-zinc-900/60 p-4 rounded-2xl border border-white/5 space-y-2">
+              <div className="bg-zinc-900/60 p-6 rounded-2xl border border-white/5 space-y-3">
                 <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider block">Key Highlights:</span>
-                <ul className="list-disc list-inside space-y-1 text-xs text-zinc-300 pl-1">
+                <ul className="list-disc list-inside space-y-2 text-sm text-zinc-300 pl-1">
                   {concept.bulletPoints.map((pt, idx) => (
                     <li key={idx}>{pt}</li>
                   ))}
@@ -702,14 +702,14 @@ export default function Phase6ConversationWizard({
               </div>
 
               {/* Micro-question Section */}
-              <div className="mt-6 border-t border-white/5 pt-6 space-y-4">
+              <div className="mt-8 border-t border-white/5 pt-8 space-y-5">
                 <div className="flex items-center gap-2">
                   <HelpCircle className="w-5 h-5 text-yellow-400 animate-bounce" />
                   <span className="text-xs font-black uppercase tracking-widest text-zinc-400">Concept Check</span>
                 </div>
-                <p className="text-sm font-bold text-white leading-snug">{concept.question.stem}</p>
+                <p className="text-base font-extrabold text-white leading-snug">{concept.question.stem}</p>
 
-                <div className="grid grid-cols-1 gap-2.5">
+                <div className="grid grid-cols-1 gap-3">
                   {concept.question.options.map((opt) => {
                     const isSelected = selectedOption === opt.id;
                     const isCorrectOption = opt.id === concept.question.correctId;
@@ -738,7 +738,7 @@ export default function Phase6ConversationWizard({
                             playWrongSound();
                           }
                         }}
-                        className={`p-3.5 rounded-xl border text-xs font-semibold text-left transition duration-300 flex justify-between items-center ${buttonStyle}`}
+                        className={`p-4 rounded-xl border text-sm font-semibold text-left transition duration-300 flex justify-between items-center ${buttonStyle}`}
                       >
                         <span>{opt.text}</span>
                         {questionChecked && isCorrectOption && <Check className="w-4 h-4 text-emerald-400" />}
@@ -749,7 +749,7 @@ export default function Phase6ConversationWizard({
                 </div>
 
                 {questionChecked && (
-                  <div className="p-3.5 rounded-xl bg-zinc-950/60 border border-white/5 text-xs text-zinc-400 leading-relaxed font-sans mt-3">
+                  <div className="p-4 rounded-xl bg-zinc-950/60 border border-white/5 text-sm text-zinc-400 leading-relaxed font-sans mt-3">
                     <strong className="text-zinc-200 block mb-1">Tutor Explanation:</strong>
                     {concept.question.explanation}
                   </div>
@@ -757,17 +757,17 @@ export default function Phase6ConversationWizard({
               </div>
             </div>
 
-            <div className="flex justify-between items-center pt-4 border-t border-white/5">
+            <div className="flex justify-between items-center pt-6 border-t border-white/5">
               <button
                 onClick={() => setStep(step - 1)}
-                className="px-4 py-2 bg-zinc-900 hover:bg-zinc-800 rounded-lg text-xs font-bold text-zinc-400 transition"
+                className="px-5 py-3 bg-zinc-900 hover:bg-zinc-800 rounded-lg text-sm font-bold text-zinc-400 transition"
               >
                 Back
               </button>
               <button
                 onClick={() => setStep(step + 1)}
                 disabled={!questionChecked}
-                className="px-6 py-2.5 bg-yellow-500 disabled:opacity-40 hover:bg-yellow-400 text-zinc-950 font-black rounded-lg text-xs transition flex items-center gap-1.5 cursor-pointer shadow shadow-yellow-500/15"
+                className="px-8 py-3 bg-yellow-500 disabled:opacity-40 hover:bg-yellow-400 text-zinc-950 font-black rounded-lg text-sm transition flex items-center gap-2 cursor-pointer shadow shadow-yellow-500/15"
               >
                 <span>Continue</span>
                 <ChevronRight className="w-4 h-4 text-zinc-950" />
@@ -779,34 +779,34 @@ export default function Phase6ConversationWizard({
 
       {/* ====== Screen 7: Scenario Selection (Old Screen 2) ====== */}
       {step === 7 && (
-        <div className="glass-panel neon-border p-8 rounded-3xl shadow-2xl w-full space-y-6 flex-grow flex flex-col justify-center animate-fade-in text-left">
-          <div className="border-b border-white/5 pb-4">
-            <h2 className="text-2xl font-black text-white">Select a Role-Play Scenario</h2>
-            <p className="text-xs text-zinc-500">Pick a situation to practice with Gwan-Sik</p>
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in text-left">
+          <div className="border-b border-white/5 pb-5">
+            <h2 className="text-4xl font-black text-white tracking-tight">Select a Role-Play Scenario</h2>
+            <p className="text-sm text-zinc-400 mt-1">Pick a situation to practice with Gwan-Sik</p>
           </div>
 
           {/* Recommended scenarios */}
           {recommendedScenarios.length > 0 && (
-            <div className="space-y-3">
-              <span className="text-xs font-black uppercase text-amber-400 tracking-wider flex items-center gap-1">
-                <Sparkles className="w-3.5 h-3.5" />
+            <div className="space-y-4">
+              <span className="text-xs font-black uppercase text-amber-400 tracking-wider flex items-center gap-1.5">
+                <Sparkles className="w-4 h-4" />
                 <span>Recommended For Your Level</span>
               </span>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {recommendedScenarios.map((sc) => (
                   <div
                     key={sc.id}
                     onClick={() => handleStartScenario(sc)}
-                    className="glass-panel p-5 rounded-2xl border border-amber-500/20 bg-amber-500/[0.02] hover:border-amber-400/50 hover:bg-amber-500/[0.04] transition cursor-pointer text-left space-y-3 group"
+                    className="glass-panel p-6 rounded-2xl border border-amber-500/20 bg-amber-500/[0.02] hover:border-amber-400/50 hover:bg-amber-500/[0.04] transition cursor-pointer text-left space-y-3.5 group animate-in fade-in zoom-in-95 duration-200"
                   >
                     <div className="flex justify-between items-start">
-                      <h4 className="font-extrabold text-white text-base group-hover:text-amber-300">{sc.title}</h4>
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500/20 text-amber-300">
+                      <h4 className="font-extrabold text-white text-lg group-hover:text-amber-300">{sc.title}</h4>
+                      <span className="text-[10px] font-bold px-2.5 py-1 rounded bg-amber-500/20 text-amber-300 font-mono">
                         {sc.cefr_level}
                       </span>
                     </div>
-                    <p className="text-xs text-zinc-400 leading-relaxed">{sc.description}</p>
-                    <div className="text-[10px] font-mono text-zinc-500 pt-1 border-t border-white/5">
+                    <p className="text-sm text-zinc-400 leading-relaxed">{sc.description}</p>
+                    <div className="text-xs font-mono text-zinc-550 pt-2 border-t border-white/5">
                       Focus: {sc.focus_grammar}
                     </div>
                   </div>
@@ -816,25 +816,25 @@ export default function Phase6ConversationWizard({
           )}
 
           {/* All Scenarios catalog */}
-          <div className="space-y-3">
+          <div className="space-y-4">
             <span className="text-xs font-black uppercase text-zinc-400 tracking-wider">All Scenarios</span>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {scenarios
                 .filter((s) => !recommendedScenarios.some((r) => r.id === s.id))
                 .map((sc) => (
                   <div
                     key={sc.id}
                     onClick={() => handleStartScenario(sc)}
-                    className="glass-panel p-5 rounded-2xl border border-white/5 bg-zinc-900/30 hover:border-yellow-500/30 hover:bg-zinc-900/60 transition cursor-pointer text-left space-y-3 group"
+                    className="glass-panel p-6 rounded-2xl border border-white/5 bg-zinc-900/30 hover:border-yellow-500/30 hover:bg-zinc-900/60 transition cursor-pointer text-left space-y-3.5 group animate-in fade-in zoom-in-95 duration-200"
                   >
                     <div className="flex justify-between items-start">
-                      <h4 className="font-extrabold text-white text-base group-hover:text-yellow-400">{sc.title}</h4>
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-zinc-800 text-zinc-400">
+                      <h4 className="font-extrabold text-white text-lg group-hover:text-yellow-400">{sc.title}</h4>
+                      <span className="text-[10px] font-bold px-2.5 py-1 rounded bg-zinc-800 text-zinc-400 font-mono">
                         {sc.cefr_level}
                       </span>
                     </div>
-                    <p className="text-xs text-zinc-400 leading-relaxed">{sc.description}</p>
-                    <div className="text-[10px] font-mono text-zinc-500 pt-1 border-t border-white/5">
+                    <p className="text-sm text-zinc-400 leading-relaxed">{sc.description}</p>
+                    <div className="text-xs font-mono text-zinc-550 pt-2 border-t border-white/5">
                       Focus: {sc.focus_grammar}
                     </div>
                   </div>
@@ -842,10 +842,10 @@ export default function Phase6ConversationWizard({
             </div>
           </div>
 
-          <div className="flex justify-start pt-2">
+          <div className="flex justify-start pt-4">
             <button
               onClick={() => setStep(6)}
-              className="glass-panel px-4 py-2.5 rounded-xl hover:bg-white/5 text-zinc-400 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
+              className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-450 text-sm font-bold transition flex items-center gap-2 cursor-pointer"
             >
               <ChevronLeft className="w-4 h-4" /> Back to Theory
             </button>
@@ -855,42 +855,42 @@ export default function Phase6ConversationWizard({
 
       {/* ====== Screen 8: Chat Runtime UI (Old Screen 3) ====== */}
       {step === 8 && (
-        <div className="glass-panel neon-border p-6 rounded-3xl shadow-2xl w-full flex-grow flex flex-col justify-between min-h-[60vh] max-w-3xl mx-auto relative overflow-hidden text-left">
+        <div className="glass-panel neon-border p-8 rounded-[2.5rem] shadow-2xl w-full flex-grow flex flex-col justify-between min-h-[65vh] relative overflow-hidden text-left">
           {/* Convo Header info */}
-          <div className="flex justify-between items-center border-b border-white/5 pb-3.5 mb-4 shrink-0">
+          <div className="flex justify-between items-center border-b border-white/5 pb-4 mb-6 shrink-0">
             <div>
-              <span className="text-[10px] font-bold text-yellow-400 uppercase tracking-widest block">Role-Play Scenario</span>
-              <h3 className="text-base font-extrabold text-white">{currentScenario?.title}</h3>
+              <span className="text-[10px] font-bold text-yellow-400 uppercase tracking-widest block font-mono">Role-Play Scenario</span>
+              <h3 className="text-xl font-black text-white">{currentScenario?.title}</h3>
             </div>
             <div className="text-right">
-              <span className="text-[10px] font-mono text-zinc-500 bg-zinc-900 px-2 py-0.5 rounded border border-white/5">
+              <span className="text-xs font-mono text-zinc-400 bg-zinc-900 px-3 py-1 rounded border border-white/5">
                 Role: {currentScenario?.role}
               </span>
             </div>
           </div>
 
           {/* Message Area */}
-          <div className="flex-grow overflow-y-auto space-y-4 pr-1 mb-4 max-h-[45vh] min-h-[30vh]">
+          <div className="flex-grow overflow-y-auto space-y-6 pr-2 mb-6 max-h-[50vh] min-h-[35vh]">
             {chatMessages.map((msg, i) => (
               <div
                 key={i}
-                className={`flex gap-3 max-w-[85%] ${msg.sender === "user" ? "ml-auto flex-row-reverse" : "mr-auto"}`}
+                className={`flex gap-4 max-w-[85%] ${msg.sender === "user" ? "ml-auto flex-row-reverse" : "mr-auto"}`}
               >
                 {/* Avatar Icon */}
                 <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 border ${
+                  className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 border shadow-md ${
                     msg.sender === "user"
                       ? "bg-brand-500/10 text-brand-400 border-brand-500/20"
                       : "bg-zinc-800 text-zinc-300 border-white/10"
                   }`}
                 >
-                  {msg.sender === "user" ? <User className="w-4 h-4" /> : <Sparkles className="w-4 h-4" />}
+                  {msg.sender === "user" ? <User className="w-5 h-5" /> : <Sparkles className="w-5 h-5" />}
                 </div>
 
                 {/* Bubble content */}
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   <div
-                    className={`p-3.5 rounded-2xl text-sm leading-relaxed relative ${
+                    className={`p-4.5 rounded-2xl text-base leading-relaxed relative shadow-md ${
                       msg.sender === "user"
                         ? "bg-brand-500 text-zinc-950 font-semibold rounded-tr-none"
                         : "bg-zinc-900 text-zinc-100 rounded-tl-none border border-white/5"
@@ -900,33 +900,33 @@ export default function Phase6ConversationWizard({
                     {msg.sender === "ai" && (
                       <button
                         onClick={() => playAudioUrl(msg.text)}
-                        className="absolute right-2 top-2 p-1 rounded bg-zinc-950 text-zinc-500 hover:text-white transition opacity-60 hover:opacity-100 cursor-pointer"
+                        className="absolute right-3 top-3 p-1.5 rounded-lg bg-zinc-950 text-zinc-400 hover:text-white transition opacity-65 hover:opacity-100 cursor-pointer"
                         title="Listen speak audio"
                       >
-                        <Volume2 className="w-3.5 h-3.5" />
+                        <Volume2 className="w-4 h-4" />
                       </button>
                     )}
 
-                    <p>{msg.text}</p>
+                    <p className="pr-6">{msg.text}</p>
 
                     {/* Word highlight score for voice user attempt */}
                     {msg.sender === "user" && msg.pronScore !== undefined && (
-                      <span className="block text-[9px] text-zinc-950/70 font-mono mt-1 font-bold">
+                      <span className="block text-xs text-zinc-950/70 font-mono mt-1.5 font-black">
                         Acoustic alignment: {msg.pronScore.toFixed(0)}%
                       </span>
                     )}
 
                     {/* Corrections if any */}
                     {msg.correction && (
-                      <div className="mt-2 pt-2 border-t border-red-500/20 text-xs text-red-400 font-sans space-y-1.5">
+                      <div className="mt-3 pt-3 border-t border-red-500/20 text-sm text-red-400 font-sans space-y-2">
                         <p className="font-extrabold flex items-center gap-1">⚠️ Correction:</p>
-                        <p className="italic bg-red-500/5 p-1.5 rounded">{msg.correction}</p>
+                        <p className="italic bg-red-500/5 p-2 rounded-lg">{msg.correction}</p>
                       </div>
                     )}
 
                     {/* Grammar note tooltip */}
                     {msg.grammarNotes && !msg.correction && (
-                      <div className="mt-2 pt-1 border-t border-yellow-500/10 text-[10px] text-yellow-300">
+                      <div className="mt-3 pt-2 border-t border-yellow-500/10 text-xs text-yellow-300">
                         💡 Tip: {msg.grammarNotes}
                       </div>
                     )}
@@ -943,12 +943,12 @@ export default function Phase6ConversationWizard({
                             return next;
                           });
                         }}
-                        className="text-[10px] text-zinc-500 hover:text-zinc-300 font-bold transition"
+                        className="text-xs text-zinc-500 hover:text-zinc-300 font-bold transition"
                       >
                         {msg.showTranslation ? "Hide English" : "Translate"}
                       </button>
                       {msg.showTranslation && (
-                        <p className="text-xs text-zinc-400 italic mt-0.5 font-sans">
+                        <p className="text-sm text-zinc-400 italic mt-1 font-sans leading-relaxed animate-in fade-in duration-200">
                           {msg.englishTranslation}
                         </p>
                       )}
@@ -960,13 +960,13 @@ export default function Phase6ConversationWizard({
 
             {/* Comprehension check rendered inline in log */}
             {chatMessages.length >= 3 && !inlineChecked && (
-              <div className="my-4 p-5 rounded-2xl border border-yellow-500/30 bg-yellow-500/[0.03] space-y-4">
+              <div className="my-6 p-6 rounded-3xl border border-yellow-500/30 bg-yellow-500/[0.03] space-y-5 animate-in fade-in duration-300">
                 <div className="flex items-center gap-2">
                   <HelpCircle className="w-5 h-5 text-yellow-400 animate-bounce" />
                   <span className="text-xs font-black uppercase tracking-widest text-yellow-400">Comprehension Check</span>
                 </div>
-                <p className="text-sm font-bold text-white">What did Gwan-Sik ask you or say in the dialogue?</p>
-                <div className="grid grid-cols-1 gap-2">
+                <p className="text-base font-extrabold text-white leading-snug">What did Gwan-Sik ask you or say in the dialogue?</p>
+                <div className="grid grid-cols-1 gap-3">
                   {[
                     { id: "A", text: "To order a beverage or introduce yourself" },
                     { id: "B", text: "What country you are from" },
@@ -990,7 +990,7 @@ export default function Phase6ConversationWizard({
                             playWrongSound();
                           }
                         }}
-                        className={`p-3 rounded-xl border text-xs font-bold text-left transition flex justify-between items-center ${btnStyle}`}
+                        className={`p-4 rounded-xl border text-sm font-bold text-left transition flex justify-between items-center ${btnStyle}`}
                       >
                         <span>{opt.text}</span>
                         {inlineSelected !== null && opt.id === "A" && <Check className="w-4 h-4 text-emerald-400" />}
@@ -1000,12 +1000,12 @@ export default function Phase6ConversationWizard({
                   })}
                 </div>
                 {inlineSelected !== null && (
-                  <div className="pt-2 text-xs text-zinc-400 space-y-2 border-t border-white/5 font-sans">
-                    <p className="font-bold text-zinc-300">Explanation:</p>
+                  <div className="pt-4 text-sm text-zinc-450 space-y-3 border-t border-white/5 font-sans leading-relaxed">
+                    <p className="font-extrabold text-zinc-300">Explanation:</p>
                     <p>Gwan-Sik welcomed you and asked for your order or name depending on the scenario chosen. Always listen carefully to the first turn to respond correctly!</p>
                     <button
                       onClick={() => setInlineChecked(true)}
-                      className="mt-2 px-4 py-2 bg-yellow-500 hover:bg-yellow-400 text-zinc-950 font-black rounded-lg text-xs transition"
+                      className="mt-3 px-6 py-2.5 bg-yellow-500 hover:bg-yellow-400 text-zinc-950 font-black rounded-lg text-xs transition"
                     >
                       Continue Chat
                     </button>
@@ -1019,12 +1019,12 @@ export default function Phase6ConversationWizard({
 
           {/* Interactive hints preview area */}
           {userInput === "" && mode === "text" && (
-            <div className="flex gap-2 justify-center mb-3 flex-wrap">
+            <div className="flex gap-2.5 justify-center mb-4 flex-wrap">
               {currentScenario?.key_phrases.slice(0, 2).map((kp: string, idx: number) => (
                 <button
                   key={idx}
                   onClick={() => setUserInput(kp)}
-                  className="px-3 py-1 bg-zinc-900/50 hover:bg-zinc-900 border border-white/5 hover:border-yellow-500/20 text-[11px] rounded-lg text-zinc-400 transition cursor-pointer"
+                  className="px-4 py-1.5 bg-zinc-900/50 hover:bg-zinc-900 border border-white/5 hover:border-yellow-500/20 text-xs rounded-xl text-zinc-400 transition cursor-pointer"
                 >
                   💡 Try: "{kp}"
                 </button>
@@ -1033,15 +1033,15 @@ export default function Phase6ConversationWizard({
           )}
 
           {/* Input control tray */}
-          <div className="border-t border-white/5 pt-4 shrink-0 flex items-center gap-3">
+          <div className="border-t border-white/5 pt-5 shrink-0 flex items-center gap-4">
             {/* Scaffolding Help Button */}
             <button
               onClick={loadHints}
               disabled={loadingHints}
-              className="p-3 bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white rounded-xl border border-white/5 transition flex items-center justify-center shrink-0 cursor-pointer"
+              className="p-4 bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white rounded-xl border border-white/5 transition flex items-center justify-center shrink-0 cursor-pointer shadow-md"
               title="Show scaffolding hints"
             >
-              {loadingHints ? <Loader2 className="w-5 h-5 animate-spin" /> : <HelpCircle className="w-5 h-5 text-yellow-400" />}
+              {loadingHints ? <Loader2 className="w-6 h-6 animate-spin" /> : <HelpCircle className="w-6 h-6 text-yellow-400" />}
             </button>
 
             {mode === "text" ? (
@@ -1054,47 +1054,47 @@ export default function Phase6ConversationWizard({
                   onKeyDown={(e) => e.key === "Enter" && !sendingTurn && handleSendTurn()}
                   placeholder="Type Korean reply..."
                   disabled={sendingTurn || (chatMessages.length >= 3 && !inlineChecked)}
-                  className="w-full bg-zinc-900 border border-white/5 rounded-xl py-3 pl-4 pr-10 text-sm focus:outline-none focus:border-yellow-500 transition text-white"
+                  className="w-full bg-zinc-900 border border-white/5 rounded-xl py-4 pl-5 pr-12 text-base focus:outline-none focus:border-yellow-500 transition text-white placeholder-zinc-500"
                 />
                 <button
                   onClick={handleSendTurn}
                   disabled={sendingTurn || !userInput.trim() || (chatMessages.length >= 3 && !inlineChecked)}
-                  className="absolute right-2 top-2 p-1.5 bg-yellow-500 hover:bg-yellow-400 disabled:opacity-30 rounded-lg text-zinc-950 transition cursor-pointer"
+                  className="absolute right-2.5 top-2.5 p-2 bg-yellow-500 hover:bg-yellow-400 disabled:opacity-30 rounded-lg text-zinc-950 transition cursor-pointer"
                 >
-                  {sendingTurn ? <Loader2 className="w-4 h-4 animate-spin" /> : <CornerDownLeft className="w-4 h-4" />}
+                  {sendingTurn ? <Loader2 className="w-5 h-5 animate-spin" /> : <CornerDownLeft className="w-5 h-5" />}
                 </button>
               </div>
             ) : (
               // Voice mode hold-to-record
-              <div className="flex-grow flex items-center gap-3">
+              <div className="flex-grow flex items-center gap-4">
                 <button
                   onMouseDown={rec.start}
                   onMouseUp={handleStopRecording}
                   onTouchStart={rec.start}
                   onTouchEnd={handleStopRecording}
                   disabled={sendingTurn || transcribingVoice || (chatMessages.length >= 3 && !inlineChecked)}
-                  className={`flex-grow flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm transition cursor-pointer ${
+                  className={`flex-grow flex items-center justify-center gap-2.5 py-4 rounded-xl font-bold text-base transition cursor-pointer ${
                     rec.recording
                       ? "bg-red-500 text-white animate-pulse"
                       : "bg-accent-teal hover:bg-accent-teal/90 text-zinc-950 font-black"
-                  } disabled:opacity-40`}
+                  } disabled:opacity-40 shadow-md`}
                 >
-                  {rec.recording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                  {rec.recording ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
                   <span>{rec.recording ? "Recording... Release to Stop" : "Hold & Speak"}</span>
                 </button>
 
                 {/* Audio preview text input box */}
                 {userInput.trim() !== "" && !rec.recording && (
-                  <div className="flex items-center gap-2 flex-grow">
+                  <div className="flex items-center gap-3 flex-grow animate-in slide-in-from-right-4 duration-200">
                     <input
                       type="text"
                       value={userInput}
                       onChange={(e) => setUserInput(e.target.value)}
-                      className="flex-grow bg-zinc-900 border border-white/5 rounded-xl py-3 px-4 text-sm text-white"
+                      className="flex-grow bg-zinc-900 border border-white/5 rounded-xl py-4 px-5 text-base text-white focus:outline-none focus:border-yellow-500"
                     />
                     <button
                       onClick={handleSendTurn}
-                      className="p-3 bg-yellow-500 hover:bg-yellow-400 rounded-xl text-zinc-950 font-bold transition flex items-center cursor-pointer"
+                      className="py-4 px-6 bg-yellow-500 hover:bg-yellow-400 rounded-xl text-zinc-950 font-black text-sm transition flex items-center cursor-pointer shadow-md"
                     >
                       Send
                     </button>
@@ -1107,7 +1107,7 @@ export default function Phase6ConversationWizard({
             {chatMessages.length >= 4 && (
               <button
                 onClick={handleEvaluateSession}
-                className="px-4 py-3 bg-emerald-500 hover:bg-emerald-600 text-zinc-950 font-black text-xs rounded-xl shadow-lg transition flex items-center gap-1.5 shrink-0 cursor-pointer"
+                className="px-6 py-4 bg-emerald-500 hover:bg-emerald-600 text-zinc-950 font-black text-sm rounded-xl shadow-lg transition flex items-center gap-2 shrink-0 cursor-pointer"
               >
                 <span>End & Score</span>
                 <ArrowRight className="w-4 h-4 text-zinc-950" />
@@ -1117,24 +1117,24 @@ export default function Phase6ConversationWizard({
 
           {/* ====== Scaffolding Hints Drawer / Modal Overlay ====== */}
           {showHelpDrawer && hints && (
-            <div className="absolute inset-0 z-30 bg-zinc-950/90 backdrop-blur-sm p-6 flex flex-col justify-end">
-              <div className="bg-zinc-900/90 rounded-t-3xl border border-white/10 p-5 space-y-4 max-h-[80%] overflow-y-auto shadow-2xl relative">
+            <div className="absolute inset-0 z-30 bg-zinc-950/90 backdrop-blur-sm p-8 flex flex-col justify-end">
+              <div className="bg-zinc-900/90 rounded-t-[2rem] border border-white/10 p-6 space-y-5 max-h-[85%] overflow-y-auto shadow-2xl relative">
                 <button
                   onClick={() => setShowHelpDrawer(false)}
-                  className="absolute right-4 top-4 text-zinc-500 hover:text-white text-xs font-bold cursor-pointer"
+                  className="absolute right-5 top-5 text-zinc-550 hover:text-white text-sm font-extrabold cursor-pointer"
                 >
                   ✕ Close
                 </button>
 
-                <h4 className="text-sm font-black text-white flex items-center gap-2 border-b border-white/5 pb-2">
-                  <HelpCircle className="w-4 h-4 text-brand-400" />
+                <h4 className="text-base font-black text-white flex items-center gap-2.5 border-b border-white/5 pb-3">
+                  <HelpCircle className="w-5 h-5 text-brand-400" />
                   <span>Conversation Scaffolding Assistant</span>
                 </h4>
 
                 {/* Phrase Hints */}
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider block">Recommended Sentences</span>
-                  <div className="space-y-1.5">
+                  <div className="space-y-2">
                     {hints.phrase_hints?.map((ph: string, idx: number) => (
                       <button
                         key={idx}
@@ -1142,29 +1142,29 @@ export default function Phase6ConversationWizard({
                           setUserInput(ph);
                           setShowHelpDrawer(false);
                         }}
-                        className="w-full text-left p-2.5 rounded-lg bg-zinc-950/60 hover:bg-zinc-950 border border-white/5 text-xs text-brand-300 font-bold transition flex items-center justify-between cursor-pointer group"
+                        className="w-full text-left p-3.5 rounded-xl bg-zinc-950/60 hover:bg-zinc-950 border border-white/5 text-sm text-brand-300 font-bold transition flex items-center justify-between cursor-pointer group"
                       >
                         <span>{ph}</span>
-                        <Check className="w-3.5 h-3.5 text-zinc-500 opacity-0 group-hover:opacity-100 transition" />
+                        <Check className="w-4 h-4 text-zinc-550 opacity-0 group-hover:opacity-100 transition" />
                       </button>
                     ))}
                   </div>
                 </div>
 
                 {/* Vocab Hints */}
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider block">Useful Vocabulary</span>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-2 gap-3">
                     {hints.vocab_hints?.map((vc: any, idx: number) => (
                       <div
                         key={idx}
                         onClick={() => {
                           setUserInput((v) => (v ? `${v} ${vc.word}` : vc.word));
                         }}
-                        className="p-2 bg-zinc-950/40 rounded-lg border border-white/5 hover:border-white/10 text-[11px] cursor-pointer text-left transition"
+                        className="p-3 bg-zinc-950/40 rounded-xl border border-white/5 hover:border-white/10 text-xs cursor-pointer text-left transition"
                       >
-                        <span className="font-extrabold text-white block">{vc.word}</span>
-                        <span className="text-zinc-500">{vc.meaning}</span>
+                        <span className="font-extrabold text-white block text-sm">{vc.word}</span>
+                        <span className="text-zinc-450 mt-0.5 block">{vc.meaning}</span>
                       </div>
                     ))}
                   </div>
@@ -1172,10 +1172,10 @@ export default function Phase6ConversationWizard({
 
                 {/* Grammar Hint */}
                 {hints.grammar_hint && (
-                  <div className="bg-zinc-950/60 p-3 rounded-lg border border-white/5 space-y-1 text-left text-xs">
+                  <div className="bg-zinc-950/60 p-4 rounded-xl border border-white/5 space-y-1.5 text-left text-xs leading-relaxed">
                     <span className="text-[10px] text-zinc-500 font-bold uppercase block">Grammar Scaffolding</span>
                     <p className="font-extrabold text-zinc-300">{hints.grammar_hint.pattern}</p>
-                    <p className="text-zinc-500 font-mono italic">E.g., "{hints.grammar_hint.example}"</p>
+                    <p className="text-zinc-450 font-mono italic">E.g., "{hints.grammar_hint.example}"</p>
                   </div>
                 )}
               </div>
@@ -1186,32 +1186,32 @@ export default function Phase6ConversationWizard({
 
       {/* ====== Screen 9: Post-Conversation Feedback (Old Screen 5) ====== */}
       {step === 9 && (
-        <div className="glass-panel neon-border p-8 rounded-3xl shadow-2xl w-full space-y-6 flex-grow flex flex-col justify-center text-center max-w-2xl mx-auto animate-fade-in">
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center text-center animate-fade-in">
           {evaluating ? (
-            <div className="space-y-4 py-10">
-              <Loader2 className="w-12 h-12 text-yellow-500 animate-spin mx-auto" />
-              <p className="text-white font-bold text-sm">Gwan-Sik is compiling your conversation feedback report...</p>
+            <div className="space-y-4 py-12">
+              <Loader2 className="w-16 h-16 text-yellow-500 animate-spin mx-auto" />
+              <p className="text-white font-bold text-base">Gwan-Sik is compiling your conversation feedback report...</p>
             </div>
           ) : (
-            <div className="space-y-6">
-              <div className="p-3 bg-emerald-500/10 rounded-full border border-emerald-500/25 w-fit mx-auto text-emerald-400">
-                <Award className="w-8 h-8 animate-bounce" />
+            <div className="space-y-8">
+              <div className="p-4 bg-emerald-500/10 rounded-full border border-emerald-500/25 w-fit mx-auto text-emerald-400">
+                <Award className="w-10 h-10 animate-bounce" />
               </div>
-              <h2 className="text-3xl font-black text-white">Conversation Evaluation Report</h2>
+              <h2 className="text-4xl font-black text-white tracking-tight">Conversation Evaluation Report</h2>
 
               {/* Overall Score Box */}
-              <div className="bg-zinc-900/60 p-6 rounded-2xl border border-white/5 space-y-4">
+              <div className="bg-zinc-900/60 p-6 rounded-2xl border border-white/5 space-y-4 max-w-3xl mx-auto w-full">
                 <div className="flex justify-between items-center">
-                  <span className="text-xs text-zinc-400 font-black uppercase tracking-wider">Overall Scenario Score</span>
-                  <span className="text-xl font-mono text-emerald-400 font-black bg-emerald-500/10 px-3 py-1 rounded-lg">
+                  <span className="text-sm text-zinc-400 font-black uppercase tracking-wider">Overall Scenario Score</span>
+                  <span className="text-2xl font-mono text-emerald-400 font-black bg-emerald-500/10 px-4 py-1.5 rounded-xl">
                     {evalResult?.overall_score}/100
                   </span>
                 </div>
-                <p className="text-xs text-zinc-300 text-left leading-relaxed">{evalResult?.summary}</p>
+                <p className="text-sm text-zinc-300 text-left leading-relaxed">{evalResult?.summary}</p>
               </div>
 
               {/* Score bars mapping */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto w-full">
                 <ScoreBar score={evalResult?.task_completion_score || 80} label="Task Completion" />
                 <ScoreBar score={evalResult?.accuracy_score || 75} label="Grammar Accuracy" />
                 <ScoreBar score={evalResult?.vocabulary_score || 70} label="Vocab Variety" />
@@ -1219,18 +1219,18 @@ export default function Phase6ConversationWizard({
               </div>
 
               {/* Coach detailed bullet tips */}
-              <div className="bg-zinc-900/40 p-5 rounded-2xl border border-white/5 text-left text-xs space-y-3">
-                <p className="font-black text-zinc-200 text-sm border-b border-white/5 pb-1.5">💡 Tutor Gwan-Sik's Tips:</p>
-                <div>
-                  <span className="text-[10px] text-emerald-400 font-bold uppercase tracking-wider block mb-0.5">Strengths:</span>
+              <div className="bg-zinc-900/40 p-6 rounded-2xl border border-white/5 text-left text-sm space-y-4 max-w-3xl mx-auto w-full leading-relaxed">
+                <p className="font-black text-zinc-200 text-base border-b border-white/5 pb-2">💡 Tutor Gwan-Sik's Tips:</p>
+                <div className="space-y-1">
+                  <span className="text-[10px] text-emerald-400 font-bold uppercase tracking-wider block mb-1">Strengths:</span>
                   <ul className="list-disc list-inside text-zinc-400 pl-1 space-y-1">
                     {evalResult?.strengths?.map((str: string, i: number) => (
                       <li key={i}>{str}</li>
                     ))}
                   </ul>
                 </div>
-                <div>
-                  <span className="text-[10px] text-amber-400 font-bold uppercase tracking-wider block mb-0.5">Suggestions for improvement:</span>
+                <div className="space-y-1">
+                  <span className="text-[10px] text-amber-400 font-bold uppercase tracking-wider block mb-1">Suggestions for improvement:</span>
                   <ul className="list-disc list-inside text-zinc-400 pl-1 space-y-1">
                     {evalResult?.suggestions?.map((sug: string, i: number) => (
                       <li key={i}>{sug}</li>
@@ -1240,13 +1240,13 @@ export default function Phase6ConversationWizard({
               </div>
 
               {/* Reflective Micro-question */}
-              <div className="bg-zinc-950/60 p-6 rounded-2xl border border-white/5 space-y-4 text-left">
+              <div className="bg-zinc-950/60 p-6 rounded-2xl border border-white/5 space-y-5 text-left max-w-3xl mx-auto w-full">
                 <div className="flex items-center gap-2">
                   <HelpCircle className="w-5 h-5 text-yellow-400 animate-bounce" />
                   <span className="text-xs font-black uppercase tracking-widest text-yellow-400">Reflective Check-in</span>
                 </div>
-                <p className="text-sm font-bold text-white">Which tip do you want to focus on in your next conversation?</p>
-                <div className="grid grid-cols-1 gap-2">
+                <p className="text-base font-extrabold text-white leading-snug">Which tip do you want to focus on in your next conversation?</p>
+                <div className="grid grid-cols-1 gap-3">
                   {[
                     { id: "A", text: "Better endings (이에요/예요)" },
                     { id: "B", text: "Clearer pronunciation of specific words" },
@@ -1265,7 +1265,7 @@ export default function Phase6ConversationWizard({
                           setQuestionChecked(true);
                           playCorrectSound();
                         }}
-                        className={`p-3 rounded-xl border text-xs font-bold text-left transition flex justify-between items-center ${btnStyle}`}
+                        className={`p-4 rounded-xl border text-sm font-bold text-left transition flex justify-between items-center ${btnStyle}`}
                       >
                         <span>{opt.text}</span>
                         {selectedOption === opt.id && <Check className="w-4 h-4 text-emerald-400" />}
@@ -1274,17 +1274,17 @@ export default function Phase6ConversationWizard({
                   })}
                 </div>
                 {questionChecked && (
-                  <p className="text-xs text-zinc-400 italic">
+                  <p className="text-sm text-zinc-400 italic font-sans leading-relaxed">
                     Awesome goal! Focusing on this area will help customize your next feedback session.
                   </p>
                 )}
               </div>
 
-              <div className="flex gap-3 justify-center">
+              <div className="flex gap-4 justify-center pt-2">
                 <button
                   onClick={handleLoadReview}
                   disabled={!questionChecked}
-                  className="bg-yellow-500 hover:bg-yellow-400 disabled:opacity-40 text-zinc-950 font-black py-3 px-8 rounded-xl transition text-sm flex items-center justify-center gap-1.5 cursor-pointer shadow-lg shadow-yellow-500/20"
+                  className="bg-yellow-500 hover:bg-yellow-400 disabled:opacity-40 text-zinc-950 font-black py-4 px-10 rounded-2xl transition text-base flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-yellow-500/20"
                 >
                   <span>Review Transcript</span>
                   <ChevronRight className="w-4 h-4 text-zinc-950" />
@@ -1297,29 +1297,29 @@ export default function Phase6ConversationWizard({
 
       {/* ====== Screen 10: Transcript & Targeted Review (Old Screen 6) ====== */}
       {step === 10 && (
-        <div className="glass-panel neon-border p-8 rounded-3xl shadow-2xl w-full space-y-6 flex-grow flex flex-col justify-center max-w-2xl mx-auto animate-fade-in">
-          <div className="border-b border-white/5 pb-4 text-left">
-            <h2 className="text-2xl font-black text-white">Review Transcript & Exercises</h2>
-            <p className="text-xs text-zinc-500">Correct your sentences and map review redirections</p>
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
+          <div className="border-b border-white/5 pb-5 text-left">
+            <h2 className="text-4xl font-black text-white tracking-tight">Review Transcript & Exercises</h2>
+            <p className="text-sm text-zinc-450 mt-1">Correct your sentences and map review redirections</p>
           </div>
 
           {loadingReview ? (
-            <div className="text-center py-10">
-              <Loader2 className="w-8 h-8 animate-spin mx-auto text-yellow-500" />
+            <div className="text-center py-12">
+              <Loader2 className="w-10 h-10 animate-spin mx-auto text-yellow-500" />
             </div>
           ) : (
-            <div className="space-y-6 max-h-[50vh] overflow-y-auto pr-1 text-left">
+            <div className="space-y-8 max-h-[55vh] overflow-y-auto pr-2 text-left">
               
               {/* Highlighted transcript review */}
-              <div className="bg-zinc-950/40 p-5 rounded-2xl border border-white/5 space-y-3.5">
-                <span className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold">Dialogue Log</span>
-                <div className="space-y-3">
+              <div className="bg-zinc-950/40 p-6 rounded-2xl border border-white/5 space-y-4">
+                <span className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold font-mono">Dialogue Log</span>
+                <div className="space-y-4">
                   {reviewData?.transcript?.map((m: any) => (
-                    <div key={m.id} className="text-xs space-y-0.5">
-                      <span className={`font-mono uppercase font-black tracking-wide ${m.sender === "user" ? "text-yellow-400" : "text-zinc-500"}`}>
+                    <div key={m.id} className="text-sm space-y-1">
+                      <span className={`font-mono uppercase font-black tracking-wide text-xs ${m.sender === "user" ? "text-yellow-400" : "text-zinc-500"}`}>
                         {m.sender === "user" ? "You" : "Tutor Gwan-Sik"}:
                       </span>
-                      <p className={`text-zinc-300 font-sans leading-relaxed p-2 rounded ${
+                      <p className={`text-zinc-200 font-sans leading-relaxed p-3.5 rounded-xl ${
                         m.sender === "user" 
                           ? (m.correction ? "bg-red-500/5 text-red-300 border border-red-500/10" : "bg-emerald-500/5 text-emerald-300 border border-emerald-500/10")
                           : "bg-zinc-900/60"
@@ -1327,7 +1327,7 @@ export default function Phase6ConversationWizard({
                         {m.text}
                       </p>
                       {m.correction && (
-                        <p className="text-[11px] text-emerald-400 font-bold pl-2">
+                        <p className="text-xs text-emerald-400 font-extrabold pl-2 leading-relaxed">
                           ✓ Correct: "{m.correction}" ({m.grammar_notes})
                         </p>
                       )}
@@ -1339,41 +1339,41 @@ export default function Phase6ConversationWizard({
               {/* Fix My Sentence quiz blocks */}
               {reviewData?.exercises?.length > 0 && (
                 <div className="space-y-4">
-                  <span className="text-[10px] text-amber-400 uppercase tracking-widest font-black block">💡 Fix My Sentences Exercises</span>
-                  <div className="space-y-3">
+                  <span className="text-[10px] text-amber-400 uppercase tracking-widest font-black block font-mono">💡 Fix My Sentences Exercises</span>
+                  <div className="space-y-4">
                     {reviewData.exercises.map((ex: any) => {
                       const isCorrect = reviewChecked[ex.message_id] && (reviewAttempts[ex.message_id] || "").trim().replace(/\s/g, "") === ex.correction.trim().replace(/\s/g, "");
                       return (
-                        <div key={ex.message_id} className="bg-zinc-900/50 p-4 rounded-xl border border-white/5 space-y-3">
-                          <p className="text-xs text-zinc-400">
+                        <div key={ex.message_id} className="bg-zinc-900/50 p-5 rounded-2xl border border-white/5 space-y-4 animate-in fade-in duration-200">
+                          <p className="text-sm text-zinc-450 leading-relaxed">
                             Original response: <strong className="text-white">"{ex.original}"</strong>
                           </p>
-                          <p className="text-[11px] text-zinc-500 italic">Hint: {ex.hint}</p>
+                          <p className="text-xs text-zinc-500 italic">Hint: {ex.hint}</p>
 
-                          <div className="flex gap-2">
+                          <div className="flex gap-3">
                             <input
                               type="text"
                               value={reviewAttempts[ex.message_id] || ""}
                               onChange={(e) => setReviewAttempts((prev) => ({ ...prev, [ex.message_id]: e.target.value }))}
                               placeholder="Type correct Korean sentence..."
-                              className="flex-grow bg-zinc-950 border border-white/5 rounded-lg py-2 px-3 text-xs text-white"
+                              className="flex-grow bg-zinc-950 border border-white/5 rounded-xl py-3 px-4 text-sm text-white focus:outline-none focus:border-yellow-500"
                             />
                             <button
                               onClick={() => checkReviewAnswer(ex.message_id, ex.correction)}
-                              className="px-3 bg-yellow-500 hover:bg-yellow-400 rounded-lg text-zinc-950 font-black text-xs transition cursor-pointer"
+                              className="px-5 bg-yellow-500 hover:bg-yellow-400 rounded-xl text-zinc-950 font-black text-sm transition cursor-pointer"
                             >
                               Check
                             </button>
                           </div>
 
                           {reviewChecked[ex.message_id] && (
-                            <div className={`p-2.5 rounded border text-[11px] ${
+                            <div className={`p-4 rounded-xl border text-xs leading-relaxed ${
                               isCorrect 
                                 ? "bg-emerald-500/5 border-emerald-500/20 text-emerald-400" 
                                 : "bg-red-500/5 border-red-500/20 text-red-400"
                             }`}>
                               {isCorrect ? "✓ 맞아요! Correct!" : `✗ Wrong. Expected: "${ex.correction}"`}
-                              <p className="text-zinc-400 text-[10px] mt-1">Rule: {ex.explanation}</p>
+                              <p className="text-zinc-550 text-[11px] mt-1.5 font-sans leading-relaxed">Rule: {ex.explanation}</p>
                             </div>
                           )}
                         </div>
@@ -1385,16 +1385,16 @@ export default function Phase6ConversationWizard({
 
               {/* Target review recommendations redirects */}
               {reviewData?.redirects?.length > 0 && (
-                <div className="space-y-3 bg-zinc-900/20 p-4 rounded-xl border border-white/5">
-                  <span className="text-[10px] text-zinc-500 uppercase tracking-widest font-black block">Recommended Review Modules</span>
-                  <div className="space-y-2">
+                <div className="space-y-4 bg-zinc-900/20 p-5 rounded-2xl border border-white/5">
+                  <span className="text-[10px] text-zinc-500 uppercase tracking-widest font-black block font-mono">Recommended Review Modules</span>
+                  <div className="space-y-3">
                     {reviewData.redirects.map((rd: any, idx: number) => (
-                      <div key={idx} className="flex justify-between items-center bg-zinc-900/60 p-3 rounded-lg border border-white/5 hover:border-yellow-500/10 transition">
+                      <div key={idx} className="flex justify-between items-center bg-zinc-900/60 p-4 rounded-xl border border-white/5 hover:border-yellow-500/10 transition leading-relaxed">
                         <div>
-                          <p className="text-xs font-extrabold text-white">{rd.title}</p>
-                          <p className="text-[10px] text-zinc-400 mt-0.5">{rd.reason}</p>
+                          <p className="text-sm font-extrabold text-white">{rd.title}</p>
+                          <p className="text-xs text-zinc-450 mt-1">{rd.reason}</p>
                         </div>
-                        <span className="text-[10px] text-yellow-400 font-bold uppercase font-mono">Phase {rd.phase}</span>
+                        <span className="text-[10px] text-yellow-400 font-bold uppercase font-mono bg-yellow-500/10 px-2 py-0.5 rounded border border-yellow-500/20">Phase {rd.phase}</span>
                       </div>
                     ))}
                   </div>
@@ -1402,13 +1402,13 @@ export default function Phase6ConversationWizard({
               )}
 
               {/* Review Redirection Choice Check */}
-              <div className="bg-zinc-950/60 p-6 rounded-2xl border border-white/5 space-y-4">
+              <div className="bg-zinc-950/60 p-6 rounded-2xl border border-white/5 space-y-5">
                 <div className="flex items-center gap-2">
                   <HelpCircle className="w-5 h-5 text-yellow-400 animate-bounce" />
                   <span className="text-xs font-black uppercase tracking-widest text-yellow-400">Review Focus Check</span>
                 </div>
-                <p className="text-sm font-bold text-white">Which recommended review module will you visit first?</p>
-                <div className="grid grid-cols-1 gap-2">
+                <p className="text-base font-extrabold text-white leading-snug">Which recommended review module will you visit first?</p>
+                <div className="grid grid-cols-1 gap-3">
                   {(reviewData?.redirects || []).map((rd: any, idx: number) => {
                     const optId = `R_${idx}`;
                     let btnStyle = "border-white/5 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-300";
@@ -1424,7 +1424,7 @@ export default function Phase6ConversationWizard({
                           setQuestionChecked(true);
                           playCorrectSound();
                         }}
-                        className={`p-3 rounded-xl border text-xs font-bold text-left transition flex justify-between items-center ${btnStyle}`}
+                        className={`p-4 rounded-xl border text-sm font-bold text-left transition flex justify-between items-center ${btnStyle}`}
                       >
                         <span>{rd.title}</span>
                         {selectedOption === optId && <Check className="w-4 h-4 text-emerald-400" />}
@@ -1433,7 +1433,7 @@ export default function Phase6ConversationWizard({
                   })}
                 </div>
                 {questionChecked && (
-                  <p className="text-xs text-zinc-400 italic">
+                  <p className="text-sm text-zinc-450 italic font-sans leading-relaxed">
                     Excellent choice. Tackling your weak points systematically guarantees rapid fluency progress.
                   </p>
                 )}
@@ -1442,14 +1442,14 @@ export default function Phase6ConversationWizard({
             </div>
           )}
 
-          <div className="pt-4 border-t border-white/5 flex justify-end">
+          <div className="pt-5 border-t border-white/5 flex justify-end">
             <button
               onClick={onComplete}
               disabled={!questionChecked}
-              className="bg-gradient-to-r from-yellow-500 via-orange-500 to-indigo-500 hover:from-yellow-600 disabled:opacity-40 text-zinc-950 font-black py-3 px-8 rounded-xl transition text-sm flex items-center justify-center gap-1.5 cursor-pointer shadow shadow-brand-500/10 hover:scale-102"
+              className="bg-gradient-to-r from-yellow-500 via-orange-500 to-indigo-500 hover:from-yellow-600 disabled:opacity-40 text-zinc-950 font-black py-4 px-10 rounded-2xl transition text-base flex items-center justify-center gap-2 cursor-pointer shadow shadow-brand-500/10 hover:scale-102"
             >
               <span>Graduate Course & Return</span>
-              <CheckCircle2 className="w-4 h-4 text-zinc-950" />
+              <CheckCircle2 className="w-5 h-5 text-zinc-950" />
             </button>
           </div>
         </div>

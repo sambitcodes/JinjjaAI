@@ -601,7 +601,7 @@ export default function Phase5SpeakingLabWizard({ activeLesson, speakWord, onCom
   ];
 
   return (
-    <div className="flex-grow flex flex-col justify-between max-w-5xl mx-auto w-full px-4">
+    <div className="flex-grow flex flex-col justify-between">
       {/* Top Header tracking */}
       <header className="flex flex-col md:flex-row justify-between items-start md:items-center py-5 border-b border-white/5 mb-8 gap-4">
         <div className="flex items-center space-x-4">
@@ -666,7 +666,7 @@ export default function Phase5SpeakingLabWizard({ activeLesson, speakWord, onCom
 
       {/* Step 1: Welcome & Calibration */}
       {step === 1 && (
-        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center text-center max-w-xl mx-auto my-4 transition duration-300">
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center text-center transition duration-300">
           <div className="p-4 bg-brand-500/10 rounded-3xl border border-brand-500/25 w-fit mx-auto text-brand-400 shadow-inner animate-pulse">
             <Sparkles className="w-10 h-10" />
           </div>
@@ -733,7 +733,7 @@ export default function Phase5SpeakingLabWizard({ activeLesson, speakWord, onCom
 
       {/* Screen 2-6: Concept Screens (C1-C5) */}
       {step >= 2 && step <= 6 && (
-        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center max-w-3xl mx-auto my-4 transition duration-300">
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center transition duration-300">
           
           <div className="flex justify-between items-center border-b border-white/5 pb-4">
             <h2 className="text-2xl font-black text-white flex items-center gap-2 font-sans tracking-tight">
@@ -836,7 +836,7 @@ export default function Phase5SpeakingLabWizard({ activeLesson, speakWord, onCom
                       key={opt.id}
                       disabled={cChecked}
                       onClick={() => setCSelected(opt.id)}
-                      className={`w-full p-3.5 rounded-xl text-left text-xs font-bold border transition duration-200 ${
+                      className={`w-full p-5 rounded-xl text-left text-sm md:text-base font-bold border transition duration-200 ${
                         cSelected === opt.id
                           ? "border-brand-500 bg-brand-500/10 text-white"
                           : "border-white/5 bg-zinc-900/60 text-zinc-300 hover:bg-zinc-900"
@@ -850,7 +850,7 @@ export default function Phase5SpeakingLabWizard({ activeLesson, speakWord, onCom
                           : ""
                       }`}
                     >
-                      <span className="inline-block mr-2 text-brand-400">{opt.id}.</span>
+                      <span className="inline-block mr-3 text-brand-400">{opt.id}.</span>
                       {opt.text}
                     </button>
                   ))}
@@ -862,7 +862,7 @@ export default function Phase5SpeakingLabWizard({ activeLesson, speakWord, onCom
                   <button
                     onClick={handleCheckConceptQuestion}
                     disabled={!cSelected}
-                    className="w-full bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-zinc-950 font-black py-3 rounded-xl text-xs transition duration-200 uppercase tracking-widest shadow-md shadow-brand-500/15 cursor-pointer"
+                    className="w-full bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-zinc-955 font-black py-4 rounded-xl text-sm md:text-base transition duration-200 uppercase tracking-widest shadow-md shadow-brand-500/15 cursor-pointer"
                   >
                     Submit Answer
                   </button>
@@ -894,7 +894,7 @@ export default function Phase5SpeakingLabWizard({ activeLesson, speakWord, onCom
             <button 
               onClick={() => setStep(step + 1)}
               disabled={!cChecked}
-              className="bg-brand-500 hover:bg-brand-600 disabled:opacity-30 disabled:hover:bg-brand-500 text-zinc-950 px-6 py-3 rounded-xl text-xs font-black transition flex items-center gap-1.5 cursor-pointer"
+              className="bg-brand-500 hover:bg-brand-600 disabled:opacity-30 disabled:hover:bg-brand-500 text-zinc-955 px-6 py-3.5 rounded-xl text-sm font-black transition flex items-center gap-1.5 cursor-pointer"
             >
               <span>Next</span>
               <ChevronRight className="w-4 h-4 text-zinc-950" />
@@ -905,7 +905,7 @@ export default function Phase5SpeakingLabWizard({ activeLesson, speakWord, onCom
 
       {/* Screen 7: Activity 1 (Guided Shadowing) */}
       {step === 7 && (
-        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center max-w-3xl mx-auto my-4 transition duration-300">
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center transition duration-300">
           <div className="flex justify-between items-center border-b border-white/5 pb-4">
             <h2 className="text-2xl font-black text-white flex items-center gap-2 tracking-tight">
               <Volume2 className="w-6 h-6 text-brand-400" />
@@ -1030,7 +1030,7 @@ export default function Phase5SpeakingLabWizard({ activeLesson, speakWord, onCom
 
       {/* Screen 8: Activity 2 (Phoneme drills) */}
       {step === 8 && (
-        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center max-w-3xl mx-auto my-4 transition duration-300">
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center transition duration-300">
           <div className="flex justify-between items-center border-b border-white/5 pb-4">
             <h2 className="text-2xl font-black text-white flex items-center gap-2 tracking-tight">
               <BarChart2 className="w-6 h-6 text-brand-400 animate-pulse" />
@@ -1151,7 +1151,7 @@ export default function Phase5SpeakingLabWizard({ activeLesson, speakWord, onCom
 
       {/* Screen 9: Activity 3 (Controlled patterns speaking) */}
       {step === 9 && (
-        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center max-w-3xl mx-auto my-4 transition duration-300">
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center transition duration-300">
           <div className="flex justify-between items-center border-b border-white/5 pb-4">
             <h2 className="text-2xl font-black text-white flex items-center gap-2 tracking-tight">
               <Sparkles className="w-6 h-6 text-brand-400 animate-pulse" />
@@ -1288,7 +1288,7 @@ export default function Phase5SpeakingLabWizard({ activeLesson, speakWord, onCom
 
       {/* Screen 10: Activity 4 (Free speaking task) */}
       {step === 10 && (
-        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center max-w-3xl mx-auto my-4 transition duration-300">
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center transition duration-300">
           <div className="flex justify-between items-center border-b border-white/5 pb-4">
             <h2 className="text-2xl font-black text-white flex items-center gap-2 tracking-tight">
               <Mic className="w-6 h-6 text-brand-400" />
@@ -1389,7 +1389,7 @@ export default function Phase5SpeakingLabWizard({ activeLesson, speakWord, onCom
 
       {/* Screen 11: Assessment */}
       {step === 11 && (
-        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center max-w-3xl mx-auto my-4 transition duration-300">
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center transition duration-300">
           <div className="flex justify-between items-center border-b border-white/5 pb-4">
             <h2 className="text-2xl font-black text-white flex items-center gap-2 tracking-tight">
               <Award className="w-6 h-6 text-brand-400" />
@@ -1516,7 +1516,7 @@ export default function Phase5SpeakingLabWizard({ activeLesson, speakWord, onCom
 
       {/* Screen 12: Summary & Recommendations */}
       {step === 12 && (
-        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center max-w-3xl mx-auto my-4 transition duration-300 animate-in fade-in duration-300">
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center transition duration-300 animate-in fade-in duration-300">
           <div className="flex justify-between items-center border-b border-white/5 pb-4">
             <h2 className="text-2xl font-black text-white flex items-center gap-2 tracking-tight">
               <BarChart2 className="w-6 h-6 text-brand-400" />

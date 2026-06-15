@@ -390,12 +390,17 @@ export default function Phase2ConsonantWizard({
           <div className="bg-zinc-900/60 p-6 rounded-2xl border border-white/5 text-left text-sm text-zinc-300 space-y-3.5 max-w-4xl mx-auto w-full">
             <p className="text-xs text-zinc-500 font-mono uppercase tracking-wider font-black">🎯 Objectives:</p>
             <ul className="list-disc list-inside space-y-2 text-zinc-200 pl-1 text-sm md:text-base">
-              {(metadata?.goals || [
-                "Recognise all 14 basic consonant letters: ㄱ ㄴ ㄷ ㄹ ㅁ ㅂ ㅅ ㅇ ㅈ ㅊ ㅋ ㅌ ㅍ ㅎ",
-                "Understand consonants as stylized mouth & tongue positions",
-                "Differentiate plain vs. aspirated vs. tense consonant series",
-                "Assemble basic CV syllables and master the double role of ㅇ"
-              ]).map((g: string, idx: number) => (
+              {(Array.isArray(metadata?.goals)
+                ? metadata.goals
+                : typeof metadata?.goals === "string"
+                  ? [metadata.goals]
+                  : [
+                      "Recognise all 14 basic consonant letters: ㄱ ㄴ ㄷ ㄹ ㅁ ㅂ ㅅ ㅇ ㅈ ㅊ ㅋ ㅌ ㅍ ㅎ",
+                      "Understand consonants as stylized mouth & tongue positions",
+                      "Differentiate plain vs. aspirated vs. tense consonant series",
+                      "Assemble basic CV syllables and master the double role of ㅇ"
+                    ]
+              ).map((g: string, idx: number) => (
                 <li key={idx}>{g}</li>
               ))}
             </ul>

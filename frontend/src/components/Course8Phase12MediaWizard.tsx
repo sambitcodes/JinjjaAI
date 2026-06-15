@@ -380,9 +380,9 @@ export default function Course8Phase12MediaWizard({
   };
 
   return (
-    <div className="flex-grow flex flex-col justify-between max-w-2xl mx-auto w-full font-sans">
+    <div className="flex-grow flex flex-col justify-between">
       {/* Header bar */}
-      <header className="border-b border-white/5 bg-zinc-900/60 backdrop-blur px-6 py-4 flex items-center justify-between sticky top-0 z-50">
+      <header className="border-b border-white/5 bg-zinc-900/60 backdrop-blur px-8 py-5 flex items-center justify-between sticky top-0 z-50">
         <div className="flex items-center gap-3">
           <Trophy className="w-5 h-5 text-yellow-400" />
           <div>
@@ -411,7 +411,7 @@ export default function Course8Phase12MediaWizard({
         <div className="flex items-center gap-2">
           <button 
             onClick={() => setShowOutline(!showOutline)}
-            className="text-[10px] bg-zinc-900 border border-white/10 hover:bg-zinc-800 text-zinc-300 px-2.5 py-1 rounded transition cursor-pointer"
+            className="text-[10px] bg-zinc-900 border border-white/10 hover:bg-zinc-900 text-zinc-300 px-3 py-1.5 rounded-lg transition duration-200 cursor-pointer uppercase tracking-wider font-bold"
           >
             {showOutline ? "Hide Outline" : "View Outline"}
           </button>
@@ -467,15 +467,15 @@ export default function Course8Phase12MediaWizard({
           </div>
 
           <div>
-            <h2 className="text-3xl font-black text-white font-sans">{metadata?.title || "Media Lab – Real‑World Listening & Reaction (B2)"}</h2>
+            <h2 className="text-5xl font-black text-white tracking-tight font-sans">{metadata?.title || "Media Lab – Real‑World Listening & Reaction (B2)"}</h2>
             <h3 className="text-md font-bold text-yellow-400 mt-1">{metadata?.subtitle || "Understand real audio and respond naturally."}</h3>
           </div>
 
-          <p className="text-zinc-300 text-sm leading-relaxed max-w-md mx-auto">
+          <p className="text-zinc-300 text-base leading-relaxed max-w-2xl mx-auto">
             {metadata?.description || "In this lab, you’ll practise listening to real‑world Korean audio like news bites, mini podcasts, and interviews, and then summarising and reacting to what you heard at B2 level."}
           </p>
 
-          <div className="bg-zinc-900/60 p-5 rounded-2xl border border-white/5 text-left text-xs space-y-2 max-w-md mx-auto w-full">
+          <div className="bg-zinc-900/60 p-6 rounded-2xl border border-white/5 text-left text-sm space-y-3 max-w-2xl mx-auto w-full">
             <p className="text-[10px] text-zinc-500 font-mono uppercase tracking-wider font-black">🎯 Focus Milestones:</p>
             <ul className="list-disc list-inside space-y-1.5 text-zinc-300 pl-1">
               {(metadata?.goals || [
@@ -487,7 +487,7 @@ export default function Course8Phase12MediaWizard({
             <p className="pt-2 text-zinc-400"><strong>⏱️ Est. Lab Time:</strong> 35 minutes</p>
           </div>
 
-          <div className="flex flex-wrap gap-2 justify-center max-w-md mx-auto">
+          <div className="flex flex-wrap gap-2.5 justify-center max-w-2xl mx-auto">
             {["B2 Capstone", "Authentic listening", "Integrated skills", "Final Rewards"].map(chip => (
               <span key={chip} className="px-3 py-1 bg-yellow-500/10 border border-yellow-500/20 rounded-full text-[10px] text-yellow-300 font-bold">{chip}</span>
             ))}
@@ -986,7 +986,7 @@ export default function Course8Phase12MediaWizard({
                 <p className="text-xs text-zinc-400 mt-1">Capstone Quiz Completed Successfully!</p>
               </div>
 
-              <div className="text-3xl font-black text-white">{quizScore}%</div>
+              <div className="text-5xl font-black text-white tracking-tight">{quizScore}%</div>
 
               <p className="text-xs text-zinc-400 max-w-xs mx-auto leading-relaxed">
                 {quizScore >= 80 

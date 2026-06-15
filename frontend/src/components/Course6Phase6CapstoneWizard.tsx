@@ -363,23 +363,23 @@ export default function Course6Phase6CapstoneWizard({
   };
 
   return (
-    <div className="flex-grow flex flex-col justify-between max-w-2xl mx-auto w-full font-sans">
+    <div className="flex-grow flex flex-col justify-between">
 
       {/* Header */}
       <header className="flex justify-between items-center py-4 border-b border-white/5 mb-6">
-        <div className="flex items-center space-x-3">
-          <div className="p-2 rounded-xl bg-zinc-900 border border-white/10">
+        <div className="flex items-center space-x-4">
+          <div className="p-3 rounded-2xl bg-zinc-900 border border-white/10 shadow-lg">
             <Trophy className="w-5 h-5 text-yellow-400" />
           </div>
           <div>
-            <h2 className="font-extrabold text-lg">
+            <h2 className="font-black text-xl text-white tracking-tight">
               {activeLesson?.title || "Korean 5.6 – C1 Capstone"}
             </h2>
             <p className="text-xs text-zinc-500 font-medium">Topic: Real-World C1 Communication</p>
           </div>
         </div>
         <div className="flex items-center space-x-4">
-          <div className="w-32 h-2.5 bg-zinc-800 rounded-full overflow-hidden">
+          <div className="w-40 h-3 bg-zinc-900/80 rounded-full overflow-hidden border border-white/5 p-[2px]">
             <div 
               className="h-full bg-gradient-to-r from-yellow-500 via-orange-500 to-indigo-500 rounded-full transition-all duration-500" 
               style={{ width: `${(step / totalSteps) * 100}%` }}
@@ -388,7 +388,7 @@ export default function Course6Phase6CapstoneWizard({
           <span className="text-xs text-zinc-400 font-bold">{Math.round((step / totalSteps) * 100)}%</span>
           <button 
             onClick={() => setShowOutline(!showOutline)}
-            className="text-[10px] bg-zinc-900 border border-white/10 hover:bg-zinc-800 text-zinc-300 px-2.5 py-1 rounded transition cursor-pointer"
+            className="text-[10px] bg-zinc-900 border border-white/10 hover:bg-zinc-900 text-zinc-300 px-3 py-1.5 rounded-lg transition duration-200 cursor-pointer uppercase tracking-wider font-bold"
           >
             {showOutline ? "Hide Outline" : "View Outline"}
           </button>
@@ -397,7 +397,7 @@ export default function Course6Phase6CapstoneWizard({
 
       {/* ─── SCREEN 1: Welcome ─── */}
       {step === 1 && (
-        <div className="glass-panel neon-border p-8 rounded-3xl shadow-2xl w-full space-y-6 flex-grow flex flex-col justify-center text-center">
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center text-center animate-fade-in">
           <div className="relative mx-auto w-fit">
             <div className="p-4 bg-yellow-500/10 rounded-full border border-yellow-500/25 text-yellow-400">
               <Trophy className="w-10 h-10" />
@@ -408,15 +408,15 @@ export default function Course6Phase6CapstoneWizard({
           </div>
 
           <div>
-            <h2 className="text-3xl font-black text-white">Korean 5.6</h2>
+            <h2 className="text-5xl font-black text-white tracking-tight">Korean 5.6</h2>
             <h3 className="text-xl font-bold text-yellow-400 mt-1">C1 Real-World Communication (Capstone)</h3>
           </div>
 
-          <p className="text-zinc-300 text-sm leading-relaxed max-w-md mx-auto">
+          <p className="text-zinc-300 text-base leading-relaxed max-w-2xl mx-auto">
             {metadata?.description || "Handle complex situations in Korean with nuance and confidence."}
           </p>
 
-          <div className="bg-zinc-900/60 p-5 rounded-2xl border border-white/5 text-left text-xs space-y-2 max-w-md mx-auto w-full">
+          <div className="bg-zinc-900/60 p-6 rounded-2xl border border-white/5 text-left text-sm space-y-3 max-w-2xl mx-auto w-full">
             <p className="text-[10px] text-zinc-500 font-mono uppercase tracking-wider font-black">🎯 Capstone Goals:</p>
             <ul className="list-disc list-inside space-y-1.5 text-zinc-300 pl-1">
               {(metadata?.goals || [
@@ -428,7 +428,7 @@ export default function Course6Phase6CapstoneWizard({
           </div>
 
           {/* Skill chips */}
-          <div className="flex flex-wrap gap-2 justify-center max-w-md mx-auto">
+          <div className="flex flex-wrap gap-2.5 justify-center max-w-2xl mx-auto">
             {["Scenario-based", "Integrated Skills", "Subtext & Nuance", "Social / Academic / Professional"].map(chip => (
               <span key={chip} className="px-3 py-1 bg-yellow-500/10 border border-yellow-500/20 rounded-full text-[10px] text-yellow-300 font-bold">{chip}</span>
             ))}
@@ -478,7 +478,7 @@ export default function Course6Phase6CapstoneWizard({
           </div>
 
           {showOutline && (
-            <div className="bg-zinc-950 p-4 rounded-xl border border-white/5 text-left text-xs text-zinc-400 space-y-1.5 animate-fade-in max-w-md mx-auto w-full font-mono">
+            <div className="bg-zinc-950 p-6 rounded-2xl border border-white/5 text-left text-xs text-zinc-400 space-y-2 animate-fade-in max-w-2xl mx-auto w-full font-mono">
               <p className="font-extrabold text-white text-center pb-2">Capstone Activities:</p>
               <p>✓ Screen 1 – Welcome / Phase Overview</p>
               <p>✓ Screen 2 – Concept: Scenario-Based C1 Tasks</p>
@@ -495,7 +495,7 @@ export default function Course6Phase6CapstoneWizard({
       {step === 2 && coreData && (
         <div className="glass-panel neon-border p-8 rounded-3xl shadow-2xl w-full space-y-5 flex-grow flex flex-col justify-center">
           <div className="flex justify-between items-center border-b border-white/5 pb-4">
-            <h2 className="text-xl font-black text-white flex items-center gap-2">
+            <h2 className="text-2xl font-black text-white flex items-center gap-2">
               <BookOpen className="w-5 h-5 text-yellow-400" />
               <span>Scenario-Based C1 Tasks</span>
             </h2>
@@ -956,7 +956,7 @@ export default function Course6Phase6CapstoneWizard({
 
       {/* ─── SCREEN 5: Mini-Quiz ─── */}
       {step === 5 && (
-        <div className="glass-panel neon-border p-8 rounded-3xl shadow-2xl w-full space-y-6 flex-grow flex flex-col justify-center">
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
           <div className="flex justify-between items-center border-b border-white/5 pb-4">
             <h2 className="text-lg font-black text-white flex items-center gap-2">
               <Brain className="w-5 h-5 text-yellow-400" />

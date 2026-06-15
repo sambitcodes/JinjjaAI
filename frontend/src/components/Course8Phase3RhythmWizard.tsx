@@ -471,13 +471,13 @@ export default function Course8Phase3RhythmWizard({
   };
 
   return (
-    <div className="flex-grow flex flex-col justify-between max-w-2xl mx-auto w-full font-sans">
+    <div className="flex-grow flex flex-col justify-between">
       {/* Header bar */}
-      <header className="border-b border-white/5 bg-zinc-900/60 backdrop-blur px-6 py-4 flex items-center justify-between sticky top-0 z-50">
+      <header className="border-b border-white/5 bg-zinc-900/60 backdrop-blur px-8 py-5 flex items-center justify-between sticky top-0 z-50">
         <div className="flex items-center gap-3">
           <Volume2 className="w-5 h-5 text-cyan-400" />
           <div>
-            <h2 className="font-extrabold text-lg">Pronunciation Lab 3</h2>
+            <h2 className="font-black text-xl text-white tracking-tight">Pronunciation Lab 3</h2>
             <p className="text-xs text-zinc-400">Rhythm & Word Flow</p>
           </div>
         </div>
@@ -499,7 +499,7 @@ export default function Course8Phase3RhythmWizard({
         <div className="flex items-center gap-2">
           <button 
             onClick={() => setShowOutline(!showOutline)}
-            className="text-[10px] bg-zinc-900 border border-white/10 hover:bg-zinc-800 text-zinc-300 px-2.5 py-1 rounded transition cursor-pointer"
+            className="text-[10px] bg-zinc-900 border border-white/10 hover:bg-zinc-900 text-zinc-300 px-3 py-1.5 rounded-lg transition duration-200 cursor-pointer uppercase tracking-wider font-bold"
           >
             {showOutline ? "Hide Outline" : "View Outline"}
           </button>
@@ -544,7 +544,7 @@ export default function Course8Phase3RhythmWizard({
 
       {/* SCREEN 1: WELCOME */}
       {step === 1 && (
-        <div className="glass-panel border border-white/10 p-8 rounded-3xl shadow-2xl w-full space-y-6 flex-grow flex flex-col justify-center text-center relative overflow-hidden">
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center text-center animate-fade-in relative overflow-hidden">
           <div className="relative mx-auto w-fit">
             <div className="p-4 bg-cyan-500/10 rounded-full border border-cyan-500/25 text-cyan-400">
               <Volume2 className="w-10 h-10" />
@@ -555,15 +555,15 @@ export default function Course8Phase3RhythmWizard({
           </div>
 
           <div>
-            <h2 className="text-3xl font-black text-white font-sans">{metadata?.title || "Pronunciation Lab 3 – Rhythm & Word Flow (A2)"}</h2>
-            <h3 className="text-md font-bold text-cyan-400 mt-1">{metadata?.subtitle || "Even syllables, smoother words."}</h3>
+            <h2 className="text-5xl font-black text-white tracking-tight font-sans">{metadata?.title || "Pronunciation Lab 3 – Rhythm & Word Flow (A2)"}</h2>
+            <h3 className="text-2xl font-extrabold text-cyan-400 mt-2">{metadata?.subtitle || "Even syllables, smoother words."}</h3>
           </div>
 
-          <p className="text-zinc-300 text-sm leading-relaxed max-w-md mx-auto">
+          <p className="text-zinc-300 text-base leading-relaxed max-w-2xl mx-auto">
             {metadata?.description || "In this lab, you’ll practise Korean rhythm: keeping syllables even, grouping words into natural chunks, and avoiding English‑style stress patterns."}
           </p>
 
-          <div className="bg-zinc-900/60 p-5 rounded-2xl border border-white/5 text-left text-xs space-y-2 max-w-md mx-auto w-full">
+          <div className="bg-zinc-900/60 p-6 rounded-2xl border border-white/5 text-left text-sm space-y-3 max-w-2xl mx-auto w-full">
             <p className="text-[10px] text-zinc-500 font-mono uppercase tracking-wider font-black">🎯 Focus Milestones:</p>
             <ul className="list-disc list-inside space-y-1.5 text-zinc-300 pl-1">
               {(metadata?.goals || [
@@ -576,7 +576,7 @@ export default function Course8Phase3RhythmWizard({
             <p className="text-zinc-400"><strong>🔗 Prerequisites:</strong> {metadata?.dependencies || "Pronunciation Lab 2 (Completed)"}</p>
           </div>
 
-          <div className="flex flex-wrap gap-2 justify-center max-w-md mx-auto">
+          <div className="flex flex-wrap gap-2.5 justify-center max-w-2xl mx-auto">
             {["A2", "Rhythm", "Listening", "Speaking"].map(chip => (
               <span key={chip} className="px-3 py-1 bg-cyan-500/10 border border-cyan-500/20 rounded-full text-[10px] text-cyan-300 font-bold">{chip}</span>
             ))}
@@ -595,8 +595,8 @@ export default function Course8Phase3RhythmWizard({
 
       {/* SCREEN 2: CONCEPT EXPLANATION */}
       {step === 2 && (
-        <div className="glass-panel border border-white/10 p-8 rounded-3xl shadow-2xl w-full space-y-6 flex-grow flex flex-col justify-center">
-          <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-teal-400 flex items-center gap-2">
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
+          <h2 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-teal-400 flex items-center gap-2">
             <BookOpen className="w-6 h-6 text-cyan-400" />
             Korean Rhythm Basics
           </h2>
@@ -671,7 +671,7 @@ export default function Course8Phase3RhythmWizard({
 
       {/* SCREEN 3: ACTIVITY 1: HEAR RHYTHM & CHUNKING */}
       {step === 3 && (
-        <div className="glass-panel border border-white/10 p-8 rounded-3xl shadow-2xl w-full space-y-6 flex-grow flex flex-col justify-center">
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
           <div>
             <span className="text-xs bg-cyan-500/10 text-cyan-400 border border-cyan-500/25 px-2 py-0.5 rounded-full font-bold">
               Activity 1: Perception & Beat matching
@@ -894,7 +894,7 @@ export default function Course8Phase3RhythmWizard({
 
       {/* SCREEN 4: ACTIVITY 2: SPEAK WITH EVEN RHYTHM */}
       {step === 4 && (
-        <div className="glass-panel border border-white/10 p-8 rounded-3xl shadow-2xl w-full space-y-6 flex-grow flex flex-col justify-center">
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
           <div>
             <span className="text-xs bg-cyan-500/10 text-cyan-400 border border-cyan-500/25 px-2 py-0.5 rounded-full font-bold">
               Activity 2: Production & rhythm timing
@@ -1121,7 +1121,7 @@ export default function Course8Phase3RhythmWizard({
 
       {/* SCREEN 5: MINI QUIZ */}
       {step === 5 && (
-        <div className="glass-panel border border-white/10 p-8 rounded-3xl shadow-2xl w-full space-y-6 flex-grow flex flex-col justify-center">
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
           <div>
             <span className="text-xs bg-cyan-500/10 text-cyan-400 border border-cyan-500/25 px-2 py-0.5 rounded-full font-bold">
               Mini-Quiz: Rhythm & Flow Check
@@ -1247,7 +1247,7 @@ export default function Course8Phase3RhythmWizard({
 
       {/* SCREEN 6: HOMEWORK & COACH */}
       {step === 6 && (
-        <div className="glass-panel border border-white/10 p-8 rounded-3xl shadow-2xl w-full space-y-6 flex-grow flex flex-col justify-center">
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
           <div>
             <span className="text-xs bg-cyan-500/10 text-cyan-400 border border-cyan-500/25 px-2 py-0.5 rounded-full font-bold">
               Homework & AI Rhythm Coach

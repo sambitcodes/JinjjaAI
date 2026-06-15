@@ -447,16 +447,16 @@ export default function Course7Phase1GrammarLabWizard({
   };
 
   return (
-    <div className="flex-grow flex flex-col justify-between max-w-2xl mx-auto w-full font-sans">
+    <div className="flex-grow flex flex-col justify-between">
       
       {/* Top Header */}
       <header className="flex justify-between items-center py-4 border-b border-white/5 mb-6">
-        <div className="flex items-center space-x-3">
-          <div className="p-2 rounded-xl bg-zinc-900 border border-white/10">
+        <div className="flex items-center space-x-4">
+          <div className="p-3 rounded-2xl bg-zinc-900 border border-white/10 shadow-lg">
             <BookOpen className="w-5 h-5 text-indigo-400" />
           </div>
           <div>
-            <h2 className="font-extrabold text-lg flex items-center gap-2">
+            <h2 className="font-black text-xl text-white tracking-tight flex items-center gap-2">
               <span>{metadata?.title || "Grammar Lab 1"}</span>
             </h2>
             <p className="text-xs text-zinc-500 font-medium">Topic: SOV Sentence Structure Foundations</p>
@@ -465,7 +465,7 @@ export default function Course7Phase1GrammarLabWizard({
         
         {/* Progress Bar */}
         <div className="flex items-center space-x-4">
-          <div className="w-32 h-2.5 bg-zinc-800 rounded-full overflow-hidden">
+          <div className="w-40 h-3 bg-zinc-900/80 rounded-full overflow-hidden border border-white/5 p-[2px]">
             <div 
               className="h-full bg-gradient-to-r from-yellow-500 via-orange-500 to-indigo-500 rounded-full transition-all duration-500" 
               style={{ width: `${(step / 6) * 100}%` }}
@@ -474,7 +474,7 @@ export default function Course7Phase1GrammarLabWizard({
           <span className="text-xs text-zinc-400 font-bold">{Math.round((step / 6) * 100)}%</span>
           <button 
             onClick={() => setShowOutline(!showOutline)}
-            className="text-[10px] bg-zinc-900 border border-white/10 hover:bg-zinc-800 text-zinc-300 px-2.5 py-1 rounded transition cursor-pointer"
+            className="text-[10px] bg-zinc-900 border border-white/10 hover:bg-zinc-900 text-zinc-300 px-3 py-1.5 rounded-lg transition duration-200 cursor-pointer uppercase tracking-wider font-bold"
           >
             {showOutline ? "Hide Outline" : "View Outline"}
           </button>
@@ -483,18 +483,18 @@ export default function Course7Phase1GrammarLabWizard({
 
       {/* Screen 1: Welcome/Overview */}
       {step === 1 && (
-        <div className="glass-panel border border-white/10 p-8 rounded-3xl shadow-2xl w-full space-y-6 flex-grow flex flex-col justify-center text-center relative overflow-hidden">
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center text-center animate-fade-in relative overflow-hidden">
           <div className="absolute -top-1/4 -right-1/4 w-40 h-40 bg-indigo-500/10 rounded-full blur-3xl" />
           <div className="p-3 bg-indigo-500/10 rounded-full border border-indigo-500/25 w-fit mx-auto text-indigo-400 shrink-0">
             <Sparkles className="w-8 h-8 animate-pulse" />
           </div>
           
           <div>
-            <h2 className="text-3xl font-black text-white font-sans">{metadata?.title}</h2>
+            <h2 className="text-5xl font-black text-white tracking-tight font-sans">{metadata?.title}</h2>
             <h3 className="text-md font-bold text-indigo-400 mt-1">{metadata?.subtitle}</h3>
           </div>
           
-          <p className="text-zinc-300 text-sm leading-relaxed max-w-md mx-auto">
+          <p className="text-zinc-300 text-base leading-relaxed max-w-2xl mx-auto">
             {metadata?.description}
           </p>
 
@@ -521,7 +521,7 @@ export default function Course7Phase1GrammarLabWizard({
           </div>
 
           {showOutline && (
-            <div className="bg-zinc-950 p-4 rounded-xl border border-white/5 text-left text-xs text-zinc-400 space-y-1.5 animate-fade-in max-w-md mx-auto w-full font-mono">
+            <div className="bg-zinc-950 p-6 rounded-2xl border border-white/5 text-left text-xs text-zinc-400 space-y-2 animate-fade-in max-w-2xl mx-auto w-full font-mono">
               <p className="font-extrabold text-white text-center pb-2">Lab Activities Outline:</p>
               <p>✓ Screen 1 – Welcome / Phase Overview</p>
               <p>✓ Screen 2 – SOV & "Verb at the End" Concept</p>
@@ -536,9 +536,9 @@ export default function Course7Phase1GrammarLabWizard({
 
       {/* Screen 2: Concept Explanation */}
       {step === 2 && (
-        <div className="glass-panel border border-white/10 p-8 rounded-3xl shadow-2xl w-full space-y-6 flex-grow flex flex-col justify-center">
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
           <div className="flex justify-between items-center border-b border-white/5 pb-4">
-            <h2 className="text-xl font-black text-white flex items-center gap-2">
+            <h2 className="text-2xl font-black text-white flex items-center gap-2">
               <BookOpen className="w-5 h-5 text-indigo-400" />
               <span>SOV & "Verb at the End"</span>
             </h2>
@@ -605,7 +605,7 @@ export default function Course7Phase1GrammarLabWizard({
           </p>
 
           <div className="flex justify-between items-center pt-2">
-            <button onClick={() => setStep(1)} className="glass-panel px-4 py-2.5 rounded-xl hover:bg-white/5 text-zinc-400 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
+            <button onClick={() => setStep(1)} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-sm font-bold transition flex items-center gap-2 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
             <button onClick={() => setStep(3)} className="bg-indigo-500 hover:bg-indigo-600 text-white px-5 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer">Start Building <ChevronRight className="w-4 h-4" /></button>
           </div>
         </div>
@@ -613,9 +613,9 @@ export default function Course7Phase1GrammarLabWizard({
 
       {/* Screen 3: Activity 1: Build & Repair */}
       {step === 3 && (
-        <div className="glass-panel border border-white/10 p-8 rounded-3xl shadow-2xl w-full space-y-6 flex-grow flex flex-col justify-center">
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
           <div className="flex justify-between items-center border-b border-white/5 pb-4">
-            <h2 className="text-xl font-black text-white flex items-center gap-2">
+            <h2 className="text-2xl font-black text-white flex items-center gap-2">
               <Sparkles className="w-5 h-5 text-indigo-400" />
               <span>Activity 1 - Build & Repair</span>
             </h2>
@@ -786,7 +786,7 @@ export default function Course7Phase1GrammarLabWizard({
           )}
 
           <div className="flex justify-between items-center pt-4 border-t border-white/5">
-            <button onClick={() => setStep(2)} className="glass-panel px-4 py-2.5 rounded-xl hover:bg-white/5 text-zinc-400 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
+            <button onClick={() => setStep(2)} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-sm font-bold transition flex items-center gap-2 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
             <button onClick={() => setStep(4)} className="bg-indigo-500 hover:bg-indigo-600 text-white px-5 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer">Move to Production <ChevronRight className="w-4 h-4" /></button>
           </div>
         </div>
@@ -794,9 +794,9 @@ export default function Course7Phase1GrammarLabWizard({
 
       {/* Screen 4: Activity 2: Typing & Transformations */}
       {step === 4 && (
-        <div className="glass-panel border border-white/10 p-8 rounded-3xl shadow-2xl w-full space-y-6 flex-grow flex flex-col justify-center">
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
           <div className="flex justify-between items-center border-b border-white/5 pb-4">
-            <h2 className="text-xl font-black text-white flex items-center gap-2">
+            <h2 className="text-2xl font-black text-white flex items-center gap-2">
               <Sparkles className="w-5 h-5 text-indigo-400" />
               <span>Activity 2 - Typing & Forms</span>
             </h2>
@@ -966,7 +966,7 @@ export default function Course7Phase1GrammarLabWizard({
           </div>
 
           <div className="flex justify-between items-center pt-4 border-t border-white/5">
-            <button onClick={() => setStep(3)} className="glass-panel px-4 py-2.5 rounded-xl hover:bg-white/5 text-zinc-400 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
+            <button onClick={() => setStep(3)} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-sm font-bold transition flex items-center gap-2 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
             <button onClick={() => setStep(5)} className="bg-indigo-500 hover:bg-indigo-600 text-white px-5 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer">Start Mini‑Quiz <ChevronRight className="w-4 h-4" /></button>
           </div>
         </div>
@@ -974,9 +974,9 @@ export default function Course7Phase1GrammarLabWizard({
 
       {/* Screen 5: Mini-Quiz */}
       {step === 5 && (
-        <div className="glass-panel border border-white/10 p-8 rounded-3xl shadow-2xl w-full space-y-6 flex-grow flex flex-col justify-center">
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
           <div className="flex justify-between items-center border-b border-white/5 pb-4">
-            <h2 className="text-xl font-black text-white flex items-center gap-2">
+            <h2 className="text-2xl font-black text-white flex items-center gap-2">
               <Award className="w-5 h-5 text-indigo-400" />
               <span>Checkpoint Mini-Quiz</span>
             </h2>
@@ -1049,7 +1049,7 @@ export default function Course7Phase1GrammarLabWizard({
 
       {/* Screen 6: Homework & Completion */}
       {step === 6 && (
-        <div className="glass-panel border border-white/10 p-8 rounded-3xl shadow-2xl w-full space-y-6 flex-grow flex flex-col justify-center text-center relative overflow-hidden">
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center text-center animate-fade-in relative overflow-hidden">
           <div className="p-3 bg-emerald-500/10 rounded-full border border-emerald-500/25 w-fit mx-auto text-emerald-400 shrink-0">
             <Award className="w-10 h-10 animate-bounce" />
           </div>

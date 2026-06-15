@@ -337,16 +337,16 @@ export default function Course4Phase1ConnectorsWizard({
   };
 
   return (
-    <div className="flex-grow flex flex-col justify-between max-w-2xl mx-auto w-full font-sans">
+    <div className="flex-grow flex flex-col justify-between">
       
       {/* Top Header tracking */}
       <header className="flex justify-between items-center py-4 border-b border-white/5 mb-6">
-        <div className="flex items-center space-x-3">
-          <div className="p-2 rounded-xl bg-zinc-900 border border-white/10">
-            <BookOpen className="w-5 h-5 text-brand-400" />
+        <div className="flex items-center space-x-4">
+          <div className="p-3 rounded-2xl bg-zinc-900 border border-white/10 shadow-lg">
+            <BookOpen className="w-6 h-6 text-brand-400" />
           </div>
           <div>
-            <h2 className="font-extrabold text-lg flex items-center gap-2">
+            <h2 className="font-black text-xl text-white tracking-tight flex items-center gap-2">
               <span>{activeLesson?.title || "Connecting Ideas (B1 Core)"}</span>
             </h2>
             <p className="text-xs text-zinc-500">Curated Topic: Clause Linking Connectors</p>
@@ -355,7 +355,7 @@ export default function Course4Phase1ConnectorsWizard({
         
         {/* Active progress bar */}
         <div className="flex items-center space-x-4">
-          <div className="w-32 h-2.5 bg-zinc-800 rounded-full overflow-hidden">
+          <div className="w-40 h-3 bg-zinc-900/80 rounded-full overflow-hidden border border-white/5 p-[2px]">
             <div 
               className="h-full bg-gradient-to-r from-yellow-500 via-orange-500 to-indigo-500 rounded-full transition-all duration-500" 
               style={{ width: `${(step / totalSteps) * 100}%` }}
@@ -364,7 +364,7 @@ export default function Course4Phase1ConnectorsWizard({
           <span className="text-xs text-zinc-400 font-bold">{Math.round((step / totalSteps) * 100)}%</span>
           <button 
             onClick={() => setShowOutline(!showOutline)}
-            className="text-[10px] bg-zinc-900 border border-white/10 hover:bg-zinc-800 text-zinc-300 px-2.5 py-1 rounded transition cursor-pointer"
+            className="text-[10px] bg-zinc-900 border border-white/10 hover:bg-zinc-900 text-zinc-300 px-3 py-1.5 rounded-lg transition duration-200 cursor-pointer uppercase tracking-wider font-bold"
           >
             {showOutline ? "Hide Outline" : "View Outline"}
           </button>
@@ -373,19 +373,19 @@ export default function Course4Phase1ConnectorsWizard({
 
       {/* Screen 1: Welcome/Overview */}
       {step === 1 && (
-        <div className="glass-panel neon-border p-8 rounded-3xl shadow-2xl w-full space-y-6 flex-grow flex flex-col justify-center text-center">
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center text-center animate-fade-in">
           <div className="p-3 bg-brand-500/10 rounded-full border border-brand-500/25 w-fit mx-auto text-brand-400 shrink-0">
             <Sparkles className="w-8 h-8 animate-pulse shrink-0" />
           </div>
           
-          <h2 className="text-4xl font-black text-white">Korean 3.1</h2>
-          <h3 className="text-xl font-bold text-brand-400 mt-1">Connecting Ideas: Because, So & But</h3>
+          <h2 className="text-5xl font-black text-white tracking-tight">Korean 3.1</h2>
+          <h3 className="text-2xl font-extrabold text-brand-400 mt-2">Connecting Ideas: Because, So & But</h3>
           
-          <p className="text-zinc-300 text-sm leading-relaxed max-w-md mx-auto">
+          <p className="text-zinc-300 text-base leading-relaxed max-w-2xl mx-auto">
             {metadata?.description || "Link your sentences to explain reasons, results, and contrasts."}
           </p>
 
-          <div className="bg-zinc-900/60 p-4 rounded-xl border border-white/5 text-left text-xs text-zinc-400 space-y-2 max-w-md mx-auto w-full">
+          <div className="bg-zinc-900/60 p-6 rounded-2xl border border-white/5 text-left text-sm text-zinc-400 space-y-3 max-w-2xl mx-auto w-full">
             <p className="text-[10px] text-zinc-500 font-mono uppercase tracking-wider font-black">🎯 Objectives:</p>
             <ul className="list-disc list-inside space-y-1 text-zinc-300 pl-1">
               {(metadata?.goals || [
@@ -400,10 +400,10 @@ export default function Course4Phase1ConnectorsWizard({
             <p><strong>📋 Prerequisites:</strong> {metadata?.prerequisites || "Korean 2.6 – Everyday Conversations"}</p>
           </div>
 
-          <div className="flex flex-col gap-3 max-w-xs mx-auto">
+          <div className="flex flex-col gap-3 max-w-sm mx-auto pt-4">
             <button 
               onClick={() => setStep(2)}
-              className="bg-brand-500 hover:bg-brand-600 text-white font-bold py-3.5 px-8 rounded-xl transition text-sm flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-brand-500/20"
+              className="bg-brand-500 hover:bg-brand-600 text-white font-black py-4 px-10 rounded-2xl transition text-base flex items-center justify-center gap-2.5 cursor-pointer shadow-lg shadow-brand-500/20"
             >
               <span>Start Phase 1</span>
               <ChevronRight className="w-4 h-4" />
@@ -412,7 +412,7 @@ export default function Course4Phase1ConnectorsWizard({
           </div>
 
           {showOutline && (
-            <div className="bg-zinc-950 p-4 rounded-xl border border-white/5 text-left text-xs text-zinc-400 space-y-1.5 animate-fade-in max-w-md mx-auto w-full font-mono">
+            <div className="bg-zinc-950 p-6 rounded-2xl border border-white/5 text-left text-xs text-zinc-400 space-y-2 animate-fade-in max-w-2xl mx-auto w-full font-mono">
               <p className="font-extrabold text-white text-center pb-2">Phase Activities Outline</p>
               <p>✓ Activity 1 – Core connectors cards & before/after sentence mergers</p>
               <p>✓ Activity 2 – Connector matching & relationship classifiers</p>
@@ -425,10 +425,10 @@ export default function Course4Phase1ConnectorsWizard({
 
       {/* Screen 2: Concept Explanation */}
       {step === 2 && (
-        <div className="glass-panel neon-border p-8 rounded-3xl shadow-2xl w-full space-y-6 flex-grow flex flex-col justify-center">
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
           <div className="flex justify-between items-center border-b border-white/5 pb-4">
-            <h2 className="text-xl font-black text-white flex items-center gap-2">
-              <BookOpen className="w-5 h-5 text-brand-400" />
+            <h2 className="text-2xl font-black text-white flex items-center gap-2">
+              <BookOpen className="w-6 h-6 text-brand-400" />
               <span>Clauses & Connectors (B1)</span>
             </h2>
             <span className="text-xs text-zinc-500 font-bold">Step 2 of {totalSteps}</span>
@@ -488,7 +488,7 @@ export default function Course4Phase1ConnectorsWizard({
               </div>
 
               <div className="flex flex-col items-center justify-center shrink-0">
-                <ArrowRight className="w-5 h-5 text-brand-400" />
+                <ArrowRight className="w-6 h-6 text-brand-400" />
                 <span className="text-[9px] text-brand-400 font-bold">Merge</span>
               </div>
 
@@ -503,18 +503,18 @@ export default function Course4Phase1ConnectorsWizard({
           </div>
 
           <div className="flex justify-between items-center pt-4 border-t border-white/5">
-            <button onClick={() => setStep(1)} className="glass-panel px-4 py-2.5 rounded-xl hover:bg-white/5 text-zinc-400 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
-            <button onClick={() => setStep(3)} className="bg-brand-500 hover:bg-brand-600 text-white px-5 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer">Start Activities <ChevronRight className="w-4 h-4" /></button>
+            <button onClick={() => setStep(1)} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-sm font-bold transition flex items-center gap-2 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
+            <button onClick={() => setStep(3)} className="bg-brand-500 hover:bg-brand-600 text-white px-8 py-3 rounded-xl text-sm font-bold transition flex items-center gap-2 cursor-pointer">Start Activities <ChevronRight className="w-4 h-4" /></button>
           </div>
         </div>
       )}
 
       {/* Screen 3: Activity 1: Recognize & Choose */}
       {step === 3 && (
-        <div className="glass-panel neon-border p-8 rounded-3xl shadow-2xl w-full space-y-6 flex-grow flex flex-col justify-center">
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
           <div className="flex justify-between items-center border-b border-white/5 pb-4">
-            <h2 className="text-xl font-black text-white flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-brand-400" />
+            <h2 className="text-2xl font-black text-white flex items-center gap-2">
+              <Sparkles className="w-6 h-6 text-brand-400" />
               <span>Activity 1 – Connector Recognition</span>
             </h2>
             <span className="text-xs text-zinc-500 font-bold">Step 3 of {totalSteps}</span>
@@ -675,18 +675,18 @@ export default function Course4Phase1ConnectorsWizard({
           )}
 
           <div className="flex justify-between items-center pt-4 border-t border-white/5">
-            <button onClick={() => setStep(2)} className="glass-panel px-4 py-2.5 rounded-xl hover:bg-white/5 text-zinc-400 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
-            <button onClick={() => setStep(4)} className="bg-brand-500 hover:bg-brand-600 text-white px-5 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer">Move to Activity 2 <ChevronRight className="w-4 h-4" /></button>
+            <button onClick={() => setStep(2)} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-sm font-bold transition flex items-center gap-2 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
+            <button onClick={() => setStep(4)} className="bg-brand-500 hover:bg-brand-600 text-white px-8 py-3 rounded-xl text-sm font-bold transition flex items-center gap-2 cursor-pointer">Move to Activity 2 <ChevronRight className="w-4 h-4" /></button>
           </div>
         </div>
       )}
 
       {/* Screen 4: Activity 2: Build & Expand */}
       {step === 4 && (
-        <div className="glass-panel neon-border p-8 rounded-3xl shadow-2xl w-full space-y-6 flex-grow flex flex-col justify-center">
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
           <div className="flex justify-between items-center border-b border-white/5 pb-4">
-            <h2 className="text-xl font-black text-white flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-brand-400" />
+            <h2 className="text-2xl font-black text-white flex items-center gap-2">
+              <Sparkles className="w-6 h-6 text-brand-400" />
               <span>Activity 2 – Clause Expansion Builder</span>
             </h2>
             <span className="text-xs text-zinc-500 font-bold">Step 4 of {totalSteps}</span>
@@ -870,18 +870,18 @@ export default function Course4Phase1ConnectorsWizard({
           </div>
 
           <div className="flex justify-between items-center pt-4 border-t border-white/5">
-            <button onClick={() => setStep(3)} className="glass-panel px-4 py-2.5 rounded-xl hover:bg-white/5 text-zinc-400 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
-            <button onClick={() => setStep(5)} className="bg-brand-500 hover:bg-brand-600 text-white px-5 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer">Start Mini-Quiz <ChevronRight className="w-4 h-4" /></button>
+            <button onClick={() => setStep(3)} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-sm font-bold transition flex items-center gap-2 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
+            <button onClick={() => setStep(5)} className="bg-brand-500 hover:bg-brand-600 text-white px-8 py-3 rounded-xl text-sm font-bold transition flex items-center gap-2 cursor-pointer">Start Mini-Quiz <ChevronRight className="w-4 h-4" /></button>
           </div>
         </div>
       )}
 
       {/* Screen 5: Mini-Quiz */}
       {step === 5 && (
-        <div className="glass-panel neon-border p-8 rounded-3xl shadow-2xl w-full space-y-6 flex-grow flex flex-col justify-center">
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
           <div className="flex justify-between items-center border-b border-white/5 pb-4">
-            <h2 className="text-xl font-black text-white flex items-center gap-2">
-              <Award className="w-5 h-5 text-brand-400" />
+            <h2 className="text-2xl font-black text-white flex items-center gap-2">
+              <Award className="w-6 h-6 text-brand-400" />
               <span>Mini-Quiz: Connector Usage Check</span>
             </h2>
             <span className="text-xs text-zinc-500 font-bold">Question {quizIdx + 1} of {quizBlueprint.length}</span>
@@ -944,7 +944,7 @@ export default function Course4Phase1ConnectorsWizard({
           )}
 
           <div className="flex justify-between items-center pt-4 border-t border-white/5">
-            <button onClick={() => setStep(4)} className="glass-panel px-4 py-2.5 rounded-xl hover:bg-white/5 text-zinc-400 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
+            <button onClick={() => setStep(4)} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-sm font-bold transition flex items-center gap-2 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
             <div className="h-4" />
           </div>
         </div>
@@ -952,12 +952,12 @@ export default function Course4Phase1ConnectorsWizard({
 
       {/* Screen 6: Homework & AI practice launcher */}
       {step === 6 && (
-        <div className="glass-panel neon-border p-8 rounded-3xl shadow-2xl w-full space-y-6 flex-grow flex flex-col justify-center text-center">
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center text-center animate-fade-in">
           <div className="p-3 bg-accent-teal/10 rounded-full border border-accent-teal/25 w-fit mx-auto text-accent-teal shrink-0">
             <Award className="w-8 h-8 animate-bounce shrink-0" />
           </div>
 
-          <h2 className="text-3xl font-black text-white">Course 4 Started!</h2>
+          <h2 className="text-5xl font-black text-white tracking-tight">Course 4 Started!</h2>
           <p className="text-xs text-zinc-400 font-mono">Badge Earned: Connector Starter (150 XP rewarded)</p>
 
           <div className="bg-zinc-900/40 p-5 rounded-2xl border border-white/5 text-left space-y-3 max-w-md mx-auto w-full">

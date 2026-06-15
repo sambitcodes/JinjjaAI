@@ -389,16 +389,16 @@ export default function Course5Phase5ListeningWizard({
   };
 
   return (
-    <div className="flex-grow flex flex-col justify-between max-w-2xl mx-auto w-full font-sans">
+    <div className="flex-grow flex flex-col justify-between">
       
       {/* Top Header tracking */}
       <header className="flex justify-between items-center py-4 border-b border-white/5 mb-6">
-        <div className="flex items-center space-x-3">
-          <div className="p-2 rounded-xl bg-zinc-900 border border-white/10">
-            <BookOpen className="w-5 h-5 text-brand-400" />
+        <div className="flex items-center space-x-4">
+          <div className="p-3 rounded-2xl bg-zinc-900 border border-white/10 shadow-lg">
+            <BookOpen className="w-6 h-6 text-brand-400" />
           </div>
           <div>
-            <h2 className="font-extrabold text-lg flex items-center gap-2">
+            <h2 className="font-black text-xl text-white tracking-tight flex items-center gap-2">
               <span>{activeLesson?.title || "Korean 4.5 – Longer Listening & Note‑Taking"}</span>
             </h2>
             <p className="text-xs text-zinc-500 font-medium">Topic: B1 Listening & Keywords Synthesis</p>
@@ -407,7 +407,7 @@ export default function Course5Phase5ListeningWizard({
         
         {/* Active progress bar */}
         <div className="flex items-center space-x-4">
-          <div className="w-32 h-2.5 bg-zinc-800 rounded-full overflow-hidden">
+          <div className="w-40 h-3 bg-zinc-900/80 rounded-full overflow-hidden border border-white/5 p-[2px]">
             <div 
               className="h-full bg-gradient-to-r from-yellow-500 via-orange-500 to-indigo-500 rounded-full transition-all duration-500" 
               style={{ width: `${(step / totalSteps) * 100}%` }}
@@ -416,7 +416,7 @@ export default function Course5Phase5ListeningWizard({
           <span className="text-xs text-zinc-400 font-bold">{Math.round((step / totalSteps) * 100)}%</span>
           <button 
             onClick={() => setShowOutline(!showOutline)}
-            className="text-[10px] bg-zinc-900 border border-white/10 hover:bg-zinc-800 text-zinc-300 px-2.5 py-1 rounded transition cursor-pointer"
+            className="text-[10px] bg-zinc-900 border border-white/10 hover:bg-zinc-900 text-zinc-300 px-3 py-1.5 rounded-lg transition duration-200 cursor-pointer uppercase tracking-wider font-bold"
           >
             {showOutline ? "Hide Outline" : "View Outline"}
           </button>
@@ -425,15 +425,15 @@ export default function Course5Phase5ListeningWizard({
 
       {/* Screen 1: Welcome/Overview */}
       {step === 1 && (
-        <div className="glass-panel neon-border p-8 rounded-3xl shadow-2xl w-full space-y-6 flex-grow flex flex-col justify-center text-center">
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center text-center animate-fade-in">
           <div className="p-3 bg-brand-500/10 rounded-full border border-brand-500/25 w-fit mx-auto text-brand-400 shrink-0">
             <Sparkles className="w-8 h-8 animate-pulse shrink-0" />
           </div>
           
-          <h2 className="text-3xl font-black text-white font-sans">Korean 4.5</h2>
-          <h3 className="text-xl font-bold text-brand-400 mt-1">Longer Listening & Note‑Taking</h3>
+          <h2 className="text-5xl font-black text-white tracking-tight font-sans">Korean 4.5</h2>
+          <h3 className="text-2xl font-extrabold text-brand-400 mt-2">Longer Listening & Note‑Taking</h3>
           
-          <p className="text-zinc-300 text-sm leading-relaxed max-w-md mx-auto">
+          <p className="text-zinc-300 text-base leading-relaxed max-w-2xl mx-auto">
             {metadata?.description || "Understand longer Korean and keep simple notes."}
           </p>
 
@@ -482,7 +482,7 @@ export default function Course5Phase5ListeningWizard({
           <div className="flex flex-col gap-3 max-w-xs mx-auto pt-2">
             <button 
               onClick={() => setStep(2)}
-              className="bg-brand-500 hover:bg-brand-600 text-white font-bold py-3 px-8 rounded-xl transition text-sm flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-brand-500/20"
+              className="bg-brand-500 hover:bg-brand-600 text-white font-black py-4 px-10 rounded-2xl transition text-base flex items-center justify-center gap-2.5 cursor-pointer shadow-lg shadow-brand-500/20"
             >
               <span>Start Phase 5</span>
               <ChevronRight className="w-4 h-4" />
@@ -491,7 +491,7 @@ export default function Course5Phase5ListeningWizard({
           </div>
 
           {showOutline && (
-            <div className="bg-zinc-950 p-4 rounded-xl border border-white/5 text-left text-xs text-zinc-400 space-y-1.5 animate-fade-in max-w-md mx-auto w-full font-mono">
+            <div className="bg-zinc-950 p-6 rounded-2xl border border-white/5 text-left text-xs text-zinc-400 space-y-2 animate-fade-in max-w-2xl mx-auto w-full font-mono">
               <p className="font-extrabold text-white text-center pb-2">Course syllabus activities:</p>
               <p>✓ Screen 1 – Welcome / Phase Overview</p>
               <p>✓ Screen 2 – Listening & Note-Taking Foundations</p>
@@ -506,10 +506,10 @@ export default function Course5Phase5ListeningWizard({
 
       {/* Screen 2: Concept Explanation */}
       {step === 2 && (
-        <div className="glass-panel neon-border p-8 rounded-3xl shadow-2xl w-full space-y-6 flex-grow flex flex-col justify-center">
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
           <div className="flex justify-between items-center border-b border-white/5 pb-4">
-            <h2 className="text-xl font-black text-white flex items-center gap-2">
-              <BookOpen className="w-5 h-5 text-brand-400" />
+            <h2 className="text-2xl font-black text-white flex items-center gap-2">
+              <BookOpen className="w-6 h-6 text-brand-400" />
               <span>Main Points, Details & Simple Notes</span>
             </h2>
             <span className="text-xs text-zinc-500 font-bold">Step 2 of {totalSteps}</span>
@@ -583,10 +583,10 @@ export default function Course5Phase5ListeningWizard({
 
       {/* Screen 3: Activity 1: Identify Main Points & Details */}
       {step === 3 && (
-        <div className="glass-panel neon-border p-8 rounded-3xl shadow-2xl w-full space-y-6 flex-grow flex flex-col justify-center">
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
           <div className="flex justify-between items-center border-b border-white/5 pb-4">
-            <h2 className="text-xl font-black text-white flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-brand-400" />
+            <h2 className="text-2xl font-black text-white flex items-center gap-2">
+              <Sparkles className="w-6 h-6 text-brand-400" />
               <span>{activity1Step === "1A" ? "Activity 1A – What's the main point?" : "Activity 1B – Pick the key details"}</span>
             </h2>
             <span className="text-xs text-zinc-500 font-bold">Step 3 of {totalSteps}</span>
@@ -712,10 +712,10 @@ export default function Course5Phase5ListeningWizard({
 
       {/* Screen 4: Activity 2: Note-Taking & Summaries */}
       {step === 4 && (
-        <div className="glass-panel neon-border p-8 rounded-3xl shadow-2xl w-full space-y-6 flex-grow flex flex-col justify-center">
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
           <div className="flex justify-between items-center border-b border-white/5 pb-4">
-            <h2 className="text-xl font-black text-white flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-brand-400" />
+            <h2 className="text-2xl font-black text-white flex items-center gap-2">
+              <Sparkles className="w-6 h-6 text-brand-400" />
               <span>Activity 2 – Notes & Summaries</span>
             </h2>
             <div className="flex gap-1">
@@ -943,10 +943,10 @@ export default function Course5Phase5ListeningWizard({
 
       {/* Screen 5: Mini-Quiz */}
       {step === 5 && (
-        <div className="glass-panel neon-border p-8 rounded-3xl shadow-2xl w-full space-y-6 flex-grow flex flex-col justify-center">
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
           <div className="flex justify-between items-center border-b border-white/5 pb-4">
-            <h2 className="text-xl font-black text-white flex items-center gap-2">
-              <Award className="w-5 h-5 text-brand-400" />
+            <h2 className="text-2xl font-black text-white flex items-center gap-2">
+              <Award className="w-6 h-6 text-brand-400" />
               <span>Mini‑Quiz: Register & Note Check</span>
             </h2>
             <div className="flex items-center gap-2">
@@ -1018,7 +1018,7 @@ export default function Course5Phase5ListeningWizard({
 
       {/* Screen 6: Homework & Completion */}
       {step === 6 && (
-        <div className="glass-panel neon-border p-8 rounded-3xl shadow-2xl w-full space-y-6 flex-grow flex flex-col justify-center text-center">
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center text-center animate-fade-in">
           <div className="p-3 bg-accent-teal/10 rounded-full border border-accent-teal/25 w-fit mx-auto text-accent-teal shrink-0">
             <Award className="w-10 h-10 animate-bounce" />
           </div>

@@ -330,16 +330,16 @@ export default function Course4Phase6CapstoneWizard({
   };
 
   return (
-    <div className="flex-grow flex flex-col justify-between max-w-2xl mx-auto w-full font-sans">
+    <div className="flex-grow flex flex-col justify-between">
       
       {/* Top Header tracking */}
       <header className="flex justify-between items-center py-4 border-b border-white/5 mb-6">
-        <div className="flex items-center space-x-3">
-          <div className="p-2 rounded-xl bg-zinc-900 border border-white/10">
+        <div className="flex items-center space-x-4">
+          <div className="p-3 rounded-2xl bg-zinc-900 border border-white/10 shadow-lg">
             <Trophy className="w-5 h-5 text-yellow-400" />
           </div>
           <div>
-            <h2 className="font-extrabold text-lg flex items-center gap-2">
+            <h2 className="font-black text-xl text-white tracking-tight flex items-center gap-2">
               <span>{activeLesson?.title || "B1 Conversations & Stories (Capstone)"}</span>
             </h2>
             <p className="text-xs text-zinc-500 font-medium">Curated Topic: Capstone Dialogues & Storytelling</p>
@@ -348,7 +348,7 @@ export default function Course4Phase6CapstoneWizard({
         
         {/* Active progress bar */}
         <div className="flex items-center space-x-4">
-          <div className="w-32 h-2.5 bg-zinc-800 rounded-full overflow-hidden">
+          <div className="w-40 h-3 bg-zinc-900/80 rounded-full overflow-hidden border border-white/5 p-[2px]">
             <div 
               className="h-full bg-gradient-to-r from-yellow-500 via-orange-500 to-indigo-500 rounded-full transition-all duration-500" 
               style={{ width: `${(step / totalSteps) * 100}%` }}
@@ -357,7 +357,7 @@ export default function Course4Phase6CapstoneWizard({
           <span className="text-xs text-zinc-400 font-bold">{Math.round((step / totalSteps) * 100)}%</span>
           <button 
             onClick={() => setShowOutline(!showOutline)}
-            className="text-[10px] bg-zinc-900 border border-white/10 hover:bg-zinc-800 text-zinc-300 px-2.5 py-1 rounded transition cursor-pointer"
+            className="text-[10px] bg-zinc-900 border border-white/10 hover:bg-zinc-900 text-zinc-300 px-3 py-1.5 rounded-lg transition duration-200 cursor-pointer uppercase tracking-wider font-bold"
           >
             {showOutline ? "Hide Outline" : "View Outline"}
           </button>
@@ -366,7 +366,7 @@ export default function Course4Phase6CapstoneWizard({
 
       {/* Screen 1: Welcome/Overview */}
       {step === 1 && (
-        <div className="glass-panel neon-border p-8 rounded-3xl shadow-2xl w-full space-y-6 flex-grow flex flex-col justify-center text-center">
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center text-center animate-fade-in">
           <div className="relative mx-auto w-fit">
             <div className="p-4 bg-yellow-500/10 rounded-full border border-yellow-500/25 text-yellow-400">
               <Trophy className="w-10 h-10" />
@@ -379,7 +379,7 @@ export default function Course4Phase6CapstoneWizard({
           <h2 className="text-4xl font-black text-white font-sans">Korean 3.6</h2>
           <h3 className="text-xl font-bold text-yellow-400 mt-1">B1 Conversations & Stories (Capstone)</h3>
           
-          <p className="text-zinc-300 text-sm leading-relaxed max-w-md mx-auto">
+          <p className="text-zinc-300 text-base leading-relaxed max-w-2xl mx-auto">
             {metadata?.description || "Have real conversations and tell stories about your life."}
           </p>
 
@@ -427,7 +427,7 @@ export default function Course4Phase6CapstoneWizard({
           </div>
 
 
-          <div className="flex flex-col gap-3 max-w-xs mx-auto">
+          <div className="flex flex-col gap-3 max-w-sm mx-auto pt-4">
             <button 
               onClick={() => setStep(2)}
               className="bg-yellow-500 hover:bg-yellow-400 text-zinc-950 font-bold py-3.5 px-8 rounded-xl transition text-sm flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-yellow-500/20"
@@ -439,7 +439,7 @@ export default function Course4Phase6CapstoneWizard({
           </div>
 
           {showOutline && (
-            <div className="bg-zinc-950 p-4 rounded-xl border border-white/5 text-left text-xs text-zinc-400 space-y-1.5 animate-fade-in max-w-md mx-auto w-full font-mono">
+            <div className="bg-zinc-950 p-6 rounded-2xl border border-white/5 text-left text-xs text-zinc-400 space-y-2 animate-fade-in max-w-2xl mx-auto w-full font-mono">
               <p className="font-extrabold text-white text-center pb-2">Phase Activities Outline</p>
               <p>✓ Activity 1 – Guided Conversational Analysis & missing lines</p>
               <p>✓ Activity 2 – Live AI Conversation Tutor (Text/Voice) Simulation</p>
@@ -452,9 +452,9 @@ export default function Course4Phase6CapstoneWizard({
 
       {/* Screen 2: Concept Explanation */}
       {step === 2 && (
-        <div className="glass-panel neon-border p-8 rounded-3xl shadow-2xl w-full space-y-6 flex-grow flex flex-col justify-center">
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
           <div className="flex justify-between items-center border-b border-white/5 pb-4">
-            <h2 className="text-xl font-black text-white flex items-center gap-2">
+            <h2 className="text-2xl font-black text-white flex items-center gap-2">
               <BookOpen className="w-5 h-5 text-yellow-400" />
               <span>What B1 Conversations Look Like</span>
             </h2>
@@ -514,7 +514,7 @@ export default function Course4Phase6CapstoneWizard({
           )}
 
           <div className="flex justify-between items-center pt-4 border-t border-white/5">
-            <button onClick={() => setStep(1)} className="glass-panel px-4 py-2.5 rounded-xl hover:bg-white/5 text-zinc-400 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
+            <button onClick={() => setStep(1)} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-sm font-bold transition flex items-center gap-2 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
             <button onClick={() => setStep(3)} className="bg-yellow-500 hover:bg-yellow-400 text-zinc-950 px-5 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer">Start Activities <ChevronRight className="w-4 h-4" /></button>
           </div>
         </div>
@@ -522,9 +522,9 @@ export default function Course4Phase6CapstoneWizard({
 
       {/* Screen 3: Activity 1: Guided Dialogue Analysis */}
       {step === 3 && (
-        <div className="glass-panel neon-border p-8 rounded-3xl shadow-2xl w-full space-y-6 flex-grow flex flex-col justify-center">
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
           <div className="flex justify-between items-center border-b border-white/5 pb-4">
-            <h2 className="text-xl font-black text-white flex items-center gap-2">
+            <h2 className="text-2xl font-black text-white flex items-center gap-2">
               <Sparkles className="w-5 h-5 text-yellow-400" />
               <span>{activity1Step === "1A" ? "Activity 1A – Conversation Analysis" : "Activity 1B – Choose Next Line"}</span>
             </h2>
@@ -661,7 +661,7 @@ export default function Course4Phase6CapstoneWizard({
           )}
 
           <div className="flex justify-between items-center pt-4 border-t border-white/5">
-            <button onClick={() => setStep(2)} className="glass-panel px-4 py-2.5 rounded-xl hover:bg-white/5 text-zinc-400 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
+            <button onClick={() => setStep(2)} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-sm font-bold transition flex items-center gap-2 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
             <button onClick={() => setStep(4)} className="bg-yellow-500 hover:bg-yellow-400 text-zinc-950 px-5 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer">Move to Activity 2 <ChevronRight className="w-4 h-4" /></button>
           </div>
         </div>
@@ -669,9 +669,9 @@ export default function Course4Phase6CapstoneWizard({
 
       {/* Screen 4: Activity 2: Semi-Free Conversations */}
       {step === 4 && (
-        <div className="glass-panel neon-border p-8 rounded-3xl shadow-2xl w-full space-y-6 flex-grow flex flex-col justify-center">
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
           <div className="flex justify-between items-center border-b border-white/5 pb-4">
-            <h2 className="text-xl font-black text-white flex items-center gap-2">
+            <h2 className="text-2xl font-black text-white flex items-center gap-2">
               <MessageSquare className="w-5 h-5 text-yellow-400" />
               <span>Activity 2 – B1 Scenario Roleplay</span>
             </h2>
@@ -836,7 +836,7 @@ export default function Course4Phase6CapstoneWizard({
           )}
 
           <div className="flex justify-between items-center pt-4 border-t border-white/5">
-            <button onClick={() => setStep(3)} className="glass-panel px-4 py-2.5 rounded-xl hover:bg-white/5 text-zinc-400 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
+            <button onClick={() => setStep(3)} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-sm font-bold transition flex items-center gap-2 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
             <button onClick={() => setStep(5)} className="bg-yellow-500 hover:bg-yellow-400 text-zinc-950 px-5 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer">Move to Mini-Quiz <ChevronRight className="w-4 h-4" /></button>
           </div>
         </div>
@@ -846,7 +846,7 @@ export default function Course4Phase6CapstoneWizard({
       {step === 5 && (
         <div className="glass-panel p-8 rounded-3xl border border-white/5 shadow-2xl w-full space-y-6 flex-grow flex flex-col justify-center">
           <div className="flex justify-between items-center border-b border-white/5 pb-4">
-            <h2 className="text-xl font-black text-white flex items-center gap-2">
+            <h2 className="text-2xl font-black text-white flex items-center gap-2">
               <Trophy className="w-5 h-5 text-yellow-400" />
               <span>Phase Checkpoint Quiz</span>
             </h2>
@@ -891,7 +891,7 @@ export default function Course4Phase6CapstoneWizard({
               )}
 
               <div className="flex justify-between items-center pt-4 border-t border-white/5">
-                <button onClick={() => setStep(4)} className="glass-panel px-4 py-2.5 rounded-xl hover:bg-white/5 text-zinc-400 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
+                <button onClick={() => setStep(4)} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-sm font-bold transition flex items-center gap-2 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
                 {!quizChecked ? (
                   <button
                     onClick={handleCheckQuiz}
