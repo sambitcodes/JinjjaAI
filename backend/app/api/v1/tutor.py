@@ -21,6 +21,7 @@ class ChatResponse(BaseModel):
     english_translation: str | None = None
     correction: str | None = None
     grammar_notes: str | None = None
+    suggested_options: List[str] | None = None
 
 @router.post("/conversations", response_model=dict)
 async def create_conversation(
@@ -74,6 +75,7 @@ async def get_conversation_messages(
             "correction": m.correction_metadata.get("correction") if m.correction_metadata else None,
             "grammarNotes": m.correction_metadata.get("grammar_notes") if m.correction_metadata else None,
             "englishTranslation": m.correction_metadata.get("english_translation") if m.correction_metadata else None,
+            "suggestedOptions": m.correction_metadata.get("suggested_options") if m.correction_metadata else None,
             "showTranslation": False
         }
         for m in messages
@@ -129,6 +131,7 @@ async def chat_with_tutor(
     english_translation = ai_response["english_translation"]
     correction = ai_response["correction"]
     grammar_notes = ai_response["grammar_notes"]
+    suggested_options = ai_response.get("suggested_options", ["기초 모음 공부하기", "Let's learn greetings"])
     
     # Trigger AI Evaluator Daemon to dynamically rate model performance and compile SFT datasets
     from backend.app.services.evaluator_daemon import tutor_evaluator_daemon
@@ -148,7 +151,8 @@ async def chat_with_tutor(
         correction_metadata={
             "english_translation": english_translation,
             "correction": correction, 
-            "grammar_notes": grammar_notes
+            "grammar_notes": grammar_notes,
+            "suggested_options": suggested_options
         }
     )
     db.add(assist_msg)
@@ -158,7 +162,8 @@ async def chat_with_tutor(
         reply=reply,
         english_translation=english_translation,
         correction=correction,
-        grammar_notes=grammar_notes
+        grammar_notes=grammar_notes,
+        suggested_options=suggested_options
     )
 
 @router.delete("/conversations/{conv_id}", status_code=status.HTTP_204_NO_CONTENT)

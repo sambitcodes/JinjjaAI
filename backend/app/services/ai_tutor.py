@@ -108,6 +108,8 @@ class AITutorService:
                 "When asked about your name, always identify yourself as Gwan-Sik. "
                 "Analyze the user's message, provide explicit grammar corrections in English if they made any mistakes, explain corrections, "
                 "and offer additional helpful insights.\n\n"
+                "CRITICAL INSTRUCTION: You MUST ALWAYS end your response by asking the user what they want to talk about or learn next. "
+                "You will also provide two actionable, short suggested next options in the JSON response under 'suggested_options'.\n\n"
             )
             
             if context:
@@ -116,10 +118,11 @@ class AITutorService:
             system_prompt += (
                 "You must return the response in strict JSON format with these exact keys:\n"
                 "{\n"
-                '  "reply": "your conversational response. This should be beautifully curated according to the question asked and should be well and efficiently markdowned and formatted.",\n'
+                '  "reply": "your conversational response. This should be beautifully curated according to the question asked, ending with a short follow-up question asking what they want to do next. Effectively markdowned and formatted.",\n'
                 f'  "english_translation": "{translation_desc}",\n'
                 '  "correction": "explanation in English of any errors in their Korean input, or null if their sentence is grammatically perfect",\n'
-                '  "grammar_notes": "additional helpful grammar or vocabulary insights in English"\n'
+                '  "grammar_notes": "additional helpful grammar or vocabulary insights in English",\n'
+                '  "suggested_options": ["a list of exactly two short, actionable, and contextually relatable questions or options in English or Korean for what the user might want to study or say next. Example: [\'vowel ㅓ에 대해 공부할래요\', \'How do I pronounce 아기?\']"]\n'
                 "}"
             )
 
@@ -176,7 +179,8 @@ class AITutorService:
                     "reply": parsed.get("reply", "안녕하세요!"),
                     "english_translation": parsed.get("english_translation"),
                     "correction": parsed.get("correction"),
-                    "grammar_notes": parsed.get("grammar_notes")
+                    "grammar_notes": parsed.get("grammar_notes"),
+                    "suggested_options": parsed.get("suggested_options", ["기초 모음 공부하기", "Let's learn greetings"])
                 }, base_language)
 
         except Exception as e:
@@ -192,50 +196,57 @@ class AITutorService:
                     "reply": "안녕하세요! 반갑습니다. 오늘 기분이 어떠신가요?",
                     "english_translation": "Hello! Nice to meet you. How are you feeling today?",
                     "correction": None,
-                    "grammar_notes": "안녕하세요 (*An-nyeong-ha-se-yo*) is the standard polite greeting meaning 'Hello'. 기분이 어떠세요 means 'How are you feeling?'"
+                    "grammar_notes": "안녕하세요 (*An-nyeong-ha-se-yo*) is the standard polite greeting meaning 'Hello'. 기분이 어떠세요 means 'How are you feeling?'",
+                    "suggested_options": ["모음 공부 시작하기", "Let's learn greetings"]
                 }
             elif "날씨" in msg or "weather" in msg or "warm" in msg or "cold" in msg:
                 return {
                     "reply": "오늘 날씨가 정말 화창하네요! 비가 오거나 눈이 오는 날을 좋아하시나요?",
                     "english_translation": "The weather is really sunny today! Do you like rainy or snowy days?",
                     "correction": None,
-                    "grammar_notes": "**날씨** means weather. **화창하네요** (*hwa-chang-ha-ne-yo*) means 'is bright and sunny'."
+                    "grammar_notes": "**날씨** means weather. **화창하네요** (*hwa-chang-ha-ne-yo*) means 'is bright and sunny'.",
+                    "suggested_options": ["좋아하는 계절 말하기", "Tell me about rainy days"]
                 }
             elif "음식" in msg or "food" in msg or "먹" in msg or "eat" in msg or "delicious" in msg:
                 return {
                     "reply": "한국 음식은 정말 맛있고 인기가 많아요! 비빔밥이나 김치찌개를 드셔보셨나요?",
                     "english_translation": "Korean food is really delicious and popular! Have you tried bibimbap or kimchi stew?",
                     "correction": None,
-                    "grammar_notes": "**음식** means food. **맛있고** (*mat-it-go*) means 'is delicious and'. The particle **-나** connects two alternatives ('A or B')."
+                    "grammar_notes": "**음식** means food. **맛있고** (*mat-it-go*) means 'is delicious and'. The particle **-나** connects two alternatives ('A or B').",
+                    "suggested_options": ["매운 음식 좋아해요", "I want to study food vocabulary"]
                 }
             elif "취미" in msg or "hobby" in msg or "music" in msg or "음악" in msg or "영화" in msg:
                 return {
                     "reply": "제 취미는 새로운 언어를 공부하는 것이에요! 당신의 취미는 무엇인가요?",
                     "english_translation": "My hobby is studying new languages! What is your hobby?",
                     "correction": None,
-                    "grammar_notes": "**취미** (*chwi-mi*) means hobby. **무엇인가요** (*mu-eot-in-ga-yo*) is a polite way to ask 'What is it?'"
+                    "grammar_notes": "**취미** (*chwi-mi*) means hobby. **무엇인가요** (*mu-eot-in-ga-yo*) is a polite way to ask 'What is it?'",
+                    "suggested_options": ["영화 보기 좋아해요", "Tell me your favorite music"]
                 }
             elif "이름" in msg or "name" in msg or "who" in msg:
                 return {
-                    "reply": "제 이름은 관식이에요! 만나서 반갑습니다.",
-                    "english_translation": "My name is Gwan-Sik! Nice to meet you.",
+                    "reply": "제 이름은 관식이에요! 만나서 반갑습니다. 제 이름에 대해 궁금한 점이 있으신가요?",
+                    "english_translation": "My name is Gwan-Sik! Nice to meet you. Do you have any questions about my name?",
                     "correction": None,
-                    "grammar_notes": "**이름** (*i-reum*) means name. **반갑습니다** (*ban-gap-seup-ni-da*) is the formal expression for 'Nice to meet you'."
+                    "grammar_notes": "**이름** (*i-reum*) means name. **반갑습니다** (*ban-gap-seup-ni-da*) is the formal expression for 'Nice to meet you'.",
+                    "suggested_options": ["관식 뜻이 뭐예요?", "Let's study consonants next"]
                 }
             elif "공부" in msg or "learn" in msg or "study" in msg or "school" in msg:
                 return {
-                    "reply": "한국어 공부는 정말 유익하고 가치 있는 일이에요! 매일 조금씩 꾸준히 연습하면 실력이 빠르게 늘어요.",
-                    "english_translation": "Studying Korean is a very beneficial and valuable thing! If you practice a little bit every day consistently, your skills will improve quickly.",
+                    "reply": "한국어 공부는 정말 유익하고 가치 있는 일이에요! 매일 조금씩 꾸준히 연습하면 실력이 빠르게 늘어요. 오늘 어떤 모음이나 자음을 시작하고 싶으신가요?",
+                    "english_translation": "Studying Korean is a very beneficial and valuable thing! If you practice a little bit every day consistently, your skills will improve quickly. Which vowel or consonant would you like to start with today?",
                     "correction": None,
-                    "grammar_notes": "**공부** (*gong-bu*) means study. **유익하고** means 'is beneficial and'. **꾸준히** (*kku-jun-hi*) means 'consistently/steadily'."
+                    "grammar_notes": "**공부** (*gong-bu*) means study. **유익하고** means 'is beneficial and'. **꾸준히** (*kku-jun-hi*) means 'consistently/steadily'.",
+                    "suggested_options": ["모음 ㅏ 공부하기", "Let's study greetings"]
                 }
             
             # Default generic Korean-only dialogue
             return {
-                "reply": "정말 흥미로운 대화 주제네요! 더 자세하게 이야기해주시겠어요?",
-                "english_translation": "That is a very interesting topic of conversation! Could you talk about it in more detail?",
+                "reply": "정말 흥미로운 대화 주제네요! 더 자세하게 이야기해주시겠어요? 다음에 어떤 이야기를 나눌까요?",
+                "english_translation": "That is a very interesting topic of conversation! Could you talk about it in more detail? What shall we discuss next?",
                 "correction": "Your sentence structure looks excellent. Try incorporating particles (~은/는, ~이/가) next time!",
-                "grammar_notes": "Korean sentences place the verb at the very end, unlike English SVO layouts."
+                "grammar_notes": "Korean sentences place the verb at the very end, unlike English SVO layouts.",
+                "suggested_options": ["다른 주제로 얘기해요", "Help me build sentences"]
             }
 
     async def refine_formatting(self, tutor_response: Dict[str, Any], base_language: str = "korean") -> Dict[str, Any]:
@@ -252,7 +263,7 @@ class AITutorService:
 
             refiner_system_prompt = (
                 "You are a Markdown formatting expert for a Korean language learning chat application.\n"
-                "Your task: take a bilingual Korean-English tutor response object (reply, translation, correction, grammar_notes) "
+                "Your task: take a bilingual Korean-English tutor response object (reply, translation, correction, grammar_notes, suggested_options) "
                 "and reformat every field into clean, polished Markdown that renders perfectly in a modern React chat UI — "
                 "exactly like a well-formatted ChatGPT or Claude response.\n\n"
                 "════════════════════════════════════════\n"
@@ -261,15 +272,8 @@ class AITutorService:
                 "RULE 1 — BULLET LISTS (most critical rule):\n"
                 "Each bullet item MUST be on its own separate line. A blank line MUST precede any list.\n"
                 "NEVER write list items inline inside a sentence.\n\n"
-                "  ✅ CORRECT (each item on its own line):\n"
-                "  Here are some tips:\n\n"
-                "  - Tip number one goes here\n"
-                "  - Tip number two goes here\n"
-                "  - Tip number three goes here\n\n"
-                "  ❌ WRONG (items crammed inline — fix every instance of this):\n"
-                "  Here are some tips: - Tip one - Tip two - Tip three\n\n"
-                "  ❌ ALSO WRONG (hanging dash after comma):\n"
-                "  For example, - spend 30 minutes reading, - reviewing vocabulary\n\n"
+                "  Base instructions:\n"
+                "  - Keep lists beautifully vertically aligned.\n"
                 "RULE 2 — HEADERS:\n"
                 "Use ### for major section titles when the reply has 2+ distinct sections.\n"
                 "Example: ### 📚 Study Plan\n\n"
@@ -292,7 +296,8 @@ class AITutorService:
                 f'  "reply": "{refiner_reply_desc}",\n'
                 f'  "english_translation": "{refiner_trans_desc}",\n'
                 '  "correction": "formatted grammar correction in English with each correction point on its own bullet line, or null if no errors",\n'
-                '  "grammar_notes": "grammar insights in English — each insight as its own bullet point on its own line, with **bold** key terms and *italic* romanizations"\n'
+                '  "grammar_notes": "grammar insights in English — each insight as its own bullet point on its own line, with **bold** key terms and *italic* romanizations",\n'
+                '  "suggested_options": ["exactly two short string options representing possible next choices. Simply preserve the suggested_options array from the input as is."]\n'
                 "}"
             )
             
@@ -323,7 +328,8 @@ class AITutorService:
                         "reply": parsed.get("reply", tutor_response["reply"]),
                         "english_translation": parsed.get("english_translation", tutor_response["english_translation"]),
                         "correction": parsed.get("correction", tutor_response["correction"]),
-                        "grammar_notes": parsed.get("grammar_notes", tutor_response["grammar_notes"])
+                        "grammar_notes": parsed.get("grammar_notes", tutor_response["grammar_notes"]),
+                        "suggested_options": parsed.get("suggested_options", tutor_response.get("suggested_options"))
                     }
         except Exception as err:
             print(f"!!! Markdown Refiner failed, falling back to original: {err}", flush=True)
@@ -340,4 +346,7 @@ class AITutorService:
                 cleaned[key] = json.dumps(val)
             else:
                 cleaned[key] = str(val)
+        
+        # Keep suggested_options as list of strings
+        cleaned["suggested_options"] = tutor_response.get("suggested_options", [])
         return cleaned

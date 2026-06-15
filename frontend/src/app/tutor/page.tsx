@@ -19,6 +19,7 @@ interface Message {
   grammarNotes?: string;
   englishTranslation?: string;
   showTranslation?: boolean;
+  suggestedOptions?: string[];
   pronunciation?: {
     accuracy_score: number;
     syllables: Syllable[];
@@ -231,6 +232,7 @@ export default function TutorChat() {
         grammarNotes: res.grammar_notes || undefined,
         englishTranslation: res.english_translation || undefined,
         showTranslation: false,
+        suggestedOptions: res.suggested_options || undefined,
       };
       setMessages((prev) => [...prev, aiReply]);
 
@@ -1170,6 +1172,25 @@ export default function TutorChat() {
                       )}
                     </div>
                   )}
+                </div>
+              )}
+              {/* Suggested Options Pills */}
+              {msg.sender === "ai" && 
+               index === messages.length - 1 && 
+               (msg.displayedText === undefined || msg.displayedText === msg.text) && 
+               msg.suggestedOptions && 
+               msg.suggestedOptions.length > 0 && (
+                <div className="ml-12 mt-3 flex flex-wrap gap-2.5 animate-fade-in">
+                  {msg.suggestedOptions.map((opt, optIdx) => (
+                    <button
+                      key={optIdx}
+                      onClick={() => handleSendMessage(opt)}
+                      className="px-4 py-2.5 rounded-2xl bg-zinc-900/90 hover:bg-zinc-800 border border-white/10 hover:border-brand-500/50 text-xs font-bold text-zinc-300 hover:text-white transition cursor-pointer active:scale-95 shadow-md flex items-center gap-2"
+                    >
+                      <Sparkles className="w-3.5 h-3.5 text-brand-400 animate-pulse" />
+                      <span>{opt}</span>
+                    </button>
+                  ))}
                 </div>
               )}
             </div>
