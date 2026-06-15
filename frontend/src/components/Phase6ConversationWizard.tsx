@@ -28,6 +28,176 @@ import {
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
 
+// Web Audio API Sound synthesizers
+const playCorrectSound = () => {
+  if (typeof window === "undefined") return;
+  try {
+    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(523.25, ctx.currentTime); // C5
+    gain.gain.setValueAtTime(0.1, ctx.currentTime);
+    osc.start();
+    
+    osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.08); // E5
+    osc.stop(ctx.currentTime + 0.22);
+  } catch (e) {
+    console.warn("Audio synthesis error:", e);
+  }
+};
+
+const playWrongSound = () => {
+  if (typeof window === "undefined") return;
+  try {
+    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    
+    osc.type = "sawtooth";
+    osc.frequency.setValueAtTime(140, ctx.currentTime);
+    gain.gain.setValueAtTime(0.1, ctx.currentTime);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.28);
+  } catch (e) {
+    console.warn("Audio synthesis error:", e);
+  }
+};
+
+interface ConceptScreen {
+  title: string;
+  subtitle: string;
+  paragraphs: string[];
+  bulletPoints: string[];
+  question: {
+    stem: string;
+    options: { id: string; text: string }[];
+    correctId: string;
+    explanation: string;
+  };
+}
+
+const CONCEPT_SCREENS: Record<number, ConceptScreen> = {
+  2: {
+    title: "What This Lab Will Do",
+    subtitle: "From Blocks to Out-Loud Korean",
+    paragraphs: [
+      "Until now, you learned how to read Hangeul. Now we use that knowledge to start saying Korean out loud.",
+      "This capstone lab is not about perfect grammar yet. Instead, we want to help you build comfort, mimic natural native rhythm, and make your voice heard clearly."
+    ],
+    bulletPoints: [
+      "Gain confidence speaking out loud",
+      "Imitate native rhythm and pacing",
+      "Overcome the fear of making mistakes"
+    ],
+    question: {
+      stem: "What makes you most nervous when starting to speak Korean?",
+      options: [
+        { id: "A", text: "Reading text silently to myself" },
+        { id: "B", text: "Speaking out loud and hearing my own pronunciation" },
+        { id: "C", text: "Listening to fast native speakers" }
+      ],
+      correctId: "B",
+      explanation: "It is completely normal to feel nervous about speaking out loud! Gwan-Sik is a warm, supportive partner designed to help you practice in a low-stakes environment."
+    }
+  },
+  3: {
+    title: "How Shadowing Works",
+    subtitle: "Train your ears and mouth simultaneously",
+    paragraphs: [
+      "Shadowing means: listen to a short sentence, then say it with or right after the native speaker, trying to match rhythm, pitch, and speed as closely as you comfortably can.",
+      "This process trains your ears and mouth at the same time, transitioning you from letters/spelling to sound chunks and full phrases."
+    ],
+    bulletPoints: [
+      "Listen and copy sound rhythm, pitch, and speed",
+      "Train mouth muscles to adapt to Korean phonology",
+      "Develop automatic sound-chunking skills"
+    ],
+    question: {
+      stem: "In shadowing, what matters more at this beginner level?",
+      options: [
+        { id: "A", text: "Having perfect grammar rules memorized" },
+        { id: "B", text: "Copying the physical rhythm and sound flow" }
+      ],
+      correctId: "B",
+      explanation: "At this stage, imitating the rhythm, pitch, and physical sounds is far more important than analyzing grammar rules!"
+    }
+  },
+  4: {
+    title: "What Gwan-Sik Listens For",
+    subtitle: "Speech Recognition & Alignment",
+    paragraphs: [
+      "The app uses speech recognition (ASR) to turn your audio into text (transcription).",
+      "It checks if key words/syllables appear correctly, if the length of your speech roughly matches the target, and if important sounds (like 받침, vowels) are present.",
+      "Do not worry if the transcription is not 100% perfect; focus on speaking clearly and loudly."
+    ],
+    bulletPoints: [
+      "Transcription is powered by speech recognition",
+      "Aligned by acoustic match and syllable duration",
+      "Acoustic alignment score shown for each turn"
+    ],
+    question: {
+      stem: "If Gwan-Sik hears one syllable wrong in your sentence, what should you do?",
+      options: [
+        { id: "A", text: "Give up and close the conversation" },
+        { id: "B", text: "Slow down, listen again, and repeat the target sound clearly" },
+        { id: "C", text: "Speak faster so the app cannot track your syllables" }
+      ],
+      correctId: "B",
+      explanation: "Slowing down and enunciating clearly is the best way to help the ASR recognize your pronunciation."
+    }
+  },
+  5: {
+    title: "Speak with Meaning",
+    subtitle: "Using sentence frames to express yourself",
+    paragraphs: [
+      "A pattern is a short sentence frame you can fill with different words. Rather than just repeating sentences blindly, patterns let you construct real meaning.",
+      "Using simple patterns, you can introduce yourself, say where you are from, and list things you like using Hangeul words you've learned."
+    ],
+    bulletPoints: [
+      "저는 _이에요/예요. (I am ...)",
+      "저는 _ 좋아해요. (I like ...)",
+      "여기는 _이에요/예요. (This is ...)"
+    ],
+    question: {
+      stem: "Which pattern is best to talk about your favorite foods or drinks?",
+      options: [
+        { id: "A", text: "저는 _ 이에요." },
+        { id: "B", text: "저는 _ 좋아해요." }
+      ],
+      correctId: "B",
+      explanation: "저는 _ 좋아해요 means 'I like _'. You can fill it with loanwords like coffee, pizza, etc."
+    }
+  },
+  6: {
+    title: "What 'Good Enough' Means",
+    subtitle: "Aiming for confidence over perfection",
+    paragraphs: [
+      "At Course 0, 'good enough' means: syllables are recognisable, stress is not on each syllable separately (avoid robot speech), and you are not afraid to say basic sentences out loud.",
+      "Perfect accent comes later; now you aim for clear and confident."
+    ],
+    bulletPoints: [
+      "Pronounce syllables recognisably",
+      "Speak smoothly rather than syllable-by-syllable",
+      "Aim for confidence and volume"
+    ],
+    question: {
+      stem: "What is your main preference after finishing this Capstone Conversation Lab?",
+      options: [
+        { id: "A", text: "Move into Course 1 (Everyday Basics)" },
+        { id: "B", text: "Repeat capstone scenarios to build more speech confidence" }
+      ],
+      correctId: "A",
+      explanation: "Great! Both options are excellent. Repeating helps build automaticity, while Course 1 introduces rich everyday context."
+    }
+  }
+};
+
 function getToken(): string | null {
   if (typeof window === "undefined") return null;
   return localStorage.getItem("token");
@@ -163,6 +333,20 @@ export default function Phase6ConversationWizard({
   const [evalResult, setEvalResult] = useState<any>(null);
   const [evaluating, setEvaluating] = useState(false);
 
+  // Concept Micro-questions state
+  const [selectedOption, setSelectedOption] = useState<string | null>(null);
+  const [questionChecked, setQuestionChecked] = useState<boolean>(false);
+
+  // Inline check in Chat
+  const [inlineChecked, setInlineChecked] = useState(false);
+  const [inlineSelected, setInlineSelected] = useState<string | null>(null);
+
+  // Reset micro-question state when moving between steps
+  useEffect(() => {
+    setSelectedOption(null);
+    setQuestionChecked(false);
+  }, [step]);
+
   // Review States
   const [reviewData, setReviewData] = useState<any>(null);
   const [loadingReview, setLoadingReview] = useState(false);
@@ -188,7 +372,7 @@ export default function Phase6ConversationWizard({
         if (step === 1 && !metadata) {
           const res = await apiJson("/conversation/phase6/metadata");
           setMetadata(res);
-        } else if (step === 2 && scenarios.length === 0) {
+        } else if (step === 7 && scenarios.length === 0) {
           const res = await apiJson("/conversation/scenarios");
           setScenarios(res.scenarios || []);
           setRecommendedScenarios(res.recommended || []);
@@ -234,7 +418,7 @@ export default function Phase6ConversationWizard({
           grammarNotes: sc.rag_notes,
         },
       ]);
-      setStep(3);
+      setStep(8);
     } catch (err) {
       console.error(err);
     } finally {
@@ -331,7 +515,7 @@ export default function Phase6ConversationWizard({
   const handleEvaluateSession = async () => {
     if (!sessionId) return;
     setEvaluating(true);
-    setStep(5);
+    setStep(9);
     try {
       const res = await apiJson(`/conversation/session/${sessionId}/evaluate`, {
         method: "POST",
@@ -348,7 +532,7 @@ export default function Phase6ConversationWizard({
   const handleLoadReview = async () => {
     if (!sessionId) return;
     setLoadingReview(true);
-    setStep(6);
+    setStep(10);
     try {
       const res = await apiJson(`/conversation/session/${sessionId}/review`);
       setReviewData(res);
@@ -365,7 +549,7 @@ export default function Phase6ConversationWizard({
     setReviewChecked((prev) => ({ ...prev, [exId]: true }));
   };
 
-  const totalSteps = 6;
+  const totalSteps = 10;
 
   return (
     <div className="flex-grow flex flex-col justify-between max-w-2xl mx-auto w-full font-sans">
@@ -399,7 +583,7 @@ export default function Phase6ConversationWizard({
 
       {/* ====== Screen 1: Welcome & Mode Select ====== */}
       {step === 1 && (
-        <div className="glass-panel neon-border p-8 rounded-3xl shadow-2xl w-full space-y-6 flex-grow flex flex-col justify-center text-center">
+        <div className="glass-panel neon-border p-8 rounded-3xl shadow-2xl w-full space-y-6 flex-grow flex flex-col justify-center text-center animate-fade-in">
           <div className="relative mx-auto w-fit">
             <div className="p-4 bg-yellow-500/10 rounded-full border border-yellow-500/25 text-yellow-400">
               <Trophy className="w-10 h-10" />
@@ -468,29 +652,134 @@ export default function Phase6ConversationWizard({
           <div className="flex flex-col gap-3 max-w-xs mx-auto pt-2">
             <button
               onClick={() => setStep(2)}
-              className="bg-yellow-500 hover:bg-yellow-400 text-zinc-950 font-bold py-3 px-8 rounded-xl transition text-sm flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-yellow-500/20"
+              className="bg-yellow-500 hover:bg-yellow-400 text-zinc-950 font-bold py-3 px-8 rounded-xl transition text-sm flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-yellow-500/20 animate-pulse"
             >
               <Trophy className="w-4 h-4" /> Start Capstone Phase
             </button>
-            
           </div>
 
           {showOutline && (
             <div className="bg-zinc-950 p-4 rounded-xl border border-white/5 text-left text-xs text-zinc-400 space-y-1.5 animate-fade-in max-w-md mx-auto w-full font-mono">
               <p className="font-extrabold text-white text-center pb-2">Capstone Activities:</p>
               <p>✓ Screen 1 – Welcome / Phase Overview</p>
-              <p>✓ Screen 2 – Scenario Selection</p>
-              <p>✓ Screen 3 – Chat Runtime UI</p>
-              <p>✓ Screen 5 – Post-Conversation Feedback</p>
-              <p>✓ Screen 6 – Transcript & Targeted Review</p>
+              <p>✓ Screen 2-6 – Concept Interactive Scaffolding</p>
+              <p>✓ Screen 7 – Scenario Selection</p>
+              <p>✓ Screen 8 – Chat Runtime UI & Checks</p>
+              <p>✓ Screen 9 – Post-Conversation Feedback</p>
+              <p>✓ Screen 10 – Transcript & Targeted Review</p>
             </div>
           )}
         </div>
       )}
 
-      {/* ====== Screen 2: Scenario Selection ====== */}
-      {step === 2 && (
-        <div className="glass-panel neon-border p-8 rounded-3xl shadow-2xl w-full space-y-6 flex-grow flex flex-col justify-center">
+      {/* ====== Concept Screens 2 to 6 ====== */}
+      {step >= 2 && step <= 6 && (() => {
+        const concept = CONCEPT_SCREENS[step];
+        if (!concept) return null;
+        return (
+          <div className="glass-panel neon-border p-8 rounded-3xl shadow-2xl w-full space-y-6 flex-grow flex flex-col justify-between animate-fade-in text-left">
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-yellow-400">
+                <BookOpen className="w-6 h-6" />
+                <span className="text-xs font-black uppercase tracking-wider">Concept {step - 1} of 5</span>
+              </div>
+              <h2 className="text-2xl font-black text-white">{concept.title}</h2>
+              <p className="text-xs text-yellow-400 font-mono italic">{concept.subtitle}</p>
+
+              <div className="space-y-3 pt-2">
+                {concept.paragraphs.map((para, idx) => (
+                  <p key={idx} className="text-zinc-300 text-sm leading-relaxed">{para}</p>
+                ))}
+              </div>
+
+              <div className="bg-zinc-900/60 p-4 rounded-2xl border border-white/5 space-y-2">
+                <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider block">Key Highlights:</span>
+                <ul className="list-disc list-inside space-y-1 text-xs text-zinc-300 pl-1">
+                  {concept.bulletPoints.map((pt, idx) => (
+                    <li key={idx}>{pt}</li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* Micro-question Section */}
+              <div className="mt-6 border-t border-white/5 pt-6 space-y-4">
+                <div className="flex items-center gap-2">
+                  <HelpCircle className="w-5 h-5 text-yellow-400 animate-bounce" />
+                  <span className="text-xs font-black uppercase tracking-widest text-zinc-400">Concept Check</span>
+                </div>
+                <p className="text-sm font-bold text-white leading-snug">{concept.question.stem}</p>
+
+                <div className="grid grid-cols-1 gap-2.5">
+                  {concept.question.options.map((opt) => {
+                    const isSelected = selectedOption === opt.id;
+                    const isCorrectOption = opt.id === concept.question.correctId;
+                    
+                    let buttonStyle = "border-white/5 bg-zinc-900/60 hover:border-white/10 text-zinc-300";
+                    if (questionChecked) {
+                      if (isCorrectOption) {
+                        buttonStyle = "border-emerald-500 bg-emerald-500/10 text-white font-bold";
+                      } else if (isSelected) {
+                        buttonStyle = "border-red-500 bg-red-500/10 text-white font-bold";
+                      } else {
+                        buttonStyle = "border-white/5 bg-zinc-900/30 text-zinc-500 opacity-60";
+                      }
+                    }
+
+                    return (
+                      <button
+                        key={opt.id}
+                        disabled={questionChecked}
+                        onClick={() => {
+                          setSelectedOption(opt.id);
+                          setQuestionChecked(true);
+                          if (opt.id === concept.question.correctId || step === 2 || step === 6) {
+                            playCorrectSound();
+                          } else {
+                            playWrongSound();
+                          }
+                        }}
+                        className={`p-3.5 rounded-xl border text-xs font-semibold text-left transition duration-300 flex justify-between items-center ${buttonStyle}`}
+                      >
+                        <span>{opt.text}</span>
+                        {questionChecked && isCorrectOption && <Check className="w-4 h-4 text-emerald-400" />}
+                        {questionChecked && isSelected && !isCorrectOption && <XCircle className="w-4 h-4 text-red-400" />}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {questionChecked && (
+                  <div className="p-3.5 rounded-xl bg-zinc-950/60 border border-white/5 text-xs text-zinc-400 leading-relaxed font-sans mt-3">
+                    <strong className="text-zinc-200 block mb-1">Tutor Explanation:</strong>
+                    {concept.question.explanation}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="flex justify-between items-center pt-4 border-t border-white/5">
+              <button
+                onClick={() => setStep(step - 1)}
+                className="px-4 py-2 bg-zinc-900 hover:bg-zinc-800 rounded-lg text-xs font-bold text-zinc-400 transition"
+              >
+                Back
+              </button>
+              <button
+                onClick={() => setStep(step + 1)}
+                disabled={!questionChecked}
+                className="px-6 py-2.5 bg-yellow-500 disabled:opacity-40 hover:bg-yellow-400 text-zinc-950 font-black rounded-lg text-xs transition flex items-center gap-1.5 cursor-pointer shadow shadow-yellow-500/15"
+              >
+                <span>Continue</span>
+                <ChevronRight className="w-4 h-4 text-zinc-950" />
+              </button>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* ====== Screen 7: Scenario Selection (Old Screen 2) ====== */}
+      {step === 7 && (
+        <div className="glass-panel neon-border p-8 rounded-3xl shadow-2xl w-full space-y-6 flex-grow flex flex-col justify-center animate-fade-in text-left">
           <div className="border-b border-white/5 pb-4">
             <h2 className="text-2xl font-black text-white">Select a Role-Play Scenario</h2>
             <p className="text-xs text-zinc-500">Pick a situation to practice with Gwan-Sik</p>
@@ -553,20 +842,20 @@ export default function Phase6ConversationWizard({
             </div>
           </div>
 
-          <div className="flex justify-start">
+          <div className="flex justify-start pt-2">
             <button
-              onClick={() => setStep(1)}
+              onClick={() => setStep(6)}
               className="glass-panel px-4 py-2.5 rounded-xl hover:bg-white/5 text-zinc-400 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
             >
-              <ChevronLeft className="w-4 h-4" /> Back to Mode
+              <ChevronLeft className="w-4 h-4" /> Back to Theory
             </button>
           </div>
         </div>
       )}
 
-      {/* ====== Screen 3: Chat Runtime UI ====== */}
-      {step === 3 && (
-        <div className="glass-panel neon-border p-6 rounded-3xl shadow-2xl w-full flex-grow flex flex-col justify-between min-h-[60vh] max-w-3xl mx-auto relative overflow-hidden">
+      {/* ====== Screen 8: Chat Runtime UI (Old Screen 3) ====== */}
+      {step === 8 && (
+        <div className="glass-panel neon-border p-6 rounded-3xl shadow-2xl w-full flex-grow flex flex-col justify-between min-h-[60vh] max-w-3xl mx-auto relative overflow-hidden text-left">
           {/* Convo Header info */}
           <div className="flex justify-between items-center border-b border-white/5 pb-3.5 mb-4 shrink-0">
             <div>
@@ -668,6 +957,63 @@ export default function Phase6ConversationWizard({
                 </div>
               </div>
             ))}
+
+            {/* Comprehension check rendered inline in log */}
+            {chatMessages.length >= 3 && !inlineChecked && (
+              <div className="my-4 p-5 rounded-2xl border border-yellow-500/30 bg-yellow-500/[0.03] space-y-4">
+                <div className="flex items-center gap-2">
+                  <HelpCircle className="w-5 h-5 text-yellow-400 animate-bounce" />
+                  <span className="text-xs font-black uppercase tracking-widest text-yellow-400">Comprehension Check</span>
+                </div>
+                <p className="text-sm font-bold text-white">What did Gwan-Sik ask you or say in the dialogue?</p>
+                <div className="grid grid-cols-1 gap-2">
+                  {[
+                    { id: "A", text: "To order a beverage or introduce yourself" },
+                    { id: "B", text: "What country you are from" },
+                    { id: "C", text: "To pay for a hotel room key" }
+                  ].map((opt) => {
+                    let btnStyle = "border-white/5 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-300";
+                    if (inlineSelected === opt.id) {
+                      btnStyle = opt.id === "A" ? "border-emerald-500 bg-emerald-500/10 text-white font-bold" : "border-red-500 bg-red-500/10 text-white font-bold";
+                    } else if (inlineSelected !== null && opt.id === "A") {
+                      btnStyle = "border-emerald-500 bg-emerald-500/10 text-white";
+                    }
+                    return (
+                      <button
+                        key={opt.id}
+                        disabled={inlineSelected !== null}
+                        onClick={() => {
+                          setInlineSelected(opt.id);
+                          if (opt.id === "A") {
+                            playCorrectSound();
+                          } else {
+                            playWrongSound();
+                          }
+                        }}
+                        className={`p-3 rounded-xl border text-xs font-bold text-left transition flex justify-between items-center ${btnStyle}`}
+                      >
+                        <span>{opt.text}</span>
+                        {inlineSelected !== null && opt.id === "A" && <Check className="w-4 h-4 text-emerald-400" />}
+                        {inlineSelected === opt.id && opt.id !== "A" && <XCircle className="w-4 h-4 text-red-400" />}
+                      </button>
+                    );
+                  })}
+                </div>
+                {inlineSelected !== null && (
+                  <div className="pt-2 text-xs text-zinc-400 space-y-2 border-t border-white/5 font-sans">
+                    <p className="font-bold text-zinc-300">Explanation:</p>
+                    <p>Gwan-Sik welcomed you and asked for your order or name depending on the scenario chosen. Always listen carefully to the first turn to respond correctly!</p>
+                    <button
+                      onClick={() => setInlineChecked(true)}
+                      className="mt-2 px-4 py-2 bg-yellow-500 hover:bg-yellow-400 text-zinc-950 font-black rounded-lg text-xs transition"
+                    >
+                      Continue Chat
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
             <div ref={messagesEndRef} />
           </div>
 
@@ -707,12 +1053,12 @@ export default function Phase6ConversationWizard({
                   onChange={(e) => setUserInput(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && !sendingTurn && handleSendTurn()}
                   placeholder="Type Korean reply..."
-                  disabled={sendingTurn}
+                  disabled={sendingTurn || (chatMessages.length >= 3 && !inlineChecked)}
                   className="w-full bg-zinc-900 border border-white/5 rounded-xl py-3 pl-4 pr-10 text-sm focus:outline-none focus:border-yellow-500 transition text-white"
                 />
                 <button
                   onClick={handleSendTurn}
-                  disabled={sendingTurn || !userInput.trim()}
+                  disabled={sendingTurn || !userInput.trim() || (chatMessages.length >= 3 && !inlineChecked)}
                   className="absolute right-2 top-2 p-1.5 bg-yellow-500 hover:bg-yellow-400 disabled:opacity-30 rounded-lg text-zinc-950 transition cursor-pointer"
                 >
                   {sendingTurn ? <Loader2 className="w-4 h-4 animate-spin" /> : <CornerDownLeft className="w-4 h-4" />}
@@ -726,7 +1072,7 @@ export default function Phase6ConversationWizard({
                   onMouseUp={handleStopRecording}
                   onTouchStart={rec.start}
                   onTouchEnd={handleStopRecording}
-                  disabled={sendingTurn || transcribingVoice}
+                  disabled={sendingTurn || transcribingVoice || (chatMessages.length >= 3 && !inlineChecked)}
                   className={`flex-grow flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm transition cursor-pointer ${
                     rec.recording
                       ? "bg-red-500 text-white animate-pulse"
@@ -764,7 +1110,7 @@ export default function Phase6ConversationWizard({
                 className="px-4 py-3 bg-emerald-500 hover:bg-emerald-600 text-zinc-950 font-black text-xs rounded-xl shadow-lg transition flex items-center gap-1.5 shrink-0 cursor-pointer"
               >
                 <span>End & Score</span>
-                <ArrowRight className="w-4 h-4" />
+                <ArrowRight className="w-4 h-4 text-zinc-950" />
               </button>
             )}
           </div>
@@ -838,9 +1184,9 @@ export default function Phase6ConversationWizard({
         </div>
       )}
 
-      {/* ====== Screen 5: Post-Conversation Feedback ====== */}
-      {step === 5 && (
-        <div className="glass-panel neon-border p-8 rounded-3xl shadow-2xl w-full space-y-6 flex-grow flex flex-col justify-center text-center max-w-2xl mx-auto">
+      {/* ====== Screen 9: Post-Conversation Feedback (Old Screen 5) ====== */}
+      {step === 9 && (
+        <div className="glass-panel neon-border p-8 rounded-3xl shadow-2xl w-full space-y-6 flex-grow flex flex-col justify-center text-center max-w-2xl mx-auto animate-fade-in">
           {evaluating ? (
             <div className="space-y-4 py-10">
               <Loader2 className="w-12 h-12 text-yellow-500 animate-spin mx-auto" />
@@ -893,10 +1239,52 @@ export default function Phase6ConversationWizard({
                 </div>
               </div>
 
+              {/* Reflective Micro-question */}
+              <div className="bg-zinc-950/60 p-6 rounded-2xl border border-white/5 space-y-4 text-left">
+                <div className="flex items-center gap-2">
+                  <HelpCircle className="w-5 h-5 text-yellow-400 animate-bounce" />
+                  <span className="text-xs font-black uppercase tracking-widest text-yellow-400">Reflective Check-in</span>
+                </div>
+                <p className="text-sm font-bold text-white">Which tip do you want to focus on in your next conversation?</p>
+                <div className="grid grid-cols-1 gap-2">
+                  {[
+                    { id: "A", text: "Better endings (이에요/예요)" },
+                    { id: "B", text: "Clearer pronunciation of specific words" },
+                    { id: "C", text: "Asking more questions back to Gwan-Sik" }
+                  ].map((opt) => {
+                    let btnStyle = "border-white/5 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-300";
+                    if (selectedOption === opt.id) {
+                      btnStyle = "border-emerald-500 bg-emerald-500/10 text-white font-bold";
+                    }
+                    return (
+                      <button
+                        key={opt.id}
+                        disabled={questionChecked}
+                        onClick={() => {
+                          setSelectedOption(opt.id);
+                          setQuestionChecked(true);
+                          playCorrectSound();
+                        }}
+                        className={`p-3 rounded-xl border text-xs font-bold text-left transition flex justify-between items-center ${btnStyle}`}
+                      >
+                        <span>{opt.text}</span>
+                        {selectedOption === opt.id && <Check className="w-4 h-4 text-emerald-400" />}
+                      </button>
+                    );
+                  })}
+                </div>
+                {questionChecked && (
+                  <p className="text-xs text-zinc-400 italic">
+                    Awesome goal! Focusing on this area will help customize your next feedback session.
+                  </p>
+                )}
+              </div>
+
               <div className="flex gap-3 justify-center">
                 <button
                   onClick={handleLoadReview}
-                  className="bg-yellow-500 hover:bg-yellow-400 text-zinc-950 font-black py-3 px-8 rounded-xl transition text-sm flex items-center justify-center gap-1.5 cursor-pointer shadow-lg shadow-yellow-500/20"
+                  disabled={!questionChecked}
+                  className="bg-yellow-500 hover:bg-yellow-400 disabled:opacity-40 text-zinc-950 font-black py-3 px-8 rounded-xl transition text-sm flex items-center justify-center gap-1.5 cursor-pointer shadow-lg shadow-yellow-500/20"
                 >
                   <span>Review Transcript</span>
                   <ChevronRight className="w-4 h-4 text-zinc-950" />
@@ -907,10 +1295,10 @@ export default function Phase6ConversationWizard({
         </div>
       )}
 
-      {/* ====== Screen 6: Transcript & Targeted Review ====== */}
-      {step === 6 && (
-        <div className="glass-panel neon-border p-8 rounded-3xl shadow-2xl w-full space-y-6 flex-grow flex flex-col justify-center max-w-2xl mx-auto">
-          <div className="border-b border-white/5 pb-4">
+      {/* ====== Screen 10: Transcript & Targeted Review (Old Screen 6) ====== */}
+      {step === 10 && (
+        <div className="glass-panel neon-border p-8 rounded-3xl shadow-2xl w-full space-y-6 flex-grow flex flex-col justify-center max-w-2xl mx-auto animate-fade-in">
+          <div className="border-b border-white/5 pb-4 text-left">
             <h2 className="text-2xl font-black text-white">Review Transcript & Exercises</h2>
             <p className="text-xs text-zinc-500">Correct your sentences and map review redirections</p>
           </div>
@@ -929,7 +1317,7 @@ export default function Phase6ConversationWizard({
                   {reviewData?.transcript?.map((m: any) => (
                     <div key={m.id} className="text-xs space-y-0.5">
                       <span className={`font-mono uppercase font-black tracking-wide ${m.sender === "user" ? "text-yellow-400" : "text-zinc-500"}`}>
-                        {m.sender === "user" ? "You" : "Barista Gwan-Sik"}:
+                        {m.sender === "user" ? "You" : "Tutor Gwan-Sik"}:
                       </span>
                       <p className={`text-zinc-300 font-sans leading-relaxed p-2 rounded ${
                         m.sender === "user" 
@@ -1006,12 +1394,50 @@ export default function Phase6ConversationWizard({
                           <p className="text-xs font-extrabold text-white">{rd.title}</p>
                           <p className="text-[10px] text-zinc-400 mt-0.5">{rd.reason}</p>
                         </div>
-                        <span className="text-[10px] text-yellow-400 font-bold uppercase">Phase {rd.phase}</span>
+                        <span className="text-[10px] text-yellow-400 font-bold uppercase font-mono">Phase {rd.phase}</span>
                       </div>
                     ))}
                   </div>
                 </div>
               )}
+
+              {/* Review Redirection Choice Check */}
+              <div className="bg-zinc-950/60 p-6 rounded-2xl border border-white/5 space-y-4">
+                <div className="flex items-center gap-2">
+                  <HelpCircle className="w-5 h-5 text-yellow-400 animate-bounce" />
+                  <span className="text-xs font-black uppercase tracking-widest text-yellow-400">Review Focus Check</span>
+                </div>
+                <p className="text-sm font-bold text-white">Which recommended review module will you visit first?</p>
+                <div className="grid grid-cols-1 gap-2">
+                  {(reviewData?.redirects || []).map((rd: any, idx: number) => {
+                    const optId = `R_${idx}`;
+                    let btnStyle = "border-white/5 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-300";
+                    if (selectedOption === optId) {
+                      btnStyle = "border-emerald-500 bg-emerald-500/10 text-white font-bold";
+                    }
+                    return (
+                      <button
+                        key={idx}
+                        disabled={questionChecked}
+                        onClick={() => {
+                          setSelectedOption(optId);
+                          setQuestionChecked(true);
+                          playCorrectSound();
+                        }}
+                        className={`p-3 rounded-xl border text-xs font-bold text-left transition flex justify-between items-center ${btnStyle}`}
+                      >
+                        <span>{rd.title}</span>
+                        {selectedOption === optId && <Check className="w-4 h-4 text-emerald-400" />}
+                      </button>
+                    );
+                  })}
+                </div>
+                {questionChecked && (
+                  <p className="text-xs text-zinc-400 italic">
+                    Excellent choice. Tackling your weak points systematically guarantees rapid fluency progress.
+                  </p>
+                )}
+              </div>
 
             </div>
           )}
@@ -1019,7 +1445,8 @@ export default function Phase6ConversationWizard({
           <div className="pt-4 border-t border-white/5 flex justify-end">
             <button
               onClick={onComplete}
-              className="bg-gradient-to-r from-yellow-500 via-orange-500 to-indigo-500 hover:from-yellow-600 text-zinc-950 font-black py-3 px-8 rounded-xl transition text-sm flex items-center justify-center gap-1.5 cursor-pointer shadow shadow-brand-500/10 hover:scale-102"
+              disabled={!questionChecked}
+              className="bg-gradient-to-r from-yellow-500 via-orange-500 to-indigo-500 hover:from-yellow-600 disabled:opacity-40 text-zinc-950 font-black py-3 px-8 rounded-xl transition text-sm flex items-center justify-center gap-1.5 cursor-pointer shadow shadow-brand-500/10 hover:scale-102"
             >
               <span>Graduate Course & Return</span>
               <CheckCircle2 className="w-4 h-4 text-zinc-950" />
