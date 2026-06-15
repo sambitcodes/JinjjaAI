@@ -48,3 +48,17 @@ export async function ensureAuthenticated() {
   }
   return null;
 }
+
+export async function apiForm(endpoint: string, formData: FormData) {
+  const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+  const cleanEndpoint = (endpoint.startsWith("/phases/") || endpoint.startsWith("/quiz/") || endpoint.startsWith("/practice/")) ? `/lessons${endpoint}` : endpoint;
+  
+  const res = await fetch(`${API_BASE_URL}${cleanEndpoint}`, {
+    method: "POST",
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    body: formData,
+  });
+  if (!res.ok) throw new Error(`${res.status}`);
+  return res.json();
+}
+

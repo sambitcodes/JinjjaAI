@@ -138,11 +138,45 @@ PHASE_2_DATA = {
         {"ko": "엔지니어", "en": "Engineer"}
     ],
     "quiz": [
-        {"id": "q_intro_lis_1", "type": "listening", "question": "Identify whether the sentence states name or origin:", "audio_text": "저는 영국 사람입니다", "options": ["Name (이름)", "Origin (출신)", "Occupation (직업)"], "correct_answer": "Origin (출신)", "explanation": "저는 영국 사람입니다 means 'I am British / from the UK' (Origin)."},
-        {"id": "q_intro_match_2", "type": "context", "question": "Match the Korean self-intro line to its English meaning: '제 이름은 지우입니다'", "options": ["My name is Jiwoo.", "I am from France.", "I am a teacher."], "correct_answer": "My name is Jiwoo.", "explanation": "제 이름은 지우입니다 translates to 'My name is Jiwoo'."},
-        {"id": "q_intro_fill_3", "type": "context", "question": "Complete the blank with the correct country name: '저는 [ ] 사람입니다' (I am Canadian).", "options": ["캐나다", "학생", "반갑습니다"], "correct_answer": "캐나다", "explanation": "캐나다 is Canada. Combining it makes '저는 캐나다 사람입니다' (I am Canadian)."},
-        {"id": "q_intro_type_4", "type": "writing", "question": "Type the polite Hangeul word for 'student' (학생):", "correct_answer": "학생", "explanation": "학생 means student in Korean."},
-        {"id": "q_intro_speak_5", "type": "speaking", "question": "Introduce your origin by reading this sentence: '저는 미국 사람입니다'", "correct_answer": "저는 미국 사람입니다", "explanation": "This sentence says 'I am American'."}
+        {
+            "id": "q_intro_lis_1", 
+            "type": "listening", 
+            "question": "Listen to the speaker and identify what type of details they are introducing:", 
+            "audio_text": "저는 영국 사람입니다", 
+            "options": ["Name (이름)", "Origin (출신)", "Occupation (직업)"], 
+            "correct_answer": "Origin (출신)", 
+            "explanation": "저는 영국 사람입니다 means 'I am British / from the UK' (Origin)."
+        },
+        {
+            "id": "q_intro_match_2", 
+            "type": "context", 
+            "question": "Choose the correct English meaning for the Korean line: 제 이름은 지우입니다", 
+            "options": ["My name is Jiwoo.", "I am from France.", "I am a teacher."], 
+            "correct_answer": "My name is Jiwoo.", 
+            "explanation": "제 이름은 지우입니다 translates to 'My name is Jiwoo'."
+        },
+        {
+            "id": "q_intro_fill_3", 
+            "type": "context", 
+            "question": "Choose the correct country word to say 'I am Canadian': 저는 [ ] 사람입니다.", 
+            "options": ["캐나다", "학생", "반갑습니다"], 
+            "correct_answer": "캐나다", 
+            "explanation": "캐나다 is Canada. Combining it makes '저는 캐나다 사람입니다' (I am Canadian)."
+        },
+        {
+            "id": "q_intro_type_4", 
+            "type": "writing", 
+            "question": "Type the polite Hangeul word meaning 'student':", 
+            "correct_answer": "학생", 
+            "explanation": "학생 means student in Korean."
+        },
+        {
+            "id": "q_intro_speak_5", 
+            "type": "speaking", 
+            "question": "Introduce your origin by reading this sentence aloud: '저는 미국 사람입니다'", 
+            "correct_answer": "저는 미국 사람입니다", 
+            "explanation": "This sentence says 'I am American'."
+        }
     ],
     "homework": [
         {"id": "hw_intro_1", "text": "Record yourself saying your complete self-intro (greeting, name, origin, closing) 3 times out loud."},
@@ -150,3 +184,4 @@ PHASE_2_DATA = {
         {"id": "hw_intro_3", "text": "Write your self-introduction as a short text message in Korean and save it in your notes."}
     ]
 }
+

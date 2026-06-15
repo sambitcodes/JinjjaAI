@@ -117,7 +117,7 @@ PHASE_1_DATA = {
         {
             "id": "q_rot2_4",
             "type": "writing",
-            "question": "Type the Korean frequency word for 'always' (항상):",
+            "question": "Type the Korean frequency word meaning 'always':",
             "correct_answer": "항상",
             "explanation": "항상 is the adverb meaning 'always' in Korean."
         }

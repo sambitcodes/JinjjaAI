@@ -1,0 +1,220 @@
+1. Expanded goals for Phase 2 – Consonant Bootcamp
+Phase name: Consonant Bootcamp (A0)
+By the end of this phase, a true beginner should be able to:
+Recognise all basic 14 consonant letters: ㄱ ㄴ ㄷ ㄹ ㅁ ㅂ ㅅ ㅇ ㅈ ㅊ ㅋ ㅌ ㅍ ㅎ.[5]
+Understand the idea that Hangeul consonants are stylised diagrams of mouth/tongue positions (lips, tongue, throat).[6][7][8]
+Know the dual role of ㅇ: silent at the start, “ng” at the end of a block.[7][1]
+Have an intuitive feel for plain vs aspirated vs tense series (e.g., ㄱ / ㅋ / ㄲ, ㄷ / ㅌ / ㄸ, ㅂ / ㅍ / ㅃ, ㅅ / ㅆ, ㅈ / ㅊ / ㅉ).[4][9]
+Read and build a small set of CV syllables using consonants + vowels from Phase 1 (e.g., 가, 거, 고, 구, 나, 다, 마, 바).[9][7]
+
+2. New concept screens (more theory, small bites)
+You currently have a single high‑density description: “Learn Korean consonants, including plain, aspirated, and tense sounds…”. Below is a split into 5 focused concept screens.[1]
+Screen C1 – What do consonants show?
+Key ideas:
+Hangeul consonants were designed to show how your speech organs move: tongue, lips, and throat.[8][6][7]
+For example:
+ㄴ looks like the tongue touching the top of the mouth.
+ㅁ looks like the outline of lips.
+ㅇ relates to the throat / empty mouth.[5][8]
+Micro‑questions (no answers in the stem):
+When you say “n” in English, which part touches the top of your mouth?
+Which body part moves most for ㅁ (m‑sound):
+A) Lips
+B) Tongue
+C) Throat
+Only after the learner chooses do you show “Correct/Wrong” feedback + explanation.
+
+Screen C2 – Meet the core consonants (shapes + basic sounds)
+Group consonants by articulation and simplicity:
+Lips group: ㅁ (m), ㅂ (b/p), ㅍ (pʰ).
+Tongue front: ㄴ (n), ㄷ (d/t), ㅌ (tʰ), ㄹ (r/l).
+Back of tongue / velar: ㄱ (g/k), ㅋ (kʰ).
+Fricatives & others: ㅅ (s), ㅎ (h), ㅇ (silent/ng), ㅈ (j), ㅊ (ch).[3][7][9]
+For each, show:
+Big glyph.
+One simple English hint (approximate, not perfect).
+Audio button with single‑consonant sound (as close as possible) and an example syllable (e.g., 가, 나, 마).
+Micro‑questions examples:
+“Which consonant uses both lips together:
+ㄴ, ㅁ, or ㄱ?”
+“If you say ‘g/k’ at the back of your mouth, which consonant group is this?”
+
+Screen C3 – Plain vs aspirated vs tense (concept)
+Content:
+Use one set (ㄱ / ㅋ / ㄲ) to illustrate:
+Plain (lenis): ㄱ – regular, soft “g/k”, little air.
+Aspirated: ㅋ – more air puff out (you can feel it on your hand in front of your mouth).
+Tense: ㄲ – strongly pressed, stiff throat and tongue, less obvious air release.[3][4][9]
+Explain that Korean has series:
+ㄱ / ㅋ / ㄲ
+ㄷ / ㅌ / ㄸ
+ㅂ / ㅍ / ㅃ
+ㅈ / ㅊ / ㅉ
+ㅅ / ㅆ
+You do not need perfect production now—just awareness.
+Micro‑questions:
+When you say the aspirated sound, which has more air on your hand:
+ㄱ or ㅋ?
+Which type feels “tighter” in your throat: plain or tense?
+
+Screen C4 – Special letter ㅇ
+Content (mostly you already have):
+At the start of a block, ㅇ is silent, just a placeholder for vowel‑starting syllables (아, 어 etc.).[7][1]
+At the end of a block (받침 position), ㅇ is pronounced like “ng” in English “king”.[1][7]
+Micro‑questions:
+In “아”, is the ㅇ sound silent or like “ng”?
+In “방”, what sound does the final consonant make:
+A) “m”
+B) “ng”
+C) silent
+Again, options only; no answer printed.
+
+Screen C5 – Consonants inside syllable blocks
+Connect Phase 1 + Phase 2:
+A Korean syllable can be:
+C + V (e.g., 가, 너, 모),
+C + V + C (e.g., 감, 밥) – CVC later.
+Consonant always sits at the top‑left or top of the block; vowels attach to the right/below.[2][10][7]
+Micro‑questions:
+Which part of the block is the consonant in 가?
+Is 나 a CV or CVC syllable?
+
+3. Activity 1 – Visual consonant recognition
+Your Phase 2 TSX already has “visualQuestions” and “visualCorrect”. Here’s richer content + rules.[1]
+Activity 1A – Shape‑to‑sound gallery
+Learner scrolls through consonants; for each:
+Large glyph (e.g., ㄴ).
+Mouth diagram (icon) or 1–2 words: “tongue touches top front”.
+Audio: consonant + example syllable (“ㄴ… 나”).
+Short self‑check prompts:
+“Try saying ‘n’ like in ‘no’. Feel where your tongue is—front/top.”
+Micro‑questions:
+“This consonant is made with the tongue at the front. Which is it?” (options show ㄴ, ㅁ, ㅇ etc.)
+“This consonant’s shape looks like lips. Which one: ㄴ, ㅁ, or ㄱ?”
+Activity 1B – Visual multiple‑choice (no answer in stem)
+Each item:
+Question text never includes the correct consonant glyph. For example:
+“Choose the consonant that uses both lips (m‑sound).”
+“Choose the consonant that usually sounds like ‘n’ at the start of a syllable.”
+Display 3–4 consonant glyph options.
+Learner taps one.
+Feedback rules (apply everywhere in Phase 2):
+If correct:
+Play “Correct” sound tone.
+Highlight the chosen option in green.
+Show short explanation: “ㅁ uses both lips—it’s similar to m‑sound.”
+If incorrect:
+Play “Wrong” sound tone.
+Mark the chosen option with a red border.
+Also highlight the correct option in green.
+Show short explanation: “ㅁ is lips (m). You selected ㄴ, which is tongue‑front.”
+The TSX pattern visualCorrect ? "맞아요! Correct!" : "Oops! Incorrect." can be replaced with this state‑driven styling + explanation.[1]
+
+4. Activity 2 – Ear training for consonants
+Your file already has listeningQuestions and seriesQuestions for plain/aspirated/tense series. Enrich them with more granular items.[1]
+Activity 2A – Identify consonant in a simple CV syllable
+Per item:
+Play a syllable using a simple vowel from Phase 1 (e.g., 가, 나, 마, 바, 사, 자).[4][9]
+Display 3–4 consonant glyphs as options: ㄱ, ㄴ, ㅁ, ㅂ etc.
+Prompt: “Which consonant do you hear at the start of this syllable?”
+Feedback uses the same red/green + sounds pattern, with explanation:
+“You heard [가]. The initial sound is similar to ‘g/k’, so the consonant is ㄱ.”
+Activity 2B – Plain vs aspirated vs tense contrast
+Per series (e.g., ㄱ/ㅋ/ㄲ):
+Show three buttons labelled “A”, “B”, “C” (or the glyphs themselves), but the stem does not contain the correct one by name.
+Play one sound or a syllable pair like 가 vs 카 vs 까.
+Prompt examples:
+“Which version has the strongest puff of air?”
+“Which version sounds ‘strongest’ / more tense?”
+Learner chooses; explanation after:
+“This was ㅋ (aspirated). You can feel more air on your hand.”
+“This was ㄲ (tense). The voice started tighter and shorter.”
+Micro‑questions for metacognition:
+“Which series do you find hardest:
+g/k series,
+d/t series,
+b/p series?”
+Store this to tailor later practice.
+
+5. Activity 3 – Build and read CV syllables
+This corresponds to syllableQuestions / syllableCorrect in the file.[1]
+Activity 3A – Build syllable from consonant + vowel
+Per item:
+Show a consonant and a vowel separately (e.g., ㄱ + ㅏ).
+Prompt: “Tap the correct syllable block.”
+Show 3–4 options: 가 / 개 / 고 / 구 etc.
+Feedback: red/green + “Correct/Wrong” tones, with explanation:
+“ㄱ + ㅏ builds 가. You chose 개, which uses ㅐ.”
+Activity 3B – Read syllables out loud (self‑evaluation)
+Show a list of CV syllables (가, 거, 고, 구, 나, 다, 마, 바).
+For each:
+Prompt: “Read this out loud, then tap to hear the model.”
+After tapping, play native audio.
+Ask small reflection question:
+“Did your initial consonant sound softer, more aspirated, or very tense?”
+User chooses one; this can feed into recommendations.weakness for series training.[1]
+
+6. Phase 2 mini‑quiz – small but dense questions
+Use your existing quizQuestions setup but follow the global rules.[1]
+Suggested structure:
+Visual recognition (3 items):
+“Which consonant represents the n‑sound at the front of your mouth?”
+“Which consonant uses lips and often sounds like b/p?”
+Ear recognition (3 items):
+Hear CV syllable → choose consonant.
+One plain vs aspirated minimal pair item (e.g., “Which has more air: syllable 1 or 2?”).
+Special ㅇ (1–2 items):
+Show 아 vs 앙 and ask about ㅇ’s role (silent vs ng).
+Hear 앙 → choose final consonant.
+Syllable building (1–2 items):
+Given consonant + vowel, pick the correct block.
+Global behaviour for quiz:
+Stem text never directly includes the correct glyph or “letter name” as the answer.
+After submit:
+Play correct/wrong SFX.
+Red highlight on learner’s incorrect option, green on the correct option.
+Show quizQuestions[idx].explanation under the options.[1]
+If incorrect, also show a short “Correct answer:” line, but in UI, not in the stem itself (as your TSX already hints).[1]
+
+7. Implementation notes for devs (matching Phase2ConsonantWizard.tsx)
+7.1. Screen flow
+Keep your wizard skeleton but expand concept screens like Phase 1:
+/course0/phase2/welcome
+Use existing metadata, goals, estimated time.[1]
+/course0/phase2/concept-1 – “What consonants show (mouth diagrams)”
+/course0/phase2/concept-2 – “Meet the basic consonants”
+/course0/phase2/concept-3 – “Plain vs aspirated vs tense”
+/course0/phase2/concept-4 – “Special ㅇ: silent / ng”
+/course0/phase2/concept-5 – “Consonants inside syllables”
+Then activities mapped to your existing sections:
+/course0/phase2/activity-visual
+Uses visualQuestions; apply new feedback logic and item bank.
+/course0/phase2/activity-listening
+Uses listeningQuestions and seriesQuestions for ear training.
+/course0/phase2/activity-syllables
+Uses syllableQuestions for building/reading CV syllables.
+/course0/phase2/quiz
+Uses quizQuestions for checkpoint.
+/course0/phase2/homework
+Short practice plan + logging, similar to Phase 1.
+7.2. Question + feedback model
+For all question types in Phase 2 (visual/listening/series/syllable/quiz):
+Question object should contain:
+stem (string without explicit correct glyph),
+options (array of { id, labelGlyph, maybe helperText }),
+correct_option_id,
+explanation.
+On answer:
+Set status → "correct" or "incorrect".
+In UI:
+Apply green class to correct_option_id.
+If incorrect, apply red class to selected_option_id.
+Play correct_answer.mp3 or wrong_answer.mp3.
+This replaces generic {seriesCorrect ? "Fantastic!" : "Oops!"} text, while still allowing you to keep motivational text if you want.[1]
+7.3. AI quiz constraints (Gwan‑Sik + Llama)
+For any dynamically generated consonant quiz:
+System prompt additions:
+“Do not include the actual correct consonant glyph or syllable in the question stem. Only show it in the answer options and explanation.”
+“Always provide a one‑sentence explanation to show after the user answers, explaining why the correct option is correct.”
+Maintain the same red/green highlight and sound behaviour for AI‑generated items.
+ 

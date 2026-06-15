@@ -83,11 +83,45 @@ PHASE_5_DATA = {
         "destination": "저는 [장소]에 가요."
     },
     "quiz": [
-        {"id": "q_loc_1", "type": "listening", "question": "Hear the place and select the correct English name:", "audio_text": "식당", "options": ["Restaurant", "School", "Station", "Café"], "correct_answer": "Restaurant", "explanation": "식당 (sik-dang) means restaurant in Korean."},
-        {"id": "q_loc_2", "type": "context", "question": "Identify where the person is: '저는 회사에 있어요.'", "options": ["at home", "at the office", "at school"], "correct_answer": "at the office", "explanation": "회사 (hoe-sa) means office. '저는 회사에 있어요' translates to 'I am at the office'."},
-        {"id": "q_loc_3", "type": "context", "question": "Complete the destination response: '어디 가요?' -> '[ ]에 가요.' (I am going to the station.)", "options": ["역", "집", "화장실"], "correct_answer": "역", "explanation": "역 (yeok) is station. '역에 가요' is 'I am going to the station'."},
-        {"id": "q_loc_4", "type": "writing", "question": "Type the polite Korean word for 'home' (집):", "correct_answer": "집", "explanation": "집 means home/house in Korean."},
-        {"id": "q_loc_5", "type": "speaking", "question": "Read this destination sentence aloud: '저는 학교에 가요'", "correct_answer": "저는 학교에 가요", "explanation": "This reads 'I go to school / I am going to school'."}
+        {
+            "id": "q_loc_1", 
+            "type": "listening", 
+            "question": "Hear the place and select the correct English name:", 
+            "audio_text": "식당", 
+            "options": ["Restaurant", "School", "Station", "Café"], 
+            "correct_answer": "Restaurant", 
+            "explanation": "식당 (sik-dang) means restaurant in Korean."
+        },
+        {
+            "id": "q_loc_2", 
+            "type": "context", 
+            "question": "Identify where the person is: '저는 회사에 있어요.'", 
+            "options": ["at home", "at the office", "at school"], 
+            "correct_answer": "at the office", 
+            "explanation": "회사 (hoe-sa) means office. '저는 회사에 있어요' translates to 'I am at the office'."
+        },
+        {
+            "id": "q_loc_3", 
+            "type": "context", 
+            "question": "Complete the destination response: '어디 가요?' -> '[ ]에 가요.' (I am going to the station.)", 
+            "options": ["역", "집", "화장실"], 
+            "correct_answer": "역", 
+            "explanation": "역 (yeok) is station. '역에 가요' is 'I am going to the station'."
+        },
+        {
+            "id": "q_loc_4", 
+            "type": "writing", 
+            "question": "Type the polite Korean word meaning 'home':", 
+            "correct_answer": "집", 
+            "explanation": "집 means home/house in Korean."
+        },
+        {
+            "id": "q_loc_5", 
+            "type": "speaking", 
+            "question": "Read this destination sentence aloud: '저는 학교에 가요'", 
+            "correct_answer": "저는 학교에 가요", 
+            "explanation": "This reads 'I go to school / I am going to school'."
+        }
     ],
     "homework": [
         {"id": "hw_loc_1", "text": "Write 3 simple Korean sentences stating where you are right now (e.g. 집에 있어요)."},
@@ -95,3 +129,4 @@ PHASE_5_DATA = {
         {"id": "hw_loc_3", "text": "Sketch a simple blueprint layout of your current room and label the door or window in Korean."}
     ]
 }
+

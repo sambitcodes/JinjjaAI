@@ -14,7 +14,8 @@ import {
   MicOff,
   Check,
   MessageSquare,
-  ArrowRight
+  ArrowRight,
+  RefreshCw
 } from "lucide-react";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
@@ -50,7 +51,6 @@ async function apiForm(path: string, formData: FormData) {
   if (!res.ok) throw new Error(`${res.status}`);
   return res.json();
 }
-
 
 // Audio recorder hook
 function useRecorder() {
@@ -107,6 +107,13 @@ interface Course3Phase5StoriesWizardProps {
   onComplete: () => void;
 }
 
+interface MicroQuestion {
+  question: string;
+  options: { id: string; text: string }[];
+  correctId: string;
+  explanation: string;
+}
+
 export default function Course3Phase5StoriesWizard({
   activeLesson,
   speakWord,
@@ -114,35 +121,139 @@ export default function Course3Phase5StoriesWizard({
 }: Course3Phase5StoriesWizardProps) {
   const [step, setStep] = useState(1);
   const [showOutline, setShowOutline] = useState(false);
-  const totalSteps = 6;
+  const totalSteps = 12;
 
-  // Data loaded
+  // Persist progress to localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem("hangeulai_c3p5_step");
+    if (saved) {
+      const parsedStep = parseInt(saved, 10);
+      if (parsedStep >= 1 && parsedStep <= 12) setStep(parsedStep);
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem("hangeulai_c3p5_step", String(step));
+  }, [step]);
+
+  // DB Data loaded
   const [metadata, setMetadata] = useState<any>(null);
   const [coreData, setCoreData] = useState<any>(null);
 
-  // Concept interaction
-  const [selectedAnchorType, setSelectedAnchorType] = useState<string | null>(null);
+  // Concept Micro-questions states
+  const [cSelected, setCSelected] = useState<string | null>(null);
+  const [cChecked, setCChecked] = useState(false);
+  const [cCorrect, setCCorrect] = useState<boolean | null>(null);
+  const [cIdx, setCIdx] = useState(0);
 
-  // Activity 1: Listening
+  // Reset concept states on step change
+  useEffect(() => {
+    if (step >= 2 && step <= 5) {
+      setCSelected(null);
+      setCChecked(false);
+      setCCorrect(null);
+      setCIdx(0);
+    }
+  }, [step]);
+
+  // Concept questions
+  const conceptQuestions: Record<number, MicroQuestion[]> = {
+    2: [
+      {
+        question: "Which chronological order feels more natural for a life story?",
+        options: [
+          { id: "A", text: "future → present → past" },
+          { id: "B", text: "past → present → future" }
+        ],
+        correctId: "B",
+        explanation: "Chronological narrative flow usually moves from what already happened (past), to current situation (present), then to plans (future)."
+      }
+    ],
+    3: [
+      {
+        question: "Which word signals the present tense in the example?",
+        options: [
+          { id: "A", text: "지난 주말에 (last weekend)" },
+          { id: "B", text: "오늘 (today)" },
+          { id: "C", text: "다음 주에 (next week)" }
+        ],
+        correctId: "B",
+        explanation: "오늘 means 'today' and is the standard anchor for present-tense situations."
+      }
+    ],
+    4: [
+      {
+        question: "In '다음 주에 여행을 갈 거예요', which part shows it is future?",
+        options: [
+          { id: "A", text: "다음 주에 (time anchor)" },
+          { id: "B", text: "갈 거예요 (verb ending)" },
+          { id: "C", text: "both the time anchor and the verb ending" }
+        ],
+        correctId: "C",
+        explanation: "Both the time adverb (다음 주에 - next week) and the conjugation suffix (갈 거예요 - will go) explicitly mark the sentence as future tense."
+      }
+    ],
+    5: [
+      {
+        question: "What did the speaker do last weekend?",
+        options: [
+          { id: "A", text: "Rested well at home (집에서 푹 쉬었어요)" },
+          { id: "B", text: "Worked at the office (회사에서 일해요)" }
+        ],
+        correctId: "A",
+        explanation: "The text says '지난 주말에 저는 집에서 푹 쉬었어요' which means they rested well at home last weekend."
+      },
+      {
+        question: "What will they do next week?",
+        options: [
+          { id: "A", text: "Rest at home" },
+          { id: "B", text: "Go on a trip with a friend (친구랑 여행을 갈 거예요)" }
+        ],
+        correctId: "B",
+        explanation: "The text says '다음 주에 친구랑 여행을 갈 거예요' (Next week I will go on a trip with a friend)."
+      }
+    ]
+  };
+
+  // Card flipping tracking
+  const [flippedAnchorIdx, setFlippedAnchorIdx] = useState<number | null>(null);
+
+  // Activity 1: Time anchors MCQ
+  const [anchorMcqIdx, setAnchorMcqIdx] = useState(0);
+  const [anchorMcqSelected, setAnchorMcqSelected] = useState<string | null>(null);
+  const [anchorMcqChecked, setAnchorMcqChecked] = useState(false);
+  const [anchorMcqCorrect, setAnchorMcqCorrect] = useState<boolean | null>(null);
+
+  const anchorMcqs = [
+    { question: "Which anchor matches 'these days'?", options: ["어제", "요즘", "내일"], correct: "요즘", explanation: "요즘 means 'these days' or 'nowadays' representing present context." },
+    { question: "Which anchor goes with a past-tense verb?", options: ["오늘", "지난 주말에", "다음 주에"], correct: "지난 주말에", explanation: "지난 주말에 means 'last weekend' and requires polite past endings." }
+  ];
+
+  // Activity 2: 3-part timeline story frames
+  const [framePast, setFramePast] = useState("쉬었어요");
+  const [framePresent, setFramePresent] = useState("일해요");
+  const [frameFuture, setFrameFuture] = useState("갈 거예요");
+  const [frameReflectionSelected, setFrameReflectionSelected] = useState<string | null>(null);
+  const [frameReflectionChecked, setFrameReflectionChecked] = useState(false);
+
+  // Activity 3: Listening
   const [listeningItems, setListeningItems] = useState<any[]>([]);
   const [listeningIdx, setListeningIdx] = useState(0);
   const [selectedSummaryId, setSelectedSummaryId] = useState<string | null>(null);
   const [listeningChecked, setListeningChecked] = useState(false);
   const [listeningCorrect, setListeningCorrect] = useState<boolean | null>(null);
-  
-  // Timeline questions
   const [timelineAnswers, setTimelineAnswers] = useState<Record<string, string>>({});
   const [timelineChecked, setTimelineChecked] = useState(false);
   const [timelineCorrect, setTimelineCorrect] = useState<Record<string, boolean>>({});
 
-  // Activity 2: Builder
+  // Activity 4: Builder
   const [builderTemplates, setBuilderTemplates] = useState<any>(null);
-  const [pastAnchor, setPastAnchor] = useState<string>("");
-  const [pastActivity, setPastActivity] = useState<string>("");
-  const [presentAnchor, setPresentAnchor] = useState<string>("");
-  const [presentActivity, setPresentActivity] = useState<string>("");
-  const [futureAnchor, setFutureAnchor] = useState<string>("");
-  const [futureActivity, setFutureActivity] = useState<string>("");
+  const [pastAnchor, setPastAnchor] = useState<string>("지난 주말에");
+  const [pastActivity, setPastActivity] = useState<string>("집에서 푹 쉬었어요");
+  const [presentAnchor, setPresentAnchor] = useState<string>("오늘");
+  const [presentActivity, setPresentActivity] = useState<string>("회사에서 일해요");
+  const [futureAnchor, setFutureAnchor] = useState<string>("다음 주에");
+  const [futureActivity, setFutureActivity] = useState<string>("여행을 갈 거예요");
 
   const [builtParagraph, setBuiltParagraph] = useState<any>(null);
   const [building, setBuilding] = useState(false);
@@ -173,6 +284,45 @@ export default function Course3Phase5StoriesWizard({
   const [tutorSession, setTutorSession] = useState<any>(null);
   const [loadingTutor, setLoadingTutor] = useState(false);
 
+  // Sounds & XP dispatcher
+  const playCorrectSound = () => {
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("hangeulai-xp", { detail: { amount: 20, type: 'correct' } }));
+    }
+  };
+
+  const playWrongSound = () => {
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("hangeulai-xp", { detail: { amount: -10, type: 'wrong' } }));
+    }
+  };
+
+  const handleToggleHomework = async (id: string, currentStatus: boolean) => {
+    setCompletedHomework(prev => ({ ...prev, [id]: !currentStatus }));
+    try {
+      await apiJson("/phases/korean2/5/homework/check", {
+        method: "POST",
+        body: JSON.stringify({ homework_id: id, checked: !currentStatus })
+      });
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleLaunchTutor = async () => {
+    setLoadingTutor(true);
+    setTutorSession(null);
+    try {
+      const res = await apiJson("/lessons/conversation/a2/daily-story-practice/start", { method: "POST" });
+      setTutorSession(res);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoadingTutor(false);
+    }
+  };
+
+  // APIs loaders
   useEffect(() => {
     const load = async () => {
       try {
@@ -182,28 +332,25 @@ export default function Course3Phase5StoriesWizard({
         } else if (step === 2 && !coreData) {
           const res = await apiJson("/phases/korean2/5/core-data");
           setCoreData(res);
-        } else if (step === 3 && listeningItems.length === 0) {
+        } else if (step === 8 && listeningItems.length === 0) {
           const res_l = await apiJson("/practice/daily-stories/listening");
           setListeningItems(res_l.items || []);
-        } else if (step === 4) {
-          if (!builderTemplates) {
-            const res_t = await apiJson("/practice/daily-stories/templates");
-            setBuilderTemplates(res_t);
-            // set defaults
-            if (res_t.anchors && res_t.activities) {
-              setPastAnchor(res_t.anchors.past[0]);
-              setPresentAnchor(res_t.anchors.present[0]);
-              setFutureAnchor(res_t.anchors.future[0]);
-              
-              setPastActivity(res_t.activities.past[0].past_ko);
-              setPresentActivity(res_t.activities.present[0].present_ko);
-              setFutureActivity(res_t.activities.future[0].future_ko);
-            }
+        } else if (step === 9 && !builderTemplates) {
+          const res_t = await apiJson("/practice/daily-stories/templates");
+          setBuilderTemplates(res_t);
+          if (res_t.anchors && res_t.activities) {
+            setPastAnchor(res_t.anchors.past[0]);
+            setPresentAnchor(res_t.anchors.present[0]);
+            setFutureAnchor(res_t.anchors.future[0]);
+            
+            setPastActivity(res_t.activities.past[0].past_ko);
+            setPresentActivity(res_t.activities.present[0].present_ko);
+            setFutureActivity(res_t.activities.future[0].future_ko);
           }
-        } else if (step === 5 && quizBlueprint.length === 0) {
+        } else if (step === 11 && quizBlueprint.length === 0) {
           const res_q = await apiJson("/quiz/korean2/phase-5/start", { method: "POST" });
           setQuizBlueprint(res_q.blueprint || []);
-        } else if (step === 6 && homeworkItems.length === 0) {
+        } else if (step === 12 && homeworkItems.length === 0) {
           const res_hw = await apiJson("/phases/korean2/5/homework");
           setHomeworkItems(res_hw || []);
         }
@@ -218,7 +365,54 @@ export default function Course3Phase5StoriesWizard({
     speakWord(text);
   };
 
-  // Activity 1A listening check
+  // Concept Checks
+  const handleCheckConcept = (selectedId: string) => {
+    if (cChecked) return;
+    const currentQ = conceptQuestions[step]?.[cIdx];
+    if (!currentQ) return;
+
+    setCSelected(selectedId);
+    const isCorrect = selectedId === currentQ.correctId;
+    setCChecked(true);
+    setCCorrect(isCorrect);
+    
+    if (isCorrect) playCorrectSound();
+    else playWrongSound();
+  };
+
+  const handleNextConcept = () => {
+    const list = conceptQuestions[step] || [];
+    if (cIdx < list.length - 1) {
+      setCIdx(cIdx + 1);
+      setCSelected(null);
+      setCChecked(false);
+      setCCorrect(null);
+    } else {
+      setStep(step + 1);
+    }
+  };
+
+  // Activity 1: Time Anchors MCQ
+  const handleCheckAnchorMcq = (opt: string) => {
+    if (anchorMcqChecked) return;
+    setAnchorMcqSelected(opt);
+    const correctVal = anchorMcqs[anchorMcqIdx].correct;
+    const isCorrect = opt === correctVal;
+    setAnchorMcqChecked(true);
+    setAnchorMcqCorrect(isCorrect);
+    if (isCorrect) playCorrectSound();
+    else playWrongSound();
+  };
+
+  // Activity 2: 3-part timeline frames
+  const handleCheckFrameReflection = (opt: string) => {
+    if (frameReflectionChecked) return;
+    setFrameReflectionSelected(opt);
+    setFrameReflectionChecked(true);
+    playCorrectSound();
+  };
+
+  // Activity 3: Listening summaries
   const handleCheckListeningSummary = async () => {
     const current = listeningItems[listeningIdx];
     if (!current || !selectedSummaryId) return;
@@ -234,28 +428,33 @@ export default function Course3Phase5StoriesWizard({
       });
       setListeningChecked(true);
       setListeningCorrect(res.correct);
+      if (res.correct) playCorrectSound();
+      else playWrongSound();
     } catch (err) {
       console.error(err);
     }
   };
 
-  // Activity 1B listening details check
   const handleCheckListeningDetails = () => {
     const current = listeningItems[listeningIdx];
     if (!current) return;
 
     const results: Record<string, boolean> = {};
+    let allCorrect = true;
     current.timeline_questions.forEach((q: any) => {
       const userAns = timelineAnswers[q.question];
       const isCorrect = userAns === q.correct_answer;
       results[q.question] = isCorrect;
+      if (!isCorrect) allCorrect = false;
     });
 
     setTimelineChecked(true);
     setTimelineCorrect(results);
+    if (allCorrect) playCorrectSound();
+    else playWrongSound();
   };
 
-  // Build connected paragraph
+  // Activity 4: Paragraph builder
   const handleBuildParagraph = async () => {
     setBuilding(true);
     setBuiltParagraph(null);
@@ -296,7 +495,7 @@ export default function Course3Phase5StoriesWizard({
     }
   };
 
-  // Speaking evaluation
+  // Activity 5: Speaking Evaluation
   const handleSpeechEvaluate = async () => {
     const target = builtParagraph ? builtParagraph.final_korean_text : "어제 친구를 만났어요. 오늘 일해요. 내일 청소할 거예요.";
     if (!rec.audioBlob) return;
@@ -314,7 +513,7 @@ export default function Course3Phase5StoriesWizard({
     }
   };
 
-  // Quiz check
+  // Step 11: Quiz Checkpoint
   const handleCheckQuiz = () => {
     const current = quizBlueprint[quizIdx];
     if (!current) return;
@@ -328,7 +527,10 @@ export default function Course3Phase5StoriesWizard({
 
     setQuizChecked(true);
     setQuizCorrect(isCorrect);
-    if (!isCorrect) {
+    if (isCorrect) {
+      playCorrectSound();
+    } else {
+      playWrongSound();
       setQuizMistakes(prev => [...prev, current.correct_answer]);
     }
   };
@@ -353,7 +555,7 @@ export default function Course3Phase5StoriesWizard({
           })
         });
         setQuizScore(score);
-        setStep(6);
+        setStep(12);
       } catch (err) {
         console.error(err);
       } finally {
@@ -362,34 +564,9 @@ export default function Course3Phase5StoriesWizard({
     }
   };
 
-  // Homework check logging
-  const handleToggleHomework = async (id: string, currentStatus: boolean) => {
-    setCompletedHomework(prev => ({ ...prev, [id]: !currentStatus }));
-    try {
-      await apiJson("/phases/korean2/5/homework/check", {
-        method: "POST",
-        body: JSON.stringify({ homework_id: id, checked: !currentStatus })
-      });
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  // Tutor session launch
-  const handleLaunchTutor = async () => {
-    setLoadingTutor(true);
-    try {
-      const res = await apiJson("/conversation/a2/daily-story-practice/start", { method: "POST" });
-      setTutorSession(res);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoadingTutor(false);
-    }
-  };
-
   return (
-    <div className="flex-grow flex flex-col justify-between">
+    <div className="flex-grow flex flex-col justify-between font-sans">
+      
       {/* Top Header tracking */}
       <header className="flex justify-between items-center py-4 border-b border-white/5 mb-6">
         <div className="flex items-center space-x-4">
@@ -422,7 +599,7 @@ export default function Course3Phase5StoriesWizard({
         </div>
       </header>
 
-      {/* Screen 1: Welcome/Overview */}
+      {/* Step 1: Welcome Overview */}
       {step === 1 && (
         <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center text-center animate-fade-in">
           <div className="p-3 bg-brand-500/10 rounded-full border border-brand-500/25 w-fit mx-auto text-brand-400 shrink-0">
@@ -430,19 +607,19 @@ export default function Course3Phase5StoriesWizard({
           </div>
           
           <h2 className="text-5xl font-black text-white tracking-tight">Korean 2.5</h2>
-          <h3 className="text-xl font-bold text-brand-400 mt-1 font-serif">Daily Life Stories (Past–Present–Future)</h3>
+          <h3 className="text-2xl font-extrabold text-brand-400 mt-2">Daily Life Stories</h3>
           
           <p className="text-zinc-300 text-base leading-relaxed max-w-2xl mx-auto">
             {metadata?.description || "Tell short stories about your life across yesterday, today, and tomorrow in simple connected sentences."}
           </p>
 
-          <div className="bg-zinc-900/60 p-6 rounded-2xl border border-white/5 text-left text-sm text-zinc-400 space-y-3 max-w-2xl mx-auto w-full">
+          <div className="bg-zinc-900/60 p-6 rounded-2xl border border-white/5 text-left text-sm text-zinc-400 space-y-3 max-w-2xl mx-auto w-full font-sans">
             <p className="text-[10px] text-zinc-500 font-mono uppercase tracking-wider font-black">🎯 Objectives:</p>
             <ul className="list-disc list-inside space-y-1 text-zinc-300 pl-1">
               {(metadata?.goals || [
-                "Combine past, present, and future sentences about daily life",
-                "Describe your week in simple, connected sentences",
-                "Understand short stories about someone’s past, present, and future plans"
+                "Combine past, present, and future forms in one short story",
+                "Anchor each part of your story with clear time markers",
+                "Read your multi-tense story aloud and pass a checkpoint quiz"
               ]).map((g: string, idx: number) => (
                 <li key={idx}>{g}</li>
               ))}
@@ -459,129 +636,451 @@ export default function Course3Phase5StoriesWizard({
               <span>Start Phase 5</span>
               <ChevronRight className="w-4 h-4" />
             </button>
-            
           </div>
 
           {showOutline && (
             <div className="bg-zinc-950 p-6 rounded-2xl border border-white/5 text-left text-xs text-zinc-400 space-y-2 animate-fade-in max-w-2xl mx-auto w-full font-mono">
               <p className="font-extrabold text-white text-center pb-2">Phase Activities Outline</p>
-              <p>✓ Activity 1 – Past, present, future time anchors</p>
-              <p>✓ Activity 2 – 3-part timeline story frames</p>
-              <p>✓ Activity 3 – Daily life stories listening summaries</p>
+              <p>✓ C1 – Daily life stories structure</p>
+              <p>✓ C2 – Past, present, and future time anchors</p>
+              <p>✓ C3 – Tense selection rules per time anchors</p>
+              <p>✓ C4 – Narrative paragraph example breakdown</p>
+              <p>✓ Activity 1 – Past, present, future time anchors cards & MCQs</p>
+              <p>✓ Activity 2 – 3-part timeline story frames template</p>
+              <p>✓ Activity 3 – Daily life stories listening summaries & timeline checks</p>
               <p>✓ Activity 4 – Multi-tense story paragraph builder</p>
-              <p>✓ Activity 5 – Speaking voice checkpoint check feedback</p>
+              <p>✓ Activity 5 – Story read-aloud voice check</p>
             </div>
           )}
         </div>
       )}
 
-      {/* Screen 2: Concept Explanation */}
+      {/* Step 2: Screen C1 – What is a “daily life story”? */}
       {step === 2 && (
         <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
-          <div className="flex justify-between items-center border-b border-white/5 pb-4">
-            <h2 className="text-2xl font-black text-white flex items-center gap-2">
-              <BookOpen className="w-6 h-6 text-brand-400" />
-              <span>Linking Yesterday–Today–Tomorrow</span>
-            </h2>
-            <span className="text-xs text-zinc-500 font-bold">Step 2 of {totalSteps}</span>
+          <h2 className="text-3xl font-black text-white">What is a Daily Life Story?</h2>
+          <div className="bg-zinc-900/60 p-6 rounded-2xl border border-white/5 space-y-3 text-sm text-zinc-300 text-left">
+            <p>A daily life story connects what you did, what your life is like now, and what you will do. Stringing these three frames together builds narrative competency at A2 level.</p>
+            <p>We follow the chronological order: **Past (e.g. last weekend) → Present (today) → Future (next week / tomorrow)**.</p>
           </div>
 
-          <div className="bg-zinc-900/60 p-4 rounded-xl border border-white/5 space-y-2 text-xs leading-relaxed text-zinc-300 text-left">
-            <p><strong>Connecting Tenses:</strong> To create cohesive stories about your daily life, anchor your descriptions with timeline markers. Follow the structure of combining past activities, present habits, and future plans in sequence.</p>
-          </div>
-
-          {/* Time Anchors Grid */}
-          <div className="space-y-2 text-left">
-            <span className="text-[10px] text-zinc-500 font-black uppercase tracking-wider block">1. Time Anchors (Tense Markers)</span>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-              {coreData?.time_anchors?.map((t: any, idx: number) => {
-                const isSelected = selectedAnchorType === t.type;
-                return (
-                  <div
-                    key={idx}
-                    onClick={() => {
-                      setSelectedAnchorType(isSelected ? null : t.type);
-                      playAudio(t.ko);
-                    }}
-                    className={`glass-panel p-2.5 rounded-2xl border text-center transition cursor-pointer flex flex-col justify-between h-20 ${
-                      isSelected ? "border-brand-500 bg-brand-500/5" : "border-white/5 bg-zinc-900/60 hover:bg-zinc-800"
-                    }`}
-                  >
-                    <div className="flex justify-between items-center">
-                      <span className="text-[7px] font-mono text-zinc-500 uppercase tracking-widest">{t.type}</span>
-                      <button onClick={(e) => { e.stopPropagation(); playAudio(t.ko); }} className="p-1 rounded bg-zinc-950/40 text-zinc-400"><Volume2 className="w-3 h-3" /></button>
-                    </div>
-                    <div className="py-0.5">
-                      <div className="text-sm font-black text-white font-korean">{t.ko}</div>
-                      <div className="text-[9px] text-zinc-400">{t.en}</div>
-                    </div>
-                  </div>
-                );
-              })}
+          <div className="bg-zinc-900/60 p-6 rounded-2xl border border-white/5 space-y-4 max-w-xl text-left">
+            <h4 className="text-xs font-black uppercase text-amber-400 tracking-wider">Concept Check</h4>
+            <p className="text-xs text-zinc-300 font-bold">{conceptQuestions[2][cIdx].question}</p>
+            <div className="grid grid-cols-1 gap-2">
+              {conceptQuestions[2][cIdx].options.map(opt => (
+                <button
+                  key={opt.id}
+                  onClick={() => handleCheckConcept(opt.id)}
+                  disabled={cChecked}
+                  className={`p-3 rounded-xl border text-left text-xs font-semibold transition cursor-pointer ${
+                    cSelected === opt.id
+                      ? cCorrect
+                        ? "border-accent-teal bg-accent-teal/15 text-white"
+                        : "border-red-500 bg-red-500/10 text-white"
+                      : "border-white/5 bg-zinc-950 text-zinc-300 hover:border-white/10"
+                  } ${cChecked && opt.id === conceptQuestions[2][cIdx].correctId ? "border-accent-teal bg-accent-teal/15 text-white" : ""}`}
+                >
+                  {opt.text}
+                </button>
+              ))}
             </div>
-          </div>
-
-          {/* Visual Timeline */}
-          <div className="p-4 bg-zinc-950 rounded-2xl border border-white/5 text-left space-y-3">
-            <span className="text-[9px] text-zinc-500 font-mono uppercase tracking-widest block font-bold">2. Story Timeline Structure</span>
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
-              <div className="p-2.5 bg-zinc-900 border border-red-500/25 rounded-xl w-full text-center">
-                <span className="text-red-400 font-bold block">Past (어제)</span>
-                <span className="text-[10px] text-zinc-400">...했지 / ...했어요</span>
+            {cChecked && (
+              <div className="animate-fade-in space-y-3">
+                <p className="text-xs text-zinc-400 leading-relaxed">{conceptQuestions[2][cIdx].explanation}</p>
+                <button
+                  onClick={handleNextConcept}
+                  className="bg-brand-500 hover:bg-brand-600 text-white px-5 py-2 rounded-xl text-xs font-bold transition cursor-pointer"
+                >
+                  Continue
+                </button>
               </div>
-              <div className="text-zinc-500">→</div>
-              <div className="p-2.5 bg-zinc-900 border border-green-500/25 rounded-xl w-full text-center">
-                <span className="text-green-400 font-bold block">Present (오늘)</span>
-                <span className="text-[10px] text-zinc-400">...해요 / ...하고 있어요</span>
-              </div>
-              <div className="text-zinc-500">→</div>
-              <div className="p-2.5 bg-zinc-900 border border-cyan-500/25 rounded-xl w-full text-center">
-                <span className="text-cyan-400 font-bold block">Future (내일)</span>
-                <span className="text-[10px] text-zinc-400">...할 거예요 / ...려고 해요</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Example Stories */}
-          {coreData?.story_examples?.[0] && (
-            <div className="space-y-2 text-left">
-              <span className="text-[10px] text-zinc-500 font-black uppercase tracking-wider block">3. Multi-Tense Connected Story</span>
-              <div className="p-4 bg-zinc-950 rounded-xl border border-white/5 space-y-3">
-                <p className="font-korean font-bold text-sm leading-relaxed text-white">
-                  <span className="text-red-400">지난 주말에</span> 저는 집에서 푹 <span className="text-red-400">쉬었어요</span>. <span className="text-green-400">오늘</span> 바빠요. 회사에서 <span className="text-green-400">일해요</span>. <span className="text-cyan-400">다음 주에</span> 친구랑 여행을 <span className="text-cyan-400">갈 거예요</span>.
-                </p>
-                <p className="text-xs text-zinc-400">{coreData.story_examples[0].en}</p>
-                <div className="flex justify-end">
-                  <button onClick={() => playAudio(coreData.story_examples[0].ko)} className="p-2 rounded bg-zinc-900 text-zinc-400 hover:text-white"><Volume2 className="w-4 h-4" /></button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          <div className="flex justify-between items-center pt-4 border-t border-white/5">
-            <button onClick={() => setStep(1)} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-sm font-bold transition flex items-center gap-2 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
-            <button onClick={() => setStep(3)} className="bg-brand-500 hover:bg-brand-600 text-white px-8 py-3 rounded-xl text-sm font-bold transition flex items-center gap-2 cursor-pointer">Start Activities <ChevronRight className="w-4 h-4" /></button>
+            )}
           </div>
         </div>
       )}
 
-      {/* Screen 3: Activity 1: Listening */}
+      {/* Step 3: Screen C2 – Time anchors: past, present, future */}
       {step === 3 && (
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
+          <h2 className="text-3xl font-black text-white">Time Anchors (Tense Markers)</h2>
+          <div className="bg-zinc-900/60 p-6 rounded-2xl border border-white/5 space-y-3 text-sm text-zinc-300 text-left font-korean">
+            <p>Establish when the action happened using distinct anchors:</p>
+            <div className="bg-zinc-950 p-4 rounded-xl border border-white/5 space-y-2 text-xs text-zinc-400">
+              <p>• <strong>Past:</strong> 지난 주말에 (last weekend), 어제 (yesterday), 어젯밤에 (last night)</p>
+              <p>• <strong>Present:</strong> 오늘 (today), 요즘 (these days), 지금 (now)</p>
+              <p>• <strong>Future:</strong> 내일 (tomorrow), 다음 주에 (next week), 다음 주말에 (next weekend)</p>
+            </div>
+          </div>
+
+          <div className="bg-zinc-900/60 p-6 rounded-2xl border border-white/5 space-y-4 max-w-xl text-left">
+            <h4 className="text-xs font-black uppercase text-amber-400 tracking-wider">Concept Check {cIdx + 1} of 1</h4>
+            <p className="text-xs text-zinc-300 font-bold">{conceptQuestions[3][cIdx].question}</p>
+            <div className="grid grid-cols-1 gap-2">
+              {conceptQuestions[3][cIdx].options.map(opt => (
+                <button
+                  key={opt.id}
+                  onClick={() => handleCheckConcept(opt.id)}
+                  disabled={cChecked}
+                  className={`p-3 rounded-xl border text-left text-xs font-semibold transition cursor-pointer ${
+                    cSelected === opt.id
+                      ? cCorrect
+                        ? "border-accent-teal bg-accent-teal/15 text-white"
+                        : "border-red-500 bg-red-500/10 text-white"
+                      : "border-white/5 bg-zinc-950 text-zinc-300 hover:border-white/10"
+                  } ${cChecked && opt.id === conceptQuestions[3][cIdx].correctId ? "border-accent-teal bg-accent-teal/15 text-white" : ""}`}
+                >
+                  {opt.text}
+                </button>
+              ))}
+            </div>
+            {cChecked && (
+              <div className="animate-fade-in space-y-3">
+                <p className="text-xs text-zinc-400 leading-relaxed">{conceptQuestions[3][cIdx].explanation}</p>
+                <button
+                  onClick={handleNextConcept}
+                  className="bg-brand-500 hover:bg-brand-600 text-white px-5 py-2 rounded-xl text-xs font-bold transition cursor-pointer"
+                >
+                  Continue
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Step 4: Screen C3 – Using the right tense for each anchor */}
+      {step === 4 && (
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in font-sans">
+          <h2 className="text-3xl font-black text-white">Matching Anchors with Tenses</h2>
+          <div className="bg-zinc-900/60 p-6 rounded-2xl border border-white/5 space-y-3 text-sm text-zinc-300 text-left">
+            <p>Ensure that the verb ending matches your chosen time anchor:</p>
+            <div className="bg-zinc-950 p-4 rounded-xl border border-white/5 space-y-1.5 text-xs text-zinc-400 font-korean">
+              <p>• 지난 주말에 ... <strong className="text-brand-300">쉬었어요</strong> (polite past)</p>
+              <p>• 오늘 ... 바빠요 / <strong className="text-brand-300">일해요</strong> (present)</p>
+              <p>• 다음 주에 ... <strong className="text-brand-300">갈 거예요</strong> (future plan)</p>
+            </div>
+          </div>
+
+          <div className="bg-zinc-900/60 p-6 rounded-2xl border border-white/5 space-y-4 max-w-xl text-left">
+            <h4 className="text-xs font-black uppercase text-amber-400 tracking-wider">Concept Check {cIdx + 1} of 1</h4>
+            <p className="text-xs text-zinc-300 font-bold">{conceptQuestions[4][cIdx].question}</p>
+            <div className="grid grid-cols-1 gap-2">
+              {conceptQuestions[4][cIdx].options.map(opt => (
+                <button
+                  key={opt.id}
+                  onClick={() => handleCheckConcept(opt.id)}
+                  disabled={cChecked}
+                  className={`p-3 rounded-xl border text-left text-xs font-semibold transition cursor-pointer ${
+                    cSelected === opt.id
+                      ? cCorrect
+                        ? "border-accent-teal bg-accent-teal/15 text-white"
+                        : "border-red-500 bg-red-500/10 text-white"
+                      : "border-white/5 bg-zinc-950 text-zinc-300 hover:border-white/10"
+                  } ${cChecked && opt.id === conceptQuestions[4][cIdx].correctId ? "border-accent-teal bg-accent-teal/15 text-white" : ""}`}
+                >
+                  {opt.text}
+                </button>
+              ))}
+            </div>
+            {cChecked && (
+              <div className="animate-fade-in space-y-3">
+                <p className="text-xs text-zinc-400 leading-relaxed">{conceptQuestions[4][cIdx].explanation}</p>
+                <button
+                  onClick={handleNextConcept}
+                  className="bg-brand-500 hover:bg-brand-600 text-white px-5 py-2 rounded-xl text-xs font-bold transition cursor-pointer"
+                >
+                  Continue
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Step 5: Screen C4 – Example story paragraph */}
+      {step === 5 && (
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
+          <h2 className="text-3xl font-black text-white">Example Story Breakdown</h2>
+          
+          <div className="space-y-3 text-left">
+            <span className="text-[10px] text-zinc-550 font-black uppercase tracking-wider block">Yesterday-Today-Tomorrow Story</span>
+            <div className="p-5 bg-zinc-950 rounded-2xl border border-white/5 space-y-3">
+              <p className="font-korean font-bold text-sm leading-relaxed text-zinc-300">
+                <span className="bg-red-500/20 text-red-300 px-1 py-0.5 rounded border border-red-500/35" title="Past Anchor">지난 주말에</span> 저는 집에서 푹 쉬었어요. <span className="bg-green-500/20 text-green-300 px-1 py-0.5 rounded border border-green-500/35" title="Present Anchor">오늘</span> 바빠요. 회사에서 일해요. <span className="bg-cyan-500/20 text-cyan-300 px-1 py-0.5 rounded border border-cyan-500/35" title="Future Anchor">다음 주에</span> 친구랑 여행을 갈 거예요.
+              </p>
+              <p className="text-xs text-zinc-500 leading-relaxed font-sans italic">
+                "{coreData?.story_examples?.[0]?.en || "Last weekend I rested well at home. Today I am busy. I work at the office. Next week I will go on a trip with a friend."}"
+              </p>
+            </div>
+          </div>
+
+          <div className="bg-zinc-900/60 p-6 rounded-2xl border border-white/5 space-y-4 max-w-xl text-left">
+            <h4 className="text-xs font-black uppercase text-amber-400 tracking-wider">Concept Check {cIdx + 1} of 2</h4>
+            <p className="text-xs text-zinc-300 font-bold">{conceptQuestions[5][cIdx].question}</p>
+            <div className="grid grid-cols-1 gap-2">
+              {conceptQuestions[5][cIdx].options.map(opt => (
+                <button
+                  key={opt.id}
+                  onClick={() => handleCheckConcept(opt.id)}
+                  disabled={cChecked}
+                  className={`p-3 rounded-xl border text-left text-xs font-semibold transition cursor-pointer ${
+                    cSelected === opt.id
+                      ? cCorrect
+                        ? "border-accent-teal bg-accent-teal/15 text-white"
+                        : "border-red-500 bg-red-500/10 text-white"
+                      : "border-white/5 bg-zinc-950 text-zinc-300 hover:border-white/10"
+                  } ${cChecked && opt.id === conceptQuestions[5][cIdx].correctId ? "border-accent-teal bg-accent-teal/15 text-white" : ""}`}
+                >
+                  {opt.text}
+                </button>
+              ))}
+            </div>
+            {cChecked && (
+              <div className="animate-fade-in space-y-3">
+                <p className="text-xs text-zinc-400 leading-relaxed">{conceptQuestions[5][cIdx].explanation}</p>
+                <button
+                  onClick={handleNextConcept}
+                  className="bg-brand-500 hover:bg-brand-600 text-white px-5 py-2 rounded-xl text-xs font-bold transition cursor-pointer"
+                >
+                  Continue
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Step 6: Activity 1 – Past, present, future time anchors */}
+      {step === 6 && (
         <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
           <div className="flex justify-between items-center border-b border-white/5 pb-4">
             <h2 className="text-2xl font-black text-white flex items-center gap-2">
               <Sparkles className="w-6 h-6 text-brand-400" />
-              <span>Activity 1 – Timeline Story Comprehension</span>
+              <span>Activity 1 – Time Anchors Cards</span>
             </h2>
-            <span className="text-xs text-zinc-500 font-bold">Step 3 of {totalSteps}</span>
+            <span className="text-xs text-zinc-500 font-bold">Step 6 of {totalSteps}</span>
           </div>
 
-          {listeningItems.length > 0 && (
+          <p className="text-xs text-zinc-400">
+            Select a card to play its pronunciation and flip it. Then answer the matching MCQs.
+          </p>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 max-h-[30vh] overflow-y-auto pr-1">
+            {coreData?.time_anchors?.map((t: any, idx: number) => {
+              const isFlipped = flippedAnchorIdx === idx;
+              return (
+                <div
+                  key={idx}
+                  onClick={() => {
+                    setFlippedAnchorIdx(isFlipped ? null : idx);
+                    playAudio(t.ko);
+                  }}
+                  className={`glass-panel p-3.5 rounded-xl border text-center transition cursor-pointer flex flex-col justify-between h-24 ${
+                    isFlipped ? "border-brand-500 bg-brand-500/5 shadow-md" : "border-white/5 bg-zinc-900/60 hover:bg-zinc-800"
+                  }`}
+                >
+                  {!isFlipped ? (
+                    <div className="my-auto space-y-1 font-korean">
+                      <div className="text-sm font-black text-white">{t.ko}</div>
+                      <span className="text-[7.5px] text-zinc-500 tracking-wider uppercase font-mono">{t.type} Anchor</span>
+                    </div>
+                  ) : (
+                    <div className="animate-fade-in text-left my-auto space-y-0.5">
+                      <span className="text-xs font-black text-brand-400">{t.en}</span>
+                      <p className="text-[8.5px] text-zinc-500 leading-normal">Requires a matching {t.type} tense verb ending.</p>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Micro MCQs */}
+          <div className="bg-zinc-900/60 p-6 rounded-2xl border border-white/5 space-y-4 max-w-xl mx-auto w-full text-left">
+            <h4 className="text-xs font-black uppercase text-amber-400 tracking-wider">Anchor Drill {anchorMcqIdx + 1} of 2</h4>
+            <p className="text-xs text-zinc-300 font-bold">
+              {anchorMcqs[anchorMcqIdx].question}
+            </p>
+            <div className="grid grid-cols-3 gap-2">
+              {anchorMcqs[anchorMcqIdx].options.map(opt => (
+                <button
+                  key={opt}
+                  onClick={() => handleCheckAnchorMcq(opt)}
+                  disabled={anchorMcqChecked}
+                  className={`p-3 rounded-xl border text-center text-xs font-bold transition cursor-pointer ${
+                    anchorMcqSelected === opt
+                      ? anchorMcqCorrect
+                        ? "border-accent-teal bg-accent-teal/15 text-white"
+                        : "border-red-500 bg-red-500/10 text-white"
+                      : "border-white/5 bg-zinc-950 text-zinc-400 hover:border-white/10"
+                  } ${anchorMcqChecked && opt === anchorMcqs[anchorMcqIdx].correct ? "border-accent-teal bg-accent-teal/15 text-white" : ""}`}
+                >
+                  {opt}
+                </button>
+              ))}
+            </div>
+
+            {anchorMcqChecked && (
+              <div className="flex justify-between items-center pt-1">
+                <p className="text-[10px] text-zinc-455 italic">
+                  {anchorMcqs[anchorMcqIdx].explanation}
+                </p>
+                <button
+                  onClick={() => {
+                    setAnchorMcqChecked(false);
+                    setAnchorMcqSelected(null);
+                    setAnchorMcqCorrect(null);
+                    if (anchorMcqIdx === 0) setAnchorMcqIdx(1);
+                    else setStep(7);
+                  }}
+                  className="bg-brand-500 hover:bg-brand-600 text-white px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer shrink-0"
+                >
+                  {anchorMcqIdx === 0 ? "Next MCQ" : "Continue to Story Frames"}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Step 7: Activity 2 – 3‑part timeline story frames */}
+      {step === 7 && (
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
+          <div className="flex justify-between items-center border-b border-white/5 pb-4">
+            <h2 className="text-2xl font-black text-white flex items-center gap-2">
+              <Sparkles className="w-6 h-6 text-brand-400" />
+              <span>Activity 2 – 3-Part Story Frame template</span>
+            </h2>
+            <span className="text-xs text-zinc-500 font-bold">Step 7 of {totalSteps}</span>
+          </div>
+
+          <div className="bg-zinc-900/30 p-5 rounded-2xl border border-white/5 space-y-4 max-w-xl mx-auto w-full text-left">
+            <h3 className="text-xs font-black uppercase text-amber-400 tracking-wider">3-Part Chronological Frame</h3>
+            
+            <div className="space-y-3">
+              {/* Past Frame */}
+              <div className="p-3 bg-zinc-950 rounded-xl border border-white/5 space-y-1.5 text-xs">
+                <span className="text-[10px] text-zinc-500 uppercase font-black tracking-widest block">1. Past Block (e.g. 지난 주말에)</span>
+                <div className="flex gap-2">
+                  {["쉬었어요", "일했어요", "만났어요"].map(o => (
+                    <button
+                      key={o}
+                      onClick={() => setFramePast(o)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition ${
+                        framePast === o ? "bg-red-500/20 text-red-300 border-red-500/35" : "bg-zinc-900 text-zinc-400 border-white/5"
+                      }`}
+                    >
+                      {o}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Present Frame */}
+              <div className="p-3 bg-zinc-950 rounded-xl border border-white/5 space-y-1.5 text-xs">
+                <span className="text-[10px] text-zinc-500 uppercase font-black tracking-widest block">2. Present Block (e.g. 오늘)</span>
+                <div className="flex gap-2">
+                  {["일해요", "바빠요", "공부해요"].map(o => (
+                    <button
+                      key={o}
+                      onClick={() => setFramePresent(o)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition ${
+                        framePresent === o ? "bg-green-500/20 text-green-300 border-green-500/35" : "bg-zinc-900 text-zinc-400 border-white/5"
+                      }`}
+                    >
+                      {o}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Future Frame */}
+              <div className="p-3 bg-zinc-950 rounded-xl border border-white/5 space-y-1.5 text-xs">
+                <span className="text-[10px] text-zinc-500 uppercase font-black tracking-widest block">3. Future Block (e.g. 내일 / 다음 주에)</span>
+                <div className="flex gap-2">
+                  {["갈 거예요", "쉴 거예요", "볼 거예요"].map(o => (
+                    <button
+                      key={o}
+                      onClick={() => setFrameFuture(o)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition ${
+                        frameFuture === o ? "bg-cyan-500/20 text-cyan-300 border-cyan-500/35" : "bg-zinc-900 text-zinc-400 border-white/5"
+                      }`}
+                    >
+                      {o}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Compiled Preview */}
+            <div className="p-4 bg-zinc-950 rounded-xl border border-brand-500/20 text-center space-y-1.5">
+              <span className="text-[9px] text-brand-400 uppercase tracking-widest block">Frame Preview Narrative</span>
+              <p className="font-korean font-bold text-white text-sm">
+                지난 주말에 {framePast}. 오늘 {framePresent}. 내일 {frameFuture}.
+              </p>
+            </div>
+
+            {/* Reflection question */}
+            <div className="pt-2 border-t border-white/5 space-y-2">
+              <p className="text-xs text-zinc-350">Which block describes your current situation?</p>
+              <div className="flex gap-2">
+                {["Past Block", "Present Block", "Future Block"].map(opt => (
+                  <button
+                    key={opt}
+                    onClick={() => handleCheckFrameReflection(opt)}
+                    disabled={frameReflectionChecked}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition cursor-pointer ${
+                      frameReflectionSelected === opt
+                        ? "border-accent-teal bg-accent-teal/15 text-white"
+                        : "border-white/10 bg-zinc-900 text-zinc-450 hover:border-white/20"
+                    }`}
+                  >
+                    {opt}
+                  </button>
+                ))}
+              </div>
+              {frameReflectionChecked && (
+                <p className="text-[10px] text-zinc-550 leading-snug">
+                  Feedback logged. The present block matches the today situation.
+                </p>
+              )}
+            </div>
+
+            {frameReflectionChecked && (
+              <div className="flex justify-end pt-2">
+                <button
+                  onClick={() => setStep(8)}
+                  className="bg-brand-500 hover:bg-brand-600 text-white px-5 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer"
+                >
+                  Continue to Listening
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Step 8: Activity 3 – Daily life stories listening summaries */}
+      {step === 8 && (
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
+          <div className="flex justify-between items-center border-b border-white/5 pb-4">
+            <h2 className="text-2xl font-black text-white flex items-center gap-2">
+              <Sparkles className="w-6 h-6 text-brand-400" />
+              <span>Activity 3 – Life Stories Listening</span>
+            </h2>
+            <span className="text-xs text-zinc-500 font-bold">Step 8 of {totalSteps}</span>
+          </div>
+
+          {listeningItems.length === 0 ? (
+            <div className="text-center py-6"><Loader2 className="w-8 h-8 animate-spin mx-auto text-brand-400" /></div>
+          ) : (
             <div className="space-y-6 max-w-xl mx-auto w-full">
               {/* Part A: Choose correct summary */}
               <div className="bg-zinc-900/30 p-5 rounded-2xl border border-white/5 space-y-4">
-                <div className="text-left text-center">
-                  <span className="text-[9px] text-zinc-500 font-black uppercase tracking-wider block">Part A: Listen & Choose Overall Summary</span>
+                <div className="text-center">
+                  <span className="text-[9px] text-zinc-500 font-black uppercase tracking-wider block">Part A: Listen & Choose Plan Summary</span>
                   <p className="text-xs text-zinc-300 mt-1">Listen to the chronological life story:</p>
                 </div>
 
@@ -595,11 +1094,11 @@ export default function Course3Phase5StoriesWizard({
                       key={opt.id}
                       onClick={() => !listeningChecked && setSelectedSummaryId(opt.id)}
                       disabled={listeningChecked}
-                      className={`p-3 rounded-xl border text-left text-xs font-bold transition ${
+                      className={`p-3 rounded-xl border text-left text-xs font-bold transition cursor-pointer ${
                         selectedSummaryId === opt.id
                           ? "border-brand-500 bg-brand-500/10 text-white"
                           : "border-white/5 bg-zinc-950 text-zinc-300 hover:border-white/10"
-                      } ${listeningChecked && opt.id === listeningItems[listeningIdx]?.correct_id ? "border-accent-teal bg-accent-teal/15 text-white" : ""}`}
+                      } ${listeningChecked && opt.id === listeningItems[listeningIdx]?.correct_id ? "border-accent-teal bg-accent-teal/15 text-white" : ""} ${listeningChecked && selectedSummaryId === opt.id && opt.id !== listeningItems[listeningIdx]?.correct_id ? "border-red-500 bg-red-500/10 text-white" : ""}`}
                     >
                       {opt.text}
                     </button>
@@ -610,7 +1109,7 @@ export default function Course3Phase5StoriesWizard({
                   <div className={`p-3 rounded-xl border text-xs text-center ${
                     listeningCorrect ? "bg-accent-teal/5 border-accent-teal/20 text-accent-teal" : "bg-red-500/5 border-red-500/10 text-red-400"
                   }`}>
-                    {listeningCorrect ? "Correct! Timeline summary is valid." : "Incorrect summary match."}
+                    {listeningCorrect ? "Correct timeline summary!" : "Incorrect summary option."}
                   </div>
                 )}
 
@@ -619,7 +1118,7 @@ export default function Course3Phase5StoriesWizard({
                     <button
                       onClick={handleCheckListeningSummary}
                       disabled={!selectedSummaryId}
-                      className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer"
+                      className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white px-5 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer"
                     >
                       Verify Summary
                     </button>
@@ -629,8 +1128,8 @@ export default function Course3Phase5StoriesWizard({
 
               {/* Part B: Timeline Questions */}
               {listeningChecked && (
-                <div className="bg-zinc-900/30 p-5 rounded-2xl border border-white/5 space-y-4 text-left">
-                  <span className="text-[9px] text-zinc-500 font-black uppercase tracking-wider block text-center">Part B: Timeline Detail Questions</span>
+                <div className="bg-zinc-900/30 p-5 rounded-2xl border border-white/5 space-y-4 text-left animate-fade-in font-sans">
+                  <span className="text-[9px] text-zinc-500 font-black uppercase tracking-wider block text-center">Part B: Timeline detail questions</span>
                   
                   {listeningItems[listeningIdx]?.timeline_questions.map((q: any, qidx: number) => (
                     <div key={qidx} className="space-y-2">
@@ -641,12 +1140,12 @@ export default function Course3Phase5StoriesWizard({
                             key={opt}
                             onClick={() => !timelineChecked && setTimelineAnswers(prev => ({ ...prev, [q.question]: opt }))}
                             disabled={timelineChecked}
-                            className={`p-2 rounded-xl border text-xs font-bold transition ${
+                            className={`p-2 rounded-xl border text-center text-[10px] font-bold transition cursor-pointer ${
                               timelineAnswers[q.question] === opt
                                 ? "border-brand-500 bg-brand-500/10 text-white"
                                 : "border-white/5 bg-zinc-950 text-zinc-400 hover:border-white/10"
                             } ${timelineChecked && opt === q.correct_answer ? "border-accent-teal bg-accent-teal/15 text-white" : ""} ${
-                              timelineChecked && timelineAnswers[q.question] === opt && !timelineCorrect[q.question] ? "border-red-500 bg-red-500/15" : ""
+                              timelineChecked && timelineAnswers[q.question] === opt && !timelineCorrect[q.question] ? "border-red-500 bg-red-500/10 text-white" : ""
                             }`}
                           >
                             {opt}
@@ -657,15 +1156,15 @@ export default function Course3Phase5StoriesWizard({
                   ))}
 
                   {timelineChecked && (
-                    <div className="p-3 bg-zinc-950 rounded-xl border border-white/5 text-xs text-center text-zinc-400 space-y-1">
+                    <div className="p-3 bg-zinc-950 rounded-xl border border-white/5 text-[11px] text-zinc-450 space-y-2 text-center">
                       {Object.values(timelineCorrect).every(v => v) ? (
-                        <p className="text-accent-teal font-bold">Excellent! All details are correct.</p>
+                        <p className="text-accent-teal font-extrabold">Excellent! All details are correct.</p>
                       ) : (
-                        <p className="text-red-400">Some answers are incorrect. Review the explanations.</p>
+                        <p className="text-red-400 font-extrabold">Some answers are incorrect. Review the explanations.</p>
                       )}
                       {listeningItems[listeningIdx]?.timeline_questions.map((q: any, idx: number) => (
-                        <p key={idx} className="text-[10px] text-left text-zinc-500 mt-1">
-                          <strong>Q{idx+1}:</strong> {q.explanation}
+                        <p key={idx} className="text-[10px] text-left">
+                          • <strong>Q{idx+1}:</strong> {q.explanation}
                         </p>
                       ))}
                     </div>
@@ -676,7 +1175,7 @@ export default function Course3Phase5StoriesWizard({
                       <button
                         onClick={handleCheckListeningDetails}
                         disabled={Object.keys(timelineAnswers).length !== listeningItems[listeningIdx]?.timeline_questions.length}
-                        className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer"
+                        className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white px-5 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer"
                       >
                         Verify Details
                       </button>
@@ -692,12 +1191,12 @@ export default function Course3Phase5StoriesWizard({
                           if (listeningIdx < listeningItems.length - 1) {
                             setListeningIdx(listeningIdx + 1);
                           } else {
-                            setListeningIdx(0);
+                            setStep(9); // Move to paragraph builder
                           }
                         }}
-                        className="bg-accent-teal text-zinc-950 hover:bg-accent-teal/90 px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer"
+                        className="bg-accent-teal text-zinc-950 hover:bg-accent-teal/90 px-5 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer"
                       >
-                        Reset / Next
+                        {listeningIdx < listeningItems.length - 1 ? "Next Audio" : "Continue to Story Builder"}
                       </button>
                     )}
                   </div>
@@ -705,33 +1204,28 @@ export default function Course3Phase5StoriesWizard({
               )}
             </div>
           )}
-
-          <div className="flex justify-between items-center pt-4 border-t border-white/5">
-            <button onClick={() => setStep(2)} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-sm font-bold transition flex items-center gap-2 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
-            <button onClick={() => setStep(4)} className="bg-brand-500 hover:bg-brand-600 text-white px-8 py-3 rounded-xl text-sm font-bold transition flex items-center gap-2 cursor-pointer">Move to Activity 2 <ChevronRight className="w-4 h-4" /></button>
-          </div>
         </div>
       )}
 
-      {/* Screen 4: Activity 2: Build & Tell My Week Story */}
-      {step === 4 && (
-        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
+      {/* Step 9: Activity 4 – Multi‑tense story paragraph builder */}
+      {step === 9 && (
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in font-sans">
           <div className="flex justify-between items-center border-b border-white/5 pb-4">
             <h2 className="text-2xl font-black text-white flex items-center gap-2">
               <Sparkles className="w-6 h-6 text-brand-400" />
-              <span>Activity 2 – My Week Story Builder</span>
+              <span>Activity 4 – Multi-Tense Story Builder</span>
             </h2>
-            <span className="text-xs text-zinc-500 font-bold">Step 4 of {totalSteps}</span>
+            <span className="text-xs text-zinc-500 font-bold">Step 9 of {totalSteps}</span>
           </div>
 
-          <div className="bg-zinc-900/30 p-5 rounded-2xl border border-white/5 space-y-4">
-            <h3 className="text-xs font-black uppercase text-amber-400 tracking-wider text-left">Part A: Select Anchors & Activities</h3>
+          <div className="bg-zinc-900/30 p-5 rounded-2xl border border-white/5 space-y-4 max-w-xl mx-auto w-full text-left">
+            <h3 className="text-xs font-black uppercase text-amber-400 tracking-wider">Multi-Tense Narrative Builder</h3>
 
             {builderTemplates && (
-              <div className="space-y-4">
-                {/* Past Tense Row */}
-                <div className="p-3.5 bg-zinc-950 rounded-xl border border-white/5 text-left space-y-3">
-                  <span className="text-xs font-extrabold text-white block">1. Past Routine:</span>
+              <div className="space-y-3 text-xs">
+                {/* Past Panel */}
+                <div className="p-3 bg-zinc-950 rounded-xl border border-white/5 space-y-2">
+                  <span className="text-[9px] uppercase tracking-widest text-zinc-500 font-black block">1. Past segment</span>
                   <div className="grid grid-cols-2 gap-2">
                     <select
                       value={pastAnchor}
@@ -742,22 +1236,21 @@ export default function Course3Phase5StoriesWizard({
                         <option key={a} value={a}>{a}</option>
                       ))}
                     </select>
-
                     <select
                       value={pastActivity}
                       onChange={(e) => setPastActivity(e.target.value)}
                       className="bg-zinc-900 p-2 rounded border border-white/5 text-xs text-white focus:outline-none"
                     >
                       {builderTemplates.activities.past.map((act: any) => (
-                        <option key={act.past_ko} value={act.past_ko}>{act.past_ko} ({act.en})</option>
+                        <option key={act.past_ko} value={act.past_ko}>{act.past_ko}</option>
                       ))}
                     </select>
                   </div>
                 </div>
 
-                {/* Present Tense Row */}
-                <div className="p-3.5 bg-zinc-950 rounded-xl border border-white/5 text-left space-y-3">
-                  <span className="text-xs font-extrabold text-white block">2. Present Routine:</span>
+                {/* Present Panel */}
+                <div className="p-3 bg-zinc-950 rounded-xl border border-white/5 space-y-2">
+                  <span className="text-[9px] uppercase tracking-widest text-zinc-500 font-black block">2. Present segment</span>
                   <div className="grid grid-cols-2 gap-2">
                     <select
                       value={presentAnchor}
@@ -768,22 +1261,21 @@ export default function Course3Phase5StoriesWizard({
                         <option key={a} value={a}>{a}</option>
                       ))}
                     </select>
-
                     <select
                       value={presentActivity}
                       onChange={(e) => setPresentActivity(e.target.value)}
                       className="bg-zinc-900 p-2 rounded border border-white/5 text-xs text-white focus:outline-none"
                     >
                       {builderTemplates.activities.present.map((act: any) => (
-                        <option key={act.present_ko} value={act.present_ko}>{act.present_ko} ({act.en})</option>
+                        <option key={act.present_ko} value={act.present_ko}>{act.present_ko}</option>
                       ))}
                     </select>
                   </div>
                 </div>
 
-                {/* Future Tense Row */}
-                <div className="p-3.5 bg-zinc-950 rounded-xl border border-white/5 text-left space-y-3">
-                  <span className="text-xs font-extrabold text-white block">3. Future Intent:</span>
+                {/* Future Panel */}
+                <div className="p-3 bg-zinc-950 rounded-xl border border-white/5 space-y-2">
+                  <span className="text-[9px] uppercase tracking-widest text-zinc-500 font-black block">3. Future segment</span>
                   <div className="grid grid-cols-2 gap-2">
                     <select
                       value={futureAnchor}
@@ -794,14 +1286,13 @@ export default function Course3Phase5StoriesWizard({
                         <option key={a} value={a}>{a}</option>
                       ))}
                     </select>
-
                     <select
                       value={futureActivity}
                       onChange={(e) => setFutureActivity(e.target.value)}
                       className="bg-zinc-900 p-2 rounded border border-white/5 text-xs text-white focus:outline-none"
                     >
                       {builderTemplates.activities.future.map((act: any) => (
-                        <option key={act.future_ko} value={act.future_ko}>{act.future_ko} ({act.en})</option>
+                        <option key={act.future_ko} value={act.future_ko}>{act.future_ko}</option>
                       ))}
                     </select>
                   </div>
@@ -809,169 +1300,194 @@ export default function Course3Phase5StoriesWizard({
               </div>
             )}
 
-            <div className="flex justify-center pt-1">
+            <div className="flex justify-center pt-2">
               <button
                 onClick={handleBuildParagraph}
                 disabled={building}
                 className="bg-brand-500 hover:bg-brand-600 text-white font-bold py-2.5 px-6 rounded-xl text-xs transition cursor-pointer"
               >
-                {building ? "Compiling Story..." : "Compile Story"}
+                {building ? "Assembling story..." : "Assemble Story Paragraph"}
               </button>
             </div>
 
             {builtParagraph && (
               <div className="bg-zinc-950 p-4 rounded-xl border border-brand-500/25 space-y-3 animate-fade-in text-center">
-                <span className="text-[9px] text-brand-400 font-black uppercase tracking-wider block">Compiled A2 Story</span>
-                <p className="text-base font-black text-white font-korean leading-relaxed">{builtParagraph.final_korean_text}</p>
+                <span className="text-[9px] text-brand-400 font-black uppercase tracking-wider block">Generated Life Story</span>
+                <p className="text-sm font-black text-white font-korean leading-relaxed">{builtParagraph.final_korean_text}</p>
                 
-                <div className="flex items-center justify-center gap-3">
-                  <button
-                    onClick={() => playAudio(builtParagraph.final_korean_text)}
-                    className="p-2 bg-brand-500/10 hover:bg-brand-500/20 text-brand-400 rounded-full border border-brand-500/20 transition cursor-pointer"
-                  >
-                    <Volume2 className="w-5 h-5" />
-                  </button>
-
-                  <button
-                    onClick={handleSaveParagraph}
-                    disabled={savingParagraph || paragraphSaved}
-                    className="bg-accent-teal hover:bg-accent-teal/95 disabled:opacity-50 text-zinc-950 font-black py-1.5 px-4 rounded-lg text-xs transition cursor-pointer"
-                  >
-                    {savingParagraph ? "Saving..." : paragraphSaved ? "Saved Story!" : "Save Story to Profile"}
-                  </button>
+                <div className="flex items-center justify-center gap-2">
+                  <button onClick={() => playAudio(builtParagraph.final_korean_text)} className="p-2 bg-brand-500/10 text-brand-400 rounded-full border border-brand-500/20 hover:bg-brand-500/20 transition cursor-pointer"><Volume2 className="w-4 h-4" /></button>
+                  <button onClick={handleSaveParagraph} disabled={savingParagraph || paragraphSaved} className="bg-accent-teal text-zinc-950 font-black py-1 px-4 rounded text-xs">{paragraphSaved ? "Saved!" : "Save Story"}</button>
                 </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
-                {/* Speak story */}
-                <div className="pt-4 border-t border-white/5 space-y-3">
-                  <span className="text-[9px] text-zinc-500 font-mono uppercase tracking-wider block">Part B: Speak & Verify Story</span>
-                  <div className="flex justify-center items-center gap-3">
-                    <button
-                      onClick={() => {
-                        if (rec.recording) {
-                          rec.stop();
-                        } else {
-                          rec.start();
-                        }
-                      }}
-                      disabled={speakingTranscribing}
-                      className={`p-4 rounded-full transition ${
-                        rec.recording
-                          ? "bg-red-500 text-white animate-pulse"
-                          : "bg-brand-500/10 text-brand-400 border border-brand-500/25 hover:bg-brand-500/20"
-                      }`}
-                    >
-                      {rec.recording ? <MicOff className="w-6 h-6" /> : <Mic className="w-6 h-6" />}
-                    </button>
-                    <div className="text-left text-xs">
-                      <p className="font-bold text-white">{rec.recording ? "Recording... Click to Stop" : "Click to Record Story"}</p>
-                      <p className="text-[10px] text-zinc-500">Read your multi-tense story aloud</p>
-                    </div>
-                  </div>
+      {/* Step 10: Activity 5 – Story speaking voice check */}
+      {step === 10 && (
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in font-sans">
+          <div className="flex justify-between items-center border-b border-white/5 pb-4">
+            <h2 className="text-2xl font-black text-white flex items-center gap-2">
+              <Sparkles className="w-6 h-6 text-brand-400" />
+              <span>Activity 5 – Voice Recording Practice</span>
+            </h2>
+            <span className="text-xs text-zinc-500 font-bold">Step 10 of {totalSteps}</span>
+          </div>
 
-                  {rec.audioBlob && !speakingTranscribing && !speakingResult && (
-                    <button
-                      onClick={handleSpeechEvaluate}
-                      className="bg-brand-500 hover:bg-brand-600 text-white px-4 py-1.5 rounded-lg text-xs font-bold transition mx-auto block cursor-pointer"
-                    >
-                      Evaluate Recording
-                    </button>
-                  )}
+          <div className="bg-zinc-900/30 p-6 rounded-2xl border border-white/5 space-y-4 max-w-xl mx-auto w-full text-center">
+            <h3 className="text-xs font-black uppercase text-amber-400 tracking-wider">Read your multi-tense story aloud</h3>
+            <p className="text-base font-black text-white font-korean leading-relaxed mt-2">
+              {builtParagraph ? builtParagraph.final_korean_text : "어제 친구를 만났어요. 오늘 일해요. 내일 청소할 거예요."}
+            </p>
 
-                  {speakingTranscribing && (
-                    <div className="flex items-center justify-center gap-2 text-xs text-zinc-500">
-                      <Loader2 className="w-4 h-4 animate-spin text-brand-400" />
-                      <span>Transcribing your week story...</span>
-                    </div>
-                  )}
+            <div className="flex justify-center items-center gap-4 pt-4">
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  if (rec.recording) rec.stop();
+                  else rec.start();
+                }}
+                disabled={speakingTranscribing}
+                className={`p-5 rounded-full transition cursor-pointer ${
+                  rec.recording
+                    ? "bg-red-500 text-white animate-pulse"
+                    : "bg-brand-500/10 text-brand-400 border border-brand-500/25 hover:bg-brand-500/20"
+                }`}
+              >
+                {rec.recording ? <MicOff className="w-6 h-6" /> : <Mic className="w-6 h-6" />}
+              </button>
+              <div className="text-left text-xs">
+                <p className="font-bold text-white">{rec.recording ? "Recording... Click to Stop" : "Click to Record Story"}</p>
+                <p className="text-[10px] text-zinc-500">ASR spoken evaluation check</p>
+              </div>
+            </div>
 
-                  {speakingResult && (
-                    <div className="p-3 bg-zinc-900 rounded-xl border border-white/5 text-left text-xs space-y-1">
-                      <div className="flex justify-between items-center">
-                        <span className="text-zinc-400 font-bold">Accuracy Score:</span>
-                        <span className="text-accent-teal font-black">{speakingResult.similarity_score}%</span>
-                      </div>
-                      <p className="text-zinc-500 text-[10px]">Recognized: "{speakingResult.recognized_text}"</p>
-                      <p className="text-zinc-400 italic text-[10px]">Feedback: {speakingResult.feedback}</p>
-                      <button onClick={() => setSpeakingResult(null)} className="text-[9px] text-brand-400 hover:underline">Re-record</button>
-                    </div>
-                  )}
-                </div>
+            {rec.audioBlob && !rec.recording && (
+              <button
+                onClick={handleSpeechEvaluate}
+                disabled={speakingTranscribing}
+                className="w-full bg-zinc-900 hover:bg-zinc-850 text-white font-bold py-2 rounded-xl text-xs transition border border-white/5 cursor-pointer font-sans"
+              >
+                {speakingTranscribing ? "Evaluating..." : "Check Pronunciation"}
+              </button>
+            )}
+
+            {speakingResult && (
+              <div className="p-3 bg-zinc-950 rounded-xl border border-white/5 text-left text-xs space-y-1 mt-2">
+                <p className="font-black text-white">Score Accuracy: {speakingResult.similarity_score?.toFixed(0) || speakingResult.score || 0}%</p>
+                <p className="text-zinc-500 text-[10px]">Recognized: "{speakingResult.recognized_text || speakingResult.transcription || "..."}"</p>
+                <p className="text-zinc-450 text-[10px] italic">Feedback: {speakingResult.feedback}</p>
               </div>
             )}
           </div>
 
           <div className="flex justify-between items-center pt-4 border-t border-white/5">
-            <button onClick={() => setStep(3)} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-sm font-bold transition flex items-center gap-2 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
-            <button onClick={() => setStep(5)} className="bg-brand-500 hover:bg-brand-600 text-white px-8 py-3 rounded-xl text-sm font-bold transition flex items-center gap-2 cursor-pointer">Start Checkpoint Quiz <ChevronRight className="w-4 h-4" /></button>
+            <button onClick={() => setStep(9)} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-sm font-bold transition flex items-center gap-2 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
+            <button onClick={() => setStep(11)} className="bg-brand-500 hover:bg-brand-600 text-white px-8 py-3 rounded-xl text-sm font-bold transition flex items-center gap-2 cursor-pointer font-sans">Start Checkpoint Quiz <ChevronRight className="w-4 h-4" /></button>
           </div>
         </div>
       )}
 
-      {/* Screen 5: Mini-Quiz Checkpoint */}
-      {step === 5 && (
+      {/* Step 11: Activity 5 – Graduating checkpoint mini-quiz */}
+      {step === 11 && (
         <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
           <div className="flex justify-between items-center border-b border-white/5 pb-4">
             <h2 className="text-2xl font-black text-white flex items-center gap-2">
               <Award className="w-6 h-6 text-brand-400" />
-              <span>Step 5 – Mini-Quiz (Phase 5 Checkpoint)</span>
+              <span>Capstone Daily Stories Quiz</span>
             </h2>
-            <span className="text-xs text-zinc-500 font-bold">Q {quizIdx + 1}/{quizBlueprint.length}</span>
+            <span className="text-xs text-zinc-500 font-bold">Question {quizIdx + 1} of {quizBlueprint.length}</span>
           </div>
 
-          {quizBlueprint.length > 0 && (
+          {quizBlueprint.length === 0 ? (
+            <div className="text-center py-6"><Loader2 className="w-8 h-8 animate-spin mx-auto text-brand-400" /></div>
+          ) : (
             <div className="space-y-6 max-w-xl mx-auto w-full">
-              <div className="flex justify-between text-[10px] text-zinc-500 font-mono">
-                <span>Quiz Question</span>
-                <span>Type: {quizBlueprint[quizIdx]?.type}</span>
+              <div className="p-5 bg-zinc-950 rounded-2xl border border-white/5 text-center">
+                <span className="text-[10px] text-zinc-500 uppercase font-mono block">Question Prompt</span>
+                <p className="font-extrabold text-white text-base mt-2">{quizBlueprint[quizIdx]?.question}</p>
               </div>
 
-              <h3 className="text-base font-extrabold text-white text-center leading-relaxed">
-                {quizBlueprint[quizIdx]?.question}
-              </h3>
-
               {quizBlueprint[quizIdx]?.type === "listening" && (
-                <div className="flex justify-center py-2">
-                  <button onClick={() => playAudio(quizBlueprint[quizIdx]?.audio_url)} className="p-3 bg-brand-500/10 hover:bg-brand-500/20 text-brand-400 border border-brand-500/20 rounded-full transition cursor-pointer"><Volume2 className="w-5 h-5" /></button>
+                <div className="text-center space-y-4">
+                  <button 
+                    onClick={() => playAudio(quizBlueprint[quizIdx]?.correct_answer || quizBlueprint[quizIdx]?.audio_text)}
+                    className="p-5 bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 border border-purple-500/20 rounded-full mx-auto transition flex items-center justify-center cursor-pointer shadow-md"
+                  >
+                    <Volume2 className="w-8 h-8" />
+                  </button>
+                  <div className="grid grid-cols-2 gap-2 max-w-md mx-auto">
+                    {quizBlueprint[quizIdx]?.options.map((opt: string) => (
+                      <button
+                        key={opt}
+                        onClick={() => !quizChecked && setQuizSelectedOpt(opt)}
+                        disabled={quizChecked}
+                        className={`p-3 rounded-xl border text-xs font-bold transition cursor-pointer ${
+                          quizSelectedOpt === opt
+                            ? "border-brand-500 bg-brand-500/10 text-white"
+                            : "border-white/5 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-300"
+                        } ${quizChecked && opt === quizBlueprint[quizIdx]?.correct_answer ? "border-accent-teal bg-accent-teal/15 text-white" : ""} ${quizChecked && quizSelectedOpt === opt && opt !== quizBlueprint[quizIdx]?.correct_answer ? "border-red-500 bg-red-500/10 text-white" : ""}`}
+                      >
+                        {opt}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               )}
 
-              {quizBlueprint[quizIdx]?.type !== "writing" ? (
-                <div className="grid grid-cols-1 gap-2.5 max-w-md mx-auto">
+              {quizBlueprint[quizIdx]?.type !== "listening" && quizBlueprint[quizIdx]?.type !== "writing" && (
+                <div className="grid grid-cols-1 gap-2">
                   {quizBlueprint[quizIdx]?.options.map((opt: string) => (
                     <button
                       key={opt}
                       onClick={() => !quizChecked && setQuizSelectedOpt(opt)}
                       disabled={quizChecked}
-                      className={`p-3 rounded-xl border text-left text-xs font-bold transition ${
+                      className={`p-3 rounded-xl border text-left text-xs font-bold transition cursor-pointer ${
                         quizSelectedOpt === opt
                           ? "border-brand-500 bg-brand-500/10 text-white"
-                          : "border-white/5 bg-zinc-950 text-zinc-300 hover:border-white/10"
-                      } ${quizChecked && opt === quizBlueprint[quizIdx]?.correct_answer ? "border-accent-teal bg-accent-teal/15 text-white" : ""}`}
+                          : "border-white/5 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-300"
+                      } ${quizChecked && opt === quizBlueprint[quizIdx]?.correct_answer ? "border-accent-teal bg-accent-teal/15 text-white" : ""} ${quizChecked && quizSelectedOpt === opt && opt !== quizBlueprint[quizIdx]?.correct_answer ? "border-red-500 bg-red-500/10 text-white" : ""}`}
                     >
                       {opt}
                     </button>
                   ))}
                 </div>
-              ) : (
-                <div className="space-y-3 max-w-md mx-auto">
+              )}
+
+              {quizBlueprint[quizIdx]?.type === "writing" && (
+                <div className="space-y-2">
                   <input
                     type="text"
                     value={quizWritingAns}
-                    onChange={(e) => setQuizWritingAns(e.target.value)}
-                    placeholder="Type Korean spelling here..."
-                    className="w-full bg-zinc-950 p-3 rounded-xl border border-white/10 outline-none focus:border-brand-500 text-center font-sans text-sm text-white"
                     disabled={quizChecked}
-                    onKeyDown={(e) => e.key === "Enter" && !quizChecked && handleCheckQuiz()}
+                    onChange={(e) => setQuizWritingAns(e.target.value)}
+                    placeholder="Type the exact Hangeul block..."
+                    className="w-full bg-zinc-950 p-4 rounded-xl border border-white/5 text-center text-lg font-black text-white focus:outline-none focus:border-brand-500 font-sans"
                   />
+                  {!quizChecked && (
+                    <div className="flex gap-1.5 justify-center flex-wrap pt-2">
+                      {["어제", "오늘", "내일", "쉬었어요", "일해요", "갈 거예요"].map(ch => (
+                        <button
+                          key={ch}
+                          onClick={() => setQuizWritingAns(v => v + ch)}
+                          className="px-3 py-1.5 bg-zinc-900 hover:bg-zinc-850 rounded border border-white/5 text-xs text-white"
+                        >
+                          {ch}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
 
               {quizChecked && (
-                <div className={`p-4 rounded-xl border text-xs text-left space-y-1 ${
+                <div className={`p-4 rounded-xl border text-xs text-left space-y-1.5 ${
                   quizCorrect ? "bg-accent-teal/5 border-accent-teal/20 text-accent-teal" : "bg-red-500/5 border-red-500/10 text-red-400"
                 }`}>
                   <p className="font-extrabold">{quizCorrect ? "Correct!" : "Incorrect."}</p>
-                  <p>{quizBlueprint[quizIdx]?.explanation}</p>
+                  <p><strong>Explanation:</strong> {quizBlueprint[quizIdx]?.explanation}</p>
                   {!quizCorrect && <p className="font-mono mt-1 text-zinc-400">Correct Answer: {quizBlueprint[quizIdx]?.correct_answer}</p>}
                 </div>
               )}
@@ -981,10 +1497,14 @@ export default function Course3Phase5StoriesWizard({
                 {!quizChecked ? (
                   <button
                     onClick={handleCheckQuiz}
-                    disabled={quizBlueprint[quizIdx]?.type !== "writing" ? !quizSelectedOpt : !quizWritingAns.trim()}
+                    disabled={
+                      quizBlueprint[quizIdx]?.type !== "writing" 
+                        ? !quizSelectedOpt 
+                        : !quizWritingAns.trim()
+                    }
                     className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white px-5 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer"
                   >
-                    Check Answer
+                    Check Checkpoint
                   </button>
                 ) : (
                   <button
@@ -994,13 +1514,12 @@ export default function Course3Phase5StoriesWizard({
                   >
                     {finishingQuiz ? (
                       <>
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                        <span>Graduating...</span>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" /> Submitting...
                       </>
                     ) : (
                       <>
-                        <span>{quizIdx < quizBlueprint.length - 1 ? "Next Question" : "See Final Score"}</span>
-                        <ChevronRight className="w-4 h-4" />
+                        <span>{quizIdx < quizBlueprint.length - 1 ? "Next Question" : "Submit Quiz & See Score"}</span>
+                        <ChevronRight className="w-4 h-4 text-zinc-950" />
                       </>
                     )}
                   </button>
@@ -1011,64 +1530,64 @@ export default function Course3Phase5StoriesWizard({
         </div>
       )}
 
-      {/* Screen 6: Complete & Homework Panel */}
-      {step === 6 && (
-        <div className="glass-panel neon-border p-8 rounded-3xl shadow-2xl w-full space-y-6 flex-grow flex flex-col justify-center text-center max-w-xl mx-auto">
-          <div className="p-3 bg-brand-500/10 rounded-full border border-brand-500/25 w-fit mx-auto text-brand-400">
-            <Award className="w-10 h-10 animate-bounce" />
+      {/* Step 12: Completion & Homework */}
+      {step === 12 && (
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center text-center animate-fade-in max-w-2xl mx-auto">
+          <div className="p-3 bg-brand-500/10 rounded-full border border-brand-500/25 w-fit mx-auto text-brand-400 shrink-0 animate-bounce">
+            <Award className="w-10 h-10" />
           </div>
 
-          <div>
-            <h2 className="text-2xl font-black text-white font-sans font-serif">A2 Course Synthesis Graduated! 🇰🇷✨</h2>
-            <p className="text-zinc-400 text-xs mt-1">You scored {quizScore}% on the daily life stories checkpoint.</p>
+          <div className="space-y-1">
+            <h2 className="text-3xl font-black text-white">Level 3: Phase 5 Completed! 🎓✨</h2>
+            <p className="text-zinc-400 text-xs">You scored {quizScore}% on your daily life stories check! You earned **150 XP**.</p>
           </div>
 
-          {/* Homework checklist */}
-          <div className="bg-zinc-900/60 p-5 rounded-2xl border border-white/5 text-left text-xs space-y-3 w-full">
-            <span className="text-[9px] text-zinc-500 font-mono font-black uppercase tracking-wider block">Practical A2 Capstone Homework</span>
-            
+          {/* Practical Checklist Homework */}
+          <div className="bg-zinc-900/40 p-5 rounded-2xl border border-white/5 text-left space-y-3 w-full">
+            <span className="text-[10px] text-zinc-550 uppercase tracking-widest font-black block">Homework Checklist Tasks</span>
             <div className="space-y-2">
-              {homeworkItems.map((item) => {
-                const isChecked = !!completedHomework[item.id];
+              {homeworkItems.map((hw) => {
+                const isChecked = !!completedHomework[hw.id];
                 return (
-                  <div key={item.id} className="flex items-start gap-3 p-2 bg-zinc-950/40 rounded-xl border border-white/[0.02] hover:border-white/5 transition">
-                    <button
-                      onClick={() => handleToggleHomework(item.id, isChecked)}
-                      className={`w-4 h-4 rounded mt-0.5 border flex items-center justify-center transition cursor-pointer ${
-                        isChecked ? "bg-accent-teal border-accent-teal text-zinc-950" : "border-white/10 bg-zinc-900"
-                      }`}
-                    >
-                      {isChecked && <Check className="w-3 h-3 stroke-[3]" />}
-                    </button>
-                    <span className={`text-zinc-300 text-xs leading-normal ${isChecked ? "line-through text-zinc-500" : ""}`}>{item.text}</span>
+                  <div 
+                    key={hw.id}
+                    onClick={() => handleToggleHomework(hw.id, isChecked)}
+                    className="flex items-center gap-3 p-3 bg-zinc-950/80 rounded-xl border border-white/5 cursor-pointer hover:bg-zinc-900 transition animate-fade-in"
+                  >
+                    <div className={`w-5 h-5 rounded-md border flex items-center justify-center shrink-0 transition ${
+                      isChecked ? "border-emerald-500 bg-emerald-500/15 text-emerald-400" : "border-white/10 bg-zinc-900"
+                    }`}>
+                      {isChecked && <Check className="w-3.5 h-3.5" />}
+                    </div>
+                    <span className={`text-xs text-zinc-300 ${isChecked ? "line-through text-zinc-500" : ""}`}>{hw.text}</span>
                   </div>
                 );
               })}
             </div>
           </div>
 
-          {/* AI practice button */}
-          <div className="bg-zinc-950 p-4 rounded-xl border border-brand-500/10 space-y-3">
-            <div className="text-left space-y-1 text-center">
-              <span className="text-[9px] text-brand-400 font-black uppercase tracking-wider block font-sans">Start Capstone Speaking Practice</span>
-              <p className="text-[11px] text-zinc-500">Engage in a multi-turn RAG discussion telling Gwan-Sik your week story.</p>
+          {/* AI practice room */}
+          <div className="bg-zinc-950 p-6 rounded-2xl border border-brand-500/10 space-y-4">
+            <div className="space-y-1">
+              <span className="text-[10px] text-brand-400 font-mono font-black uppercase tracking-wider block">Start Speaking Practice with Gwan-Sik</span>
+              <p className="text-xs text-zinc-500">Practice describing your daily life story spanning tenses with live corrections.</p>
             </div>
 
             {!tutorSession ? (
               <button
                 onClick={handleLaunchTutor}
                 disabled={loadingTutor}
-                className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white font-bold py-2.5 px-6 rounded-xl text-xs transition flex items-center justify-center gap-2 mx-auto cursor-pointer"
+                className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white font-bold py-3 px-8 rounded-xl text-xs transition flex items-center justify-center gap-2 mx-auto cursor-pointer"
               >
                 {loadingTutor ? <Loader2 className="w-4 h-4 animate-spin" /> : <MessageSquare className="w-4 h-4" />}
-                <span>Practice Storytelling with AI Tutor</span>
+                <span>Practice Daily Stories with AI Tutor</span>
               </button>
             ) : (
-              <div className="bg-zinc-900 p-3 rounded-xl border border-white/5 text-xs text-center space-y-3 animate-fade-in">
-                <p className="text-zinc-300 font-medium">Room launched! Opener: <strong>"{tutorSession.opener}"</strong></p>
+              <div className="bg-zinc-900 p-4 rounded-xl border border-white/5 text-xs text-center space-y-3 animate-fade-in font-sans">
+                <p className="text-zinc-300">Room launched! Opener: <strong>"{tutorSession.opener}"</strong></p>
                 <a
                   href={`/conversation?session_id=${tutorSession.session_id}`}
-                  className="bg-accent-teal hover:bg-accent-teal/90 text-zinc-950 font-black py-2 px-6 rounded-lg text-xs transition inline-flex items-center gap-1"
+                  className="bg-accent-teal hover:bg-accent-teal/90 text-zinc-950 font-black py-2.5 px-6 rounded-lg text-xs transition inline-flex items-center gap-1.5 cursor-pointer font-sans"
                 >
                   <span>Enter AI Chat Room</span>
                   <ArrowRight className="w-3.5 h-3.5" />
@@ -1080,7 +1599,7 @@ export default function Course3Phase5StoriesWizard({
           <div className="flex justify-between items-center pt-4 border-t border-white/5">
             <button 
               onClick={() => {
-                setStep(5);
+                setStep(11);
                 setQuizIdx(0);
                 setQuizSelectedOpt(null);
                 setQuizWritingAns("");
@@ -1097,7 +1616,7 @@ export default function Course3Phase5StoriesWizard({
               onClick={onComplete}
               className="bg-gradient-to-r from-brand-500 to-amber-500 text-zinc-950 font-black px-6 py-2.5 rounded-xl text-xs transition flex items-center gap-1.5 cursor-pointer shadow shadow-brand-500/25"
             >
-              <span>Complete & Graduate Course!</span>
+              <span>Complete & Earn 150 XP</span>
               <ChevronRight className="w-4 h-4 text-zinc-950" />
             </button>
           </div>

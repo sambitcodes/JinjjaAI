@@ -524,7 +524,7 @@ export default function OnlineMaterials() {
     const featuredResource = resources[featuredIndex] || resources[0];
 
     return (
-      <div className="min-h-screen text-foreground relative pb-16">
+      <div className="min-h-screen text-foreground relative pb-16 w-full max-w-[98%] mx-auto px-4 md:px-6">
         {/* Background glowing decorations */}
         <div className="absolute -top-10 left-1/4 w-[400px] h-[400px] bg-gradient-to-tr from-purple-500/10 to-indigo-500/5 rounded-full blur-[140px] pointer-events-none animate-pulse duration-10000" />
         <div className="absolute bottom-10 right-1/4 w-[450px] h-[450px] bg-gradient-to-tr from-cyan-500/10 to-blue-500/5 rounded-full blur-[160px] pointer-events-none animate-pulse duration-8000" />
@@ -688,7 +688,7 @@ export default function OnlineMaterials() {
         {/* Playlists Grid */}
         <motion.div 
           layout
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto"
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 w-full max-w-none"
         >
           <AnimatePresence>
             {filteredResources.map((resource) => (
@@ -736,7 +736,7 @@ export default function OnlineMaterials() {
 
   // --- PLAYER & TRANSLATION WORKSPACE VIEW ---
   return (
-    <div className="min-h-screen text-foreground relative pb-16">
+    <div className="min-h-screen text-foreground relative pb-16 w-full max-w-[98%] mx-auto px-4 md:px-6">
       {/* Background glowing decorations */}
       <div className="absolute -top-10 left-1/4 w-[400px] h-[400px] bg-gradient-to-tr from-purple-500/10 to-indigo-500/5 rounded-full blur-[140px] pointer-events-none animate-pulse duration-10000" />
       <div className="absolute bottom-10 right-1/4 w-[450px] h-[450px] bg-gradient-to-tr from-cyan-500/10 to-blue-500/5 rounded-full blur-[160px] pointer-events-none animate-pulse duration-8000" />

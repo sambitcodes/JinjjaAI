@@ -75,7 +75,7 @@ function useRecorder() {
         }
       };
       mr.onstop = () => {
-        const blob = new Blob(chunks.current, { type: mr.mimeType || "audio/webm" });
+        const blob = new Blob(chunks.current, { type: mr.mimeType || "audio/wav" });
         setAudioBlob(blob);
         stream.getTracks().forEach((t) => t.stop());
         streamRef.current = null;
@@ -109,6 +109,13 @@ interface Course2Phase1GreetingsWizardProps {
   onComplete: () => void;
 }
 
+interface MicroQuestion {
+  question: string;
+  options: { id: string; text: string }[];
+  correctId: string;
+  explanation: string;
+}
+
 export default function Course2Phase1GreetingsWizard({
   activeLesson,
   speakWord,
@@ -116,6 +123,20 @@ export default function Course2Phase1GreetingsWizard({
 }: Course2Phase1GreetingsWizardProps) {
   const [step, setStep] = useState(1);
   const [showOutline, setShowOutline] = useState(false);
+  const totalSteps = 11;
+
+  // Persist step to localStorage for refresh resilience
+  useEffect(() => {
+    const saved = localStorage.getItem("hangeulai_c1p1_step");
+    if (saved) {
+      const parsedStep = parseInt(saved, 10);
+      if (parsedStep >= 1 && parsedStep <= 11) setStep(parsedStep);
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem("hangeulai_c1p1_step", String(step));
+  }, [step]);
 
   // Data loaded from backend
   const [metadata, setMetadata] = useState<any>(null);
@@ -129,24 +150,89 @@ export default function Course2Phase1GreetingsWizard({
   // Card flipping tracking
   const [flippedCardId, setFlippedCardId] = useState<string | null>(null);
 
-  // Activity 1A: Listening states
+  // Concept Micro-questions states
+  const [cSelected, setCSelected] = useState<string | null>(null);
+  const [cChecked, setCChecked] = useState(false);
+  const [cCorrect, setCCorrect] = useState<boolean | null>(null);
+
+  // Reset micro-question state when moving between concept screens
+  useEffect(() => {
+    if (step >= 2 && step <= 6) {
+      setCSelected(null);
+      setCChecked(false);
+      setCCorrect(null);
+    }
+  }, [step]);
+
+  // Concept Micro-questions definitions
+  const conceptQuestions: Record<number, MicroQuestion> = {
+    2: {
+      question: "If you only know 2–3 Korean phrases, which is more important to learn first?",
+      options: [
+        { id: "A", text: "Greetings and thanks" },
+        { id: "B", text: "Future tense grammar" }
+      ],
+      correctId: "A",
+      explanation: "Greetings are your first impression: even with zero extra grammar, they make you look friendly and respectful."
+    },
+    3: {
+      question: "Which is safer to use with your teacher?",
+      options: [
+        { id: "A", text: "안녕" },
+        { id: "B", text: "안녕하세요" }
+      ],
+      correctId: "B",
+      explanation: "안녕하세요 is standard polite (존댓말), suitable for teachers, strangers, and adults."
+    },
+    4: {
+      question: "You accidentally bump into someone on the street. Which phrase fits best?",
+      options: [
+        { id: "A", text: "안녕하세요" },
+        { id: "B", text: "죄송합니다" },
+        { id: "C", text: "안녕히 계세요" }
+      ],
+      correctId: "B",
+      explanation: "죄송합니다 means 'I'm sorry / Excuse me' and is the standard polite way to apologize."
+    },
+    5: {
+      question: "You leave a café while the staff stays inside. Which goodbye is correct?",
+      options: [
+        { id: "A", text: "안녕히 계세요" },
+        { id: "B", text: "안녕히 가세요" }
+      ],
+      correctId: "A",
+      explanation: "Say 안녕히 계세요 ('Please stay well') when you leave and the other person remains."
+    },
+    6: {
+      question: "Your teacher gives you a book. What do you say?",
+      options: [
+        { id: "A", text: "죄송합니다" },
+        { id: "B", text: "감사합니다" }
+      ],
+      correctId: "B",
+      explanation: "감사합니다 is standard polite for 'Thank you'."
+    }
+  };
+
+  // Activity 7: Listening states
   const [listeningIdx, setListeningIdx] = useState(0);
   const [selectedListeningOpt, setSelectedListeningOpt] = useState<string | null>(null);
   const [listeningChecked, setListeningChecked] = useState(false);
   const [listeningCorrect, setListeningCorrect] = useState<boolean | null>(null);
 
-  // Activity 1B: Matching states
+  // Activity 8: Matching states
   const [matchingPairs, setMatchingPairs] = useState<any[]>([]);
   const [selectedMatchKo, setSelectedMatchKo] = useState<string | null>(null);
   const [matchedPairs, setMatchedPairs] = useState<string[]>([]); // list of matched korean words
+  const [matchingFailedId, setMatchingFailedId] = useState<string | null>(null);
 
-  // Activity 2A: Gap-fill states
+  // Activity 9: Gap-fill states
   const [gapfillIdx, setGapfillIdx] = useState(0);
   const [selectedGapfillOpt, setSelectedGapfillOpt] = useState<string | null>(null);
   const [gapfillChecked, setGapfillChecked] = useState(false);
   const [gapfillCorrect, setGapfillCorrect] = useState<boolean | null>(null);
 
-  // Activity 2B: Context states
+  // Activity 10: Context states
   const [contextIdx, setContextIdx] = useState(0);
   const [selectedContextOpt, setSelectedContextOpt] = useState<string | null>(null);
   const [contextChecked, setContextChecked] = useState(false);
@@ -174,6 +260,19 @@ export default function Course2Phase1GreetingsWizard({
   const [tutorSession, setTutorSession] = useState<any>(null);
   const [loadingTutor, setLoadingTutor] = useState(false);
 
+  // Sound triggers
+  const playCorrectSound = () => {
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("hangeulai-xp", { detail: { amount: 20, type: 'correct' } }));
+    }
+  };
+
+  const playWrongSound = () => {
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("hangeulai-xp", { detail: { amount: -10, type: 'wrong' } }));
+    }
+  };
+
   // Lazy load curriculum items based on steps
   useEffect(() => {
     const load = async () => {
@@ -184,25 +283,25 @@ export default function Course2Phase1GreetingsWizard({
         } else if (step === 2 && expressions.length === 0) {
           const res = await apiJson("/lessons/phases/korean1/1/expressions");
           setExpressions(res);
-        } else if (step === 3 && listeningItems.length === 0) {
+        } else if (step === 7 && listeningItems.length === 0) {
           const res_lis = await apiJson("/lessons/practice/greetings/listening");
           setListeningItems(res_lis.items || []);
-          
-          // Match pairs layout
+        } else if (step === 8 && matchingPairs.length === 0) {
           const rawMatching = [
             { ko: "안녕하세요", en: "Hello" },
             { ko: "감사합니다", en: "Thank you" },
             { ko: "죄송합니다", en: "I'm sorry" },
-            { ko: "네", en: "Yes" },
-            { ko: "아니요", en: "No" }
+            { ko: "안녕히 계세요", en: "Goodbye (you leave)" },
+            { ko: "안녕히 가세요", en: "Goodbye (they leave)" }
           ];
           setMatchingPairs(rawMatching);
-        } else if (step === 4 && gapfillItems.length === 0) {
+        } else if (step === 9 && gapfillItems.length === 0) {
           const res_gf = await apiJson("/lessons/practice/greetings/gapfill");
           setGapfillItems(res_gf || []);
+        } else if (step === 10 && contextItems.length === 0) {
           const res_ctx = await apiJson("/lessons/practice/greetings/context");
           setContextItems(res_ctx || []);
-        } else if (step === 5 && quizBlueprint.length === 0) {
+        } else if (step === 11 && quizBlueprint.length === 0) {
           const res_q = await apiJson("/lessons/quiz/korean1/phase-1/start", { method: "POST" });
           setQuizBlueprint(res_q.blueprint || []);
         } else if (step === 6 && homeworkItems.length === 0) {
@@ -221,6 +320,24 @@ export default function Course2Phase1GreetingsWizard({
     speakWord(koreanText);
   };
 
+  // Submit concept micro-question
+  const handleCheckConcept = (selectedId: string) => {
+    if (cChecked) return;
+    const currentQuestion = conceptQuestions[step];
+    if (!currentQuestion) return;
+
+    setCSelected(selectedId);
+    const isCorrect = selectedId === currentQuestion.correctId;
+    setCChecked(true);
+    setCCorrect(isCorrect);
+    
+    if (isCorrect) {
+      playCorrectSound();
+    } else {
+      playWrongSound();
+    }
+  };
+
   // Submit listening attempt
   const handleCheckListening = async () => {
     const current = listeningItems[listeningIdx];
@@ -237,6 +354,11 @@ export default function Course2Phase1GreetingsWizard({
       });
       setListeningChecked(true);
       setListeningCorrect(res.correct);
+      if (res.correct) {
+        playCorrectSound();
+      } else {
+        playWrongSound();
+      }
     } catch (err) {
       console.error(err);
     }
@@ -247,12 +369,15 @@ export default function Course2Phase1GreetingsWizard({
     if (!selectedMatchKo) {
       setSelectedMatchKo(ko);
     } else {
-      // Find pair
       const pair = matchingPairs.find(p => p.ko === selectedMatchKo);
       if (pair && pair.en === en) {
         setMatchedPairs(prev => [...prev, selectedMatchKo]);
+        playCorrectSound();
+        setMatchingFailedId(null);
       } else {
-        alert("Incorrect match, try again!");
+        setMatchingFailedId(en);
+        playWrongSound();
+        setTimeout(() => setMatchingFailedId(null), 1000);
       }
       setSelectedMatchKo(null);
     }
@@ -274,6 +399,11 @@ export default function Course2Phase1GreetingsWizard({
       });
       setGapfillChecked(true);
       setGapfillCorrect(res.correct);
+      if (res.correct) {
+        playCorrectSound();
+      } else {
+        playWrongSound();
+      }
     } catch (err) {
       console.error(err);
     }
@@ -295,6 +425,11 @@ export default function Course2Phase1GreetingsWizard({
       });
       setContextChecked(true);
       setContextCorrect(res.correct);
+      if (res.correct) {
+        playCorrectSound();
+      } else {
+        playWrongSound();
+      }
     } catch (err) {
       console.error(err);
     }
@@ -306,18 +441,19 @@ export default function Course2Phase1GreetingsWizard({
     if (!current) return;
 
     let isCorrect = false;
-    let answerText = quizAnswer;
 
     if (current.type === "listening" || current.type === "context") {
       isCorrect = quizAnswerSelected === current.correct_answer;
-      answerText = quizAnswerSelected || "";
     } else {
       isCorrect = quizAnswer.trim().toLowerCase() === current.correct_answer.trim().toLowerCase();
     }
 
     setQuizChecked(true);
     setQuizCorrect(isCorrect);
-    if (!isCorrect) {
+    if (isCorrect) {
+      playCorrectSound();
+    } else {
+      playWrongSound();
       setQuizMistakes(prev => [...prev, current.correct_answer]);
     }
   };
@@ -331,7 +467,6 @@ export default function Course2Phase1GreetingsWizard({
       setQuizCorrect(null);
       setSpeakingResult(null);
     } else {
-      // Completed, submit finish request
       setFinishingQuiz(true);
       try {
         const correctCount = quizBlueprint.length - quizMistakes.length;
@@ -344,7 +479,7 @@ export default function Course2Phase1GreetingsWizard({
           }),
         });
         setQuizScore(score);
-        setStep(6); // Go to homework/extension
+        setStep(11); // Last slide summary
       } catch (err) {
         console.error(err);
       } finally {
@@ -360,11 +495,10 @@ export default function Course2Phase1GreetingsWizard({
     try {
       const fd = new FormData();
       fd.append("target_text", "안녕하세요");
-      fd.append("audio_file", rec.audioBlob, "recording.webm");
+      fd.append("audio_file", rec.audioBlob, "recording.wav");
       const res = await apiForm("/speech/shadow", fd);
       setSpeakingResult(res);
       
-      // Select the correct option implicitly if similarity is above 60%
       if (res.similarity_score >= 60) {
         setQuizAnswerSelected("안녕하세요");
       }
@@ -400,8 +534,6 @@ export default function Course2Phase1GreetingsWizard({
       console.error(err);
     }
   };
-
-  const totalSteps = 6;
 
   return (
     <div className="flex-grow flex flex-col justify-between">
@@ -458,7 +590,8 @@ export default function Course2Phase1GreetingsWizard({
               {(metadata?.goals || [
                 "Greet people politely in Korean",
                 "Say thank you, sorry, and excuse me",
-                "Respond with yes/no in simple daily situations"
+                "Respond with yes/no in simple daily situations",
+                "Choose appropriate goodbye expressions based on context"
               ]).map((g: string, idx: number) => (
                 <li key={idx}>{g}</li>
               ))}
@@ -475,12 +608,16 @@ export default function Course2Phase1GreetingsWizard({
               <span>Start Phase 1</span>
               <ChevronRight className="w-4 h-4" />
             </button>
-            
           </div>
 
           {showOutline && (
             <div className="bg-zinc-950 p-6 rounded-2xl border border-white/5 text-left text-xs text-zinc-400 space-y-2 animate-fade-in max-w-2xl mx-auto w-full font-mono">
               <p className="font-extrabold text-white text-center pb-2">Phase Activities Outline</p>
+              <p>✓ Screen C1 – Why greetings matter in Korean</p>
+              <p>✓ Screen C2 – Politeness basics: polite vs casual</p>
+              <p>✓ Screen C3 – Core greeting set (forms and meanings)</p>
+              <p>✓ Screen C4 – Goodbye: who is moving where?</p>
+              <p>✓ Screen C5 – “Thank you” vs “Sorry”</p>
               <p>✓ Activity 1 – Listening & sound comprehension drills</p>
               <p>✓ Activity 2 – Polite expression matching game</p>
               <p>✓ Activity 3 – Gap-fill spelling production drills</p>
@@ -491,88 +628,213 @@ export default function Course2Phase1GreetingsWizard({
         </div>
       )}
 
-      {/* Screen 2: Concept Explanation */}
+      {/* Screen 2: C1 - Why greetings matter in Korean */}
       {step === 2 && (
         <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
-          <div className="flex justify-between items-center border-b border-white/5 pb-4">
-            <h2 className="text-2xl font-black text-white flex items-center gap-2">
-              <BookOpen className="w-6 h-6 text-brand-400" />
-              <span>Core Polite Expressions</span>
-            </h2>
-            <span className="text-xs text-zinc-500 font-bold">Step 2 of {totalSteps}</span>
-          </div>
+          <h2 className="text-3xl font-black text-white">Why Greetings Matter in Korean</h2>
+          <p className="text-zinc-300 text-base leading-relaxed">
+            Greetings are your first impression: even with zero extra grammar, you can be polite and friendly.
+            Koreans pay close attention to whether you use polite endings (‑요 / 합니다) and how you deliver your basic greetings.
+          </p>
 
-          <div className="prose prose-invert text-xs text-zinc-400 space-y-1 max-w-none">
-            <p><strong>Politeness Concept:</strong> In Korean, politeness is built directly into the language. Default safe speech to strangers/adults is polite. Informal forms will come later. Tap cards below to play audio and reveal descriptions.</p>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {expressions.map((exp) => {
-              const isFlipped = flippedCardId === exp.id;
-              return (
-                <div 
-                  key={exp.id}
-                  onClick={() => {
-                    setFlippedCardId(isFlipped ? null : exp.id);
-                    playAudio(exp.korean);
-                  }}
-                  className={`glass-panel p-5 rounded-2xl border transition duration-300 cursor-pointer flex flex-col justify-between h-36 ${
-                    isFlipped 
-                      ? "border-brand-500 bg-brand-500/5 shadow-[0_0_20px_rgba(79,70,229,0.15)]" 
-                      : "border-white/5 bg-zinc-900/60 hover:bg-zinc-800"
-                  }`}
+          <div className="bg-zinc-900/60 p-6 rounded-2xl border border-white/5 space-y-4 max-w-xl">
+            <h4 className="text-xs font-black uppercase text-amber-400 tracking-wider">Concept check</h4>
+            <p className="text-xs text-zinc-300 font-bold">{conceptQuestions[2].question}</p>
+            <div className="grid grid-cols-1 gap-2">
+              {conceptQuestions[2].options.map(opt => (
+                <button
+                  key={opt.id}
+                  onClick={() => handleCheckConcept(opt.id)}
+                  disabled={cChecked}
+                  className={`p-3 rounded-xl border text-left text-xs font-semibold transition ${
+                    cSelected === opt.id
+                      ? cCorrect
+                        ? "border-accent-teal bg-accent-teal/15 text-white"
+                        : "border-red-500 bg-red-500/10 text-white"
+                      : "border-white/5 bg-zinc-950 text-zinc-300 hover:border-white/10"
+                  } ${cChecked && opt.id === conceptQuestions[2].correctId ? "border-accent-teal bg-accent-teal/15 text-white" : ""}`}
                 >
-                  <div className="flex justify-between items-start">
-                    <span className="text-[9px] font-black uppercase tracking-wider text-brand-400 bg-brand-500/10 px-2 py-0.5 rounded border border-brand-500/20">Polite</span>
-                    <button 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        playAudio(exp.korean);
-                      }}
-                      className="p-1 rounded bg-zinc-950/60 text-zinc-400 hover:text-white"
-                    >
-                      <Volume2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-
-                  {!isFlipped ? (
-                    <div className="space-y-1 py-2 text-center">
-                      <div className="text-2xl font-black text-white font-korean">{exp.korean}</div>
-                      <div className="text-[10px] text-zinc-500 font-mono">Tap card to see details</div>
-                    </div>
-                  ) : (
-                    <div className="space-y-1 text-left py-1 animate-fade-in">
-                      <div className="text-xs font-mono font-bold text-zinc-300">{exp.romanization}</div>
-                      <div className="text-sm font-black text-white">{exp.english}</div>
-                      <p className="text-[10px] text-zinc-400 leading-snug">{exp.usage}</p>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-
-          <div className="flex justify-between items-center pt-4 border-t border-white/5">
-            <button onClick={() => setStep(1)} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-sm font-bold transition flex items-center gap-2 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
-            <button onClick={() => setStep(3)} className="bg-brand-500 hover:bg-brand-600 text-white px-8 py-3 rounded-xl text-sm font-bold transition flex items-center gap-2 cursor-pointer">Start Listening Drills <ChevronRight className="w-4 h-4" /></button>
+                  {opt.text}
+                </button>
+              ))}
+            </div>
+            {cChecked && (
+              <p className="text-xs text-zinc-400 mt-2 leading-relaxed">{conceptQuestions[2].explanation}</p>
+            )}
           </div>
         </div>
       )}
 
-      {/* Screen 3: Activity 1: Listening & Matching */}
+      {/* Screen 3: C2 - Politeness basics: polite vs casual */}
       {step === 3 && (
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
+          <h2 className="text-3xl font-black text-white">Politeness Basics: Polite vs Casual</h2>
+          <p className="text-zinc-300 text-base leading-relaxed">
+            Korean has different politeness levels. In this course, you’ll mostly learn standard polite (‑요 / 합니다).
+            Always use polite Korean with strangers, teachers, and service staff to ensure you are safe and respectful.
+          </p>
+
+          <div className="bg-zinc-900/60 p-6 rounded-2xl border border-white/5 space-y-4 max-w-xl">
+            <h4 className="text-xs font-black uppercase text-amber-400 tracking-wider">Concept check</h4>
+            <p className="text-xs text-zinc-300 font-bold">{conceptQuestions[3].question}</p>
+            <div className="grid grid-cols-1 gap-2">
+              {conceptQuestions[3].options.map(opt => (
+                <button
+                  key={opt.id}
+                  onClick={() => handleCheckConcept(opt.id)}
+                  disabled={cChecked}
+                  className={`p-3 rounded-xl border text-left text-xs font-semibold transition ${
+                    cSelected === opt.id
+                      ? cCorrect
+                        ? "border-accent-teal bg-accent-teal/15 text-white"
+                        : "border-red-500 bg-red-500/10 text-white"
+                      : "border-white/5 bg-zinc-950 text-zinc-300 hover:border-white/10"
+                  } ${cChecked && opt.id === conceptQuestions[3].correctId ? "border-accent-teal bg-accent-teal/15 text-white" : ""}`}
+                >
+                  {opt.text}
+                </button>
+              ))}
+            </div>
+            {cChecked && (
+              <p className="text-xs text-zinc-400 mt-2 leading-relaxed">{conceptQuestions[3].explanation}</p>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Screen 4: C3 - Core greeting set */}
+      {step === 4 && (
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
+          <h2 className="text-3xl font-black text-white">Core Greeting Set</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+            {expressions.slice(0, 5).map((exp) => (
+              <div 
+                key={exp.id} 
+                onClick={() => playAudio(exp.korean)}
+                className="p-4 bg-zinc-900/60 border border-white/5 rounded-2xl cursor-pointer hover:bg-zinc-800 transition text-center space-y-2"
+              >
+                <div className="text-xl font-bold text-white font-korean">{exp.korean}</div>
+                <div className="text-xs text-zinc-400">{exp.english}</div>
+                <div className="text-[10px] text-zinc-500 font-mono italic">({exp.romanization})</div>
+              </div>
+            ))}
+          </div>
+
+          <div className="bg-zinc-900/60 p-6 rounded-2xl border border-white/5 space-y-4 max-w-xl">
+            <h4 className="text-xs font-black uppercase text-amber-400 tracking-wider">Concept check</h4>
+            <p className="text-xs text-zinc-300 font-bold">{conceptQuestions[4].question}</p>
+            <div className="grid grid-cols-1 gap-2">
+              {conceptQuestions[4].options.map(opt => (
+                <button
+                  key={opt.id}
+                  onClick={() => handleCheckConcept(opt.id)}
+                  disabled={cChecked}
+                  className={`p-3 rounded-xl border text-left text-xs font-semibold transition ${
+                    cSelected === opt.id
+                      ? cCorrect
+                        ? "border-accent-teal bg-accent-teal/15 text-white"
+                        : "border-red-500 bg-red-500/10 text-white"
+                      : "border-white/5 bg-zinc-950 text-zinc-300 hover:border-white/10"
+                  } ${cChecked && opt.id === conceptQuestions[4].correctId ? "border-accent-teal bg-accent-teal/15 text-white" : ""}`}
+                >
+                  {opt.text}
+                </button>
+              ))}
+            </div>
+            {cChecked && (
+              <p className="text-xs text-zinc-400 mt-2 leading-relaxed">{conceptQuestions[4].explanation}</p>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Screen 5: C4 - Goodbye: who stays, who goes? */}
+      {step === 5 && (
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
+          <h2 className="text-3xl font-black text-white">Goodbye: Who stays, who goes?</h2>
+          <p className="text-zinc-300 text-base leading-relaxed">
+            If you are leaving and the other person stays: say **안녕히 계세요** ("Please stay well").<br/>
+            If they are leaving and you stay: say **안녕히 가세요** ("Please go well").
+          </p>
+
+          <div className="bg-zinc-900/60 p-6 rounded-2xl border border-white/5 space-y-4 max-w-xl">
+            <h4 className="text-xs font-black uppercase text-amber-400 tracking-wider">Concept check</h4>
+            <p className="text-xs text-zinc-300 font-bold">{conceptQuestions[5].question}</p>
+            <div className="grid grid-cols-1 gap-2">
+              {conceptQuestions[5].options.map(opt => (
+                <button
+                  key={opt.id}
+                  onClick={() => handleCheckConcept(opt.id)}
+                  disabled={cChecked}
+                  className={`p-3 rounded-xl border text-left text-xs font-semibold transition ${
+                    cSelected === opt.id
+                      ? cCorrect
+                        ? "border-accent-teal bg-accent-teal/15 text-white"
+                        : "border-red-500 bg-red-500/10 text-white"
+                      : "border-white/5 bg-zinc-950 text-zinc-300 hover:border-white/10"
+                  } ${cChecked && opt.id === conceptQuestions[5].correctId ? "border-accent-teal bg-accent-teal/15 text-white" : ""}`}
+                >
+                  {opt.text}
+                </button>
+              ))}
+            </div>
+            {cChecked && (
+              <p className="text-xs text-zinc-400 mt-2 leading-relaxed">{conceptQuestions[5].explanation}</p>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Screen 6: C5 - Thank you vs Sorry */}
+      {step === 6 && (
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
+          <h2 className="text-3xl font-black text-white">Thank You vs Sorry</h2>
+          <p className="text-zinc-300 text-base leading-relaxed">
+            **감사합니다** is used for expressing gratitude politely.<br/>
+            **죄송합니다** is for apologies and saying "sorry/excuse me" in polite situations (like bumping into someone).
+          </p>
+
+          <div className="bg-zinc-900/60 p-6 rounded-2xl border border-white/5 space-y-4 max-w-xl">
+            <h4 className="text-xs font-black uppercase text-amber-400 tracking-wider">Concept check</h4>
+            <p className="text-xs text-zinc-300 font-bold">{conceptQuestions[6].question}</p>
+            <div className="grid grid-cols-1 gap-2">
+              {conceptQuestions[6].options.map(opt => (
+                <button
+                  key={opt.id}
+                  onClick={() => handleCheckConcept(opt.id)}
+                  disabled={cChecked}
+                  className={`p-3 rounded-xl border text-left text-xs font-semibold transition ${
+                    cSelected === opt.id
+                      ? cCorrect
+                        ? "border-accent-teal bg-accent-teal/15 text-white"
+                        : "border-red-500 bg-red-500/10 text-white"
+                      : "border-white/5 bg-zinc-950 text-zinc-300 hover:border-white/10"
+                  } ${cChecked && opt.id === conceptQuestions[6].correctId ? "border-accent-teal bg-accent-teal/15 text-white" : ""}`}
+                >
+                  {opt.text}
+                </button>
+              ))}
+            </div>
+            {cChecked && (
+              <p className="text-xs text-zinc-400 mt-2 leading-relaxed">{conceptQuestions[6].explanation}</p>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Screen 7: Activity 1: Listening & Sound Comprehension */}
+      {step === 7 && (
         <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
           <div className="flex justify-between items-center border-b border-white/5 pb-4">
             <h2 className="text-2xl font-black text-white flex items-center gap-2">
               <Sparkles className="w-6 h-6 text-brand-400" />
-              <span>Activity 1 – Listening & Matching</span>
+              <span>Activity 1 – Listening & Sound Comprehension</span>
             </h2>
-            <span className="text-xs text-zinc-500 font-bold">Step 3 of {totalSteps}</span>
+            <span className="text-xs text-zinc-500 font-bold">Step 7 of {totalSteps}</span>
           </div>
 
-          {/* Activity 1A: Hear it -> Choose meaning */}
           <div className="space-y-4 bg-zinc-900/30 p-5 rounded-2xl border border-white/5">
-            <h3 className="text-xs font-black uppercase text-amber-400 tracking-wider">Part A: Hear spoken phrase → Choose meaning</h3>
+            <h3 className="text-xs font-black uppercase text-amber-400 tracking-wider">Hear spoken phrase → Choose meaning</h3>
             
             {listeningItems.length === 0 ? (
               <div className="text-center py-6"><Loader2 className="w-8 h-8 animate-spin mx-auto text-brand-400" /></div>
@@ -580,9 +842,9 @@ export default function Course2Phase1GreetingsWizard({
               <div className="space-y-4 max-w-md mx-auto w-full text-center">
                 <button 
                   onClick={() => playAudio(listeningItems[listeningIdx]?.korean)}
-                  className="p-5 bg-brand-500/10 hover:bg-brand-500/20 text-brand-400 border border-brand-500/20 rounded-full mx-auto transition flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 cursor-pointer"
+                  className="p-5 bg-brand-500/10 hover:bg-brand-500/20 text-brand-400 border border-brand-500/20 rounded-full mx-auto transition flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 cursor-pointer animate-pulse"
                 >
-                  <Volume2 className="w-8 h-8 animate-pulse" />
+                  <Volume2 className="w-8 h-8" />
                 </button>
 
                 <div className="grid grid-cols-1 gap-2 pt-2">
@@ -607,7 +869,7 @@ export default function Course2Phase1GreetingsWizard({
                     listeningCorrect ? "bg-accent-teal/5 border-accent-teal/20 text-accent-teal" : "bg-red-500/5 border-red-500/10 text-red-400"
                   }`}>
                     <p className="font-extrabold">{listeningCorrect ? "Correct!" : "Incorrect."}</p>
-                    <p>Korean: <strong className="text-white text-sm">{listeningItems[listeningIdx]?.korean}</strong> ({listeningItems[listeningIdx]?.romanization})</p>
+                    <p>Korean: <strong className="text-white text-sm font-korean">{listeningItems[listeningIdx]?.korean}</strong> ({listeningItems[listeningIdx]?.romanization})</p>
                   </div>
                 )}
 
@@ -629,7 +891,7 @@ export default function Course2Phase1GreetingsWizard({
                         if (listeningIdx < listeningItems.length - 1) {
                           setListeningIdx(listeningIdx + 1);
                         } else {
-                          setListeningIdx(0); // Wrap around or keep
+                          setListeningIdx(0);
                         }
                       }}
                       className="bg-accent-teal text-zinc-950 hover:bg-accent-teal/90 px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer"
@@ -641,11 +903,22 @@ export default function Course2Phase1GreetingsWizard({
               </div>
             )}
           </div>
+        </div>
+      )}
 
-          {/* Activity 1B: Match Korean to English */}
+      {/* Screen 8: Activity 2: Matching game */}
+      {step === 8 && (
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
+          <div className="flex justify-between items-center border-b border-white/5 pb-4">
+            <h2 className="text-2xl font-black text-white flex items-center gap-2">
+              <Sparkles className="w-6 h-6 text-brand-400" />
+              <span>Activity 2 – Polite expression matching game</span>
+            </h2>
+            <span className="text-xs text-zinc-500 font-bold">Step 8 of {totalSteps}</span>
+          </div>
+
           <div className="space-y-4 bg-zinc-900/30 p-5 rounded-2xl border border-white/5">
-            <h3 className="text-xs font-black uppercase text-amber-400 tracking-wider">Part B: Match columns</h3>
-            <p className="text-[10px] text-zinc-500">Tap a Korean word on the left, then its English meaning on the right.</p>
+            <p className="text-[10px] text-zinc-500 font-bold">Tap a Korean word on the left, then its English meaning on the right.</p>
 
             <div className="grid grid-cols-2 gap-8 pt-2">
               <div className="space-y-2">
@@ -658,9 +931,9 @@ export default function Course2Phase1GreetingsWizard({
                       key={pair.ko}
                       disabled={isMatched}
                       onClick={() => setSelectedMatchKo(pair.ko)}
-                      className={`w-full p-2.5 rounded-xl border text-left text-xs font-bold transition ${
+                      className={`w-full p-2.5 rounded-xl border text-left text-xs font-bold font-korean transition ${
                         isMatched 
-                          ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-400 line-through" 
+                          ? "border-emerald-500 bg-emerald-500/10 text-emerald-400 line-through" 
                           : isSelected 
                             ? "border-brand-500 bg-brand-500/20 text-white font-black"
                             : "border-white/5 bg-zinc-950/60 hover:bg-zinc-900 text-zinc-300"
@@ -676,6 +949,7 @@ export default function Course2Phase1GreetingsWizard({
                 <span className="text-[10px] font-bold text-zinc-500 uppercase block">English Meaning</span>
                 {matchingPairs.map((pair) => {
                   const isMatched = matchedPairs.includes(pair.ko);
+                  const isFailed = matchingFailedId === pair.en;
                   return (
                     <button
                       key={pair.en}
@@ -683,8 +957,10 @@ export default function Course2Phase1GreetingsWizard({
                       onClick={() => handleMatchClick(pair.ko, pair.en)}
                       className={`w-full p-2.5 rounded-xl border text-left text-xs transition ${
                         isMatched 
-                          ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-400 line-through" 
-                          : "border-white/5 bg-zinc-950/60 hover:bg-zinc-900 text-zinc-400"
+                          ? "border-emerald-500 bg-emerald-500/10 text-emerald-400 line-through" 
+                          : isFailed
+                            ? "border-red-500 bg-red-500/15 text-red-400"
+                            : "border-white/5 bg-zinc-950/60 hover:bg-zinc-900 text-zinc-400"
                       }`}
                     >
                       {pair.en}
@@ -694,29 +970,21 @@ export default function Course2Phase1GreetingsWizard({
               </div>
             </div>
           </div>
-
-          <div className="flex justify-between items-center pt-4 border-t border-white/5">
-            <button onClick={() => setStep(2)} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-sm font-bold transition flex items-center gap-2 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
-            <button onClick={() => setStep(4)} className="bg-brand-500 hover:bg-brand-600 text-white px-8 py-3 rounded-xl text-sm font-bold transition flex items-center gap-2 cursor-pointer">Move to Activity 2 <ChevronRight className="w-4 h-4" /></button>
-          </div>
         </div>
       )}
 
-      {/* Screen 4: Activity 2: Controlled Production */}
-      {step === 4 && (
+      {/* Screen 9: Activity 3: Gap-fill spelling drills */}
+      {step === 9 && (
         <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
           <div className="flex justify-between items-center border-b border-white/5 pb-4">
             <h2 className="text-2xl font-black text-white flex items-center gap-2">
               <Sparkles className="w-6 h-6 text-brand-400" />
-              <span>Activity 2 – Controlled Production</span>
+              <span>Activity 3 – Gap-fill spelling production drills</span>
             </h2>
-            <span className="text-xs text-zinc-500 font-bold">Step 4 of {totalSteps}</span>
+            <span className="text-xs text-zinc-500 font-bold">Step 9 of {totalSteps}</span>
           </div>
 
-          {/* Activity 2A: Gap-fill */}
           <div className="space-y-4 bg-zinc-900/30 p-5 rounded-2xl border border-white/5">
-            <h3 className="text-xs font-black uppercase text-amber-400 tracking-wider">Part A: Fill-in-the-blank greetings</h3>
-            
             {gapfillItems.length === 0 ? (
               <div className="text-center py-6"><Loader2 className="w-8 h-8 animate-spin mx-auto text-brand-400" /></div>
             ) : (
@@ -726,7 +994,7 @@ export default function Course2Phase1GreetingsWizard({
                   <p className="font-semibold text-zinc-300">{gapfillItems[gapfillIdx]?.prompt}</p>
                 </div>
 
-                <div className="text-2xl font-black text-white tracking-widest font-mono py-2">
+                <div className="text-2xl font-black text-white tracking-widest font-korean py-2">
                   {gapfillItems[gapfillIdx]?.koreanTemplate.replace("[ ]", selectedGapfillOpt ? gapfillItems[gapfillIdx]?.options.find((o: any) => o.id === selectedGapfillOpt)?.text : "___")}
                 </div>
 
@@ -738,8 +1006,8 @@ export default function Course2Phase1GreetingsWizard({
                       disabled={gapfillChecked}
                       className={`px-4 py-2 rounded-xl text-sm font-black border transition ${
                         selectedGapfillOpt === opt.id
-                          ? "border-brand-500 bg-brand-500/10 text-white"
-                          : "border-white/5 bg-zinc-950 text-zinc-300 hover:border-white/10"
+                          ? "border-brand-500 bg-brand-500/10 text-white font-korean"
+                          : "border-white/5 bg-zinc-950 text-zinc-300 hover:border-white/10 font-korean"
                       }`}
                     >
                       {opt.text}
@@ -786,17 +1054,27 @@ export default function Course2Phase1GreetingsWizard({
               </div>
             )}
           </div>
+        </div>
+      )}
 
-          {/* Activity 2B: Context Appropriate response */}
+      {/* Screen 10: Activity 4: Context-appropriate phrase challenges */}
+      {step === 10 && (
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
+          <div className="flex justify-between items-center border-b border-white/5 pb-4">
+            <h2 className="text-2xl font-black text-white flex items-center gap-2">
+              <Sparkles className="w-6 h-6 text-brand-400" />
+              <span>Activity 4 – Context-appropriate phrase challenges</span>
+            </h2>
+            <span className="text-xs text-zinc-500 font-bold">Step 10 of {totalSteps}</span>
+          </div>
+
           <div className="space-y-4 bg-zinc-900/30 p-5 rounded-2xl border border-white/5">
-            <h3 className="text-xs font-black uppercase text-amber-400 tracking-wider">Part B: Choose appropriate expression</h3>
-            
             {contextItems.length === 0 ? (
               <div className="text-center py-6"><Loader2 className="w-8 h-8 animate-spin mx-auto text-brand-400" /></div>
             ) : (
               <div className="space-y-4 w-full">
                 <div className="p-4 bg-zinc-950 rounded-xl border border-white/5 text-xs text-center">
-                  <span className="text-[10px] text-zinc-500 block mb-1">English Situation Scenario:</span>
+                  <span className="text-[10px] text-zinc-500 block mb-1">Situation scenario:</span>
                   <p className="font-semibold text-zinc-300">{contextItems[contextIdx]?.scenario}</p>
                 </div>
 
@@ -806,7 +1084,7 @@ export default function Course2Phase1GreetingsWizard({
                       key={opt.id}
                       onClick={() => !contextChecked && setSelectedContextOpt(opt.id)}
                       disabled={contextChecked}
-                      className={`p-3 rounded-xl border text-left text-xs font-bold transition ${
+                      className={`p-3 rounded-xl border text-left text-xs font-bold font-korean transition ${
                         selectedContextOpt === opt.id
                           ? "border-brand-500 bg-brand-500/10 text-white"
                           : "border-white/5 bg-zinc-950 text-zinc-300 hover:border-white/10"
@@ -856,29 +1134,97 @@ export default function Course2Phase1GreetingsWizard({
               </div>
             )}
           </div>
-
-          <div className="flex justify-between items-center pt-4 border-t border-white/5">
-            <button onClick={() => setStep(3)} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-sm font-bold transition flex items-center gap-2 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
-            <button onClick={() => setStep(5)} className="bg-brand-500 hover:bg-brand-600 text-white px-8 py-3 rounded-xl text-sm font-bold transition flex items-center gap-2 cursor-pointer">Move to Mini-Quiz <ChevronRight className="w-4 h-4" /></button>
-          </div>
         </div>
       )}
 
-      {/* Screen 5: Mini-quiz Checkpoint */}
-      {step === 5 && (
+      {/* Screen 11: Graduating checkpoint quiz */}
+      {step === 11 && (
         <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
-          <div className="flex justify-between items-center border-b border-white/5 pb-4">
-            <h2 className="text-2xl font-black text-white flex items-center gap-2">
-              <Award className="w-6 h-6 text-brand-400" />
-              <span>Mini-Quiz: A1 Polite Checkpoint</span>
-            </h2>
-            <span className="text-xs text-zinc-500 font-bold">Question {quizIdx + 1} of {quizBlueprint.length}</span>
-          </div>
+          {quizScore !== null ? (
+            <div className="space-y-6 text-center">
+              <div className="p-3 bg-brand-500/10 rounded-full border border-brand-500/25 w-fit mx-auto text-brand-400 animate-bounce">
+                <Award className="w-10 h-10" />
+              </div>
+              <h2 className="text-2xl font-black text-white">Checkpoint Complete! 🇰🇷✨</h2>
+              <p className="text-zinc-400 text-xs">You scored **{quizScore}%** on your A1 Checkpoint Quiz and earned **150 XP**.</p>
 
-          {quizBlueprint.length === 0 ? (
-            <div className="text-center py-6"><Loader2 className="w-8 h-8 animate-spin mx-auto text-brand-400" /></div>
+              {quizScore < 80 && (
+                <div className="p-4 bg-yellow-500/5 border border-yellow-500/20 text-yellow-400 text-xs rounded-xl max-w-md mx-auto text-left">
+                  ⚠️ We suggest resetting the lesson and revisiting Activities 1-4 to build core confidence in greetings!
+                </div>
+              )}
+
+              <div className="bg-zinc-900/40 p-5 rounded-2xl border border-white/5 text-left space-y-3 max-w-lg mx-auto">
+                <span className="text-[10px] text-zinc-500 uppercase tracking-widest font-black block">Homework Checklist Tasks</span>
+                <div className="space-y-2">
+                  {homeworkItems.map((hw) => {
+                    const isChecked = !!completedHomework[hw.id];
+                    return (
+                      <div 
+                        key={hw.id}
+                        onClick={() => handleToggleHomework(hw.id, isChecked)}
+                        className="flex items-center gap-3 p-3 bg-zinc-950/80 rounded-xl border border-white/5 cursor-pointer hover:bg-zinc-900 transition"
+                      >
+                        <div className={`w-5 h-5 rounded-md border flex items-center justify-center shrink-0 transition ${
+                          isChecked ? "border-emerald-500 bg-emerald-500/15 text-emerald-400" : "border-white/10 bg-zinc-900"
+                        }`}>
+                          {isChecked && <Check className="w-3.5 h-3.5" />}
+                        </div>
+                        <span className={`text-xs text-zinc-300 ${isChecked ? "line-through text-zinc-500" : ""}`}>{hw.text}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="p-5 bg-zinc-900/60 rounded-2xl border border-white/5 space-y-4 max-w-lg mx-auto">
+                <div className="text-left space-y-1">
+                  <span className="text-[9px] font-black uppercase text-blue-400 tracking-wider block">Special AI Practice Mode</span>
+                  <h4 className="text-xs font-bold text-white">Greetings Mode dialogue coaching with Gwan-Sik</h4>
+                  <p className="text-[11px] text-zinc-400 leading-normal">
+                    Starts a short, greetings-focused chat session where Gwan-Sik greets you and gives corrections on your polite responses.
+                  </p>
+                </div>
+
+                {tutorSession ? (
+                  <div className="bg-zinc-950 p-4 rounded-xl border border-brand-500/25 text-left space-y-2">
+                    <span className="text-[9px] font-black text-brand-400 uppercase tracking-wider block">Greetings Coach Active Session</span>
+                    <p className="text-xs italic text-zinc-300 font-serif">"{tutorSession.opener}"</p>
+                    <div className="flex justify-end pt-1">
+                      <a 
+                        href={`/tutor?session=${tutorSession.session_id}`}
+                        className="bg-brand-500 text-zinc-950 font-black px-3 py-1.5 rounded-lg text-[10px] hover:bg-brand-400 transition"
+                      >
+                        Enter Chat Room
+                      </a>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    onClick={handleLaunchTutor}
+                    disabled={loadingTutor}
+                    className="w-full bg-zinc-950 hover:bg-zinc-900 text-brand-400 hover:text-brand-300 border border-brand-500/20 font-bold px-4 py-3 rounded-xl text-xs transition flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    {loadingTutor ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <MessageSquare className="w-3.5 h-3.5" />}
+                    <span>Practice with your AI tutor (Greetings Mode)</span>
+                  </button>
+                )}
+              </div>
+
+              <button
+                onClick={onComplete}
+                className="bg-gradient-to-r from-brand-500 to-amber-500 hover:from-brand-600 text-zinc-950 font-black py-4 px-8 rounded-2xl transition text-sm flex items-center justify-center gap-2 mx-auto shadow-lg shadow-brand-500/20 cursor-pointer w-full max-w-xs"
+              >
+                <span>Finish Phase 1 & Earn XP</span>
+                <ChevronRight className="w-4 h-4 text-zinc-950" />
+              </button>
+            </div>
           ) : (
             <div className="space-y-6 max-w-xl mx-auto w-full">
+              <div className="flex justify-between items-center border-b border-white/5 pb-2">
+                <span className="text-xs text-zinc-500 font-bold">Checkpoint Question {quizIdx + 1} of {quizBlueprint.length}</span>
+              </div>
+
               <div className="p-4 bg-zinc-950 rounded-xl border border-white/5 text-xs text-center">
                 <span className="text-[10px] text-zinc-500 uppercase font-mono block">Question Prompt</span>
                 <p className="font-extrabold text-white text-base mt-1">{quizBlueprint[quizIdx]?.question}</p>
@@ -892,7 +1238,7 @@ export default function Course2Phase1GreetingsWizard({
                   >
                     <Volume2 className="w-8 h-8" />
                   </button>
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-2 gap-2">
                     {quizBlueprint[quizIdx]?.options.map((opt: string) => (
                       <button
                         key={opt}
@@ -912,7 +1258,7 @@ export default function Course2Phase1GreetingsWizard({
               )}
 
               {quizBlueprint[quizIdx]?.type === "context" && (
-                <div className="grid grid-cols-1 gap-2">
+                <div className="grid grid-cols-1 gap-2 animate-fade-in">
                   {quizBlueprint[quizIdx]?.options.map((opt: string) => (
                     <button
                       key={opt}
@@ -920,8 +1266,8 @@ export default function Course2Phase1GreetingsWizard({
                       disabled={quizChecked}
                       className={`p-3 rounded-xl border text-left text-xs font-bold transition ${
                         quizAnswerSelected === opt
-                          ? "border-brand-500 bg-brand-500/10 text-white"
-                          : "border-white/5 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-300"
+                          ? "border-brand-500 bg-brand-500/10 text-white font-korean"
+                          : "border-white/5 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-300 font-korean"
                       } ${quizChecked && opt === quizBlueprint[quizIdx]?.correct_answer ? "border-accent-teal bg-accent-teal/10" : ""}`}
                     >
                       {opt}
@@ -938,16 +1284,15 @@ export default function Course2Phase1GreetingsWizard({
                     disabled={quizChecked}
                     onChange={(e) => setQuizAnswer(e.target.value)}
                     placeholder="Type the exact Hangeul block..."
-                    className="w-full bg-zinc-950 p-4 rounded-xl border border-white/5 text-center text-lg font-black text-white focus:outline-none focus:border-brand-500 font-sans"
+                    className="w-full bg-zinc-950 p-4 rounded-xl border border-white/5 text-center text-lg font-black text-white focus:outline-none focus:border-brand-500 font-korean"
                   />
-                  {/* Keyboard help key */}
                   {!quizChecked && (
                     <div className="flex gap-1.5 justify-center flex-wrap pt-2">
-                      {["네", "아니요", "감사", "합니", "죄송", "안녕"].map(ch => (
+                      {["네", "아니요", "감사", "합니", "죄송", "안녕", "가세요", "계세요"].map(ch => (
                         <button
                           key={ch}
                           onClick={() => setQuizAnswer(v => v + ch)}
-                          className="px-3 py-1.5 bg-zinc-900 hover:bg-zinc-850 rounded border border-white/5 text-xs text-white"
+                          className="px-3 py-1.5 bg-zinc-900 hover:bg-zinc-850 rounded border border-white/5 text-xs text-white font-korean"
                         >
                           {ch}
                         </button>
@@ -959,7 +1304,7 @@ export default function Course2Phase1GreetingsWizard({
 
               {quizBlueprint[quizIdx]?.type === "speaking" && (
                 <div className="space-y-4 text-center">
-                  <p className="text-xs text-zinc-400">Bonus: Speak "안녕하세요" to check pronunciation.</p>
+                  <p className="text-xs text-zinc-400 font-bold">Speak "안녕하세요" loudly to evaluate your pronunciation.</p>
                   
                   <div className="flex justify-center items-center gap-3">
                     <button
@@ -974,10 +1319,9 @@ export default function Course2Phase1GreetingsWizard({
                       disabled={speakingTranscribing || quizChecked}
                       className={`p-5 rounded-full transition ${
                         rec.recording
-                          ? "bg-red-500 text-white animate-pulse"
+                          ? "bg-red-500 text-white animate-pulse animate-duration-1000"
                           : "bg-brand-500/10 text-brand-400 border border-brand-500/25 hover:bg-brand-500/20"
                       }`}
-                      title={rec.recording ? "Stop Recording" : "Click to Record"}
                     >
                       {rec.recording ? <MicOff className="w-8 h-8" /> : <Mic className="w-8 h-8" />}
                     </button>
@@ -994,8 +1338,8 @@ export default function Course2Phase1GreetingsWizard({
                   </div>
 
                   {speakingResult && (
-                    <div className="bg-zinc-950/60 p-4 rounded-xl border border-white/5 text-left text-xs space-y-1">
-                      <p className="font-black text-white">Score: {speakingResult.similarity_score.toFixed(0)}%</p>
+                    <div className="bg-zinc-950/60 p-4 rounded-xl border border-white/5 text-left text-xs space-y-1 max-w-sm mx-auto">
+                      <p className="font-black text-white">Acoustic Score: {speakingResult.similarity_score.toFixed(0)}%</p>
                       <p className="text-zinc-400">Heard: "{speakingResult.transcription || "..."}"</p>
                     </div>
                   )}
@@ -1038,7 +1382,7 @@ export default function Course2Phase1GreetingsWizard({
                       </>
                     ) : (
                       <>
-                        <span>{quizIdx < quizBlueprint.length - 1 ? "Next Question" : "Submit Quiz & See Score"}</span>
+                        <span>{quizIdx < quizBlueprint.length - 1 ? "Next Question" : "Submit Quiz"}</span>
                         <ChevronRight className="w-4 h-4 text-zinc-950" />
                       </>
                     )}
@@ -1049,90 +1393,9 @@ export default function Course2Phase1GreetingsWizard({
           )}
         </div>
       )}
-
-      {/* Screen 6: Homework & AI Extension suggestions */}
-      {step === 6 && (
-        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center text-center animate-fade-in">
-          <div className="p-3 bg-brand-500/10 rounded-full border border-brand-500/25 w-fit mx-auto text-brand-400 shrink-0 animate-bounce">
-            <Award className="w-10 h-10" />
-          </div>
-
-          <div className="space-y-1">
-            <h2 className="text-2xl font-black text-white">Phase 1 Complete! 🇰🇷✨</h2>
-            <p className="text-zinc-400 text-xs">You scored {quizScore}% on your checkpoint test! You earned **150 XP**.</p>
-          </div>
-
-          {/* Practical Checklist Homework */}
-          <div className="bg-zinc-900/40 p-5 rounded-2xl border border-white/5 text-left space-y-3">
-            <span className="text-[10px] text-zinc-500 uppercase tracking-widest font-black block">Homework Checklist Tasks</span>
-            <div className="space-y-2">
-              {homeworkItems.map((hw) => {
-                const isChecked = !!completedHomework[hw.id];
-                return (
-                  <div 
-                    key={hw.id}
-                    onClick={() => handleToggleHomework(hw.id, isChecked)}
-                    className="flex items-center gap-3 p-3 bg-zinc-950/80 rounded-xl border border-white/5 cursor-pointer hover:bg-zinc-900 transition"
-                  >
-                    <div className={`w-5 h-5 rounded-md border flex items-center justify-center shrink-0 transition ${
-                      isChecked ? "border-emerald-500 bg-emerald-500/15 text-emerald-400" : "border-white/10 bg-zinc-900"
-                    }`}>
-                      {isChecked && <Check className="w-3.5 h-3.5" />}
-                    </div>
-                    <span className={`text-xs text-zinc-300 ${isChecked ? "line-through text-zinc-500" : ""}`}>{hw.text}</span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* AI tutor mode portal launcher */}
-          <div className="p-5 bg-zinc-900/60 rounded-2xl border border-white/5 space-y-4">
-            <div className="text-left space-y-1">
-              <span className="text-[9px] font-black uppercase text-blue-400 tracking-wider block">Special AI Practice Mode</span>
-              <h4 className="text-xs font-bold text-white">Greetings Mode dialogue coaching with Gwan-Sik</h4>
-              <p className="text-[11px] text-zinc-400 leading-normal">
-                Starts a short, greetings-focused chat session where Gwan-Sik greets you and gives corrections on your polite responses.
-              </p>
-            </div>
-
-            {tutorSession ? (
-              <div className="bg-zinc-950 p-4 rounded-xl border border-brand-500/25 text-left space-y-2">
-                <span className="text-[9px] font-black text-brand-400 uppercase tracking-wider block">Greetings Coach Active Session</span>
-                <p className="text-xs italic text-zinc-300 font-serif">"{tutorSession.opener}"</p>
-                <div className="flex justify-end pt-1">
-                  <a 
-                    href={`/tutor?session=${tutorSession.session_id}`}
-                    className="bg-brand-500 text-zinc-950 font-black px-3 py-1.5 rounded-lg text-[10px] hover:bg-brand-400 transition"
-                  >
-                    Enter Chat Room
-                  </a>
-                </div>
-              </div>
-            ) : (
-              <button
-                onClick={handleLaunchTutor}
-                disabled={loadingTutor}
-                className="w-full bg-zinc-950 hover:bg-zinc-900 text-brand-400 hover:text-brand-300 border border-brand-500/20 font-bold px-4 py-3 rounded-xl text-xs transition flex items-center justify-center gap-2 cursor-pointer"
-              >
-                {loadingTutor ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <MessageSquare className="w-3.5 h-3.5" />}
-                <span>Practice with your AI tutor (Greetings Mode)</span>
-              </button>
-            )}
-          </div>
-
-          <button
-            onClick={onComplete}
-            className="bg-gradient-to-r from-brand-500 to-amber-500 hover:from-brand-600 text-zinc-950 font-black py-4 px-8 rounded-2xl transition text-sm flex items-center justify-center gap-2 mx-auto shadow-lg shadow-brand-500/20 cursor-pointer w-full max-w-xs"
-          >
-            <span>Finish Phase 1 & Earn XP</span>
-            <ChevronRight className="w-4 h-4 text-zinc-950" />
-          </button>
-        </div>
-      )}
       
       {/* Navigation bottom controls for non-quiz screens */}
-      {step < 5 && step > 1 && (
+      {step < 11 && step > 1 && (
         <div className="flex justify-between items-center py-4 border-t border-white/5 mt-6">
           <button 
             onClick={() => setStep(step - 1)} 

@@ -74,7 +74,7 @@ function useRecorder() {
         }
       };
       mr.onstop = () => {
-        const blob = new Blob(chunks.current, { type: mr.mimeType || "audio/webm" });
+        const blob = new Blob(chunks.current, { type: mr.mimeType || "audio/wav" });
         setAudioBlob(blob);
         stream.getTracks().forEach((t) => t.stop());
         streamRef.current = null;
@@ -108,6 +108,13 @@ interface Course2Phase3NumbersWizardProps {
   onComplete: () => void;
 }
 
+interface MicroQuestion {
+  question: string;
+  options: { id: string; text: string }[];
+  correctId: string;
+  explanation: string;
+}
+
 export default function Course2Phase3NumbersWizard({
   activeLesson,
   speakWord,
@@ -115,7 +122,20 @@ export default function Course2Phase3NumbersWizard({
 }: Course2Phase3NumbersWizardProps) {
   const [step, setStep] = useState(1);
   const [showOutline, setShowOutline] = useState(false);
-  const totalSteps = 6;
+  const totalSteps = 12;
+
+  // Persist step to localStorage for refresh resilience
+  useEffect(() => {
+    const saved = localStorage.getItem("hangeulai_c1p3_step");
+    if (saved) {
+      const parsedStep = parseInt(saved, 10);
+      if (parsedStep >= 1 && parsedStep <= 12) setStep(parsedStep);
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem("hangeulai_c1p3_step", String(step));
+  }, [step]);
 
   // DB Data States
   const [metadata, setMetadata] = useState<any>(null);
@@ -129,19 +149,148 @@ export default function Course2Phase3NumbersWizard({
   // Flip tracking for number cards
   const [flippedNumDigit, setFlippedNumDigit] = useState<string | null>(null);
 
-  // Activity 1A listening states
+  // Concept Micro-questions states
+  const [cSelected, setCSelected] = useState<string | null>(null);
+  const [cChecked, setCChecked] = useState(false);
+  const [cCorrect, setCCorrect] = useState<boolean | null>(null);
+  const [cIdx, setCIdx] = useState(0);
+
+  // Reset concept states on step change
+  useEffect(() => {
+    if (step >= 2 && step <= 6) {
+      setCSelected(null);
+      setCChecked(false);
+      setCCorrect(null);
+      setCIdx(0);
+    }
+  }, [step]);
+
+  // Concept Micro-questions definitions
+  const conceptQuestions: Record<number, MicroQuestion[]> = {
+    2: [
+      {
+        question: "Which system do we usually use for minutes, prices, and phone numbers?",
+        options: [
+          { id: "A", text: "Sino-Korean" },
+          { id: "B", text: "Native Korean" }
+        ],
+        correctId: "A",
+        explanation: "Sino-Korean numbers are used for math-like units (minutes, prices, phone numbers, dates)."
+      },
+      {
+        question: "Which system is used for hours (시) when telling time?",
+        options: [
+          { id: "A", text: "Sino-Korean" },
+          { id: "B", text: "Native Korean" }
+        ],
+        correctId: "B",
+        explanation: "Hours use the Native Korean system (한 시, 두 시, 세 시...)."
+      }
+    ],
+    3: [
+      {
+        question: "How would you build 13 using 십 (10) and 삼 (3)?",
+        options: [
+          { id: "A", text: "삼십" },
+          { id: "B", text: "십삼" }
+        ],
+        correctId: "B",
+        explanation: "10 (십) + 3 (삼) = 13 (십삼). Tens digit goes first, then unit."
+      },
+      {
+        question: "Which of these represents 11?",
+        options: [
+          { id: "A", text: "십일" },
+          { id: "B", text: "십이" },
+          { id: "C", text: "이십" }
+        ],
+        correctId: "A",
+        explanation: "십일 (10 + 1) is 11. 이십 is 20 (2 * 10)."
+      }
+    ],
+    4: [
+      {
+        question: "Which number corresponds to 삼십?",
+        options: [
+          { id: "A", text: "20" },
+          { id: "B", text: "30" },
+          { id: "C", text: "40" }
+        ],
+        correctId: "B",
+        explanation: "삼 (3) + 십 (10) = 삼십 (30)."
+      },
+      {
+        question: "How do you say '50' with Sino-Korean tens?",
+        options: [
+          { id: "A", text: "오십" },
+          { id: "B", text: "사십" }
+        ],
+        correctId: "A",
+        explanation: "오 (5) + 십 (10) = 오십 (50)."
+      }
+    ],
+    5: [
+      {
+        question: "Which is correct for 3 o'clock?",
+        options: [
+          { id: "A", text: "삼 시" },
+          { id: "B", text: "세 시" }
+        ],
+        correctId: "B",
+        explanation: "Hours use the Native Korean hour words (한, 두, 세, 네...). So 3 o'clock is 세 시."
+      },
+      {
+        question: "If you hear '다섯 시', what hour is it?",
+        options: [
+          { id: "A", text: "3 o'clock" },
+          { id: "B", text: "5 o'clock" },
+          { id: "C", text: "7 o'clock" }
+        ],
+        correctId: "B",
+        explanation: "다섯 is the Native Korean word for 5. So 다섯 시 is 5 o'clock."
+      }
+    ],
+    6: [
+      {
+        question: "Which number system is easier to start with for prices and phone digits?",
+        options: [
+          { id: "A", text: "Sino-Korean numbers" },
+          { id: "B", text: "Native Korean numbers" }
+        ],
+        correctId: "A",
+        explanation: "Sino-Korean numbers are purely decimal and much simpler to build for large digits."
+      },
+      {
+        question: "Which one sounds more natural for 10,000 won price?",
+        options: [
+          { id: "A", text: "Native Korean numbers" },
+          { id: "B", text: "Sino-Korean numbers" }
+        ],
+        correctId: "B",
+        explanation: "Prices are always calculated using Sino-Korean numbers (e.g. 만 원)."
+      }
+    ]
+  };
+
+  // Activity 7: Catalog MCQ states
+  const [activeCatalogIdx, setActiveCatalogIdx] = useState(0);
+  const [catalogSelectedOpt, setCatalogSelectedOpt] = useState<string | null>(null);
+  const [catalogChecked, setCatalogChecked] = useState(false);
+  const [catalogCorrect, setCatalogCorrect] = useState<boolean | null>(null);
+
+  // Activity 8: Listening states
   const [listeningIdx, setListeningIdx] = useState(0);
   const [selectedListeningOpt, setSelectedListeningOpt] = useState<string | null>(null);
   const [listeningChecked, setListeningChecked] = useState(false);
   const [listeningCorrect, setListeningCorrect] = useState<boolean | null>(null);
 
-  // Activity 2A Time states
+  // Activity 9: Time states
   const [timeIdx, setTimeIdx] = useState(0);
   const [selectedTimeOpt, setSelectedTimeOpt] = useState<string | null>(null);
   const [timeChecked, setTimeChecked] = useState(false);
   const [timeCorrect, setTimeCorrect] = useState<boolean | null>(null);
 
-  // Activity 2B Facts states
+  // Activity 10: Facts states
   const [factsIdx, setFactsIdx] = useState(0);
   const [selectedFactOpt, setSelectedFactOpt] = useState<string | null>(null);
   const [factsChecked, setFactsChecked] = useState(false);
@@ -169,6 +318,19 @@ export default function Course2Phase3NumbersWizard({
   const [tutorSession, setTutorSession] = useState<any>(null);
   const [loadingTutor, setLoadingTutor] = useState(false);
 
+  // Sound and XP dispatches
+  const playCorrectSound = () => {
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("hangeulai-xp", { detail: { amount: 20, type: 'correct' } }));
+    }
+  };
+
+  const playWrongSound = () => {
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("hangeulai-xp", { detail: { amount: -10, type: 'wrong' } }));
+    }
+  };
+
   // Load backend content
   useEffect(() => {
     const load = async () => {
@@ -176,21 +338,21 @@ export default function Course2Phase3NumbersWizard({
         if (step === 1 && !metadata) {
           const res = await apiJson("/lessons/phases/korean1/3/metadata");
           setMetadata(res);
-        } else if (step === 2 && !coreData) {
+        } else if ((step === 2 || step === 7) && !coreData) {
           const res = await apiJson("/lessons/phases/korean1/3/core-data");
           setCoreData(res);
-        } else if (step === 3 && listeningItems.length === 0) {
+        } else if (step === 8 && listeningItems.length === 0) {
           const res = await apiJson("/lessons/practice/numbers/listening");
           setListeningItems(res.items || []);
-        } else if (step === 4 && timeItems.length === 0) {
+        } else if ((step === 9 || step === 10) && timeItems.length === 0) {
           const res_t = await apiJson("/lessons/practice/time/basic");
           const res_f = await apiJson("/lessons/practice/facts/basic");
           setTimeItems(res_t.items || []);
           setFactsItems(res_f.items || []);
-        } else if (step === 5 && quizBlueprint.length === 0) {
+        } else if (step === 11 && quizBlueprint.length === 0) {
           const res_q = await apiJson("/lessons/quiz/korean1/phase-3/start", { method: "POST" });
           setQuizBlueprint(res_q.blueprint || []);
-        } else if (step === 6 && homeworkItems.length === 0) {
+        } else if (step === 12 && homeworkItems.length === 0) {
           const res_h = await apiJson("/lessons/phases/korean1/3/homework");
           setHomeworkItems(res_h || []);
         }
@@ -205,7 +367,50 @@ export default function Course2Phase3NumbersWizard({
     speakWord(text);
   };
 
-  // Activity 1: Listen and choose answer
+  // Concept Screen checking handler
+  const handleCheckConcept = (selectedId: string) => {
+    if (cChecked) return;
+    const currentQ = conceptQuestions[step]?.[cIdx];
+    if (!currentQ) return;
+
+    setCSelected(selectedId);
+    const isCorrect = selectedId === currentQ.correctId;
+    setCChecked(true);
+    setCCorrect(isCorrect);
+    
+    if (isCorrect) {
+      playCorrectSound();
+    } else {
+      playWrongSound();
+    }
+  };
+
+  // Concept Screen next helper
+  const handleNextConcept = () => {
+    const list = conceptQuestions[step] || [];
+    if (cIdx < list.length - 1) {
+      setCIdx(cIdx + 1);
+      setCSelected(null);
+      setCChecked(false);
+      setCCorrect(null);
+    } else {
+      setStep(step + 1);
+    }
+  };
+
+  // Activity 1: Catalog MCQ check
+  const handleCheckCatalogCard = (opt: string) => {
+    if (catalogChecked) return;
+    setCatalogSelectedOpt(opt);
+    const correctVal = activeCatalogIdx === 5 ? "B" : "A"; // sample logic for different cards
+    const isCorrect = opt === correctVal;
+    setCatalogChecked(true);
+    setCatalogCorrect(isCorrect);
+    if (isCorrect) playCorrectSound();
+    else playWrongSound();
+  };
+
+  // Activity 2: Listen and choose answer
   const handleCheckListening = async () => {
     const current = listeningItems[listeningIdx];
     if (!current || !selectedListeningOpt) return;
@@ -221,12 +426,14 @@ export default function Course2Phase3NumbersWizard({
       });
       setListeningChecked(true);
       setListeningCorrect(res.correct);
+      if (res.correct) playCorrectSound();
+      else playWrongSound();
     } catch (err) {
       console.error(err);
     }
   };
 
-  // Activity 2A: Time check
+  // Activity 3: Time check
   const handleCheckTime = async () => {
     const current = timeItems[timeIdx];
     if (!current || !selectedTimeOpt) return;
@@ -242,12 +449,14 @@ export default function Course2Phase3NumbersWizard({
       });
       setTimeChecked(true);
       setTimeCorrect(res.correct);
+      if (res.correct) playCorrectSound();
+      else playWrongSound();
     } catch (err) {
       console.error(err);
     }
   };
 
-  // Activity 2B: Facts check
+  // Activity 4: Facts check
   const handleCheckFacts = async () => {
     const current = factsItems[factsIdx];
     if (!current || !selectedFactOpt) return;
@@ -265,6 +474,8 @@ export default function Course2Phase3NumbersWizard({
       });
       setFactsChecked(true);
       setFactsCorrect(isCorrect);
+      if (isCorrect) playCorrectSound();
+      else playWrongSound();
     } catch (err) {
       console.error(err);
     }
@@ -284,7 +495,10 @@ export default function Course2Phase3NumbersWizard({
 
     setQuizChecked(true);
     setQuizCorrect(isCorrect);
-    if (!isCorrect) {
+    if (isCorrect) {
+      playCorrectSound();
+    } else {
+      playWrongSound();
       setQuizMistakes(prev => [...prev, current.correct_answer]);
     }
   };
@@ -310,7 +524,7 @@ export default function Course2Phase3NumbersWizard({
           })
         });
         setQuizScore(score);
-        setStep(6);
+        setStep(12);
       } catch (err) {
         console.error(err);
       } finally {
@@ -327,7 +541,7 @@ export default function Course2Phase3NumbersWizard({
     try {
       const fd = new FormData();
       fd.append("target_text", current.correct_answer);
-      fd.append("audio_file", rec.audioBlob, "recording.webm");
+      fd.append("audio_file", rec.audioBlob, "recording.wav");
       const res = await apiForm("/speech/shadow", fd);
       setSpeakingResult(res);
       if (res.similarity_score >= 60) {
@@ -409,7 +623,7 @@ export default function Course2Phase3NumbersWizard({
           </div>
           
           <h2 className="text-5xl font-black text-white tracking-tight">Korean 1.3</h2>
-          <h3 className="text-2xl font-extrabold text-brand-400 mt-2">Numbers & Everyday Facts</h3>
+          <h3 className="text-2xl font-extrabold text-brand-400 mt-2">Numbers & Simple Time</h3>
           
           <p className="text-zinc-300 text-base leading-relaxed max-w-2xl mx-auto">
             {metadata?.description || "Say basic numbers and understand simple time and everyday information."}
@@ -438,12 +652,16 @@ export default function Course2Phase3NumbersWizard({
               <span>Start Phase 3</span>
               <ChevronRight className="w-4 h-4" />
             </button>
-            
           </div>
 
           {showOutline && (
             <div className="bg-zinc-950 p-6 rounded-2xl border border-white/5 text-left text-xs text-zinc-400 space-y-2 animate-fade-in max-w-2xl mx-auto w-full font-mono">
               <p className="font-extrabold text-white text-center pb-2">Phase Activities Outline</p>
+              <p>✓ C1 – Two number systems: Sino vs Native</p>
+              <p>✓ C2 – Sino numbers 1–10 and building 11–19</p>
+              <p>✓ C3 – Tens: 20, 30, 40, 50, 60</p>
+              <p>✓ C4 – Time: Native hours and Sino minutes</p>
+              <p>✓ C5 – Everyday uses: age, price, phone digits</p>
               <p>✓ Activity 1 – Sino-Korean Numbers catalog and audio drills</p>
               <p>✓ Activity 2 – Listening & recognition plain and sentence numbers</p>
               <p>✓ Activity 3 – Simple time clock-mapping matches</p>
@@ -454,119 +672,381 @@ export default function Course2Phase3NumbersWizard({
         </div>
       )}
 
-      {/* Screen 2: Concept Explanation */}
+      {/* Screen 2: C1 - Two number systems: Sino vs Native */}
       {step === 2 && (
         <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
-          <div className="flex justify-between items-center border-b border-white/5 pb-4">
-            <h2 className="text-2xl font-black text-white flex items-center gap-2">
-              <BookOpen className="w-6 h-6 text-brand-400" />
-              <span>Numbers & Simple Time</span>
-            </h2>
-            <span className="text-xs text-zinc-500 font-bold">Step 2 of {totalSteps}</span>
-          </div>
-
-          <div className="bg-zinc-900/60 p-4 rounded-xl border border-white/5 space-y-2 text-xs leading-relaxed text-zinc-300">
-            <p><strong>🔢 Sino-Korean Numbers:</strong> Used for phone numbers, prices, dates, and minutes. Combine them logically: 십 (10) + 일 (1) = 십일 (11).</p>
-            <p><strong>🕒 Time:</strong> Telling time uses Native numbers for hours (시) and Sino numbers for minutes (분). We will practice simple hours today.</p>
-          </div>
-
-          {/* Core Numbers Inventory Grid */}
-          <div className="space-y-3">
-            <span className="text-[10px] text-zinc-500 font-black uppercase tracking-wider block">1. Sino-Korean Numbers Inventory</span>
-            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5">
-              {coreData?.numbers?.map((num: any) => {
-                const isFlipped = flippedNumDigit === num.digit;
-                return (
-                  <div
-                    key={num.digit}
-                    onClick={() => {
-                      setFlippedNumDigit(isFlipped ? null : num.digit);
-                      playAudio(num.ko);
-                    }}
-                    className={`glass-panel p-2.5 rounded-xl border text-center transition cursor-pointer flex flex-col items-center justify-center ${
-                      isFlipped ? "border-brand-500 bg-brand-500/5" : "border-white/5 bg-zinc-900/60 hover:bg-zinc-800"
-                    }`}
-                  >
-                    {!isFlipped ? (
-                      <div className="space-y-0.5">
-                        <div className="text-xs font-bold text-zinc-500">{num.digit}</div>
-                        <div className="text-lg font-black text-white font-korean">{num.ko}</div>
-                      </div>
-                    ) : (
-                      <div className="animate-fade-in space-y-0.5">
-                        <div className="text-xs font-black text-brand-400">{num.en}</div>
-                        <div className="text-[9px] text-zinc-500 font-mono">TTS Spoken</div>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Time samples and facts */}
+          <h2 className="text-3xl font-black text-white">Two Number Systems in Korean</h2>
+          <p className="text-zinc-300 text-base leading-relaxed">
+            Korean has two distinct sets of numbers:
+          </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <span className="text-[10px] text-zinc-500 font-black uppercase tracking-wider block">2. Simple Hours Examples</span>
-              <div className="space-y-2">
-                {coreData?.time_samples?.map((t: any) => (
-                  <div key={t.time} className="p-2.5 bg-zinc-950 rounded-xl border border-white/5 flex justify-between items-center text-xs">
-                    <div>
-                      <span className="font-bold text-white pr-2">{t.time}</span>
-                      <span className="font-korean text-zinc-300">{t.ko}</span>
-                    </div>
-                    <button onClick={() => playAudio(t.ko)} className="p-1 rounded bg-zinc-900 text-zinc-400 hover:text-white"><Volume2 className="w-3.5 h-3.5" /></button>
-                  </div>
-                ))}
-              </div>
+            <div className="p-4 bg-zinc-900/60 border border-white/5 rounded-2xl space-y-2">
+              <h4 className="font-black text-white text-sm">Sino-Korean System</h4>
+              <p className="text-xs font-korean text-brand-300">일, 이, 삼, 사, 오, 육, 칠, 팔, 구, 십...</p>
+              <p className="text-[11px] text-zinc-400">Used for minutes, prices, phone numbers, dates, and addresses.</p>
             </div>
-
-            <div className="space-y-2">
-              <span className="text-[10px] text-zinc-500 font-black uppercase tracking-wider block">3. Everyday Sentence Examples</span>
-              <div className="space-y-2">
-                {coreData?.example_sentences?.map((s: any, idx: number) => (
-                  <div key={idx} className="p-2 bg-zinc-950 rounded-xl border border-white/5 text-[10px] text-left">
-                    <div className="font-korean font-bold text-brand-300">{s.ko}</div>
-                    <div className="text-zinc-400">{s.en}</div>
-                    <div className="text-zinc-600 italic">{s.note}</div>
-                  </div>
-                ))}
-              </div>
+            <div className="p-4 bg-zinc-900/60 border border-white/5 rounded-2xl space-y-2">
+              <h4 className="font-black text-white text-sm">Native Korean System</h4>
+              <p className="text-xs font-korean text-brand-300">하나, 둘, 셋, 넷, 다섯...</p>
+              <p className="text-[11px] text-zinc-400">Used for hours (when telling time), counting items, and expressing age.</p>
             </div>
           </div>
 
-          <div className="flex justify-between items-center pt-4 border-t border-white/5">
-            <button onClick={() => setStep(1)} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-sm font-bold transition flex items-center gap-2 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
-            <button onClick={() => setStep(3)} className="bg-brand-500 hover:bg-brand-600 text-white px-8 py-3 rounded-xl text-sm font-bold transition flex items-center gap-2 cursor-pointer">Start Activities <ChevronRight className="w-4 h-4" /></button>
+          <div className="bg-zinc-900/60 p-6 rounded-2xl border border-white/5 space-y-4 max-w-xl">
+            <h4 className="text-xs font-black uppercase text-amber-400 tracking-wider">Concept Check</h4>
+            <p className="text-xs text-zinc-300 font-bold">{conceptQuestions[2][cIdx].question}</p>
+            <div className="grid grid-cols-1 gap-2">
+              {conceptQuestions[2][cIdx].options.map(opt => (
+                <button
+                  key={opt.id}
+                  onClick={() => handleCheckConcept(opt.id)}
+                  disabled={cChecked}
+                  className={`p-3 rounded-xl border text-left text-xs font-semibold transition ${
+                    cSelected === opt.id
+                      ? cCorrect
+                        ? "border-accent-teal bg-accent-teal/15 text-white"
+                        : "border-red-500 bg-red-500/10 text-white"
+                      : "border-white/5 bg-zinc-950 text-zinc-300 hover:border-white/10"
+                  } ${cChecked && opt.id === conceptQuestions[2][cIdx].correctId ? "border-accent-teal bg-accent-teal/15 text-white" : ""}`}
+                >
+                  {opt.text}
+                </button>
+              ))}
+            </div>
+            {cChecked && (
+              <div className="animate-fade-in space-y-3">
+                <p className="text-xs text-zinc-400 leading-relaxed">{conceptQuestions[2][cIdx].explanation}</p>
+                <button
+                  onClick={handleNextConcept}
+                  className="bg-brand-500 hover:bg-brand-600 text-white px-5 py-2 rounded-xl text-xs font-bold transition cursor-pointer"
+                >
+                  Continue
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
 
-      {/* Screen 3: Activity 1: Listening Comprehension */}
+      {/* Screen 3: C2 - Sino numbers 1–10 and building 11–19 */}
       {step === 3 && (
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
+          <h2 className="text-3xl font-black text-white">Sino Numbers 1–10 and 11–19</h2>
+          <p className="text-zinc-300 text-base leading-relaxed">
+            Sino-Korean numbers form using a simple block logic:
+          </p>
+          <div className="bg-zinc-900/60 p-4 rounded-xl border border-white/5 text-center font-mono space-y-1 max-w-sm mx-auto text-xs text-zinc-300">
+            <p>십 (10) + 일 (1) = <strong>십일 (11)</strong></p>
+            <p>십 (10) + 이 (2) = <strong>십이 (12)</strong></p>
+            <p>십 (10) + 구 (9) = <strong>십구 (19)</strong></p>
+          </div>
+
+          <div className="bg-zinc-900/60 p-6 rounded-2xl border border-white/5 space-y-4 max-w-xl">
+            <h4 className="text-xs font-black uppercase text-amber-400 tracking-wider">Concept Check</h4>
+            <p className="text-xs text-zinc-300 font-bold">{conceptQuestions[3][cIdx].question}</p>
+            <div className="grid grid-cols-1 gap-2">
+              {conceptQuestions[3][cIdx].options.map(opt => (
+                <button
+                  key={opt.id}
+                  onClick={() => handleCheckConcept(opt.id)}
+                  disabled={cChecked}
+                  className={`p-3 rounded-xl border text-left text-xs font-semibold transition ${
+                    cSelected === opt.id
+                      ? cCorrect
+                        ? "border-accent-teal bg-accent-teal/15 text-white"
+                        : "border-red-500 bg-red-500/10 text-white"
+                      : "border-white/5 bg-zinc-950 text-zinc-300 hover:border-white/10"
+                  } ${cChecked && opt.id === conceptQuestions[3][cIdx].correctId ? "border-accent-teal bg-accent-teal/15 text-white" : ""}`}
+                >
+                  {opt.text}
+                </button>
+              ))}
+            </div>
+            {cChecked && (
+              <div className="animate-fade-in space-y-3">
+                <p className="text-xs text-zinc-400 leading-relaxed">{conceptQuestions[3][cIdx].explanation}</p>
+                <button
+                  onClick={handleNextConcept}
+                  className="bg-brand-500 hover:bg-brand-600 text-white px-5 py-2 rounded-xl text-xs font-bold transition cursor-pointer"
+                >
+                  Continue
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Screen 4: C3 - Tens: 20, 30, 40, 50, 60 */}
+      {step === 4 && (
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
+          <h2 className="text-3xl font-black text-white">Tens: 20, 30, 40, 50, 60</h2>
+          <p className="text-zinc-300 text-base leading-relaxed">
+            Multiples of ten follow a logical formula: <strong>[digit] + 십</strong>
+          </p>
+          <div className="grid grid-cols-3 sm:grid-cols-5 gap-3 font-mono text-center text-xs text-zinc-300">
+            <div className="p-3 bg-zinc-950 rounded-xl border border-white/5">이십 (20)</div>
+            <div className="p-3 bg-zinc-950 rounded-xl border border-white/5">삼십 (30)</div>
+            <div className="p-3 bg-zinc-950 rounded-xl border border-white/5">사십 (40)</div>
+            <div className="p-3 bg-zinc-950 rounded-xl border border-white/5">오십 (50)</div>
+            <div className="p-3 bg-zinc-950 rounded-xl border border-white/5">육십 (60)</div>
+          </div>
+
+          <div className="bg-zinc-900/60 p-6 rounded-2xl border border-white/5 space-y-4 max-w-xl">
+            <h4 className="text-xs font-black uppercase text-amber-400 tracking-wider">Concept Check</h4>
+            <p className="text-xs text-zinc-300 font-bold">{conceptQuestions[4][cIdx].question}</p>
+            <div className="grid grid-cols-1 gap-2">
+              {conceptQuestions[4][cIdx].options.map(opt => (
+                <button
+                  key={opt.id}
+                  onClick={() => handleCheckConcept(opt.id)}
+                  disabled={cChecked}
+                  className={`p-3 rounded-xl border text-left text-xs font-semibold transition ${
+                    cSelected === opt.id
+                      ? cCorrect
+                        ? "border-accent-teal bg-accent-teal/15 text-white"
+                        : "border-red-500 bg-red-500/10 text-white"
+                      : "border-white/5 bg-zinc-950 text-zinc-300 hover:border-white/10"
+                  } ${cChecked && opt.id === conceptQuestions[4][cIdx].correctId ? "border-accent-teal bg-accent-teal/15 text-white" : ""}`}
+                >
+                  {opt.text}
+                </button>
+              ))}
+            </div>
+            {cChecked && (
+              <div className="animate-fade-in space-y-3">
+                <p className="text-xs text-zinc-400 leading-relaxed">{conceptQuestions[4][cIdx].explanation}</p>
+                <button
+                  onClick={handleNextConcept}
+                  className="bg-brand-500 hover:bg-brand-600 text-white px-5 py-2 rounded-xl text-xs font-bold transition cursor-pointer"
+                >
+                  Continue
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Screen 5: C4 - Time: Native hours (시) */}
+      {step === 5 && (
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
+          <h2 className="text-3xl font-black text-white">Time: Native Hours (시)</h2>
+          <p className="text-zinc-300 text-base leading-relaxed">
+            Telling time in Korean uses Native hours followed by the counter word <strong>시 (si)</strong>:
+          </p>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-left text-xs text-zinc-300 font-mono">
+            <div className="p-3 bg-zinc-950 rounded-xl border border-white/5">1 o'clock: 한 시</div>
+            <div className="p-3 bg-zinc-950 rounded-xl border border-white/5">2 o'clock: 두 시</div>
+            <div className="p-3 bg-zinc-950 rounded-xl border border-white/5">3 o'clock: 세 시</div>
+            <div className="p-3 bg-zinc-950 rounded-xl border border-white/5">4 o'clock: 네 시</div>
+          </div>
+
+          <div className="bg-zinc-900/60 p-6 rounded-2xl border border-white/5 space-y-4 max-w-xl">
+            <h4 className="text-xs font-black uppercase text-amber-400 tracking-wider">Concept Check</h4>
+            <p className="text-xs text-zinc-300 font-bold">{conceptQuestions[5][cIdx].question}</p>
+            <div className="grid grid-cols-1 gap-2">
+              {conceptQuestions[5][cIdx].options.map(opt => (
+                <button
+                  key={opt.id}
+                  onClick={() => handleCheckConcept(opt.id)}
+                  disabled={cChecked}
+                  className={`p-3 rounded-xl border text-left text-xs font-semibold transition ${
+                    cSelected === opt.id
+                      ? cCorrect
+                        ? "border-accent-teal bg-accent-teal/15 text-white"
+                        : "border-red-500 bg-red-500/10 text-white"
+                      : "border-white/5 bg-zinc-950 text-zinc-300 hover:border-white/10"
+                  } ${cChecked && opt.id === conceptQuestions[5][cIdx].correctId ? "border-accent-teal bg-accent-teal/15 text-white" : ""}`}
+                >
+                  {opt.text}
+                </button>
+              ))}
+            </div>
+            {cChecked && (
+              <div className="animate-fade-in space-y-3">
+                <p className="text-xs text-zinc-400 leading-relaxed">{conceptQuestions[5][cIdx].explanation}</p>
+                <button
+                  onClick={handleNextConcept}
+                  className="bg-brand-500 hover:bg-brand-600 text-white px-5 py-2 rounded-xl text-xs font-bold transition cursor-pointer"
+                >
+                  Continue
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Screen 6: C5 - Everyday uses: age, price, phone digits */}
+      {step === 6 && (
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
+          <h2 className="text-3xl font-black text-white">Everyday Uses: Age, Price, Phone Digits</h2>
+          <p className="text-zinc-300 text-base leading-relaxed">
+            Understanding prices, ages, and phone numbers:
+          </p>
+          <ul className="list-disc list-inside space-y-2 text-zinc-300 pl-4 text-xs">
+            <li><strong>Prices:</strong> Always spoken in Sino-Korean (e.g. 5,000 Won = 오천 원).</li>
+            <li><strong>Phone Numbers:</strong> Delivered as individual Sino digits (e.g. 010 = 영일공).</li>
+            <li><strong>Age:</strong> Usually counted in Native Korean (e.g. 20 years old = 스무 살).</li>
+          </ul>
+
+          <div className="bg-zinc-900/60 p-6 rounded-2xl border border-white/5 space-y-4 max-w-xl">
+            <h4 className="text-xs font-black uppercase text-amber-400 tracking-wider">Concept Check</h4>
+            <p className="text-xs text-zinc-300 font-bold">{conceptQuestions[6][cIdx].question}</p>
+            <div className="grid grid-cols-1 gap-2">
+              {conceptQuestions[6][cIdx].options.map(opt => (
+                <button
+                  key={opt.id}
+                  onClick={() => handleCheckConcept(opt.id)}
+                  disabled={cChecked}
+                  className={`p-3 rounded-xl border text-left text-xs font-semibold transition ${
+                    cSelected === opt.id
+                      ? cCorrect
+                        ? "border-accent-teal bg-accent-teal/15 text-white"
+                        : "border-red-500 bg-red-500/10 text-white"
+                      : "border-white/5 bg-zinc-950 text-zinc-300 hover:border-white/10"
+                  } ${cChecked && opt.id === conceptQuestions[6][cIdx].correctId ? "border-accent-teal bg-accent-teal/15 text-white" : ""}`}
+                >
+                  {opt.text}
+                </button>
+              ))}
+            </div>
+            {cChecked && (
+              <div className="animate-fade-in space-y-3">
+                <p className="text-xs text-zinc-400 leading-relaxed">{conceptQuestions[6][cIdx].explanation}</p>
+                <button
+                  onClick={handleNextConcept}
+                  className="bg-brand-500 hover:bg-brand-600 text-white px-5 py-2 rounded-xl text-xs font-bold transition cursor-pointer"
+                >
+                  Continue
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Screen 7: Activity 1 – Sino-Korean numbers catalog & audio drills */}
+      {step === 7 && (
         <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
           <div className="flex justify-between items-center border-b border-white/5 pb-4">
             <h2 className="text-2xl font-black text-white flex items-center gap-2">
               <Sparkles className="w-6 h-6 text-brand-400" />
-              <span>Activity 1 – Numbers Listening</span>
+              <span>Activity 1 – Sino-Korean Numbers Catalog</span>
             </h2>
-            <span className="text-xs text-zinc-500 font-bold">Step 3 of {totalSteps}</span>
+            <span className="text-xs text-zinc-500 font-bold">Step 7 of {totalSteps}</span>
+          </div>
+
+          <p className="text-xs text-zinc-400">
+            Tap the cards to listen to audio. Complete the matching quiz for the active card below.
+          </p>
+
+          <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
+            {coreData?.numbers?.slice(0, 6).map((num: any, idx: number) => {
+              const isActive = activeCatalogIdx === idx;
+              const isFlipped = flippedNumDigit === num.digit;
+              return (
+                <div
+                  key={num.digit}
+                  onClick={() => {
+                    setActiveCatalogIdx(idx);
+                    setFlippedNumDigit(isFlipped ? null : num.digit);
+                    playAudio(num.ko);
+                    // Reset MCQ
+                    setCatalogChecked(false);
+                    setCatalogSelectedOpt(null);
+                    setCatalogCorrect(null);
+                  }}
+                  className={`glass-panel p-4 rounded-xl border text-center transition cursor-pointer flex flex-col items-center justify-center ${
+                    isActive ? "border-brand-500 bg-brand-500/5 shadow-md" : "border-white/5 bg-zinc-900/60 hover:bg-zinc-800"
+                  }`}
+                >
+                  {!isFlipped ? (
+                    <div className="space-y-1">
+                      <div className="text-lg font-black text-white font-korean">{num.ko}</div>
+                      <div className="text-[10px] text-zinc-500 font-mono">({num.digit})</div>
+                    </div>
+                  ) : (
+                    <div className="animate-fade-in">
+                      <span className="text-xs font-bold text-brand-400 block">{num.en}</span>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Catalog active drill */}
+          <div className="bg-zinc-900/60 p-6 rounded-2xl border border-white/5 space-y-4 max-w-xl mx-auto w-full text-left">
+            <h4 className="text-xs font-black uppercase text-amber-400 tracking-wider">Number Match: {coreData?.numbers?.[activeCatalogIdx]?.ko}</h4>
+            <p className="text-xs text-zinc-300 font-bold">Select the correct English translation mapping:</p>
+            <div className="grid grid-cols-3 gap-2">
+              <button
+                onClick={() => handleCheckCatalogCard("A")}
+                disabled={catalogChecked}
+                className={`p-3 rounded-xl border text-center text-xs font-bold transition ${
+                  catalogSelectedOpt === "A"
+                    ? catalogCorrect
+                      ? "border-accent-teal bg-accent-teal/15 text-white"
+                      : "border-red-500 bg-red-500/10 text-white"
+                    : "border-white/5 bg-zinc-950 text-zinc-400 hover:border-white/10"
+                } ${catalogChecked && (activeCatalogIdx !== 5 ? "A" === "A" : "B" === "B") ? "border-accent-teal bg-accent-teal/15 text-white" : ""}`}
+              >
+                {activeCatalogIdx === 5 ? "Six" : activeCatalogIdx === 0 ? "Zero" : activeCatalogIdx === 1 ? "One" : activeCatalogIdx === 2 ? "Two" : activeCatalogIdx === 3 ? "Three" : "Four"}
+              </button>
+
+              <button
+                onClick={() => handleCheckCatalogCard("B")}
+                disabled={catalogChecked}
+                className={`p-3 rounded-xl border text-center text-xs font-bold transition ${
+                  catalogSelectedOpt === "B"
+                    ? (activeCatalogIdx === 5 ? catalogCorrect : false)
+                      ? "border-accent-teal bg-accent-teal/15 text-white"
+                      : "border-red-500 bg-red-500/10 text-white"
+                    : "border-white/5 bg-zinc-950 text-zinc-400 hover:border-white/10"
+                } ${catalogChecked && activeCatalogIdx === 5 && "B" === "B" ? "border-accent-teal bg-accent-teal/15 text-white" : ""}`}
+              >
+                {activeCatalogIdx === 5 ? "Five" : "Ten"}
+              </button>
+
+              <button
+                onClick={() => handleCheckCatalogCard("C")}
+                disabled={catalogChecked}
+                className={`p-3 rounded-xl border text-center text-xs font-bold transition ${
+                  catalogSelectedOpt === "C"
+                    ? "border-red-500 bg-red-500/10 text-white"
+                    : "border-white/5 bg-zinc-950 text-zinc-400 hover:border-white/10"
+                }`}
+              >
+                Eight
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Screen 8: Activity 2 – Listening & recognition in simple sentences */}
+      {step === 8 && (
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
+          <div className="flex justify-between items-center border-b border-white/5 pb-4">
+            <h2 className="text-2xl font-black text-white flex items-center gap-2">
+              <Sparkles className="w-6 h-6 text-brand-400" />
+              <span>Activity 2 – Audio Number Recognition</span>
+            </h2>
+            <span className="text-xs text-zinc-500 font-bold">Step 8 of {totalSteps}</span>
           </div>
 
           {listeningItems.length === 0 ? (
             <div className="text-center py-6"><Loader2 className="w-8 h-8 animate-spin mx-auto text-brand-400" /></div>
           ) : (
-            <div className="space-y-6">
-              
-              <div className="bg-zinc-900/30 p-5 rounded-2xl border border-white/5 space-y-4">
-                <div className="text-center">
-                  <span className="text-[10px] text-zinc-500 font-bold uppercase block mb-1">
-                    {listeningItems[listeningIdx]?.context_type === "plain number" ? "Drill: Hear and choose the number" : "Drill: Extract number from sentence"}
-                  </span>
-                  
+            <div className="space-y-6 max-w-xl mx-auto w-full">
+              <div className="bg-zinc-900/30 p-6 rounded-2xl border border-white/5 space-y-4 text-center">
+                <p className="text-xs text-zinc-400">What digits did you hear?</p>
+                <div className="py-2">
                   <button
                     onClick={() => playAudio(listeningItems[listeningIdx]?.audio_text)}
-                    className="p-5 bg-brand-500/10 hover:bg-brand-500/20 text-brand-400 border border-brand-500/20 rounded-full mx-auto transition flex items-center justify-center shadow-lg cursor-pointer"
+                    className="p-5 bg-brand-500/10 hover:bg-brand-500/20 text-brand-400 border border-brand-500/20 rounded-full mx-auto transition flex items-center justify-center cursor-pointer"
                   >
                     <Volume2 className="w-8 h-8 animate-pulse" />
                   </button>
@@ -578,11 +1058,11 @@ export default function Course2Phase3NumbersWizard({
                       key={opt}
                       onClick={() => !listeningChecked && setSelectedListeningOpt(opt)}
                       disabled={listeningChecked}
-                      className={`p-3 rounded-xl border text-xs font-semibold transition ${
+                      className={`p-3 rounded-xl border text-center text-xs font-bold transition ${
                         selectedListeningOpt === opt
                           ? "border-brand-500 bg-brand-500/10 text-white"
-                          : "border-white/5 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-300"
-                      } ${listeningChecked && opt === listeningItems[listeningIdx]?.correct_digit ? "border-accent-teal bg-accent-teal/10" : ""}`}
+                          : "border-white/5 bg-zinc-950 text-zinc-300 hover:border-white/10"
+                      } ${listeningChecked && opt === listeningItems[listeningIdx]?.correct_digit ? "border-accent-teal bg-accent-teal/15 text-white" : ""} ${listeningChecked && selectedListeningOpt === opt && opt !== listeningItems[listeningIdx]?.correct_digit ? "border-red-500 bg-red-500/10 text-white" : ""}`}
                     >
                       {opt}
                     </button>
@@ -590,11 +1070,11 @@ export default function Course2Phase3NumbersWizard({
                 </div>
 
                 {listeningChecked && (
-                  <div className={`p-3 rounded-xl border text-xs space-y-1 ${
+                  <div className={`p-4 rounded-xl border text-xs text-left space-y-1 ${
                     listeningCorrect ? "bg-accent-teal/5 border-accent-teal/20 text-accent-teal" : "bg-red-500/5 border-red-500/10 text-red-400"
                   }`}>
                     <p className="font-extrabold">{listeningCorrect ? "Correct!" : "Incorrect."}</p>
-                    <p>Korean: <strong className="text-white">{listeningItems[listeningIdx]?.audio_text}</strong></p>
+                    <p>Korean script: <span className="text-white font-korean">{listeningItems[listeningIdx]?.audio_text}</span></p>
                   </div>
                 )}
 
@@ -603,7 +1083,7 @@ export default function Course2Phase3NumbersWizard({
                     <button
                       onClick={handleCheckListening}
                       disabled={!selectedListeningOpt}
-                      className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer"
+                      className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white px-5 py-2 rounded-xl text-xs font-bold transition cursor-pointer"
                     >
                       Check Answer
                     </button>
@@ -619,176 +1099,175 @@ export default function Course2Phase3NumbersWizard({
                           setListeningIdx(0);
                         }
                       }}
-                      className="bg-accent-teal text-zinc-950 hover:bg-accent-teal/90 px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer"
+                      className="bg-accent-teal text-zinc-950 hover:bg-accent-teal/90 px-5 py-2 rounded-xl text-xs font-bold transition cursor-pointer"
                     >
                       Next Audio Item
                     </button>
                   )}
                 </div>
               </div>
-
             </div>
           )}
-
-          <div className="flex justify-between items-center pt-4 border-t border-white/5">
-            <button onClick={() => setStep(2)} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-sm font-bold transition flex items-center gap-2 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
-            <button onClick={() => setStep(4)} className="bg-brand-500 hover:bg-brand-600 text-white px-8 py-3 rounded-xl text-sm font-bold transition flex items-center gap-2 cursor-pointer">Move to Activity 2 <ChevronRight className="w-4 h-4" /></button>
-          </div>
         </div>
       )}
 
-      {/* Screen 4: Activity 2: Simple Time & Facts */}
-      {step === 4 && (
+      {/* Screen 9: Activity 3 – Simple time clock-mapping */}
+      {step === 9 && (
         <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
           <div className="flex justify-between items-center border-b border-white/5 pb-4">
             <h2 className="text-2xl font-black text-white flex items-center gap-2">
               <Sparkles className="w-6 h-6 text-brand-400" />
-              <span>Activity 2 – Simple Time & Facts</span>
+              <span>Activity 3 – Simple Time Mapping</span>
             </h2>
-            <span className="text-xs text-zinc-500 font-bold">Step 4 of {totalSteps}</span>
+            <span className="text-xs text-zinc-500 font-bold">Step 9 of {totalSteps}</span>
           </div>
 
-          {/* Part A: Time recognition */}
-          <div className="bg-zinc-900/30 p-5 rounded-2xl border border-white/5 space-y-4">
-            <div className="text-left space-y-1">
-              <span className="text-[9px] text-zinc-500 font-black uppercase tracking-wider block">Part A: simple hours matching</span>
+          <div className="space-y-6 max-w-xl mx-auto w-full">
+            <div className="bg-zinc-900/30 p-6 rounded-2xl border border-white/5 space-y-4 text-center">
               <p className="text-xs text-zinc-300">Listen and select the corresponding clock hours for: <strong className="text-brand-300">"{timeItems[timeIdx]?.ko_phrase}"</strong></p>
-            </div>
-
-            <div className="flex justify-center py-1">
-              <button
-                onClick={() => playAudio(timeItems[timeIdx]?.audio_text)}
-                className="p-4 bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 border border-purple-500/20 rounded-full mx-auto transition flex items-center justify-center cursor-pointer animate-pulse"
-              >
-                <Volume2 className="w-6 h-6" />
-              </button>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2 max-w-sm mx-auto">
-              {timeItems[timeIdx]?.options?.map((opt: string) => (
+              
+              <div className="flex justify-center">
                 <button
-                  key={opt}
-                  onClick={() => !timeChecked && setSelectedTimeOpt(opt)}
-                  disabled={timeChecked}
-                  className={`p-2.5 rounded-xl border text-xs font-bold transition ${
-                    selectedTimeOpt === opt
-                      ? "border-brand-500 bg-brand-500/10 text-white"
-                      : "border-white/5 bg-zinc-950 text-zinc-400 hover:border-white/10"
-                  } ${timeChecked && opt === timeItems[timeIdx]?.correct_option_id ? "border-accent-teal bg-accent-teal/15 text-white" : ""}`}
+                  onClick={() => playAudio(timeItems[timeIdx]?.audio_text)}
+                  className="p-4 bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 border border-purple-500/20 rounded-full mx-auto transition flex items-center justify-center cursor-pointer animate-pulse"
                 >
-                  {opt}
+                  <Volume2 className="w-6 h-6" />
                 </button>
-              ))}
-            </div>
-
-            {timeChecked && (
-              <div className={`p-3 rounded-xl border text-xs text-center ${
-                timeCorrect ? "bg-accent-teal/5 border-accent-teal/20 text-accent-teal" : "bg-red-500/5 border-red-500/10 text-red-400"
-              }`}>
-                {timeCorrect ? "Correct!" : `Incorrect. Correct time is ${timeItems[timeIdx]?.correct_option_id}.`}
               </div>
-            )}
 
-            <div className="flex justify-end pt-1">
-              {!timeChecked ? (
-                <button
-                  onClick={handleCheckTime}
-                  disabled={!selectedTimeOpt}
-                  className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer"
-                >
-                  Verify Clock
-                </button>
-              ) : (
-                <button
-                  onClick={() => {
-                    setTimeChecked(false);
-                    setSelectedTimeOpt(null);
-                    setTimeCorrect(null);
-                    if (timeIdx < timeItems.length - 1) {
-                      setTimeIdx(timeIdx + 1);
-                    } else {
-                      setTimeIdx(0);
-                    }
-                  }}
-                  className="bg-accent-teal text-zinc-950 hover:bg-accent-teal/90 px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer"
-                >
-                  Next clock item
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* Part B: Everyday Facts */}
-          <div className="bg-zinc-900/30 p-5 rounded-2xl border border-white/5 space-y-4">
-            <div className="text-left space-y-1">
-              <span className="text-[9px] text-zinc-500 font-black uppercase tracking-wider block">Part B: Everyday facts (age, price, phone)</span>
-              <p className="text-xs text-zinc-300">{factsItems[factsIdx]?.question}</p>
-            </div>
-
-            <div className="grid grid-cols-1 gap-2">
-              {factsItems[factsIdx]?.options?.map((opt: string) => (
-                <button
-                  key={opt}
-                  onClick={() => !factsChecked && setSelectedFactOpt(opt)}
-                  disabled={factsChecked}
-                  className={`p-3 rounded-xl border text-left text-xs font-bold transition ${
-                    selectedFactOpt === opt
-                      ? "border-brand-500 bg-brand-500/10 text-white"
-                      : "border-white/5 bg-zinc-950 text-zinc-300 hover:border-white/10"
-                  } ${factsChecked && opt === factsItems[factsIdx]?.correct_answer ? "border-accent-teal bg-accent-teal/15 text-white" : ""}`}
-                >
-                  {opt}
-                </button>
-              ))}
-            </div>
-
-            {factsChecked && (
-              <div className={`p-3 rounded-xl border text-xs text-left space-y-1 ${
-                factsCorrect ? "bg-accent-teal/5 border-accent-teal/20 text-accent-teal" : "bg-red-500/5 border-red-500/10 text-red-400"
-              }`}>
-                <p className="font-bold">{factsCorrect ? "Correct!" : "Incorrect."}</p>
-                <p className="text-[11px] text-zinc-400">{factsItems[factsIdx]?.explanation}</p>
+              <div className="grid grid-cols-2 gap-2 max-w-sm mx-auto">
+                {timeItems[timeIdx]?.options?.map((opt: string) => (
+                  <button
+                    key={opt}
+                    onClick={() => !timeChecked && setSelectedTimeOpt(opt)}
+                    disabled={timeChecked}
+                    className={`p-3 rounded-xl border text-center text-xs font-bold transition ${
+                      selectedTimeOpt === opt
+                        ? "border-brand-500 bg-brand-500/10 text-white"
+                        : "border-white/5 bg-zinc-950 text-zinc-400 hover:border-white/10"
+                    } ${timeChecked && opt === timeItems[timeIdx]?.correct_option_id ? "border-accent-teal bg-accent-teal/15 text-white" : ""} ${timeChecked && selectedTimeOpt === opt && opt !== timeItems[timeIdx]?.correct_option_id ? "border-red-500 bg-red-500/10 text-white" : ""}`}
+                  >
+                    {opt}
+                  </button>
+                ))}
               </div>
-            )}
 
-            <div className="flex justify-end pt-1">
-              {!factsChecked ? (
-                <button
-                  onClick={handleCheckFacts}
-                  disabled={!selectedFactOpt}
-                  className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer"
-                >
-                  Check Fact
-                </button>
-              ) : (
-                <button
-                  onClick={() => {
-                    setFactsChecked(false);
-                    setSelectedFactOpt(null);
-                    setFactsCorrect(null);
-                    if (factsIdx < factsItems.length - 1) {
-                      setFactsIdx(factsIdx + 1);
-                    } else {
-                      setFactsIdx(0);
-                    }
-                  }}
-                  className="bg-accent-teal text-zinc-950 hover:bg-accent-teal/90 px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer"
-                >
-                  Next Fact Item
-                </button>
+              {timeChecked && (
+                <div className={`p-3 rounded-xl border text-xs text-center ${
+                  timeCorrect ? "bg-accent-teal/5 border-accent-teal/20 text-accent-teal" : "bg-red-500/5 border-red-500/10 text-red-400"
+                }`}>
+                  {timeCorrect ? "Correct!" : `Incorrect. Correct time is ${timeItems[timeIdx]?.correct_option_id}.`}
+                  <p className="text-[10px] text-zinc-500 mt-1 font-mono">Native numbers are used for clock hours.</p>
+                </div>
               )}
-            </div>
-          </div>
 
-          <div className="flex justify-between items-center pt-4 border-t border-white/5">
-            <button onClick={() => setStep(3)} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-sm font-bold transition flex items-center gap-2 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
-            <button onClick={() => setStep(5)} className="bg-brand-500 hover:bg-brand-600 text-white px-8 py-3 rounded-xl text-sm font-bold transition flex items-center gap-2 cursor-pointer">Start Mini-Quiz <ChevronRight className="w-4 h-4" /></button>
+              <div className="flex justify-end pt-1">
+                {!timeChecked ? (
+                  <button
+                    onClick={handleCheckTime}
+                    disabled={!selectedTimeOpt}
+                    className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white px-5 py-2 rounded-xl text-xs font-bold transition cursor-pointer"
+                  >
+                    Verify Clock
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => {
+                      setTimeChecked(false);
+                      setSelectedTimeOpt(null);
+                      setTimeCorrect(null);
+                      if (timeIdx < timeItems.length - 1) {
+                        setTimeIdx(timeIdx + 1);
+                      } else {
+                        setTimeIdx(0);
+                      }
+                    }}
+                    className="bg-accent-teal text-zinc-950 hover:bg-accent-teal/90 px-5 py-2 rounded-xl text-xs font-bold transition cursor-pointer"
+                  >
+                    Next clock item
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       )}
 
-      {/* Screen 5: Mini-Quiz Checkpoint */}
-      {step === 5 && (
+      {/* Screen 10: Activity 4 – Everyday facts: age, price, phone digits */}
+      {step === 10 && (
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
+          <div className="flex justify-between items-center border-b border-white/5 pb-4">
+            <h2 className="text-2xl font-black text-white flex items-center gap-2">
+              <Sparkles className="w-6 h-6 text-brand-400" />
+              <span>Activity 4 – Everyday Facts Scenarios</span>
+            </h2>
+            <span className="text-xs text-zinc-500 font-bold">Step 10 of {totalSteps}</span>
+          </div>
+
+          <div className="space-y-6 max-w-xl mx-auto w-full">
+            <div className="bg-zinc-900/30 p-6 rounded-2xl border border-white/5 space-y-4 text-left">
+              <p className="text-xs text-zinc-300 font-bold">{factsItems[factsIdx]?.question}</p>
+
+              <div className="grid grid-cols-1 gap-2">
+                {factsItems[factsIdx]?.options?.map((opt: string) => (
+                  <button
+                    key={opt}
+                    onClick={() => !factsChecked && setSelectedFactOpt(opt)}
+                    disabled={factsChecked}
+                    className={`p-3 rounded-xl border text-left text-xs font-bold transition ${
+                      selectedFactOpt === opt
+                        ? "border-brand-500 bg-brand-500/10 text-white"
+                        : "border-white/5 bg-zinc-950 text-zinc-400 hover:border-white/10"
+                    } ${factsChecked && opt === factsItems[factsIdx]?.correct_answer ? "border-accent-teal bg-accent-teal/15 text-white" : ""} ${factsChecked && selectedFactOpt === opt && opt !== factsItems[factsIdx]?.correct_answer ? "border-red-500 bg-red-500/10 text-white" : ""}`}
+                  >
+                    {opt}
+                  </button>
+                ))}
+              </div>
+
+              {factsChecked && (
+                <div className={`p-4 rounded-xl border text-xs space-y-1.5 ${
+                  factsCorrect ? "bg-accent-teal/5 border-accent-teal/20 text-accent-teal" : "bg-red-500/5 border-red-500/10 text-red-400"
+                }`}>
+                  <p className="font-bold">{factsCorrect ? "Correct!" : "Incorrect."}</p>
+                  <p className="text-zinc-400 leading-normal">{factsItems[factsIdx]?.explanation}</p>
+                </div>
+              )}
+
+              <div className="flex justify-end pt-1">
+                {!factsChecked ? (
+                  <button
+                    onClick={handleCheckFacts}
+                    disabled={!selectedFactOpt}
+                    className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white px-5 py-2 rounded-xl text-xs font-bold transition cursor-pointer"
+                  >
+                    Check Fact
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => {
+                      setFactsChecked(false);
+                      setSelectedFactOpt(null);
+                      setFactsCorrect(null);
+                      if (factsIdx < factsItems.length - 1) {
+                        setFactsIdx(factsIdx + 1);
+                      } else {
+                        setFactsIdx(0);
+                      }
+                    }}
+                    className="bg-accent-teal text-zinc-950 hover:bg-accent-teal/90 px-5 py-2 rounded-xl text-xs font-bold transition cursor-pointer"
+                  >
+                    Next Fact Item
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Screen 11: Activity 5 – Graduating checkpoint mini-quiz */}
+      {step === 11 && (
         <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
           <div className="flex justify-between items-center border-b border-white/5 pb-4">
             <h2 className="text-2xl font-black text-white flex items-center gap-2">
@@ -802,15 +1281,15 @@ export default function Course2Phase3NumbersWizard({
             <div className="text-center py-6"><Loader2 className="w-8 h-8 animate-spin mx-auto text-brand-400" /></div>
           ) : (
             <div className="space-y-6 max-w-xl mx-auto w-full">
-              <div className="p-4 bg-zinc-950 rounded-xl border border-white/5 text-xs text-center">
+              <div className="p-5 bg-zinc-950 rounded-2xl border border-white/5 text-center">
                 <span className="text-[10px] text-zinc-500 uppercase font-mono block">Question Prompt</span>
-                <p className="font-extrabold text-white text-base mt-1">{quizBlueprint[quizIdx]?.question}</p>
+                <p className="font-extrabold text-white text-base mt-2">{quizBlueprint[quizIdx]?.question}</p>
               </div>
 
               {quizBlueprint[quizIdx]?.type === "listening" && (
                 <div className="text-center space-y-4">
                   <button 
-                    onClick={() => playAudio(quizBlueprint[quizIdx]?.audio_url ? quizBlueprint[quizIdx]?.correct_answer : quizBlueprint[quizIdx]?.correct_answer)}
+                    onClick={() => playAudio(quizBlueprint[quizIdx]?.audio_text)}
                     className="p-5 bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 border border-purple-500/20 rounded-full mx-auto transition flex items-center justify-center cursor-pointer"
                   >
                     <Volume2 className="w-8 h-8" />
@@ -825,7 +1304,7 @@ export default function Course2Phase3NumbersWizard({
                           quizSelectedOpt === opt
                             ? "border-brand-500 bg-brand-500/10 text-white"
                             : "border-white/5 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-300"
-                        } ${quizChecked && opt === quizBlueprint[quizIdx]?.correct_answer ? "border-accent-teal bg-accent-teal/10" : ""}`}
+                        } ${quizChecked && opt === quizBlueprint[quizIdx]?.correct_answer ? "border-accent-teal bg-accent-teal/15 text-white" : ""} ${quizChecked && quizSelectedOpt === opt && opt !== quizBlueprint[quizIdx]?.correct_answer ? "border-red-500 bg-red-500/10 text-white" : ""}`}
                       >
                         {opt}
                       </button>
@@ -845,7 +1324,7 @@ export default function Course2Phase3NumbersWizard({
                         quizSelectedOpt === opt
                           ? "border-brand-500 bg-brand-500/10 text-white"
                           : "border-white/5 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-300"
-                      } ${quizChecked && opt === quizBlueprint[quizIdx]?.correct_answer ? "border-accent-teal bg-accent-teal/10 text-white" : ""}`}
+                      } ${quizChecked && opt === quizBlueprint[quizIdx]?.correct_answer ? "border-accent-teal bg-accent-teal/15 text-white animate-fade-in" : ""} ${quizChecked && quizSelectedOpt === opt && opt !== quizBlueprint[quizIdx]?.correct_answer ? "border-red-500 bg-red-500/10 text-white" : ""}`}
                     >
                       {opt}
                     </button>
@@ -881,8 +1360,6 @@ export default function Course2Phase3NumbersWizard({
 
               {quizBlueprint[quizIdx]?.type === "speaking" && (
                 <div className="space-y-4 text-center">
-                  <p className="text-xs text-zinc-400">Bonus: Read the target phrase aloud to practice pronunciation.</p>
-                  
                   <div className="flex justify-center items-center gap-3">
                     <button
                       onClick={(e) => {
@@ -942,7 +1419,7 @@ export default function Course2Phase3NumbersWizard({
                     disabled={
                       (quizBlueprint[quizIdx]?.type === "listening" || quizBlueprint[quizIdx]?.type === "context") 
                         ? !quizSelectedOpt 
-                        : !quizWritingAns.trim()
+                        : (quizBlueprint[quizIdx]?.type === "speaking" ? !speakingResult : !quizWritingAns.trim())
                     }
                     className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white px-5 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer"
                   >
@@ -972,8 +1449,8 @@ export default function Course2Phase3NumbersWizard({
         </div>
       )}
 
-      {/* Screen 6: Homework & Completion */}
-      {step === 6 && (
+      {/* Screen 12: Homework & Completion */}
+      {step === 12 && (
         <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center text-center animate-fade-in">
           <div className="p-3 bg-brand-500/10 rounded-full border border-brand-500/25 w-fit mx-auto text-brand-400 shrink-0 animate-bounce">
             <Award className="w-10 h-10" />
@@ -1044,7 +1521,12 @@ export default function Course2Phase3NumbersWizard({
           </div>
 
           <button
-            onClick={onComplete}
+            onClick={() => {
+              if (typeof window !== "undefined") {
+                window.dispatchEvent(new CustomEvent("hangeulai-xp", { detail: { amount: 150, type: 'correct' } }));
+              }
+              onComplete();
+            }}
             className="bg-gradient-to-r from-brand-500 to-amber-500 hover:from-brand-600 text-zinc-950 font-black py-4 px-8 rounded-2xl transition text-sm flex items-center justify-center gap-2 mx-auto shadow-lg shadow-brand-500/20 cursor-pointer w-full max-w-xs"
           >
             <span>Finish Phase 3 & Earn XP</span>
@@ -1054,7 +1536,7 @@ export default function Course2Phase3NumbersWizard({
       )}
       
       {/* Navigation bottom controls for non-quiz screens */}
-      {step < 5 && step > 1 && (
+      {step !== 11 && step !== 12 && step > 1 && (
         <div className="flex justify-between items-center py-4 border-t border-white/5 mt-6">
           <button 
             onClick={() => setStep(step - 1)} 

@@ -6,7 +6,8 @@ PHASE_1_DATA = {
     "goals": [
         "Greet people politely in Korean",
         "Say thank you, sorry, and excuse me",
-        "Respond with yes/no in simple daily situations"
+        "Respond with yes/no in simple daily situations",
+        "Choose appropriate goodbye expressions based on context"
     ],
     "prerequisites": "Hangeul Vowels & Consonants (Phase 1-6)",
     "status": "unlocked",
@@ -21,6 +22,8 @@ PHASE_1_DATA = {
         "- **죄송합니다 (Joe-song-ham-ni-da):** Sorry / Excuse me (Polite formal form)\n"
         "- **안녕히 계세요 (An-nyeong-hi gye-se-yo):** Goodbye (When you are leaving, and the other person is staying)\n"
         "- **안녕히 가세요 (An-nyeong-hi ga-se-yo):** Goodbye (When the other person is leaving, or both of you are leaving)\n"
+        "- **처음 뵙겠습니다 (Cheo-eum boep-get-seum-ni-da):** Nice to meet you (Formal, first meeting)\n"
+        "- **반갑습니다 (Ban-gap-seum-ni-da):** Glad to meet you\n"
         "- **네 (Ne):** Yes / Agreement\n"
         "- **아니요 (A-ni-yo):** No / Disagreement\n"
     ),
@@ -51,14 +54,28 @@ PHASE_1_DATA = {
             "korean": "안녕히 계세요",
             "romanization": "An-nyeong-hi gye-se-yo",
             "english": "Goodbye (to person staying)",
-            "usage": "Literally 'Please stay in peace.' Use when you leave and they stay."
+            "usage": "Literally 'Please stay well.' Use when you leave and they stay."
         },
         {
             "id": "exp_goodbye_go",
             "korean": "안녕히 가세요",
             "romanization": "An-nyeong-hi ga-se-yo",
             "english": "Goodbye (to person leaving)",
-            "usage": "Literally 'Please go in peace.' Use when they leave (or both leave)."
+            "usage": "Literally 'Please go well.' Use when they leave (or both leave)."
+        },
+        {
+            "id": "exp_first_meet",
+            "korean": "처음 뵙겠습니다",
+            "romanization": "Cheo-eum boep-get-seum-ni-da",
+            "english": "Nice to meet you",
+            "usage": "Formal greeting used specifically during a first-time meeting."
+        },
+        {
+            "id": "exp_nice_meet",
+            "korean": "반갑습니다",
+            "romanization": "Ban-gap-seum-ni-da",
+            "english": "Glad to meet you",
+            "usage": "Used to express joy upon meeting or being introduced to someone."
         },
         {
             "id": "exp_yes",
@@ -82,7 +99,8 @@ PHASE_1_DATA = {
             "options": [
                 {"id": "opt_hello", "text": "Hello"},
                 {"id": "opt_thanks", "text": "Thank you"},
-                {"id": "opt_sorry", "text": "I'm sorry"}
+                {"id": "opt_sorry", "text": "I'm sorry"},
+                {"id": "opt_bye", "text": "Goodbye"}
             ],
             "correct_option_id": "opt_hello",
             "korean": "안녕하세요",
@@ -94,7 +112,8 @@ PHASE_1_DATA = {
             "options": [
                 {"id": "opt_bye", "text": "Goodbye"},
                 {"id": "opt_thanks", "text": "Thank you"},
-                {"id": "opt_no", "text": "No"}
+                {"id": "opt_no", "text": "No"},
+                {"id": "opt_hello", "text": "Hello"}
             ],
             "correct_option_id": "opt_thanks",
             "korean": "감사합니다",
@@ -106,7 +125,8 @@ PHASE_1_DATA = {
             "options": [
                 {"id": "opt_yes", "text": "Yes"},
                 {"id": "opt_hello", "text": "Hello"},
-                {"id": "opt_sorry", "text": "I'm sorry / Excuse me"}
+                {"id": "opt_sorry", "text": "I'm sorry / Excuse me"},
+                {"id": "opt_bye", "text": "Goodbye"}
             ],
             "correct_option_id": "opt_sorry",
             "korean": "죄송합니다",
@@ -116,19 +136,37 @@ PHASE_1_DATA = {
             "id": "lis_g4",
             "audio_text": "안녕히 계세요",
             "options": [
-                {"id": "opt_bye_stay", "text": "Goodbye (stay)"},
-                {"id": "opt_bye_go", "text": "Goodbye (go)"},
-                {"id": "opt_hello", "text": "Hello"}
+                {"id": "opt_bye_stay", "text": "Goodbye (you leave, they stay)"},
+                {"id": "opt_bye_go", "text": "Goodbye (they leave, you stay)"},
+                {"id": "opt_hello", "text": "Hello"},
+                {"id": "opt_sorry", "text": "I'm sorry"}
             ],
             "correct_option_id": "opt_bye_stay",
             "korean": "안녕히 계세요",
             "romanization": "An-nyeong-hi gye-se-yo"
+        },
+        {
+            "id": "lis_g5",
+            "audio_text": "안녕히 가세요",
+            "options": [
+                {"id": "opt_bye_stay", "text": "Goodbye (you leave, they stay)"},
+                {"id": "opt_bye_go", "text": "Goodbye (they leave, you stay)"},
+                {"id": "opt_hello", "text": "Hello"},
+                {"id": "opt_thanks", "text": "Thank you"}
+            ],
+            "correct_option_id": "opt_bye_go",
+            "korean": "안녕히 가세요",
+            "romanization": "An-nyeong-hi ga-se-yo"
         }
     ],
     "practice_matching": [
         {"ko": "안녕하세요", "en": "Hello"},
         {"ko": "감사합니다", "en": "Thank you"},
         {"ko": "죄송합니다", "en": "I'm sorry"},
+        {"ko": "안녕히 계세요", "en": "Goodbye (you leave)"},
+        {"ko": "안녕히 가세요", "en": "Goodbye (they leave)"},
+        {"ko": "처음 뵙겠습니다", "en": "Nice to meet you"},
+        {"ko": "반갑습니다", "en": "Glad to meet you"},
         {"ko": "네", "en": "Yes"},
         {"ko": "아니요", "en": "No"}
     ],
@@ -136,26 +174,38 @@ PHASE_1_DATA = {
         {
             "id": "gf_g1",
             "prompt": "You meet someone for the first time.",
-            "koreanTemplate": "[ ]세요!",
+            "koreanTemplate": "안녕[ ]세요!",
             "options": [
-                {"id": "opt_gf_1", "text": "안녕핫"},
-                {"id": "opt_gf_2", "text": "안녕하"},
-                {"id": "opt_gf_3", "text": "감사합"}
+                {"id": "opt_gf_1", "text": "하"},
+                {"id": "opt_gf_2", "text": "핫"},
+                {"id": "opt_gf_3", "text": "히"}
             ],
-            "correct_option_id": "opt_gf_2",
+            "correct_option_id": "opt_gf_1",
             "explanation": "안녕하세요 is the standard polite greeting. The root is '안녕하' (to be at peace)."
         },
         {
             "id": "gf_g2",
             "prompt": "You want to say 'Thank you' formally.",
-            "koreanTemplate": "감사합[ ].",
+            "koreanTemplate": "감사합[ ]다.",
             "options": [
-                {"id": "opt_gf_b1", "text": "네"},
-                {"id": "opt_gf_b2", "text": "니다"},
-                {"id": "opt_gf_b3", "text": "가요"}
+                {"id": "opt_gf_b1", "text": "니"},
+                {"id": "opt_gf_b2", "text": "디"},
+                {"id": "opt_gf_b3", "text": "이"}
             ],
-            "correct_option_id": "opt_gf_b2",
-            "explanation": "감사합니다 is completed with '-니다' (formal polite ending)."
+            "correct_option_id": "opt_gf_b1",
+            "explanation": "감사합니다 style uses 합니다, not 합니이다. It is completed with '니'."
+        },
+        {
+            "id": "gf_g3",
+            "prompt": "You are leaving, and the other person is staying.",
+            "koreanTemplate": "안녕히 [ ]세요.",
+            "options": [
+                {"id": "opt_gf_c1", "text": "가"},
+                {"id": "opt_gf_c2", "text": "계"},
+                {"id": "opt_gf_c3", "text": "하"}
+            ],
+            "correct_option_id": "opt_gf_c2",
+            "explanation": "안녕히 계세요 is used when you are leaving and the other person stays (계시다 = to stay/exist)."
         }
     ],
     "practice_context": [
@@ -183,22 +233,33 @@ PHASE_1_DATA = {
         },
         {
             "id": "ctx_g3",
-            "scenario": "You are leaving a cafe while the staff/baristas remain inside.",
+            "scenario": "You leave a café; the staff stays inside.",
             "options": [
                 {"id": "opt_ctx_c1", "text": "안녕히 계세요"},
                 {"id": "opt_ctx_c2", "text": "안녕히 가세요"},
-                {"id": "opt_ctx_c3", "text": "아니요"}
+                {"id": "opt_ctx_c3", "text": "안녕하세요"}
             ],
             "correct_option_id": "opt_ctx_c1",
-            "explanation": "Use '안녕히 계세요' (Please stay in peace) when you are leaving and the other party stays."
+            "explanation": "Use '안녕히 계세요' (Please stay well) when you are leaving and the other party stays."
+        },
+        {
+            "id": "ctx_g4",
+            "scenario": "Your friend leaves your house while you stay inside.",
+            "options": [
+                {"id": "opt_ctx_d1", "text": "안녕히 계세요"},
+                {"id": "opt_ctx_d2", "text": "안녕히 가세요"},
+                {"id": "opt_ctx_d3", "text": "반갑습니다"}
+            ],
+            "correct_option_id": "opt_ctx_d2",
+            "explanation": "Use '안녕히 가세요' (Please go well) when the other person is leaving."
         }
     ],
     "quiz": [
-        {"id": "q_lis_1", "type": "listening", "question": "Listen and select the meaning of the spoken phrase:", "audio_text": "안녕하세요", "options": ["Hello", "Thank you", "Yes"], "correct_answer": "Hello", "explanation": "안녕하세요 means Hello."},
-        {"id": "q_lis_2", "type": "listening", "question": "Listen and select the meaning of the spoken phrase:", "audio_text": "감사합니다", "options": ["No", "Goodbye", "Thank you"], "correct_answer": "Thank you", "explanation": "감사합니다 means Thank you."},
-        {"id": "q_ctx_3", "type": "context", "question": "Choose the best polite response: Someone says '고마워요' (Thank you) and asks if you are okay, you want to reply 'Yes, I'm okay' starting with:", "options": ["네", "아니요", "죄송합니다"], "correct_answer": "네", "explanation": "네 is the polite form for Yes."},
-        {"id": "q_ctx_4", "type": "context", "question": "You leave a friend's house while they stay home. What do you say?", "options": ["안녕히 가세요", "안녕히 계세요", "안녕하세요"], "correct_answer": "안녕히 계세요", "explanation": "안녕히 계세요 is used when you are leaving and the other person is staying."},
-        {"id": "q_type_5", "type": "writing", "question": "Type the polite Hangeul word for 'Yes' (네):", "correct_answer": "네", "explanation": "네 is polite yes in Korean."},
+        {"id": "q_lis_1", "type": "listening", "question": "Listen and select the meaning of the spoken phrase:", "audio_text": "안녕하세요", "options": ["Hello", "Thank you", "Yes", "Goodbye"], "correct_answer": "Hello", "explanation": "안녕하세요 means Hello."},
+        {"id": "q_lis_2", "type": "listening", "question": "Listen and select the meaning of the spoken phrase:", "audio_text": "감사합니다", "options": ["No", "Goodbye", "Thank you", "Sorry"], "correct_answer": "Thank you", "explanation": "감사합니다 means Thank you."},
+        {"id": "q_ctx_3", "type": "context", "question": "Choose the best polite response: Someone says '고마워요' (Thank you) and asks if you are okay, you want to reply 'Yes, I'm okay' starting with:", "options": ["네", "아니요", "죄송합니다", "안녕하세요"], "correct_answer": "네", "explanation": "네 is the polite form for Yes."},
+        {"id": "q_ctx_4", "type": "context", "question": "You leave a friend's house while they stay home. What do you say?", "options": ["안녕히 가세요", "안녕히 계세요", "안녕하세요", "반갑습니다"], "correct_answer": "안녕히 계세요", "explanation": "안녕히 계세요 is used when you are leaving and the other person is staying."},
+        {"id": "q_type_5", "type": "writing", "question": "Complete the gap-fill: 감사합[ ]다.", "options": ["니", "디", "이"], "correct_answer": "니", "explanation": "합니다 is completed with '니'."},
         {"id": "q_speak_6", "type": "speaking", "question": "Say hello politely to your teacher:", "correct_answer": "안녕하세요", "explanation": "안녕하세요 is the standard polite greeting 'Hello'."}
     ],
     "homework": [
@@ -207,3 +268,4 @@ PHASE_1_DATA = {
         {"id": "hw_3", "text": "Greet at least one person politely (or practice in front of a mirror) using '안녕하세요'."}
     ]
 }
+

@@ -128,7 +128,7 @@ PHASE_6_DATA = {
         {
             "id": "q_conv_4",
             "type": "writing",
-            "question": "Complete the response: '어디예요?' -> '[ ]에 있어요.' (I am at home. Hint: home is 집)",
+            "question": "Complete the response: '어디예요?' -> '[ ]에 있어요.' (Meaning 'I am at home.')",
             "correct_answer": "집",
             "explanation": "'집' means home. Attached to '에 있어요', it translates to 'I am at home'."
         }

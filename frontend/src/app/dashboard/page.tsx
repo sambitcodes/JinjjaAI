@@ -320,6 +320,51 @@ function MasteryBar({ label, value, color, emoji, sublabel }: { label: string; v
   );
 }
 
+const parseInlineMarkdown = (text: string) => {
+  if (!text) return "";
+  const parts = text.split(/\*\*([^*]+)\*\*/g);
+  return parts.map((part, i) => {
+    if (i % 2 === 1) {
+      return <strong key={i} className="text-white font-bold">{part}</strong>;
+    }
+    return part;
+  });
+};
+
+const renderMarkdown = (text: string | null) => {
+  if (!text) return null;
+  const lines = text.split("\n");
+  return lines.map((line, idx) => {
+    const trimmed = line.trim();
+    if (!trimmed) return <div key={idx} className="h-2" />;
+
+    if (trimmed.startsWith("### ")) {
+      return <h3 key={idx} className="text-sm font-extrabold text-teal-300 mt-4 mb-2">{trimmed.slice(4)}</h3>;
+    }
+    if (trimmed.startsWith("## ")) {
+      return <h2 key={idx} className="text-base font-black text-white mt-5 mb-2.5 border-b border-white/5 pb-1">{trimmed.slice(3)}</h2>;
+    }
+    if (trimmed.startsWith("# ")) {
+      return <h1 key={idx} className="text-lg font-black text-amber-400 mt-6 mb-3">{trimmed.slice(2)}</h1>;
+    }
+
+    if (trimmed.startsWith("- ") || trimmed.startsWith("* ")) {
+      const content = trimmed.slice(2);
+      return (
+        <li key={idx} className="ml-4 list-disc text-xs text-zinc-300 leading-relaxed my-1">
+          {parseInlineMarkdown(content)}
+        </li>
+      );
+    }
+
+    return (
+      <p key={idx} className="text-xs text-zinc-300 leading-relaxed my-1.5">
+        {parseInlineMarkdown(trimmed)}
+      </p>
+    );
+  });
+};
+
 // ─────────────────────────────────────────────────────────────────────────────
 // MAIN DASHBOARD COMPONENT
 // ─────────────────────────────────────────────────────────────────────────────
@@ -329,9 +374,12 @@ export default function Dashboard() {
   const [stats, setStats] = useState<StatsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<DashTab>("overview");
+  const [activitySummary, setActivitySummary] = useState<string | null>(null);
+  const [loadingSummary, setLoadingSummary] = useState(false);
 
   // Course progress from localStorage
   const [courseStates, setCourseStates] = useState<Record<number, CourseState>>({});
+
 
   // Quiz accuracy from localStorage (written by lessons page)
   const [quizAccuracy, setQuizAccuracy] = useState({ correct: 0, total: 0 });
@@ -471,12 +519,24 @@ export default function Dashboard() {
           localStorage.setItem("hangeulai_scheduled_courses", JSON.stringify(profileData.scheduled_courses));
         }
       }
+
+      // Fetch AI Activity summary
+      setLoadingSummary(true);
+      try {
+        const resSum = await apiRequest("/progress/activity-summary");
+        setActivitySummary(resSum.summary);
+      } catch (err) {
+        console.error("Failed to load activity summary:", err);
+      } finally {
+        setLoadingSummary(false);
+      }
     } catch (err) {
       console.error("Dashboard load failed:", err);
     } finally {
       setLoading(false);
     }
   };
+
 
   useEffect(() => {
     loadDashboardData();
@@ -675,7 +735,7 @@ export default function Dashboard() {
       <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-blue-600/3 rounded-full blur-[180px] pointer-events-none" />
       <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-amber-600/3 rounded-full blur-[160px] pointer-events-none" />
 
-      <div className="max-w-7xl mx-auto p-4 md:p-6 flex flex-col lg:flex-row gap-6 relative z-10">
+      <div className="w-full max-w-[98%] mx-auto p-4 md:p-6 flex flex-col lg:flex-row gap-6 relative z-10">
 
         {/* ═══════════════════════════════════════════════════════
             LEFT SIDEBAR — Profile + Stats
@@ -989,7 +1049,67 @@ export default function Dashboard() {
                 {ALL_COURSES.map(course => {
                   const state: CourseState = courseStates[course.id] || { lastPhase: 0, completedPhases: [], totalXP: 0, lastVisited: null };
                   const completedCount = state.completedPhases.length;
-                  const progressPct = Math.round((completedCount / course.phases) * 100);
+
+                  // ── Improved percentage calculation logic ──
+                  const getCourseDetailedProgress = (courseId: number, completedPhases: number[], lastPhase: number) => {
+                    const totalPhases = 6;
+                    let totalPercentage = 0;
+                    for (let p = 1; p <= totalPhases; p++) {
+                      if (completedPhases.includes(p)) {
+                        totalPercentage += 100;
+                      } else if (p === lastPhase) {
+                        let stepKey = "";
+                        let totalSteps = 12;
+                        if (courseId === 1) {
+                          stepKey = `hangeulai_phase${p}_step`;
+                        } else if (courseId === 2) {
+                          stepKey = `hangeulai_c1p${p}_step`;
+                        } else if (courseId === 3) {
+                          stepKey = `hangeulai_c3p${p}_step`;
+                          if (p === 6) totalSteps = 9;
+                        }
+                        if (stepKey && typeof window !== "undefined") {
+                          const savedStep = localStorage.getItem(stepKey);
+                          if (savedStep) {
+                            const stepVal = parseInt(savedStep, 10);
+                            if (stepVal > 0) {
+                              totalPercentage += Math.min(99, Math.round((stepVal / totalSteps) * 100));
+                            }
+                          }
+                        }
+                      }
+                    }
+                    return Math.round(totalPercentage / totalPhases);
+                  };
+
+                  const getLastVisitedPhaseProgress = (courseId: number, lastPhase: number, completedPhases: number[]) => {
+                    if (!lastPhase) return null;
+                    if (completedPhases.includes(lastPhase)) return 100;
+                    let stepKey = "";
+                    let totalSteps = 12;
+                    if (courseId === 1) {
+                      stepKey = `hangeulai_phase${lastPhase}_step`;
+                    } else if (courseId === 2) {
+                      stepKey = `hangeulai_c1p${lastPhase}_step`;
+                    } else if (courseId === 3) {
+                      stepKey = `hangeulai_c3p${lastPhase}_step`;
+                      if (lastPhase === 6) totalSteps = 9;
+                    }
+                    if (stepKey && typeof window !== "undefined") {
+                      const savedStep = localStorage.getItem(stepKey);
+                      if (savedStep) {
+                        const stepVal = parseInt(savedStep, 10);
+                        if (stepVal > 0) {
+                          return Math.min(99, Math.round((stepVal / totalSteps) * 100));
+                        }
+                      }
+                    }
+                    return 0;
+                  };
+
+                  const progressPct = getCourseDetailedProgress(course.id, state.completedPhases, state.lastPhase);
+                  const lastPhaseProgress = getLastVisitedPhaseProgress(course.id, state.lastPhase, state.completedPhases);
+
                   const xpEarned = state.totalXP || completedCount * course.xpPerPhase;
                   const maxXP = course.phases * course.xpPerPhase;
                   const isStarted = completedCount > 0 || state.lastPhase > 0;
@@ -1000,17 +1120,25 @@ export default function Dashboard() {
                         <div className="flex flex-col md:flex-row md:items-start gap-4">
                           <div className="flex-1 min-w-0 space-y-3">
                             {/* Course header */}
-                            <div className="flex flex-wrap items-center gap-2">
-                              <span className="text-2xl">{course.badge}</span>
-                              <div>
-                                <div className="flex items-center gap-2 flex-wrap">
-                                  <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">{course.subtitle}</span>
-                                  <span className="text-[9px] font-black px-2 py-0.5 rounded-full border" style={{ color: course.accent, borderColor: course.accent + "40", background: course.accent + "15" }}>{course.cefr}</span>
-                                  <span className="text-[9px] font-bold text-zinc-500 bg-zinc-950/60 px-2 py-0.5 rounded border border-white/5">{course.duration}</span>
-                                  {isStarted && <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">In Progress</span>}
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                              <div className="flex items-center gap-2">
+                                <span className="text-2xl">{course.badge}</span>
+                                <div>
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">{course.subtitle}</span>
+                                    <span className="text-[9px] font-black px-2 py-0.5 rounded-full border" style={{ color: course.accent, borderColor: course.accent + "40", background: course.accent + "15" }}>{course.cefr}</span>
+                                    <span className="text-[9px] font-bold text-zinc-500 bg-zinc-950/60 px-2 py-0.5 rounded border border-white/5">{course.duration}</span>
+                                    {isStarted && <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">In Progress</span>}
+                                  </div>
+                                  <h3 className="text-lg font-black text-white mt-0.5">{course.title}</h3>
                                 </div>
-                                <h3 className="text-lg font-black text-white mt-0.5">{course.title}</h3>
                               </div>
+
+                              {lastPhaseProgress !== null && lastPhaseProgress > 0 && (
+                                <div className="text-[10px] bg-zinc-950/80 px-2.5 py-1 rounded-lg border border-white/5 text-zinc-400 font-mono">
+                                  Phase {state.lastPhase} (Last Visited): <strong className="text-amber-400">{lastPhaseProgress}%</strong>
+                                </div>
+                              )}
                             </div>
                             <p className="text-xs text-zinc-400 leading-relaxed">{course.description}</p>
 
@@ -1041,7 +1169,7 @@ export default function Dashboard() {
                             <div className="space-y-1">
                               <div className="flex justify-between text-xs text-zinc-500">
                                 <span className="font-bold">{completedCount}/{course.phases} phases complete</span>
-                                <span className="font-mono font-bold">{progressPct}%</span>
+                                <span className="font-mono font-bold">{progressPct}% Overall Progress</span>
                               </div>
                               <div className="h-2 w-full bg-zinc-900/80 rounded-full overflow-hidden border border-white/5">
                                 <div
@@ -1078,6 +1206,7 @@ export default function Dashboard() {
                     </div>
                   );
                 })}
+
               </div>
             </div>
           )}
@@ -1238,6 +1367,30 @@ export default function Dashboard() {
                     );
                   })}
                 </div>
+              </section>
+
+              {/* AI Learning Summary */}
+              <section className="glass-panel p-6 rounded-3xl border border-teal-500/20 bg-gradient-to-r from-teal-950/10 via-zinc-900/30 to-zinc-950 relative overflow-hidden space-y-4">
+                <div className="absolute top-0 right-0 w-[150px] h-[150px] bg-teal-500/5 rounded-full blur-[40px] pointer-events-none" />
+                <div className="flex items-center justify-between border-b border-white/5 pb-3">
+                  <h3 className="font-bold text-white flex items-center gap-2">
+                    <Sparkles className="w-5 h-5 text-teal-400 animate-pulse" />
+                    AI Study Assistant Summary (Groq)
+                  </h3>
+                  {loadingSummary && <Loader2 className="w-4 h-4 text-teal-400 animate-spin" />}
+                </div>
+                {loadingSummary ? (
+                  <div className="flex flex-col items-center justify-center py-8 gap-2">
+                    <Loader2 className="w-8 h-8 text-teal-400 animate-spin" />
+                    <span className="text-xs text-zinc-400">Gwan-Sik is compiling your learning history...</span>
+                  </div>
+                ) : activitySummary ? (
+                  <div className="space-y-1 font-sans text-left">
+                    {renderMarkdown(activitySummary)}
+                  </div>
+                ) : (
+                  <p className="text-xs text-zinc-500 italic text-left">No summary generated. Start studying to see your personalized summary!</p>
+                )}
               </section>
 
               {/* Recent Activity Timeline */}

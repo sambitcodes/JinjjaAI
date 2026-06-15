@@ -469,7 +469,7 @@ export default function BenchmarkDashboard() {
   const rankedModels = [...brainModels].sort((a, b) => textAvgScore(b) - textAvgScore(a));
 
   return (
-    <div className="space-y-8 max-w-7xl mx-auto p-4 md:p-6 text-zinc-300 pb-16 relative">
+    <div className="space-y-8 w-full max-w-[98%] mx-auto p-4 md:p-6 text-zinc-300 pb-16 relative">
       {/* Background glowing decorations */}
       <div className="absolute -top-10 left-1/4 w-[400px] h-[400px] bg-gradient-to-tr from-purple-500/10 to-indigo-500/5 rounded-full blur-[140px] pointer-events-none animate-pulse duration-10000" />
       <div className="absolute bottom-10 right-1/4 w-[450px] h-[450px] bg-gradient-to-tr from-cyan-500/10 to-blue-500/5 rounded-full blur-[160px] pointer-events-none animate-pulse duration-8000" />

@@ -208,7 +208,7 @@ export default function GamesArcade() {
   }
 
   return (
-    <div className="min-h-screen text-foreground relative pb-16 overflow-hidden">
+    <div className="min-h-screen text-foreground relative pb-16 overflow-hidden w-full max-w-[98%] mx-auto px-4 md:px-6">
       
       {/* Background ambient depth glows */}
       <div className="absolute -top-10 left-1/4 w-[400px] h-[400px] bg-gradient-to-tr from-purple-500/10 to-indigo-500/5 rounded-full blur-[140px] pointer-events-none animate-pulse duration-10000" />
@@ -228,7 +228,7 @@ export default function GamesArcade() {
           ARCADE DASHBOARD HUB
           ───────────────────────────────────────────────────────────────────────────── */}
       {activeTab === "arcade" && (
-        <div className="space-y-10 relative z-10 max-w-6xl mx-auto">
+        <div className="space-y-10 relative z-10 w-full max-w-none">
           {/* Hero Header */}
           <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-purple-950/20 via-zinc-900/60 to-zinc-950 p-6 md:p-8 shadow-2xl transition-all hover:border-purple-500/20 duration-500 group">
             {/* Glow orbs */}
@@ -270,7 +270,7 @@ export default function GamesArcade() {
           </div>
 
           {/* Game Catalog Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
             
             {/* Tangerine Orchard Card */}
             <div 

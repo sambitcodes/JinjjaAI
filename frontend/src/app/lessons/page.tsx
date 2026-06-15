@@ -752,7 +752,7 @@ export default function LessonPlayer() {
 
   if (lessons.length === 0 || showCourseSelector) {
     return (
-      <div className="min-h-screen text-foreground max-w-7xl mx-auto p-4 md:p-8 flex flex-col justify-center items-center relative overflow-hidden font-sans">
+      <div className="min-h-screen text-foreground w-full max-w-[98%] mx-auto p-4 md:p-8 flex flex-col justify-center items-center relative overflow-hidden font-sans">
         
         {/* Background glowing decorations */}
         <div className="absolute -top-10 left-1/4 w-[400px] h-[400px] bg-gradient-to-tr from-purple-500/10 to-indigo-500/5 rounded-full blur-[140px] pointer-events-none animate-pulse duration-10000" />
@@ -811,7 +811,7 @@ export default function LessonPlayer() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full z-10 max-w-6xl">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 w-full z-10 max-w-none">
           {courses.map((course) => {
             const isStarted = courseStates[course.id] && courseStates[course.id].completedPhases && courseStates[course.id].completedPhases.length > 0;
             return (
@@ -883,7 +883,7 @@ export default function LessonPlayer() {
   console.log("LessonPlayer Render: activeIdx =", activeIdx, "lessons length =", lessons.length, "active title =", activeLesson?.title);
 
   return (
-    <div className="min-h-screen text-foreground p-6 flex flex-col relative overflow-hidden transition-all duration-300 w-full max-w-[1700px] mx-auto">
+    <div className="min-h-screen text-foreground p-6 flex flex-col relative overflow-hidden transition-all duration-300 w-full max-w-[98%] mx-auto">
       
       {/* Background glowing decorations */}
       <div className="absolute -top-10 left-1/4 w-[400px] h-[400px] bg-gradient-to-tr from-purple-500/10 to-indigo-500/5 rounded-full blur-[140px] pointer-events-none animate-pulse duration-10000" />

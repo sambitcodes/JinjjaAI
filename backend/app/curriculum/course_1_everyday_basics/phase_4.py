@@ -74,11 +74,45 @@ PHASE_4_DATA = {
         ]
     },
     "quiz": [
-        {"id": "q_rout_1", "type": "listening", "question": "Hear the daily routine phrase and select the correct meaning:", "audio_text": "공부해요", "options": ["to study", "to work", "to eat", "to sleep"], "correct_answer": "to study", "explanation": "공부해요 (gong-bu-hae-yo) means '(I) study'."},
-        {"id": "q_rout_2", "type": "context", "question": "Translate: '저는 집에 가요.'", "options": ["I go home.", "I study at home.", "I sleep at home."], "correct_answer": "I go home.", "explanation": "집 means home, 가요 means go. '저는 집에 가요' = 'I go home.'"},
-        {"id": "q_rout_3", "type": "context", "question": "Complete the polite present habit: '저는 밥을 [ ].' (I eat a meal/rice.)", "options": ["가요", "먹어요", "일해요"], "correct_answer": "먹어요", "explanation": "먹어요 is the polite present form of 먹다 (to eat)."},
-        {"id": "q_rout_4", "type": "writing", "question": "Type the polite form of 'to work' (일해요):", "correct_answer": "일해요", "explanation": "일하다 conjugates to 일해요 in polite speech."},
-        {"id": "q_rout_5", "type": "speaking", "question": "Read this routine sentence aloud: '저는 한국어를 공부해요'", "correct_answer": "저는 한국어를 공부해요", "explanation": "This reads 'I study Korean'."}
+        {
+            "id": "q_rout_1", 
+            "type": "listening", 
+            "question": "Hear the daily routine phrase and select the correct meaning:", 
+            "audio_text": "공부해요", 
+            "options": ["to study", "to work", "to eat", "to sleep"], 
+            "correct_answer": "to study", 
+            "explanation": "공부해요 (gong-bu-hae-yo) means '(I) study'."
+        },
+        {
+            "id": "q_rout_2", 
+            "type": "context", 
+            "question": "Translate: '저는 집에 가요.'", 
+            "options": ["I go home.", "I study at home.", "I sleep at home."], 
+            "correct_answer": "I go home.", 
+            "explanation": "집 means home, 가요 means go. '저는 집에 가요' = 'I go home.'"
+        },
+        {
+            "id": "q_rout_3", 
+            "type": "context", 
+            "question": "Complete the polite present habit: '저는 밥을 [ ].' (I eat a meal/rice.)", 
+            "options": ["가요", "먹어요", "일해요"], 
+            "correct_answer": "먹어요", 
+            "explanation": "먹어요 is the polite present form of 먹다 (to eat)."
+        },
+        {
+            "id": "q_rout_4", 
+            "type": "writing", 
+            "question": "Type the polite present form of the verb meaning 'to work' (일하다):", 
+            "correct_answer": "일해요", 
+            "explanation": "일하다 conjugates to 일해요 in polite speech."
+        },
+        {
+            "id": "q_rout_5", 
+            "type": "speaking", 
+            "question": "Read this routine sentence aloud: '저는 한국어를 공부해요'", 
+            "correct_answer": "저는 한국어를 공부해요", 
+            "explanation": "This reads 'I study Korean'."
+        }
     ],
     "homework": [
         {"id": "hw_rout_1", "text": "Write 3 simple Korean sentences describing your morning, daytime, and evening routine."},
@@ -86,3 +120,4 @@ PHASE_4_DATA = {
         {"id": "hw_rout_3", "text": "Record your routine sentences on a voice recorder and check the verb endings."}
     ]
 }
+

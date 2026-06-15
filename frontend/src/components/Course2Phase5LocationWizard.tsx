@@ -10,7 +10,9 @@ import {
   Award, 
   Loader2, 
   CheckCircle2, 
+  XCircle, 
   Play, 
+  RotateCcw,
   Mic,
   MicOff,
   Check,
@@ -72,7 +74,7 @@ function useRecorder() {
         }
       };
       mr.onstop = () => {
-        const blob = new Blob(chunks.current, { type: mr.mimeType || "audio/webm" });
+        const blob = new Blob(chunks.current, { type: mr.mimeType || "audio/wav" });
         setAudioBlob(blob);
         stream.getTracks().forEach((t) => t.stop());
         streamRef.current = null;
@@ -106,6 +108,13 @@ interface Course2Phase5LocationWizardProps {
   onComplete: () => void;
 }
 
+interface MicroQuestion {
+  question: string;
+  options: { id: string; text: string }[];
+  correctId: string;
+  explanation: string;
+}
+
 export default function Course2Phase5LocationWizard({
   activeLesson,
   speakWord,
@@ -113,7 +122,20 @@ export default function Course2Phase5LocationWizard({
 }: Course2Phase5LocationWizardProps) {
   const [step, setStep] = useState(1);
   const [showOutline, setShowOutline] = useState(false);
-  const totalSteps = 6;
+  const totalSteps = 12;
+
+  // Persist step to localStorage for refresh resilience
+  useEffect(() => {
+    const saved = localStorage.getItem("hangeulai_c1p5_step");
+    if (saved) {
+      const parsedStep = parseInt(saved, 10);
+      if (parsedStep >= 1 && parsedStep <= 12) setStep(parsedStep);
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem("hangeulai_c1p5_step", String(step));
+  }, [step]);
 
   // DB Data loaded
   const [metadata, setMetadata] = useState<any>(null);
@@ -147,6 +169,8 @@ export default function Course2Phase5LocationWizard({
   const [building, setBuilding] = useState(false);
   const [savingSentence, setSavingSentence] = useState(false);
   const [sentenceSaved, setSentenceSaved] = useState(false);
+  const [builderReflectChecked, setBuilderReflectChecked] = useState(false);
+  const [builderReflectSelected, setBuilderReflectSelected] = useState<string | null>(null);
 
   // Quiz states
   const [quizBlueprint, setQuizBlueprint] = useState<any[]>([]);
@@ -162,6 +186,117 @@ export default function Course2Phase5LocationWizard({
   // Card flipping tracking
   const [flippedPlaceId, setFlippedPlaceId] = useState<string | null>(null);
 
+  // Concept Micro-questions states
+  const [cSelected, setCSelected] = useState<string | null>(null);
+  const [cChecked, setCChecked] = useState(false);
+  const [cCorrect, setCCorrect] = useState<boolean | null>(null);
+  const [cIdx, setCIdx] = useState(0);
+
+  // Reset concept states on step change
+  useEffect(() => {
+    if (step >= 2 && step <= 6) {
+      setCSelected(null);
+      setCChecked(false);
+      setCCorrect(null);
+      setCIdx(0);
+    }
+  }, [step]);
+
+  // Concept Micro-questions definitions
+  const conceptQuestions: Record<number, MicroQuestion[]> = {
+    2: [
+      {
+        question: "Which of these are places?",
+        options: [
+          { id: "A", text: "집, 학교, 카페 (Home, school, café)" },
+          { id: "B", text: "먹다, 자다, 공부하다 (To eat, to sleep, to study)" }
+        ],
+        correctId: "A",
+        explanation: "집, 학교, and 카페 are place nouns. The others are verbs."
+      }
+    ],
+    3: [
+      {
+        question: "Which word means 'school'?",
+        options: [
+          { id: "A", text: "학교 (Hak-gyo)" },
+          { id: "B", text: "공원 (Gong-won)" },
+          { id: "C", text: "집 (Jip)" }
+        ],
+        correctId: "A",
+        explanation: "학교 is school. 공원 is park. 집 is home."
+      },
+      {
+        question: "Which word is likely 'park'?",
+        options: [
+          { id: "A", text: "병원 (Byeong-won)" },
+          { id: "B", text: "공원 (Gong-won)" },
+          { id: "C", text: "회사 (Hoe-sa)" }
+        ],
+        correctId: "B",
+        explanation: "공원 means park. 병원 means hospital, and 회사 means office/company."
+      }
+    ],
+    4: [
+      {
+        question: "Which sentence means 'I am at home'?",
+        options: [
+          { id: "A", text: "집에 있어요." },
+          { id: "B", text: "집에 가요." }
+        ],
+        correctId: "A",
+        explanation: "에 있어요 describes static location (being at a place). 집에 있어요 = I am at home."
+      },
+      {
+        question: "Which one is about movement ('go to')?",
+        options: [
+          { id: "A", text: "학교에 있어요." },
+          { id: "B", text: "학교에 가요." }
+        ],
+        correctId: "B",
+        explanation: "에 가요 describes direction and movement. 학교에 가요 = I go to school."
+      }
+    ],
+    5: [
+      {
+        question: "If someone asks '어디에 있어요?', what are they asking?",
+        options: [
+          { id: "A", text: "What are you doing?" },
+          { id: "B", text: "Where are you?" },
+          { id: "C", text: "How old are you?" }
+        ],
+        correctId: "B",
+        explanation: "어디 means 'where' and 에 있어요 means 'are you at'. So '어디에 있어요?' is 'Where are you?'."
+      },
+      {
+        question: "Which would you say if you want to ask 'Where are you going?'?",
+        options: [
+          { id: "A", text: "어디에 가요?" },
+          { id: "B", text: "어디에 있어요?" }
+        ],
+        correctId: "A",
+        explanation: "가요 means 'go', so '어디에 가요?' translates to 'Where are you going?'."
+      }
+    ],
+    6: [
+      {
+        question: "What is a natural reply to '집에 있어요?' as a confirmation?",
+        options: [
+          { id: "A", text: "네, 집에 있어요." },
+          { id: "B", text: "아니요, 커피에 있어요." }
+        ],
+        correctId: "A",
+        explanation: "네, 집에 있어요 (Yes, I am at home) is the grammatically and contextually correct reply."
+      }
+    ]
+  };
+
+  // Activity 7: Vocab Grid MCQs states
+  const [activePlaceCardIdx, setActivePlaceCardIdx] = useState(0);
+  const [placeCardSelectedOpt, setPlaceCardSelectedOpt] = useState<string | null>(null);
+  const [placeCardChecked, setPlaceCardChecked] = useState(false);
+  const [placeCardCorrect, setPlaceCardCorrect] = useState<boolean | null>(null);
+
   // Speaking check states
   const rec = useRecorder();
   const [speakingTranscribing, setSpeakingTranscribing] = useState(false);
@@ -175,21 +310,34 @@ export default function Course2Phase5LocationWizard({
   const [tutorSession, setTutorSession] = useState<any>(null);
   const [loadingTutor, setLoadingTutor] = useState(false);
 
+  // Sound and XP helpers
+  const playCorrectSound = () => {
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("hangeulai-xp", { detail: { amount: 20, type: 'correct' } }));
+    }
+  };
+
+  const playWrongSound = () => {
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("hangeulai-xp", { detail: { amount: -10, type: 'wrong' } }));
+    }
+  };
+
   useEffect(() => {
     const load = async () => {
       try {
         if (step === 1 && !metadata) {
           const res = await apiJson("/lessons/phases/korean1/5/metadata");
           setMetadata(res);
-        } else if (step === 2 && !coreData) {
+        } else if ((step === 2 || step === 7) && !coreData) {
           const res = await apiJson("/lessons/phases/korean1/5/core-data");
           setCoreData(res);
-        } else if (step === 3 && practicePlaces.length === 0) {
+        } else if (step === 8 && practicePlaces.length === 0) {
           const res_p = await apiJson("/lessons/practice/places/recognition");
           const res_s = await apiJson("/lessons/practice/location-sentences/recognition");
           setPracticePlaces(res_p.items || []);
           setPracticeSentences(res_s.items || []);
-        } else if (step === 4 && dialogueItems.length === 0) {
+        } else if ((step === 9 || step === 10) && dialogueItems.length === 0) {
           const res_d = await apiJson("/lessons/practice/location/qa");
           const res_b = await apiJson("/lessons/practice/location/builder");
           setDialogueItems(res_d.items || []);
@@ -197,10 +345,10 @@ export default function Course2Phase5LocationWizard({
           if (res_b.places?.length) {
             setSelectedBuilderPlace(res_b.places[0].korean);
           }
-        } else if (step === 5 && quizBlueprint.length === 0) {
+        } else if (step === 11 && quizBlueprint.length === 0) {
           const res_q = await apiJson("/lessons/quiz/korean1/phase-5/start", { method: "POST" });
           setQuizBlueprint(res_q.blueprint || []);
-        } else if (step === 6 && homeworkItems.length === 0) {
+        } else if (step === 12 && homeworkItems.length === 0) {
           const res_hw = await apiJson("/lessons/phases/korean1/5/homework");
           setHomeworkItems(res_hw || []);
         }
@@ -215,7 +363,50 @@ export default function Course2Phase5LocationWizard({
     speakWord(text);
   };
 
-  // Activity 1A check
+  // Concept Screen checking handler
+  const handleCheckConcept = (selectedId: string) => {
+    if (cChecked) return;
+    const currentQ = conceptQuestions[step]?.[cIdx];
+    if (!currentQ) return;
+
+    setCSelected(selectedId);
+    const isCorrect = selectedId === currentQ.correctId;
+    setCChecked(true);
+    setCCorrect(isCorrect);
+    
+    if (isCorrect) {
+      playCorrectSound();
+    } else {
+      playWrongSound();
+    }
+  };
+
+  // Concept Screen next helper
+  const handleNextConcept = () => {
+    const list = conceptQuestions[step] || [];
+    if (cIdx < list.length - 1) {
+      setCIdx(cIdx + 1);
+      setCSelected(null);
+      setCChecked(false);
+      setCCorrect(null);
+    } else {
+      setStep(step + 1);
+    }
+  };
+
+  // Activity 1: Place Grid flips MCQ check
+  const handleCheckPlaceCard = (opt: string) => {
+    if (placeCardChecked) return;
+    setPlaceCardSelectedOpt(opt);
+    const correctVal = activePlaceCardIdx === 1 ? "B" : "A"; // sample vocabulary matching
+    const isCorrect = opt === correctVal;
+    setPlaceCardChecked(true);
+    setPlaceCardCorrect(isCorrect);
+    if (isCorrect) playCorrectSound();
+    else playWrongSound();
+  };
+
+  // Activity 2: Place check
   const handleCheckPlace = async () => {
     const current = practicePlaces[placeIdx];
     if (!current || !selectedPlaceOpt) return;
@@ -231,12 +422,14 @@ export default function Course2Phase5LocationWizard({
       });
       setPlaceChecked(true);
       setPlaceCorrect(res.correct);
+      if (res.correct) playCorrectSound();
+      else playWrongSound();
     } catch (err) {
       console.error(err);
     }
   };
 
-  // Activity 1B check
+  // Activity 3: Sentence check
   const handleCheckSent = async () => {
     const current = practiceSentences[sentIdx];
     if (!current || !selectedSentOpt) return;
@@ -252,12 +445,14 @@ export default function Course2Phase5LocationWizard({
       });
       setSentChecked(true);
       setSentCorrect(res.correct);
+      if (res.correct) playCorrectSound();
+      else playWrongSound();
     } catch (err) {
       console.error(err);
     }
   };
 
-  // Activity 2A: Dialogue QA Check
+  // Activity 4A: Dialogue QA Check
   const handleCheckDialogue = async () => {
     const current = dialogueItems[dialogueIdx];
     if (!current || !selectedDialogueOptId) return;
@@ -273,12 +468,14 @@ export default function Course2Phase5LocationWizard({
       });
       setDialogueChecked(true);
       setDialogueCorrect(res.correct);
+      if (res.correct) playCorrectSound();
+      else playWrongSound();
     } catch (err) {
       console.error(err);
     }
   };
 
-  // Activity 2B: Sentence Builder
+  // Activity 4B: Sentence Builder
   const handleBuildSentence = async () => {
     if (!selectedBuilderPlace) return;
     setBuilding(true);
@@ -318,6 +515,12 @@ export default function Course2Phase5LocationWizard({
     }
   };
 
+  const handleCheckBuilderReflect = (opt: string) => {
+    setBuilderReflectSelected(opt);
+    setBuilderReflectChecked(true);
+    playCorrectSound();
+  };
+
   // Quiz check
   const handleCheckQuiz = () => {
     const current = quizBlueprint[quizIdx];
@@ -332,7 +535,10 @@ export default function Course2Phase5LocationWizard({
 
     setQuizChecked(true);
     setQuizCorrect(isCorrect);
-    if (!isCorrect) {
+    if (isCorrect) {
+      playCorrectSound();
+    } else {
+      playWrongSound();
       setQuizMistakes(prev => [...prev, current.correct_answer]);
     }
   };
@@ -358,7 +564,7 @@ export default function Course2Phase5LocationWizard({
           })
         });
         setQuizScore(score);
-        setStep(6);
+        setStep(12);
       } catch (err) {
         console.error(err);
       } finally {
@@ -376,7 +582,7 @@ export default function Course2Phase5LocationWizard({
     try {
       const fd = new FormData();
       fd.append("target_text", target);
-      fd.append("audio_file", rec.audioBlob, "recording.webm");
+      fd.append("audio_file", rec.audioBlob, "recording.wav");
       const res = await apiForm("/speech/shadow", fd);
       setSpeakingResult(res);
       if (res.similarity_score >= 60) {
@@ -417,6 +623,7 @@ export default function Course2Phase5LocationWizard({
 
   return (
     <div className="flex-grow flex flex-col justify-between">
+      
       {/* Top Header tracking */}
       <header className="flex justify-between items-center py-4 border-b border-white/5 mb-6">
         <div className="flex items-center space-x-4">
@@ -486,12 +693,16 @@ export default function Course2Phase5LocationWizard({
               <span>Start Phase 5</span>
               <ChevronRight className="w-4 h-4" />
             </button>
-            
           </div>
 
           {showOutline && (
             <div className="bg-zinc-950 p-6 rounded-2xl border border-white/5 text-left text-xs text-zinc-400 space-y-2 animate-fade-in max-w-2xl mx-auto w-full font-mono">
               <p className="font-extrabold text-white text-center pb-2">Phase Activities Outline</p>
+              <p>✓ C1 – Talking about places in Korean</p>
+              <p>✓ C2 – Core place vocabulary (집, 학교, 회사...)</p>
+              <p>✓ C3 – Particle 에: at/in vs to</p>
+              <p>✓ C4 – Where-questions with 어디</p>
+              <p>✓ C5 – Dialogue structures</p>
               <p>✓ Activity 1 – Places vocabulary grid & card flips</p>
               <p>✓ Activity 2 – Location/Destination particles comparison</p>
               <p>✓ Activity 3 – Places listening MCQ & sentence translation</p>
@@ -503,390 +714,675 @@ export default function Course2Phase5LocationWizard({
         </div>
       )}
 
-      {/* Screen 2: Concept Explanation */}
+      {/* Screen 2: C1 - Talking about places in Korean */}
       {step === 2 && (
         <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
-          <div className="flex justify-between items-center border-b border-white/5 pb-4">
-            <h2 className="text-2xl font-black text-white flex items-center gap-2">
-              <BookOpen className="w-6 h-6 text-brand-400" />
-              <span>Places & Location Particles</span>
-            </h2>
-            <span className="text-xs text-zinc-500 font-bold">Step 2 of {totalSteps}</span>
+          <h2 className="text-3xl font-black text-white">Talking about places in Korean</h2>
+          <p className="text-zinc-300 text-base leading-relaxed">
+            Everyday Korean conversations frequently cover where you are or where you are going. E.g.:
+          </p>
+          <div className="bg-zinc-900/60 p-4 rounded-xl border border-white/5 font-mono text-center text-xs text-zinc-300 space-y-1.5 max-w-sm mx-auto">
+            <p>“I'm at home.”</p>
+            <p>“I'm going to school.”</p>
+            <p>“I'm at the café now.”</p>
           </div>
+          <p className="text-zinc-300 text-sm">To construct these expressions, you combine: **place noun + particle + verb**.</p>
 
-          <div className="bg-zinc-900/60 p-4 rounded-xl border border-white/5 space-y-3 text-xs leading-relaxed text-zinc-300">
-            <p>Korean uses suffixes (particles) attached to place nouns to show location or movement direction:</p>
-            <div className="grid grid-cols-2 gap-4 pt-1">
-              <div className="p-3 bg-zinc-950 rounded-lg border border-brand-500/10">
-                <span className="font-bold text-brand-400 block mb-1">1. Location: [Place]에 있어요</span>
-                <span>Used to say where you are. E.g. <strong>집에 있어요</strong> = I am at home.</span>
-              </div>
-              <div className="p-3 bg-zinc-950 rounded-lg border border-accent-teal/10">
-                <span className="font-bold text-accent-teal block mb-1">2. Destination: [Place]에 가요</span>
-                <span>Used to say where you are going. E.g. <strong>학교에 가요</strong> = I go to school.</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Places Grid */}
-          <div className="space-y-3">
-            <span className="text-[10px] text-zinc-500 font-black uppercase tracking-wider block">1. Core Vocabulary (장소)</span>
-            <div className="grid grid-cols-3 gap-2.5">
-              {coreData?.places?.map((p: any) => {
-                const isFlipped = flippedPlaceId === p.id;
-                return (
-                  <div
-                    key={p.id}
-                    onClick={() => {
-                      setFlippedPlaceId(isFlipped ? null : p.id);
-                      playAudio(p.korean);
-                    }}
-                    className={`glass-panel p-3 rounded-2xl border text-center transition cursor-pointer flex flex-col justify-between h-28 ${
-                      isFlipped ? "border-brand-500 bg-brand-500/5 shadow-[0_0_15px_rgba(79,70,229,0.1)]" : "border-white/5 bg-zinc-900/60 hover:bg-zinc-800"
-                    }`}
-                  >
-                    <div className="flex justify-between items-center">
-                      <span className="text-[8px] font-black uppercase text-zinc-500 font-mono tracking-widest">{p.tag}</span>
-                      <button onClick={(e) => { e.stopPropagation(); playAudio(p.korean); }} className="p-1 rounded bg-zinc-950/40 text-zinc-400"><Volume2 className="w-3.5 h-3.5" /></button>
-                    </div>
-
-                    {!isFlipped ? (
-                      <div className="py-1">
-                        <div className="text-xl font-black text-white font-korean">{p.korean}</div>
-                        <div className="text-[9px] text-zinc-500">{p.romanization}</div>
-                      </div>
-                    ) : (
-                      <div className="animate-fade-in text-left space-y-0.5">
-                        <div className="text-xs font-black text-white">{p.english}</div>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Pattern Card examples */}
-          <div className="space-y-2">
-            <span className="text-[10px] text-zinc-500 font-black uppercase tracking-wider block">2. Conversational Q&A Examples</span>
+          <div className="bg-zinc-900/60 p-6 rounded-2xl border border-white/5 space-y-4 max-w-xl">
+            <h4 className="text-xs font-black uppercase text-amber-400 tracking-wider">Concept Check</h4>
+            <p className="text-xs text-zinc-300 font-bold">{conceptQuestions[2][cIdx].question}</p>
             <div className="grid grid-cols-1 gap-2">
-              {coreData?.pattern_examples?.map((s: any, idx: number) => (
-                <div key={idx} className="p-3 bg-zinc-950 rounded-xl border border-white/5 flex justify-between items-center text-xs">
-                  <div className="text-left">
-                    <div className="font-korean font-bold text-white text-sm">{s.ko}</div>
-                    <div className="text-zinc-400 mt-0.5">{s.en}</div>
-                  </div>
-                  <button onClick={() => playAudio(s.ko)} className="p-1.5 rounded bg-zinc-900 text-zinc-400 hover:text-white"><Volume2 className="w-4 h-4" /></button>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="flex justify-between items-center pt-4 border-t border-white/5">
-            <button onClick={() => setStep(1)} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-sm font-bold transition flex items-center gap-2 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
-            <button onClick={() => setStep(3)} className="bg-brand-500 hover:bg-brand-600 text-white px-8 py-3 rounded-xl text-sm font-bold transition flex items-center gap-2 cursor-pointer">Start Activities <ChevronRight className="w-4 h-4" /></button>
-          </div>
-        </div>
-      )}
-
-      {/* Screen 3: Activity 1: Places & Sentences Recognition */}
-      {step === 3 && (
-        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
-          <div className="flex justify-between items-center border-b border-white/5 pb-4">
-            <h2 className="text-2xl font-black text-white flex items-center gap-2">
-              <Sparkles className="w-6 h-6 text-brand-400" />
-              <span>Activity 1 – Place & Sentence Identification</span>
-            </h2>
-            <span className="text-xs text-zinc-500 font-bold">Step 3 of {totalSteps}</span>
-          </div>
-
-          {/* Activity 1A: Match place meaning */}
-          <div className="bg-zinc-900/30 p-5 rounded-2xl border border-white/5 space-y-4">
-            <div className="text-left space-y-1 text-center">
-              <span className="text-[9px] text-zinc-500 font-black uppercase tracking-wider block">Part A: Match Place Audio to Meaning</span>
-              <h4 className="text-lg font-black text-white font-korean">{practicePlaces[placeIdx]?.korean}</h4>
-            </div>
-
-            <div className="flex justify-center">
-              <button onClick={() => playAudio(practicePlaces[placeIdx]?.korean)} className="p-4 bg-brand-500/10 hover:bg-brand-500/20 border border-brand-500/20 text-brand-400 rounded-full transition flex items-center justify-center cursor-pointer shadow-md"><Volume2 className="w-6 h-6" /></button>
-            </div>
-
-            <div className="grid grid-cols-3 gap-2 max-w-sm mx-auto">
-              {practicePlaces[placeIdx]?.options.map((opt: string) => (
-                <button
-                  key={opt}
-                  onClick={() => !placeChecked && setSelectedPlaceOpt(opt)}
-                  disabled={placeChecked}
-                  className={`p-2 rounded-xl border text-xs font-bold transition ${
-                    selectedPlaceOpt === opt
-                      ? "border-brand-500 bg-brand-500/10 text-white"
-                      : "border-white/5 bg-zinc-950 text-zinc-400 hover:border-white/10"
-                  } ${placeChecked && opt === practicePlaces[placeIdx]?.correct ? "border-accent-teal bg-accent-teal/15 text-white" : ""}`}
-                >
-                  {opt}
-                </button>
-              ))}
-            </div>
-
-            {placeChecked && (
-              <div className={`p-3 rounded-xl border text-xs text-center ${
-                placeCorrect ? "bg-accent-teal/5 border-accent-teal/20 text-accent-teal" : "bg-red-500/5 border-red-500/10 text-red-400"
-              }`}>
-                {placeCorrect ? "Correct!" : "Incorrect."}
-              </div>
-            )}
-
-            <div className="flex justify-end pt-1">
-              {!placeChecked ? (
-                <button
-                  onClick={handleCheckPlace}
-                  disabled={!selectedPlaceOpt}
-                  className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer"
-                >
-                  Check Answer
-                </button>
-              ) : (
-                <button
-                  onClick={() => {
-                    setPlaceChecked(false);
-                    setSelectedPlaceOpt(null);
-                    setPlaceCorrect(null);
-                    if (placeIdx < practicePlaces.length - 1) {
-                      setPlaceIdx(placeIdx + 1);
-                    } else {
-                      setPlaceIdx(0);
-                    }
-                  }}
-                  className="bg-accent-teal text-zinc-950 hover:bg-accent-teal/90 px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer"
-                >
-                  Next Place Item
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* Activity 1B: Identify location/destination from sentence */}
-          <div className="bg-zinc-900/30 p-5 rounded-2xl border border-white/5 space-y-4">
-            <div className="text-left space-y-1 text-center">
-              <span className="text-[9px] text-zinc-500 font-black uppercase tracking-wider block">Part B: Sentence Translation Check</span>
-              <p className="text-xs text-zinc-300">Listen to the sentence and select the correct translation:</p>
-            </div>
-
-            <div className="flex justify-center">
-              <button onClick={() => playAudio(practiceSentences[sentIdx]?.sentence)} className="p-4 bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/20 text-purple-400 rounded-full transition flex items-center justify-center cursor-pointer shadow-md"><Volume2 className="w-6 h-6" /></button>
-            </div>
-
-            <div className="grid grid-cols-1 gap-2 max-w-sm mx-auto">
-              {practiceSentences[sentIdx]?.options.map((opt: string) => (
-                <button
-                  key={opt}
-                  onClick={() => !sentChecked && setSelectedSentOpt(opt)}
-                  disabled={sentChecked}
-                  className={`p-3 rounded-xl border text-left text-xs font-bold transition ${
-                    selectedSentOpt === opt
-                      ? "border-brand-500 bg-brand-500/10 text-white"
-                      : "border-white/5 bg-zinc-950 text-zinc-300 hover:border-white/10"
-                  } ${sentChecked && opt === practiceSentences[sentIdx]?.correct ? "border-accent-teal bg-accent-teal/15 text-white" : ""}`}
-                >
-                  {opt}
-                </button>
-              ))}
-            </div>
-
-            {sentChecked && (
-              <div className={`p-3 rounded-xl border text-xs text-center ${
-                sentCorrect ? "bg-accent-teal/5 border-accent-teal/20 text-accent-teal" : "bg-red-500/5 border-red-500/10 text-red-400"
-              }`}>
-                {sentCorrect ? "Correct!" : "Incorrect."}
-              </div>
-            )}
-
-            <div className="flex justify-end pt-1">
-              {!sentChecked ? (
-                <button
-                  onClick={handleCheckSent}
-                  disabled={!selectedSentOpt}
-                  className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer"
-                >
-                  Verify Sentence
-                </button>
-              ) : (
-                <button
-                  onClick={() => {
-                    setSentChecked(false);
-                    setSelectedSentOpt(null);
-                    setSentCorrect(null);
-                    if (sentIdx < practiceSentences.length - 1) {
-                      setSentIdx(sentIdx + 1);
-                    } else {
-                      setSentIdx(0);
-                    }
-                  }}
-                  className="bg-accent-teal text-zinc-950 hover:bg-accent-teal/90 px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer"
-                >
-                  Next Sentence Item
-                </button>
-              )}
-            </div>
-          </div>
-
-          <div className="flex justify-between items-center pt-4 border-t border-white/5">
-            <button onClick={() => setStep(2)} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-sm font-bold transition flex items-center gap-2 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
-            <button onClick={() => setStep(4)} className="bg-brand-500 hover:bg-brand-600 text-white px-8 py-3 rounded-xl text-sm font-bold transition flex items-center gap-2 cursor-pointer">Move to Activity 2 <ChevronRight className="w-4 h-4" /></button>
-          </div>
-        </div>
-      )}
-
-      {/* Screen 4: Activity 2: Dialogue QA & Sentence Builder */}
-      {step === 4 && (
-        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
-          <div className="flex justify-between items-center border-b border-white/5 pb-4">
-            <h2 className="text-2xl font-black text-white flex items-center gap-2">
-              <Sparkles className="w-6 h-6 text-brand-400" />
-              <span>Activity 2 – Dialogue & Sentence Builder</span>
-            </h2>
-            <span className="text-xs text-zinc-500 font-bold">Step 4 of {totalSteps}</span>
-          </div>
-
-          {/* Part A: Dialogue QA */}
-          <div className="bg-zinc-900/30 p-5 rounded-2xl border border-white/5 space-y-4">
-            <div className="text-left space-y-1">
-              <span className="text-[9px] text-amber-400 font-black uppercase tracking-wider block">Part A: Dialogue Match (Location vs Destination)</span>
-              <p className="text-xs text-zinc-300">Choose the grammatically appropriate reply to the question:</p>
-            </div>
-
-            <div className="p-3 bg-zinc-950 rounded-xl border border-white/5 text-center">
-              <h4 className="text-base font-black text-white font-korean">{dialogueItems[dialogueIdx]?.question}</h4>
-            </div>
-
-            <div className="grid grid-cols-1 gap-2 max-w-md mx-auto">
-              {dialogueItems[dialogueIdx]?.options.map((opt: any) => (
+              {conceptQuestions[2][cIdx].options.map(opt => (
                 <button
                   key={opt.id}
-                  onClick={() => !dialogueChecked && setSelectedDialogueOptId(opt.id)}
-                  disabled={dialogueChecked}
-                  className={`p-3 rounded-xl border text-left text-xs font-bold transition ${
-                    selectedDialogueOptId === opt.id
-                      ? "border-brand-500 bg-brand-500/10 text-white"
+                  onClick={() => handleCheckConcept(opt.id)}
+                  disabled={cChecked}
+                  className={`p-3 rounded-xl border text-left text-xs font-semibold transition ${
+                    cSelected === opt.id
+                      ? cCorrect
+                        ? "border-accent-teal bg-accent-teal/15 text-white"
+                        : "border-red-500 bg-red-500/10 text-white"
                       : "border-white/5 bg-zinc-950 text-zinc-300 hover:border-white/10"
-                  } ${dialogueChecked && opt.correct ? "border-accent-teal bg-accent-teal/15 text-white" : ""}`}
+                  } ${cChecked && opt.id === conceptQuestions[2][cIdx].correctId ? "border-accent-teal bg-accent-teal/15 text-white" : ""}`}
                 >
                   {opt.text}
                 </button>
               ))}
             </div>
-
-            {dialogueChecked && (
-              <div className="p-3 rounded-xl border border-white/5 bg-zinc-950 text-xs text-zinc-400">
-                <p className="font-extrabold text-white mb-1">{dialogueCorrect ? "Correct!" : "Incorrect."}</p>
-                <p>{dialogueItems[dialogueIdx]?.explanation}</p>
+            {cChecked && (
+              <div className="animate-fade-in space-y-3">
+                <p className="text-xs text-zinc-400 leading-relaxed">{conceptQuestions[2][cIdx].explanation}</p>
+                <button
+                  onClick={handleNextConcept}
+                  className="bg-brand-500 hover:bg-brand-600 text-white px-5 py-2 rounded-xl text-xs font-bold transition cursor-pointer"
+                >
+                  Continue
+                </button>
               </div>
             )}
-
-            <div className="flex justify-end pt-1">
-              {!dialogueChecked ? (
-                <button
-                  onClick={handleCheckDialogue}
-                  disabled={!selectedDialogueOptId}
-                  className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer"
-                >
-                  Verify Response
-                </button>
-              ) : (
-                <button
-                  onClick={() => {
-                    setDialogueChecked(false);
-                    setSelectedDialogueOptId(null);
-                    setDialogueCorrect(null);
-                    if (dialogueIdx < dialogueItems.length - 1) {
-                      setDialogueIdx(dialogueIdx + 1);
-                    } else {
-                      setDialogueIdx(0);
-                    }
-                  }}
-                  className="bg-accent-teal text-zinc-950 hover:bg-accent-teal/90 px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer"
-                >
-                  Next Q&A Pair
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* Part B: Sentence Builder */}
-          <div className="bg-zinc-900/30 p-5 rounded-2xl border border-white/5 space-y-4">
-            <h3 className="text-xs font-black uppercase text-amber-400 tracking-wider">Part B: Sentence Builder</h3>
-            
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1 text-left">
-                <label className="text-[8px] text-zinc-500 uppercase font-black tracking-widest block">Choose Place</label>
-                <select
-                  value={selectedBuilderPlace}
-                  onChange={(e) => setSelectedBuilderPlace(e.target.value)}
-                  className="w-full bg-zinc-950 p-2.5 rounded-xl border border-white/5 text-xs text-white focus:outline-none focus:border-brand-500"
-                >
-                  {builderPlaces.map((p) => (
-                    <option key={p.id} value={p.korean}>{p.korean} ({p.english})</option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="space-y-1 text-left">
-                <label className="text-[8px] text-zinc-500 uppercase font-black tracking-widest block">Choose Pattern Suffix</label>
-                <select
-                  value={selectedBuilderPattern}
-                  onChange={(e) => setSelectedBuilderPattern(e.target.value)}
-                  className="w-full bg-zinc-950 p-2.5 rounded-xl border border-white/5 text-xs text-white focus:outline-none focus:border-brand-500"
-                >
-                  <option value="location">에 있어요 (I am at...)</option>
-                  <option value="destination">에 가요 (I am going to...)</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="flex justify-center pt-2">
-              <button
-                onClick={handleBuildSentence}
-                disabled={building}
-                className="bg-brand-500 hover:bg-brand-600 text-white font-bold py-2.5 px-6 rounded-xl text-xs transition cursor-pointer"
-              >
-                {building ? "Assembling..." : "Assemble Custom Sentence"}
-              </button>
-            </div>
-
-            {builtSentence && (
-              <div className="bg-zinc-950 p-4 rounded-xl border border-brand-500/25 space-y-3 animate-fade-in text-center">
-                <span className="text-[9px] text-brand-400 font-black uppercase tracking-wider block">Generated Sentence</span>
-                <p className="text-lg font-black text-white font-korean leading-relaxed">{builtSentence.final_korean_text}</p>
-                
-                <div className="flex items-center justify-center gap-3">
-                  <button
-                    onClick={() => playAudio(builtSentence.final_korean_text)}
-                    className="p-2 bg-brand-500/10 hover:bg-brand-500/20 text-brand-400 rounded-full border border-brand-500/20 transition cursor-pointer"
-                  >
-                    <Volume2 className="w-5 h-5" />
-                  </button>
-
-                  <button
-                    onClick={handleSaveSentence}
-                    disabled={savingSentence || sentenceSaved}
-                    className="bg-accent-teal hover:bg-accent-teal/95 disabled:opacity-50 text-zinc-950 font-black py-1.5 px-4 rounded-lg text-xs transition cursor-pointer"
-                  >
-                    {savingSentence ? "Saving..." : sentenceSaved ? "Saved Successfully!" : "Save Sentence to Profile"}
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div className="flex justify-between items-center pt-4 border-t border-white/5">
-            <button onClick={() => setStep(3)} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-sm font-bold transition flex items-center gap-2 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
-            <button onClick={() => setStep(5)} className="bg-brand-500 hover:bg-brand-600 text-white px-8 py-3 rounded-xl text-sm font-bold transition flex items-center gap-2 cursor-pointer">Start Mini-Quiz <ChevronRight className="w-4 h-4" /></button>
           </div>
         </div>
       )}
 
-      {/* Screen 5: Mini-Quiz Checkpoint */}
+      {/* Screen 3: C2 - Core place vocabulary */}
+      {step === 3 && (
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
+          <h2 className="text-3xl font-black text-white">Core Place Vocabulary</h2>
+          
+          <div className="grid grid-cols-3 gap-3 text-center text-xs">
+            {coreData?.places?.slice(0, 6).map((p: any) => (
+              <div key={p.id} className="p-3 bg-zinc-900/60 border border-white/5 rounded-xl space-y-1">
+                <div className="font-bold text-white font-korean text-base">{p.korean}</div>
+                <div className="text-[10px] text-zinc-500 italic">({p.english})</div>
+              </div>
+            ))}
+          </div>
+
+          <div className="bg-zinc-900/60 p-6 rounded-2xl border border-white/5 space-y-4 max-w-xl">
+            <h4 className="text-xs font-black uppercase text-amber-400 tracking-wider">Concept Check</h4>
+            <p className="text-xs text-zinc-300 font-bold">{conceptQuestions[3][cIdx].question}</p>
+            <div className="grid grid-cols-1 gap-2">
+              {conceptQuestions[3][cIdx].options.map(opt => (
+                <button
+                  key={opt.id}
+                  onClick={() => handleCheckConcept(opt.id)}
+                  disabled={cChecked}
+                  className={`p-3 rounded-xl border text-left text-xs font-semibold transition ${
+                    cSelected === opt.id
+                      ? cCorrect
+                        ? "border-accent-teal bg-accent-teal/15 text-white"
+                        : "border-red-500 bg-red-500/10 text-white"
+                      : "border-white/5 bg-zinc-950 text-zinc-300 hover:border-white/10"
+                  } ${cChecked && opt.id === conceptQuestions[3][cIdx].correctId ? "border-accent-teal bg-accent-teal/15 text-white" : ""}`}
+                >
+                  {opt.text}
+                </button>
+              ))}
+            </div>
+            {cChecked && (
+              <div className="animate-fade-in space-y-3">
+                <p className="text-xs text-zinc-400 leading-relaxed">{conceptQuestions[3][cIdx].explanation}</p>
+                <button
+                  onClick={handleNextConcept}
+                  className="bg-brand-500 hover:bg-brand-600 text-white px-5 py-2 rounded-xl text-xs font-bold transition cursor-pointer"
+                >
+                  Continue
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Screen 4: C3 - Particle 에: "at/in" vs "to" */}
+      {step === 4 && (
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
+          <h2 className="text-3xl font-black text-white">Particle 에: “at/in” vs “to”</h2>
+          <p className="text-zinc-300 text-base leading-relaxed">
+            Korean attaches the suffix <strong>에 (e)</strong> after a place noun to establish location or destination:
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-mono max-w-md mx-auto text-zinc-300">
+            <div className="p-3 bg-zinc-955 rounded-xl border border-white/5 text-center">
+              <span className="text-[10px] text-brand-400 block font-bold">X에 있어요 (Location)</span>
+              <p className="font-bold mt-1 text-white">집에 있어요</p>
+              <p className="text-zinc-500">I am at home.</p>
+            </div>
+            <div className="p-3 bg-zinc-955 rounded-xl border border-white/5 text-center">
+              <span className="text-[10px] text-accent-teal block font-bold">X에 가요 (Destination)</span>
+              <p className="font-bold mt-1 text-white">학교에 가요</p>
+              <p className="text-zinc-500">I am going to school.</p>
+            </div>
+          </div>
+
+          <div className="bg-zinc-900/60 p-6 rounded-2xl border border-white/5 space-y-4 max-w-xl">
+            <h4 className="text-xs font-black uppercase text-amber-400 tracking-wider">Concept Check</h4>
+            <p className="text-xs text-zinc-300 font-bold">{conceptQuestions[4][cIdx].question}</p>
+            <div className="grid grid-cols-1 gap-2">
+              {conceptQuestions[4][cIdx].options.map(opt => (
+                <button
+                  key={opt.id}
+                  onClick={() => handleCheckConcept(opt.id)}
+                  disabled={cChecked}
+                  className={`p-3 rounded-xl border text-left text-xs font-semibold transition ${
+                    cSelected === opt.id
+                      ? cCorrect
+                        ? "border-accent-teal bg-accent-teal/15 text-white"
+                        : "border-red-500 bg-red-500/10 text-white"
+                      : "border-white/5 bg-zinc-950 text-zinc-300 hover:border-white/10"
+                  } ${cChecked && opt.id === conceptQuestions[4][cIdx].correctId ? "border-accent-teal bg-accent-teal/15 text-white" : ""}`}
+                >
+                  {opt.text}
+                </button>
+              ))}
+            </div>
+            {cChecked && (
+              <div className="animate-fade-in space-y-3">
+                <p className="text-xs text-zinc-400 leading-relaxed">{conceptQuestions[4][cIdx].explanation}</p>
+                <button
+                  onClick={handleNextConcept}
+                  className="bg-brand-500 hover:bg-brand-600 text-white px-5 py-2 rounded-xl text-xs font-bold transition cursor-pointer"
+                >
+                  Continue
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Screen 5: C4 - Where-questions with 어디 */}
       {step === 5 && (
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
+          <h2 className="text-3xl font-black text-white">Where-Questions with 어디</h2>
+          <p className="text-zinc-300 text-base leading-relaxed">
+            <strong>어디 (eo-di)</strong> means “where”. Attach it to location particles to query places:
+          </p>
+          <div className="bg-zinc-900/60 p-4 rounded-xl border border-white/5 text-center font-mono max-w-sm mx-auto space-y-1 text-sm text-brand-300 font-korean">
+            <p>Q: 어디에 있어요? (Where are you?)</p>
+            <p>A: 집에 있어요. (I'm at home.)</p>
+            <p>Q: 어디에 가요? (Where are you going?)</p>
+            <p>A: 학교에 가요. (I'm going to school.)</p>
+          </div>
+
+          <div className="bg-zinc-900/60 p-6 rounded-2xl border border-white/5 space-y-4 max-w-xl">
+            <h4 className="text-xs font-black uppercase text-amber-400 tracking-wider">Concept Check</h4>
+            <p className="text-xs text-zinc-300 font-bold">{conceptQuestions[5][cIdx].question}</p>
+            <div className="grid grid-cols-1 gap-2">
+              {conceptQuestions[5][cIdx].options.map(opt => (
+                <button
+                  key={opt.id}
+                  onClick={() => handleCheckConcept(opt.id)}
+                  disabled={cChecked}
+                  className={`p-3 rounded-xl border text-left text-xs font-semibold transition ${
+                    cSelected === opt.id
+                      ? cCorrect
+                        ? "border-accent-teal bg-accent-teal/15 text-white"
+                        : "border-red-500 bg-red-500/10 text-white"
+                      : "border-white/5 bg-zinc-950 text-zinc-300 hover:border-white/10"
+                  } ${cChecked && opt.id === conceptQuestions[5][cIdx].correctId ? "border-accent-teal bg-accent-teal/15 text-white" : ""}`}
+                >
+                  {opt.text}
+                </button>
+              ))}
+            </div>
+            {cChecked && (
+              <div className="animate-fade-in space-y-3">
+                <p className="text-xs text-zinc-400 leading-relaxed">{conceptQuestions[5][cIdx].explanation}</p>
+                <button
+                  onClick={handleNextConcept}
+                  className="bg-brand-500 hover:bg-brand-600 text-white px-5 py-2 rounded-xl text-xs font-bold transition cursor-pointer"
+                >
+                  Continue
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Screen 6: C5 - Putting it together in small dialogues */}
+      {step === 6 && (
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
+          <h2 className="text-3xl font-black text-white">Small Dialogue Structures</h2>
+          <p className="text-zinc-300 text-base leading-relaxed">
+            Let's compile small QA conversational threads:
+          </p>
+          <div className="bg-zinc-900/60 p-4 rounded-xl border border-white/5 text-center font-mono max-w-sm mx-auto space-y-2 text-xs text-zinc-300 font-korean">
+            <p>A: 어디에 가요?</p>
+            <p>B: 학교에 가요.</p>
+            <p>A: 지금 어디에 있어요?</p>
+            <p>B: 카페에 있어요.</p>
+          </div>
+
+          <div className="bg-zinc-900/60 p-6 rounded-2xl border border-white/5 space-y-4 max-w-xl">
+            <h4 className="text-xs font-black uppercase text-amber-400 tracking-wider">Concept Check</h4>
+            <p className="text-xs text-zinc-300 font-bold">{conceptQuestions[6][cIdx].question}</p>
+            <div className="grid grid-cols-1 gap-2">
+              {conceptQuestions[6][cIdx].options.map(opt => (
+                <button
+                  key={opt.id}
+                  onClick={() => handleCheckConcept(opt.id)}
+                  disabled={cChecked}
+                  className={`p-3 rounded-xl border text-left text-xs font-semibold transition ${
+                    cSelected === opt.id
+                      ? cCorrect
+                        ? "border-accent-teal bg-accent-teal/15 text-white"
+                        : "border-red-500 bg-red-500/10 text-white"
+                      : "border-white/5 bg-zinc-950 text-zinc-300 hover:border-white/10"
+                  } ${cChecked && opt.id === conceptQuestions[6][cIdx].correctId ? "border-accent-teal bg-accent-teal/15 text-white" : ""}`}
+                >
+                  {opt.text}
+                </button>
+              ))}
+            </div>
+            {cChecked && (
+              <div className="animate-fade-in space-y-3">
+                <p className="text-xs text-zinc-400 leading-relaxed">{conceptQuestions[6][cIdx].explanation}</p>
+                <button
+                  onClick={handleNextConcept}
+                  className="bg-brand-500 hover:bg-brand-600 text-white px-5 py-2 rounded-xl text-xs font-bold transition cursor-pointer"
+                >
+                  Continue
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Screen 7: Activity 1 – Places vocabulary grid & card flips */}
+      {step === 7 && (
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
+          <div className="flex justify-between items-center border-b border-white/5 pb-4">
+            <h2 className="text-2xl font-black text-white flex items-center gap-2">
+              <Sparkles className="w-6 h-6 text-brand-400" />
+              <span>Activity 1 – Place Vocabulary Flips</span>
+            </h2>
+            <span className="text-xs text-zinc-500 font-bold">Step 7 of {totalSteps}</span>
+          </div>
+
+          <p className="text-xs text-zinc-400">
+            Select a card to play its sound and flip. Then complete the mini-question below it.
+          </p>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {coreData?.places?.slice(0, 4).map((p: any, idx: number) => {
+              const isActive = activePlaceCardIdx === idx;
+              const isFlipped = flippedPlaceId === p.id;
+              
+              return (
+                <div
+                  key={p.id}
+                  onClick={() => {
+                    setActivePlaceCardIdx(idx);
+                    setFlippedPlaceId(isFlipped ? null : p.id);
+                    playAudio(p.korean);
+                    // Reset MCQ
+                    setPlaceCardChecked(false);
+                    setPlaceCardSelectedOpt(null);
+                    setPlaceCardCorrect(null);
+                  }}
+                  className={`glass-panel p-4 rounded-xl border text-center transition cursor-pointer flex flex-col items-center justify-center ${
+                    isActive ? "border-brand-500 bg-brand-500/5 shadow-md" : "border-white/5 bg-zinc-900/60 hover:bg-zinc-800"
+                  }`}
+                >
+                  {!isFlipped ? (
+                    <div className="space-y-1">
+                      <div className="text-lg font-black text-white font-korean">{p.korean}</div>
+                      <div className="text-[10px] text-zinc-500 uppercase tracking-wider font-mono">Place Card</div>
+                    </div>
+                  ) : (
+                    <div className="animate-fade-in space-y-0.5">
+                      <span className="text-sm font-black text-brand-400">{p.english}</span>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="bg-zinc-900/60 p-6 rounded-2xl border border-white/5 space-y-4 max-w-xl mx-auto w-full text-left">
+            <h4 className="text-xs font-black uppercase text-amber-400 tracking-wider">Vocab Drill: {coreData?.places?.[activePlaceCardIdx]?.korean}</h4>
+            <p className="text-xs text-zinc-300 font-bold">Where do you go in this scenario?</p>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => handleCheckPlaceCard("A")}
+                disabled={placeCardChecked}
+                className={`p-3 rounded-xl border text-center text-xs font-bold transition ${
+                  placeCardSelectedOpt === "A"
+                    ? placeCardCorrect
+                      ? "border-accent-teal bg-accent-teal/15 text-white"
+                      : "border-red-500 bg-red-500/10 text-white"
+                    : "border-white/5 bg-zinc-950 text-zinc-400 hover:border-white/10"
+                } ${placeCardChecked && (activePlaceCardIdx !== 1 ? "A" === "A" : "B" === "B") ? "border-accent-teal bg-accent-teal/15 text-white" : ""}`}
+              >
+                {activePlaceCardIdx === 1 ? "To work" : activePlaceCardIdx === 0 ? "To study" : activePlaceCardIdx === 2 ? "To exercise" : "To travel"}
+              </button>
+
+              <button
+                onClick={() => handleCheckPlaceCard("B")}
+                disabled={placeCardChecked}
+                className={`p-3 rounded-xl border text-center text-xs font-bold transition ${
+                  placeCardSelectedOpt === "B"
+                    ? (activePlaceCardIdx === 1 ? placeCardCorrect : false)
+                      ? "border-accent-teal bg-accent-teal/15 text-white"
+                      : "border-red-500 bg-red-500/10 text-white"
+                    : "border-white/5 bg-zinc-950 text-zinc-400 hover:border-white/10"
+                } ${placeCardChecked && activePlaceCardIdx === 1 && "B" === "B" ? "border-accent-teal bg-accent-teal/15 text-white" : ""}`}
+              >
+                {activePlaceCardIdx === 1 ? "To study" : "To rest"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Screen 8: Activity 2 – Location/Destination particles comparison */}
+      {step === 8 && (
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
+          <div className="flex justify-between items-center border-b border-white/5 pb-4">
+            <h2 className="text-2xl font-black text-white flex items-center gap-2">
+              <Sparkles className="w-6 h-6 text-brand-400" />
+              <span>Activity 2 – Particle Matching</span>
+            </h2>
+            <span className="text-xs text-zinc-500 font-bold">Step 8 of {totalSteps}</span>
+          </div>
+
+          {practicePlaces.length === 0 ? (
+            <div className="text-center py-6"><Loader2 className="w-8 h-8 animate-spin mx-auto text-brand-400" /></div>
+          ) : (
+            <div className="space-y-6 max-w-xl mx-auto w-full">
+              <div className="bg-zinc-900/30 p-6 rounded-2xl border border-white/5 space-y-4 text-center">
+                <p className="text-xs text-zinc-450">Which English meaning matches: <strong className="text-brand-300">"{practicePlaces[placeIdx]?.korean}"</strong>?</p>
+                
+                <div className="grid grid-cols-1 gap-2 pt-2">
+                  {practicePlaces[placeIdx]?.options.map((opt: string) => (
+                    <button
+                      key={opt}
+                      onClick={() => !placeChecked && setSelectedPlaceOpt(opt)}
+                      disabled={placeChecked}
+                      className={`p-3 rounded-xl border text-center text-xs font-bold transition ${
+                        selectedPlaceOpt === opt
+                          ? "border-brand-500 bg-brand-500/10 text-white"
+                          : "border-white/5 bg-zinc-955 text-zinc-300 hover:border-white/10"
+                      } ${placeChecked && opt === practicePlaces[placeIdx]?.correct ? "border-accent-teal bg-accent-teal/15 text-white" : ""} ${placeChecked && selectedPlaceOpt === opt && opt !== practicePlaces[placeIdx]?.correct ? "border-red-500 bg-red-500/10 text-white" : ""}`}
+                    >
+                      {opt}
+                    </button>
+                  ))}
+                </div>
+
+                {placeChecked && (
+                  <div className={`p-3 rounded-xl border text-xs text-left ${
+                    placeCorrect ? "bg-accent-teal/5 border-accent-teal/20 text-accent-teal" : "bg-red-500/5 border-red-500/10 text-red-400"
+                  }`}>
+                    {placeCorrect ? "Correct particle check!" : "Incorrect mapping."}
+                  </div>
+                )}
+
+                <div className="flex justify-end pt-1">
+                  {!placeChecked ? (
+                    <button
+                      onClick={handleCheckPlace}
+                      disabled={!selectedPlaceOpt}
+                      className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white px-5 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer"
+                    >
+                      Check Answer
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => {
+                        setPlaceChecked(false);
+                        setSelectedPlaceOpt(null);
+                        setPlaceCorrect(null);
+                        if (placeIdx < practicePlaces.length - 1) {
+                          setPlaceIdx(placeIdx + 1);
+                        } else {
+                          setPlaceIdx(0);
+                        }
+                      }}
+                      className="bg-accent-teal text-zinc-950 hover:bg-accent-teal/90 px-5 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer"
+                    >
+                      Next Place Matching
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Screen 9: Activity 3 – Places listening MCQ & sentence translation */}
+      {step === 9 && (
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
+          <div className="flex justify-between items-center border-b border-white/5 pb-4">
+            <h2 className="text-2xl font-black text-white flex items-center gap-2">
+              <Sparkles className="w-6 h-6 text-brand-400" />
+              <span>Activity 3 – Places Sentence Translation</span>
+            </h2>
+            <span className="text-xs text-zinc-500 font-bold">Step 9 of {totalSteps}</span>
+          </div>
+
+          {practiceSentences.length === 0 ? (
+            <div className="text-center py-6"><Loader2 className="w-8 h-8 animate-spin mx-auto text-brand-400" /></div>
+          ) : (
+            <div className="space-y-6 max-w-xl mx-auto w-full">
+              <div className="bg-zinc-900/30 p-6 rounded-2xl border border-white/5 space-y-4 text-center">
+                <p className="text-xs text-zinc-400">Listen to the sentence and select the correct translation:</p>
+                
+                <div className="py-2">
+                  <button onClick={() => playAudio(practiceSentences[sentIdx]?.sentence)} className="p-4 bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/20 text-purple-400 rounded-full transition flex items-center justify-center cursor-pointer shadow-md"><Volume2 className="w-6 h-6" /></button>
+                </div>
+
+                <div className="grid grid-cols-1 gap-2">
+                  {practiceSentences[sentIdx]?.options.map((opt: string) => (
+                    <button
+                      key={opt}
+                      onClick={() => !sentChecked && setSelectedSentOpt(opt)}
+                      disabled={sentChecked}
+                      className={`p-3 rounded-xl border text-left text-xs font-bold transition ${
+                        selectedSentOpt === opt
+                          ? "border-brand-500 bg-brand-500/10 text-white"
+                          : "border-white/5 bg-zinc-950 text-zinc-300 hover:border-white/10"
+                      } ${sentChecked && opt === practiceSentences[sentIdx]?.correct ? "border-accent-teal bg-accent-teal/15 text-white" : ""} ${sentChecked && selectedSentOpt === opt && opt !== practiceSentences[sentIdx]?.correct ? "border-red-500 bg-red-500/10 text-white" : ""}`}
+                    >
+                      {opt}
+                    </button>
+                  ))}
+                </div>
+
+                {sentChecked && (
+                  <div className={`p-3 rounded-xl border text-xs text-left ${
+                    sentCorrect ? "bg-accent-teal/5 border-accent-teal/20 text-accent-teal" : "bg-red-500/5 border-red-500/10 text-red-400"
+                  }`}>
+                    {sentCorrect ? "Correct translation!" : "Incorrect sentence mapping."}
+                  </div>
+                )}
+
+                <div className="flex justify-end pt-1">
+                  {!sentChecked ? (
+                    <button
+                      onClick={handleCheckSent}
+                      disabled={!selectedSentOpt}
+                      className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white px-5 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer"
+                    >
+                      Verify Translation
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => {
+                        setSentChecked(false);
+                        setSelectedSentOpt(null);
+                        setSentCorrect(null);
+                        if (sentIdx < practiceSentences.length - 1) {
+                          setSentIdx(sentIdx + 1);
+                        } else {
+                          setSentIdx(0);
+                        }
+                      }}
+                      className="bg-accent-teal text-zinc-950 hover:bg-accent-teal/90 px-5 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer"
+                    >
+                      Next Sentence
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Screen 10: Activity 4 – Dialogue Q&A matching & custom sentence builder */}
+      {step === 10 && (
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
+          <div className="flex justify-between items-center border-b border-white/5 pb-4">
+            <h2 className="text-2xl font-black text-white flex items-center gap-2">
+              <Sparkles className="w-6 h-6 text-brand-400" />
+              <span>Activity 4 – Dialog Match & Custom Builder</span>
+            </h2>
+            <span className="text-xs text-zinc-500 font-bold">Step 10 of {totalSteps}</span>
+          </div>
+
+          <div className="bg-zinc-900/30 p-6 rounded-2xl border border-white/5 space-y-4">
+            <div className="space-y-2 text-left">
+              <span className="text-[10px] text-amber-400 uppercase tracking-wider block font-bold">Dialogue Match Check</span>
+              <p className="text-xs text-zinc-300">Choose the grammatically appropriate reply to the question: <strong className="text-brand-300 font-korean font-bold">"{dialogueItems[dialogueIdx]?.question}"</strong></p>
+              
+              <div className="grid grid-cols-1 gap-2">
+                {dialogueItems[dialogueIdx]?.options.map((opt: any) => (
+                  <button
+                    key={opt.id}
+                    onClick={() => !dialogueChecked && setSelectedDialogueOptId(opt.id)}
+                    disabled={dialogueChecked}
+                    className={`p-3 rounded-xl border text-left text-xs font-bold transition ${
+                      selectedDialogueOptId === opt.id
+                        ? "border-brand-500 bg-brand-500/10 text-white"
+                        : "border-white/5 bg-zinc-950 text-zinc-300 hover:border-white/10"
+                    } ${dialogueChecked && opt.correct ? "border-accent-teal bg-accent-teal/15 text-white" : ""} ${dialogueChecked && selectedDialogueOptId === opt.id && !opt.correct ? "border-red-500 bg-red-500/10 text-white" : ""}`}
+                  >
+                    {opt.text}
+                  </button>
+                ))}
+              </div>
+
+              {dialogueChecked && (
+                <p className="text-[10px] text-zinc-400 leading-snug">{dialogueItems[dialogueIdx]?.explanation}</p>
+              )}
+
+              <div className="flex justify-end pt-1">
+                {!dialogueChecked ? (
+                  <button
+                    onClick={handleCheckDialogue}
+                    disabled={!selectedDialogueOptId}
+                    className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer"
+                  >
+                    Check QA Reply
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => {
+                      setDialogueChecked(false);
+                      setSelectedDialogueOptId(null);
+                      setDialogueCorrect(null);
+                      if (dialogueIdx < dialogueItems.length - 1) {
+                        setDialogueIdx(dialogueIdx + 1);
+                      } else {
+                        setDialogueIdx(0);
+                      }
+                    }}
+                    className="bg-accent-teal text-zinc-950 hover:bg-accent-teal/90 px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer"
+                  >
+                    Next QA Pair
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Part B: Custom Builder */}
+            <div className="p-4 bg-zinc-950 rounded-xl border border-white/5 space-y-4">
+              <span className="text-[10px] text-amber-400 uppercase tracking-wider block font-bold">Custom Location Builder</span>
+              
+              <div className="grid grid-cols-2 gap-3 text-left">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-zinc-400">Choose Place</label>
+                  <select
+                    value={selectedBuilderPlace}
+                    onChange={(e) => setSelectedBuilderPlace(e.target.value)}
+                    className="w-full bg-zinc-900 p-2.5 rounded-xl border border-white/5 text-xs text-white focus:outline-none focus:border-brand-500"
+                  >
+                    {builderPlaces.map((p) => (
+                      <option key={p.id} value={p.korean}>{p.korean} ({p.english})</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-zinc-400">Choose Pattern</label>
+                  <select
+                    value={selectedBuilderPattern}
+                    onChange={(e) => setSelectedBuilderPattern(e.target.value)}
+                    className="w-full bg-zinc-900 p-2.5 rounded-xl border border-white/5 text-xs text-white focus:outline-none focus:border-brand-500"
+                  >
+                    <option value="location">에 있어요 (am at)</option>
+                    <option value="destination">에 가요 (going to)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex justify-center pt-1">
+                <button
+                  onClick={handleBuildSentence}
+                  disabled={building}
+                  className="bg-brand-500 hover:bg-brand-600 text-white font-bold py-2 px-5 rounded-xl text-xs transition cursor-pointer"
+                >
+                  Assemble Builder
+                </button>
+              </div>
+
+              {builtSentence && (
+                <div className="bg-zinc-900/60 p-4 rounded-xl border border-brand-500/25 space-y-3 animate-fade-in text-center">
+                  <p className="text-base font-black text-white font-korean">{builtSentence.final_korean_text}</p>
+                  
+                  <div className="flex items-center justify-center gap-3">
+                    <button
+                      onClick={() => playAudio(builtSentence.final_korean_text)}
+                      className="p-2 bg-brand-500/10 hover:bg-brand-500/20 text-brand-400 rounded-full border border-brand-500/20 transition cursor-pointer"
+                    >
+                      <Volume2 className="w-4 h-4" />
+                    </button>
+
+                    <button
+                      onClick={handleSaveSentence}
+                      disabled={savingSentence || sentenceSaved}
+                      className="bg-accent-teal hover:bg-accent-teal/95 disabled:opacity-50 text-zinc-950 font-black py-1.5 px-4 rounded-lg text-xs transition cursor-pointer"
+                    >
+                      {savingSentence ? "Saving..." : sentenceSaved ? "Saved Successfully!" : "Save Sentence"}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Builder Reflection MCQ */}
+              <div className="bg-zinc-900/60 p-3 rounded-xl border border-white/5 space-y-2 text-left">
+                <p className="text-xs text-zinc-300">Which pattern did you just use in your builder?</p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleCheckBuilderReflect("location")}
+                    disabled={builderReflectChecked}
+                    className={`px-4 py-2 rounded-lg text-xs font-bold border transition ${
+                      builderReflectSelected === "location"
+                        ? "border-accent-teal bg-accent-teal/15 text-white"
+                        : "border-white/10 bg-zinc-900 text-zinc-400 hover:border-white/20"
+                    }`}
+                  >
+                    Location (에 있어요)
+                  </button>
+                  <button
+                    onClick={() => handleCheckBuilderReflect("destination")}
+                    disabled={builderReflectChecked}
+                    className={`px-4 py-2 rounded-lg text-xs font-bold border transition ${
+                      builderReflectSelected === "destination"
+                        ? "border-accent-teal bg-accent-teal/15 text-white"
+                        : "border-white/10 bg-zinc-900 text-zinc-400 hover:border-white/20"
+                    }`}
+                  >
+                    Destination (에 가요)
+                  </button>
+                </div>
+                {builderReflectChecked && (
+                  <p className="text-[10px] text-zinc-500 leading-snug">
+                    Correct! Match the verb structure to determine location presence vs directional movement.
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Screen 11: Activity 5 – Graduating checkpoint mini-quiz */}
+      {step === 11 && (
         <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
           <div className="flex justify-between items-center border-b border-white/5 pb-4">
             <h2 className="text-2xl font-black text-white flex items-center gap-2">
@@ -900,15 +1396,15 @@ export default function Course2Phase5LocationWizard({
             <div className="text-center py-6"><Loader2 className="w-8 h-8 animate-spin mx-auto text-brand-400" /></div>
           ) : (
             <div className="space-y-6 max-w-xl mx-auto w-full">
-              <div className="p-4 bg-zinc-950 rounded-xl border border-white/5 text-xs text-center">
+              <div className="p-5 bg-zinc-950 rounded-2xl border border-white/5 text-center">
                 <span className="text-[10px] text-zinc-500 uppercase font-mono block">Question Prompt</span>
-                <p className="font-extrabold text-white text-base mt-1">{quizBlueprint[quizIdx]?.question}</p>
+                <p className="font-extrabold text-white text-base mt-2">{quizBlueprint[quizIdx]?.question}</p>
               </div>
 
               {quizBlueprint[quizIdx]?.type === "listening" && (
                 <div className="text-center space-y-4">
                   <button 
-                    onClick={() => playAudio(quizBlueprint[quizIdx]?.correct_answer)}
+                    onClick={() => playAudio(quizBlueprint[quizIdx]?.correct_answer || quizBlueprint[quizIdx]?.audio_text)}
                     className="p-5 bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 border border-purple-500/20 rounded-full mx-auto transition flex items-center justify-center cursor-pointer"
                   >
                     <Volume2 className="w-8 h-8" />
@@ -923,7 +1419,7 @@ export default function Course2Phase5LocationWizard({
                           quizSelectedOpt === opt
                             ? "border-brand-500 bg-brand-500/10 text-white"
                             : "border-white/5 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-300"
-                        } ${quizChecked && opt === quizBlueprint[quizIdx]?.correct_answer ? "border-accent-teal bg-accent-teal/10" : ""}`}
+                        } ${quizChecked && opt === quizBlueprint[quizIdx]?.correct_answer ? "border-accent-teal bg-accent-teal/15 text-white" : ""} ${quizChecked && quizSelectedOpt === opt && opt !== quizBlueprint[quizIdx]?.correct_answer ? "border-red-500 bg-red-500/10 text-white" : ""}`}
                       >
                         {opt}
                       </button>
@@ -943,7 +1439,7 @@ export default function Course2Phase5LocationWizard({
                         quizSelectedOpt === opt
                           ? "border-brand-500 bg-brand-500/10 text-white"
                           : "border-white/5 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-300"
-                      } ${quizChecked && opt === quizBlueprint[quizIdx]?.correct_answer ? "border-accent-teal bg-accent-teal/10 text-white" : ""}`}
+                      } ${quizChecked && opt === quizBlueprint[quizIdx]?.correct_answer ? "border-accent-teal bg-accent-teal/15 text-white" : ""} ${quizChecked && quizSelectedOpt === opt && opt !== quizBlueprint[quizIdx]?.correct_answer ? "border-red-500 bg-red-500/10 text-white" : ""}`}
                     >
                       {opt}
                     </button>
@@ -979,8 +1475,6 @@ export default function Course2Phase5LocationWizard({
 
               {quizBlueprint[quizIdx]?.type === "speaking" && (
                 <div className="space-y-4 text-center">
-                  <p className="text-xs text-zinc-400">Bonus: Read the location sentence aloud for evaluation.</p>
-                  
                   <div className="flex justify-center items-center gap-3">
                     <button
                       onClick={(e) => {
@@ -1040,7 +1534,7 @@ export default function Course2Phase5LocationWizard({
                     disabled={
                       (quizBlueprint[quizIdx]?.type === "listening" || quizBlueprint[quizIdx]?.type === "context") 
                         ? !quizSelectedOpt 
-                        : !quizWritingAns.trim()
+                        : (quizBlueprint[quizIdx]?.type === "speaking" ? !speakingResult : !quizWritingAns.trim())
                     }
                     className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white px-5 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer"
                   >
@@ -1070,8 +1564,8 @@ export default function Course2Phase5LocationWizard({
         </div>
       )}
 
-      {/* Screen 6: Homework & AI Location Practice */}
-      {step === 6 && (
+      {/* Screen 12: Homework & AI Location Practice */}
+      {step === 12 && (
         <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center text-center animate-fade-in">
           <div className="p-3 bg-brand-500/10 rounded-full border border-brand-500/25 w-fit mx-auto text-brand-400 shrink-0 animate-bounce">
             <Award className="w-10 h-10" />
@@ -1142,7 +1636,12 @@ export default function Course2Phase5LocationWizard({
           </div>
 
           <button
-            onClick={onComplete}
+            onClick={() => {
+              if (typeof window !== "undefined") {
+                window.dispatchEvent(new CustomEvent("hangeulai-xp", { detail: { amount: 150, type: 'correct' } }));
+              }
+              onComplete();
+            }}
             className="bg-gradient-to-r from-brand-500 to-amber-500 hover:from-brand-600 text-zinc-950 font-black py-4 px-8 rounded-2xl transition text-sm flex items-center justify-center gap-2 mx-auto shadow-lg shadow-brand-500/20 cursor-pointer w-full max-w-xs"
           >
             <span>Finish Phase 5 & Earn XP</span>
@@ -1152,7 +1651,7 @@ export default function Course2Phase5LocationWizard({
       )}
       
       {/* Navigation bottom controls for non-quiz screens */}
-      {step < 5 && step > 1 && (
+      {step !== 11 && step !== 12 && step > 1 && (
         <div className="flex justify-between items-center py-4 border-t border-white/5 mt-6">
           <button 
             onClick={() => setStep(step - 1)} 
@@ -1168,6 +1667,7 @@ export default function Course2Phase5LocationWizard({
           </button>
         </div>
       )}
+      
     </div>
   );
 }

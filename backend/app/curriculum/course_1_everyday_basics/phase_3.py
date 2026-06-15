@@ -138,11 +138,45 @@ PHASE_3_DATA = {
         }
     ],
     "quiz": [
-        {"id": "q_num_1", "type": "listening", "question": "Hear the number and select the correct digits:", "audio_text": "십이", "options": ["2", "12", "20", "10"], "correct_answer": "12", "explanation": "십이 (sip-i) is 12 (10 + 2)."},
-        {"id": "q_num_2", "type": "context", "question": "Which Korean word means the number 8?", "options": ["일", "삼", "팔", "구"], "correct_answer": "팔", "explanation": "팔 (pal) corresponds to number 8."},
-        {"id": "q_num_3", "type": "context", "question": "Match the clock time: '두 시' (du si)", "options": ["1:00", "2:00", "3:00", "12:00"], "correct_answer": "2:00", "explanation": "두 시 means 2 o'clock."},
-        {"id": "q_num_4", "type": "writing", "question": "Type the Sino-Korean word for number 3 (삼):", "correct_answer": "삼", "explanation": "삼 (sam) represents 3."},
-        {"id": "q_num_5", "type": "speaking", "question": "Read this price sentence aloud: '오천 원입니다'", "correct_answer": "오천 원입니다", "explanation": "This reads 'It is 5,000 Won'."}
+        {
+            "id": "q_num_1", 
+            "type": "listening", 
+            "question": "Hear the number and select the correct digits:", 
+            "audio_text": "십이", 
+            "options": ["2", "12", "20", "10"], 
+            "correct_answer": "12", 
+            "explanation": "십이 (sip-i) is 12 (10 + 2)."
+        },
+        {
+            "id": "q_num_2", 
+            "type": "context", 
+            "question": "Which Korean word means the number 8?", 
+            "options": ["일", "삼", "팔", "구"], 
+            "correct_answer": "팔", 
+            "explanation": "팔 (pal) corresponds to number 8."
+        },
+        {
+            "id": "q_num_3", 
+            "type": "context", 
+            "question": "Match the clock time for: 두 시", 
+            "options": ["1:00", "2:00", "3:00", "12:00"], 
+            "correct_answer": "2:00", 
+            "explanation": "두 시 means 2 o'clock."
+        },
+        {
+            "id": "q_num_4", 
+            "type": "writing", 
+            "question": "Type the Sino-Korean word for number 3:", 
+            "correct_answer": "삼", 
+            "explanation": "삼 (sam) represents 3."
+        },
+        {
+            "id": "q_num_5", 
+            "type": "speaking", 
+            "question": "Read this price sentence aloud: '오천 원입니다'", 
+            "correct_answer": "오천 원입니다", 
+            "explanation": "This reads 'It is 5,000 Won'."
+        }
     ],
     "homework": [
         {"id": "hw_num_1", "text": "Write down 5 numbers from your daily life (phone digits, age, prices) and translate them to Korean."},
@@ -150,3 +184,4 @@ PHASE_3_DATA = {
         {"id": "hw_num_3", "text": "Practice saying '오천 원' (5,000 Won) and '만 원' (10,000 Won) three times."}
     ]
 }
+

@@ -18,7 +18,8 @@ import {
   Send,
   HelpCircle,
   Trophy,
-  Star
+  Star,
+  RefreshCw
 } from "lucide-react";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
@@ -49,6 +50,13 @@ interface Course2Phase6ConversationWizardProps {
   onComplete: () => void;
 }
 
+interface MicroQuestion {
+  question: string;
+  options: { id: string; text: string }[];
+  correctId: string;
+  explanation: string;
+}
+
 export default function Course2Phase6ConversationWizard({
   activeLesson,
   speakWord,
@@ -57,11 +65,96 @@ export default function Course2Phase6ConversationWizard({
   const [step, setStep] = useState(1);
   const [showOutline, setShowOutline] = useState(false);
   const [useVoiceMode, setUseVoiceMode] = useState(false);
-  const totalSteps = 6;
+  const totalSteps = 12;
+
+  // Persist step to localStorage for refresh resilience
+  useEffect(() => {
+    const saved = localStorage.getItem("hangeulai_c1p6_step");
+    if (saved) {
+      const parsedStep = parseInt(saved, 10);
+      if (parsedStep >= 1 && parsedStep <= 12) setStep(parsedStep);
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem("hangeulai_c1p6_step", String(step));
+  }, [step]);
 
   // DB Data loaded
   const [metadata, setMetadata] = useState<any>(null);
   const [examplesData, setExamplesData] = useState<any>(null);
+
+  // Concept Micro-questions states
+  const [cSelected, setCSelected] = useState<string | null>(null);
+  const [cChecked, setCChecked] = useState(false);
+  const [cCorrect, setCCorrect] = useState<boolean | null>(null);
+  const [cIdx, setCIdx] = useState(0);
+
+  // Reset concept states on step change
+  useEffect(() => {
+    if (step >= 2 && step <= 5) {
+      setCSelected(null);
+      setCChecked(false);
+      setCCorrect(null);
+      setCIdx(0);
+    }
+  }, [step]);
+
+  // Concept questions definition matching requirements
+  const conceptQuestions: Record<number, MicroQuestion[]> = {
+    2: [
+      {
+        question: "Which of these fits an A1 conversation best?",
+        options: [
+          { id: "A", text: "talking about your daily schedule" },
+          { id: "B", text: "debating politics" },
+          { id: "C", text: "explaining technical work problems" }
+        ],
+        correctId: "A",
+        explanation: "A1 conversations focus on familiar, personal topics like routines, locations, and identity."
+      }
+    ],
+    3: [
+      {
+        question: "If someone says '안녕하세요?', which is a more natural next line at A1?",
+        options: [
+          { id: "A", text: "안녕하세요." },
+          { id: "B", text: "저는 한국 사람이에요?" },
+          { id: "C", text: "어디에 있어요?" }
+        ],
+        correctId: "A",
+        explanation: "Responding to a greeting with a polite '안녕하세요' is the most natural and expected response."
+      }
+    ],
+    4: [
+      {
+        question: "Which pattern would you use to answer '어디에 있어요?'?",
+        options: [
+          { id: "A", text: "저는 _입니다." },
+          { id: "B", text: "_에 있어요." },
+          { id: "C", text: "_에 가요?" }
+        ],
+        correctId: "B",
+        explanation: "Use '[Place]에 있어요' to answer static location questions."
+      }
+    ],
+    5: [
+      {
+        question: "During a conversation, what is better at A1?",
+        options: [
+          { id: "A", text: "never speaking until you know the perfect sentence" },
+          { id: "B", text: "trying simple sentences, even with mistakes" }
+        ],
+        correctId: "B",
+        explanation: "At A1, interaction and flow are key. Mistakes are a natural part of practice!"
+      }
+    ]
+  };
+
+  // Step 8: Post scramble dialogue question
+  const [reflectionSelected, setReflectionSelected] = useState<string | null>(null);
+  const [reflectionChecked, setReflectionChecked] = useState(false);
+  const [reflectionCorrect, setReflectionCorrect] = useState<boolean | null>(null);
 
   // Activity 1A states (Guided choice)
   const [guidedItems, setGuidedItems] = useState<any[]>([]);
@@ -70,14 +163,14 @@ export default function Course2Phase6ConversationWizard({
   const [guidedChecked, setGuidedChecked] = useState(false);
   const [guidedCorrect, setGuidedCorrect] = useState<boolean | null>(null);
 
-  // Activity 1B states (Order Scrambled)
+  // Activity 2A states (Order Scrambled)
   const [orderItems, setOrderItems] = useState<any[]>([]);
   const [orderIdx, setOrderIdx] = useState(0);
   const [userOrderedIndices, setUserOrderedIndices] = useState<number[]>([]);
   const [orderChecked, setOrderChecked] = useState(false);
   const [orderCorrect, setOrderCorrect] = useState<boolean | null>(null);
 
-  // Activity 2 states (Semi-free Chat)
+  // Activity 3 states (Semi-free Chat)
   const [scenarios, setScenarios] = useState<any[]>([]);
   const [selectedScenarioId, setSelectedScenarioId] = useState<string | null>(null);
   const [chatSessionId, setChatSessionId] = useState<string | null>(null);
@@ -108,6 +201,19 @@ export default function Course2Phase6ConversationWizard({
   const [loadingTutor, setLoadingTutor] = useState(false);
   const [tutorSession, setTutorSession] = useState<any>(null);
 
+  // Sound and XP helpers
+  const playCorrectSound = () => {
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("hangeulai-xp", { detail: { amount: 20, type: 'correct' } }));
+    }
+  };
+
+  const playWrongSound = () => {
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("hangeulai-xp", { detail: { amount: -10, type: 'wrong' } }));
+    }
+  };
+
   useEffect(() => {
     const load = async () => {
       try {
@@ -117,14 +223,12 @@ export default function Course2Phase6ConversationWizard({
         } else if (step === 2 && !examplesData) {
           const res = await apiJson("/lessons/phases/korean1/6/examples");
           setExamplesData(res);
-        } else if (step === 3 && guidedItems.length === 0) {
-          const res_g = await apiJson("/practice/dialogues/guided");
-          const res_o = await apiJson("/practice/dialogues/order");
+        } else if ((step === 6 || step === 7) && guidedItems.length === 0) {
+          const res_g = await apiJson("/lessons/practice/dialogues/guided");
+          const res_o = await apiJson("/lessons/practice/dialogues/order");
           setGuidedItems(res_g.items || []);
           setOrderItems(res_o.items || []);
-        } else if (step === 4 && scenarios.length === 0) {
-          // Scenarios fetched dynamically
-          const res = await apiJson("/lessons/phases/korean1/6/metadata"); // reuse same config or mock scen
+        } else if (step === 9 && scenarios.length === 0) {
           setScenarios([
             {
               id: "a1_scen_1",
@@ -142,10 +246,10 @@ export default function Course2Phase6ConversationWizard({
               description: "Say where you are currently located and where you are heading next."
             }
           ]);
-        } else if (step === 5 && quizBlueprint.length === 0) {
-          const res_q = await apiJson("/quiz/korean1/phase-6/start", { method: "POST" });
+        } else if (step === 11 && quizBlueprint.length === 0) {
+          const res_q = await apiJson("/lessons/quiz/korean1/phase-6/start", { method: "POST" });
           setQuizBlueprint(res_q.blueprint || []);
-        } else if (step === 6 && homeworkItems.length === 0) {
+        } else if (step === 12 && homeworkItems.length === 0) {
           const res_hw = await apiJson("/lessons/phases/korean1/6/homework");
           setHomeworkItems(res_hw || []);
         }
@@ -160,13 +264,44 @@ export default function Course2Phase6ConversationWizard({
     speakWord(text);
   };
 
+  // Concept Screen checking handler
+  const handleCheckConcept = (selectedId: string) => {
+    if (cChecked) return;
+    const currentQ = conceptQuestions[step]?.[cIdx];
+    if (!currentQ) return;
+
+    setCSelected(selectedId);
+    const isCorrect = selectedId === currentQ.correctId;
+    setCChecked(true);
+    setCCorrect(isCorrect);
+    
+    if (isCorrect) {
+      playCorrectSound();
+    } else {
+      playWrongSound();
+    }
+  };
+
+  // Concept Screen next helper
+  const handleNextConcept = () => {
+    const list = conceptQuestions[step] || [];
+    if (cIdx < list.length - 1) {
+      setCIdx(cIdx + 1);
+      setCSelected(null);
+      setCChecked(false);
+      setCCorrect(null);
+    } else {
+      setStep(step + 1);
+    }
+  };
+
   // Activity 1A choice submission
   const handleCheckGuided = async () => {
     const current = guidedItems[guidedIdx];
     if (!current || !selectedGuidedOptId) return;
 
     try {
-      const res = await apiJson("/practice/dialogues/guided/answer", {
+      const res = await apiJson("/lessons/practice/dialogues/guided/answer", {
         method: "POST",
         body: JSON.stringify({
           item_id: current.id,
@@ -176,12 +311,17 @@ export default function Course2Phase6ConversationWizard({
       });
       setGuidedChecked(true);
       setGuidedCorrect(res.correct);
+      if (res.correct) {
+        playCorrectSound();
+      } else {
+        playWrongSound();
+      }
     } catch (err) {
       console.error(err);
     }
   };
 
-  // Activity 1B Order submission
+  // Activity 2A Order submission
   const handleToggleOrderSelection = (lineIdx: number) => {
     if (orderChecked) return;
     if (userOrderedIndices.includes(lineIdx)) {
@@ -195,8 +335,6 @@ export default function Course2Phase6ConversationWizard({
     const current = orderItems[orderIdx];
     if (!current) return;
 
-    // Check if the order matches scrambled_lines indices correctly
-    // The correct order is given in correct_order. We check if user indices sequence is [0, 1, 2, 3...]
     let isCorrect = true;
     if (userOrderedIndices.length !== current.scrambled_lines.length) {
       isCorrect = false;
@@ -212,7 +350,7 @@ export default function Course2Phase6ConversationWizard({
     }
 
     try {
-      await apiJson("/practice/dialogues/order/answer", {
+      await apiJson("/lessons/practice/dialogues/order/answer", {
         method: "POST",
         body: JSON.stringify({
           item_id: current.id,
@@ -222,12 +360,28 @@ export default function Course2Phase6ConversationWizard({
       });
       setOrderChecked(true);
       setOrderCorrect(isCorrect);
+      if (isCorrect) {
+        playCorrectSound();
+      } else {
+        playWrongSound();
+      }
     } catch (err) {
       console.error(err);
     }
   };
 
-  // Activity 2: Launch AI Dialogue Session
+  // Step 8: Post-scramble Reflection MCQ
+  const handleCheckReflection = (opt: string) => {
+    if (reflectionChecked) return;
+    setReflectionSelected(opt);
+    const isCorrect = opt === "greeting";
+    setReflectionChecked(true);
+    setReflectionCorrect(isCorrect);
+    if (isCorrect) playCorrectSound();
+    else playWrongSound();
+  };
+
+  // Activity 3: Launch AI Dialogue Session
   const handleStartChatSession = async (scenarioId: string) => {
     setSelectedScenarioId(scenarioId);
     setLoadingChat(true);
@@ -235,7 +389,7 @@ export default function Course2Phase6ConversationWizard({
     setChatEnded(false);
     setChatFeedback("");
     try {
-      const res = await apiJson("/conversation/a1/session/start", {
+      const res = await apiJson("/lessons/conversation/a1/session/start", {
         method: "POST",
         body: JSON.stringify({
           scenario_id: scenarioId,
@@ -245,6 +399,7 @@ export default function Course2Phase6ConversationWizard({
       setChatSessionId(res.session_id);
       setChatOpener(res.opener);
       setChatMessages([{ sender: "assistant", text: res.opener }]);
+      setStep(10); // Move directly to step 10 (Chat Runtime)
     } catch (err) {
       console.error(err);
     } finally {
@@ -260,11 +415,14 @@ export default function Course2Phase6ConversationWizard({
     setChatMessages(prev => [...prev, { sender: "user", text: userText }]);
 
     try {
-      const res = await apiJson(`/conversation/a1/session/${chatSessionId}/turn`, {
+      const res = await apiJson(`/lessons/conversation/a1/session/${chatSessionId}/turn`, {
         method: "POST",
         body: JSON.stringify({ user_text: userText })
       });
       setChatMessages(prev => [...prev, { sender: "assistant", text: res.reply }]);
+      if (res.feedback) {
+        setChatFeedback(res.feedback);
+      }
       if (useVoiceMode) {
         playAudio(res.reply);
       }
@@ -278,7 +436,7 @@ export default function Course2Phase6ConversationWizard({
   const handleEndChatSession = async () => {
     if (!chatSessionId) return;
     try {
-      const res = await apiJson(`/conversation/a1/session/${chatSessionId}/end`, { method: "POST" });
+      const res = await apiJson(`/lessons/conversation/a1/session/${chatSessionId}/end`, { method: "POST" });
       setChatFeedback(res.feedback);
       setChatEnded(true);
     } catch (err) {
@@ -300,7 +458,10 @@ export default function Course2Phase6ConversationWizard({
 
     setQuizChecked(true);
     setQuizCorrect(isCorrect);
-    if (!isCorrect) {
+    if (isCorrect) {
+      playCorrectSound();
+    } else {
+      playWrongSound();
       setQuizMistakes(prev => [...prev, current.correct_answer]);
     }
   };
@@ -317,7 +478,7 @@ export default function Course2Phase6ConversationWizard({
       try {
         const correctCount = quizBlueprint.length - quizMistakes.length;
         const score = Math.round((correctCount / quizBlueprint.length) * 100);
-        await apiJson("/quiz/korean1/phase-6/finish", {
+        await apiJson("/lessons/quiz/korean1/phase-6/finish", {
           method: "POST",
           body: JSON.stringify({
             score,
@@ -325,7 +486,7 @@ export default function Course2Phase6ConversationWizard({
           })
         });
         setQuizScore(score);
-        setStep(6);
+        setStep(12);
       } catch (err) {
         console.error(err);
       } finally {
@@ -353,8 +514,8 @@ export default function Course2Phase6ConversationWizard({
     setTutorSession(null);
     try {
       const path = topic === "selfintro" 
-        ? "/conversation/a1/selfintro-practice/start" 
-        : "/conversation/a1/routine-practice/start";
+        ? "/lessons/conversation/a1/selfintro-practice/start" 
+        : "/lessons/conversation/a1/routine-practice/start";
       const res = await apiJson(path, { method: "POST" });
       setTutorSession(res);
     } catch (err) {
@@ -366,6 +527,7 @@ export default function Course2Phase6ConversationWizard({
 
   return (
     <div className="flex-grow flex flex-col justify-between">
+      
       {/* Top Header tracking */}
       <header className="flex justify-between items-center py-4 border-b border-white/5 mb-6">
         <div className="flex items-center space-x-4">
@@ -374,7 +536,7 @@ export default function Course2Phase6ConversationWizard({
           </div>
           <div>
             <h2 className="font-black text-xl text-white tracking-tight flex items-center gap-2">
-              <span>{activeLesson?.title || "Everyday Conversations"}</span>
+              <span>{activeLesson?.title || "Conversation Capstone"}</span>
             </h2>
             <p className="text-xs text-zinc-500 font-medium">Topic: Integrated Dialogue Checks</p>
           </div>
@@ -398,21 +560,22 @@ export default function Course2Phase6ConversationWizard({
         </div>
       </header>
 
-      {/* Screen 1: Welcome/Overview */}
+      {/* Step 1: Welcome Overview */}
       {step === 1 && (
         <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center text-center animate-fade-in">
           <div className="relative mx-auto w-fit">
             <div className="p-4 bg-yellow-500/10 rounded-full border border-yellow-500/25 text-yellow-400">
-              <Trophy className="w-10 h-10" />
+              <Trophy className="w-10 h-10 animate-bounce" />
             </div>
             <div className="absolute -top-1 -right-1 p-1 bg-brand-500 rounded-full border-2 border-zinc-950">
-              <Star className="w-3 h-3 text-white fill-white" />
+              <Star className="w-3 h-3 text-white fill-white animate-pulse" />
             </div>
           </div>
           
           <div>
             <h2 className="text-5xl font-black text-white tracking-tight">Korean 1.6</h2>
-            <h3 className="text-xl font-bold text-yellow-400 mt-1">Everyday Conversations (Capstone)</h3>
+            <h3 className="text-2xl font-black text-yellow-400 mt-1">Conversation Lab</h3>
+            <p className="text-zinc-550 text-xs mt-0.5">Everyday Basics in Real Chats (A1 Capstone)</p>
           </div>
           
           <p className="text-zinc-300 text-base leading-relaxed max-w-2xl mx-auto">
@@ -425,17 +588,12 @@ export default function Course2Phase6ConversationWizard({
               {(metadata?.goals || [
                 "Combine greetings, self-intro, numbers, routines, and places",
                 "Practice 3–5-turn conversations on familiar topics (home, daily life, plans)",
-                "Build confidence for your first real conversations in Korean"
+                "Choose natural next lines and reorder scrambled statements",
+                "Handle a semi-free AI roleplay and complete the Capstone Quiz"
               ]).map((g: string, idx: number) => (
                 <li key={idx}>{g}</li>
               ))}
             </ul>
-          </div>
-
-          <div className="flex flex-wrap gap-2.5 justify-center max-w-2xl mx-auto">
-            {["Scenario-based", "A1 Fluency", "Roleplay Tasks", "Daily Life"].map(chip => (
-              <span key={chip} className="px-3 py-1 bg-yellow-500/10 border border-yellow-500/20 rounded-full text-[10px] text-yellow-300 font-bold">{chip}</span>
-            ))}
           </div>
 
           {/* Mode Selector */}
@@ -445,11 +603,11 @@ export default function Course2Phase6ConversationWizard({
               <span className="text-xs font-bold text-zinc-300">{metadata?.estimated_minutes || 25} minutes</span>
             </div>
             <div className="border-t border-white/[0.03] pt-3 space-y-2">
-              <span className="text-[9px] text-zinc-500 uppercase tracking-widest font-black block">Conversation Mode</span>
+              <span className="text-[9px] text-zinc-500 uppercase tracking-widest font-black block">Conversation Input Mode</span>
               <div className="grid grid-cols-2 gap-2">
                 <button
                   onClick={() => setUseVoiceMode(false)}
-                  className={`p-2.5 rounded-xl border text-xs font-bold transition ${
+                  className={`p-2.5 rounded-xl border text-xs font-bold transition cursor-pointer ${
                     !useVoiceMode 
                       ? "border-yellow-500 bg-yellow-500/10 text-white" 
                       : "border-white/5 bg-zinc-900/60 text-zinc-400 hover:border-white/10"
@@ -459,7 +617,7 @@ export default function Course2Phase6ConversationWizard({
                 </button>
                 <button
                   onClick={() => setUseVoiceMode(true)}
-                  className={`p-2.5 rounded-xl border text-xs font-bold transition flex items-center justify-center gap-1.5 ${
+                  className={`p-2.5 rounded-xl border text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
                     useVoiceMode 
                       ? "border-yellow-500 bg-yellow-500/10 text-white" 
                       : "border-white/5 bg-zinc-900/60 text-zinc-400 hover:border-white/10"
@@ -474,86 +632,280 @@ export default function Course2Phase6ConversationWizard({
           <div className="flex flex-col gap-3 max-w-xs mx-auto pt-2">
             <button 
               onClick={() => setStep(2)}
-              className="bg-yellow-500 hover:bg-yellow-400 text-zinc-950 font-bold py-3 px-8 rounded-xl transition text-sm flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-yellow-500/20"
+              className="bg-yellow-500 hover:bg-yellow-400 text-zinc-950 font-bold py-3.5 px-8 rounded-xl transition text-sm flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-yellow-500/20"
             >
-              <Trophy className="w-4 h-4" /> Start Capstone Phase
+              <Trophy className="w-4 h-4 text-zinc-950" />
+              <span>Start Capstone Phase</span>
             </button>
-            
           </div>
 
           {showOutline && (
-            <div className="bg-zinc-950 p-6 rounded-2xl border border-white/5 text-left text-xs text-zinc-400 space-y-2 animate-fade-in max-w-2xl mx-auto w-full font-mono">
+            <div className="bg-zinc-955 p-6 rounded-2xl border border-white/5 text-left text-xs text-zinc-400 space-y-2 animate-fade-in max-w-2xl mx-auto w-full font-mono">
               <p className="font-extrabold text-white text-center pb-2">Phase Activities Outline</p>
-              <p>✓ Activity 1 – Guided dialogue line completion choices</p>
-              <p>✓ Activity 2 – Scrambled dialog sequence solver</p>
-              <p>✓ Activity 3 – Semi-free A1 AI roleplay coaching</p>
-              <p>✓ Activity 4 – Graduating capstone checkpoints</p>
+              <p>✓ C1 – What "A1 conversation" means</p>
+              <p>✓ C2 – Conversations as "lines" (turns)</p>
+              <p>✓ C3 – Using patterns you already know</p>
+              <p>✓ C4 – How Gwan-Sik helps you in chats</p>
+              <p>✓ Activity 1A – Choose the next line</p>
+              <p>✓ Activity 2A – Scrambled dialogue solver</p>
+              <p>✓ Activity 2B – Scramble review check</p>
+              <p>✓ Activity 3A – AI Scenario selection</p>
+              <p>✓ Activity 3B – ASR Chat Room Practice</p>
+              <p>✓ Activity 4 – Graduating capstone quiz checks</p>
+              <p>✓ Activity 5 – Course 1 Everyday Basics graduation</p>
             </div>
           )}
         </div>
       )}
 
-      {/* Screen 2: Concept Explanation */}
+      {/* Step 2: Screen C1 – What "A1 conversation" means */}
       {step === 2 && (
         <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
-          <div className="flex justify-between items-center border-b border-white/5 pb-4">
-            <h2 className="text-2xl font-black text-white flex items-center gap-2">
-              <BookOpen className="w-5 h-5 text-yellow-400" />
-              <span>What is an A1 Conversation?</span>
-            </h2>
-            <span className="text-xs text-zinc-500 font-bold">Step 2 of {totalSteps}</span>
+          <h2 className="text-3xl font-black text-white">What "A1 Conversation" Means</h2>
+          
+          <div className="bg-zinc-900/60 p-6 rounded-2xl border border-white/5 space-y-4 text-sm text-zinc-300">
+            <p className="leading-relaxed">At A1 level, conversation means:</p>
+            <ul className="list-disc list-inside space-y-2 text-zinc-400 pl-2">
+              <li>Short exchanges, typically lasting between <strong className="text-white">3 to 8 turns</strong>.</li>
+              <li>Focusing on topics you know well: <strong className="text-white">yourself, your day, places, numbers</strong>.</li>
+              <li>The other person speaks slowly, repeats their words, and helps you along.</li>
+            </ul>
+            <p className="text-zinc-500 italic mt-2">You are not expected to express complex opinions yet; the focus is entirely on basic question and answer sequences.</p>
           </div>
 
-          {/* Simple English Note */}
-          <div className="bg-yellow-500/5 p-4 rounded-xl border border-yellow-500/15 text-xs leading-relaxed text-zinc-300">
-            <p className="italic">
-              "At A1, you can have short conversations about yourself, your day, and places around you when the other person speaks slowly and helps you. That's what we'll practice here."
-            </p>
+          {/* Micro-question 1 */}
+          <div className="bg-zinc-950 p-6 rounded-2xl border border-white/5 space-y-4 max-w-xl">
+            <h4 className="text-xs font-black uppercase text-yellow-400 tracking-wider">Concept Check</h4>
+            <p className="text-xs text-zinc-300 font-bold">{conceptQuestions[2][0].question}</p>
+            <div className="grid grid-cols-1 gap-2">
+              {conceptQuestions[2][0].options.map(opt => (
+                <button
+                  key={opt.id}
+                  onClick={() => handleCheckConcept(opt.id)}
+                  disabled={cChecked}
+                  className={`p-3 rounded-xl border text-left text-xs font-semibold transition ${
+                    cSelected === opt.id
+                      ? cCorrect
+                        ? "border-accent-teal bg-accent-teal/15 text-white"
+                        : "border-red-500 bg-red-500/10 text-white"
+                      : "border-white/5 bg-zinc-900 text-zinc-300 hover:border-white/10"
+                  } ${cChecked && opt.id === conceptQuestions[2][0].correctId ? "border-accent-teal bg-accent-teal/15 text-white" : ""}`}
+                >
+                  {opt.text}
+                </button>
+              ))}
+            </div>
+            {cChecked && (
+              <div className="animate-fade-in space-y-3">
+                <p className="text-xs text-zinc-400 leading-relaxed">{conceptQuestions[2][0].explanation}</p>
+                <button
+                  onClick={handleNextConcept}
+                  className="bg-yellow-500 hover:bg-yellow-400 text-zinc-950 px-5 py-2 rounded-xl text-xs font-bold transition cursor-pointer"
+                >
+                  Continue
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Step 3: Screen C2 – Conversations as "lines" (turns) */}
+      {step === 3 && (
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
+          <h2 className="text-3xl font-black text-white">Conversations as "Lines" (Turns)</h2>
+          
+          <div className="bg-zinc-900/60 p-6 rounded-2xl border border-white/5 space-y-3 text-sm text-zinc-300">
+            <p>A conversation is made of lines: each time someone speaks is one line (or turn).</p>
+            <p className="text-zinc-400">In this phase, you will practice dialogue completion and arrangement by:</p>
+            <ul className="list-disc list-inside space-y-1 text-zinc-400 pl-2">
+              <li>Reading short dialogue lines in Korean and reviewing their English support translations.</li>
+              <li>Deciding which line comes next logically.</li>
+              <li>Putting scrambled lines in order to form a natural exchange.</li>
+            </ul>
           </div>
 
-          {/* Blueprint Card */}
-          <div className="bg-zinc-900/60 p-4 rounded-xl border border-white/5 space-y-3">
-            <span className="text-[10px] text-zinc-500 font-black uppercase tracking-wider block">Conversation Blueprint</span>
-            
-            <div className="flex items-center justify-between gap-2 text-center text-xs">
-              <div className="p-3 bg-zinc-950 rounded-xl border border-white/5 flex-grow">
-                <span className="font-bold text-white block mb-0.5">Start</span>
-                <span className="text-[10px] text-zinc-400">Greeting + Identity</span>
+          {/* Micro-question 2 */}
+          <div className="bg-zinc-950 p-6 rounded-2xl border border-white/5 space-y-4 max-w-xl">
+            <h4 className="text-xs font-black uppercase text-yellow-400 tracking-wider">Concept Check</h4>
+            <p className="text-xs text-zinc-300 font-bold">{conceptQuestions[3][0].question}</p>
+            <div className="grid grid-cols-1 gap-2">
+              {conceptQuestions[3][0].options.map(opt => (
+                <button
+                  key={opt.id}
+                  onClick={() => handleCheckConcept(opt.id)}
+                  disabled={cChecked}
+                  className={`p-3 rounded-xl border text-left text-xs font-semibold transition ${
+                    cSelected === opt.id
+                      ? cCorrect
+                        ? "border-accent-teal bg-accent-teal/15 text-white"
+                        : "border-red-500 bg-red-500/10 text-white"
+                      : "border-white/5 bg-zinc-900 text-zinc-300 hover:border-white/10"
+                  } ${cChecked && opt.id === conceptQuestions[3][0].correctId ? "border-accent-teal bg-accent-teal/15 text-white" : ""}`}
+                >
+                  {opt.text}
+                </button>
+              ))}
+            </div>
+            {cChecked && (
+              <div className="animate-fade-in space-y-3">
+                <p className="text-xs text-zinc-400 leading-relaxed">{conceptQuestions[3][0].explanation}</p>
+                <button
+                  onClick={handleNextConcept}
+                  className="bg-yellow-500 hover:bg-yellow-400 text-zinc-950 px-5 py-2 rounded-xl text-xs font-bold transition cursor-pointer"
+                >
+                  Continue
+                </button>
               </div>
-              <ArrowRight className="w-4 h-4 text-zinc-500" />
-              <div className="p-3 bg-zinc-950 rounded-xl border border-yellow-500/20 flex-grow">
-                <span className="font-bold text-yellow-400 block mb-0.5">Middle</span>
-                <span className="text-[10px] text-zinc-400">Routine, Time or Place</span>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Step 4: Screen C3 – Using patterns you already know */}
+      {step === 4 && (
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
+          <h2 className="text-3xl font-black text-white">Using Patterns You Already Know</h2>
+          
+          <div className="bg-zinc-900/60 p-6 rounded-2xl border border-white/5 space-y-3 text-sm text-zinc-300">
+            <p>All conversations here reuse patterns from your earlier phases. You do not need to learn new grammar, just learn to recombine what you know:</p>
+            <div className="grid grid-cols-2 gap-3 text-xs pt-2">
+              <div className="p-2.5 bg-zinc-950/80 rounded-xl border border-white/5">
+                <strong className="text-yellow-400 block mb-0.5">Greetings & Thanks</strong>
+                안녕하세요, 반갑습니다, 감사합니다.
               </div>
-              <ArrowRight className="w-4 h-4 text-zinc-500" />
-              <div className="p-3 bg-zinc-950 rounded-xl border border-white/5 flex-grow">
-                <span className="font-bold text-white block mb-0.5">End</span>
-                <span className="text-[10px] text-zinc-400">Polite Closing</span>
+              <div className="p-2.5 bg-zinc-950/80 rounded-xl border border-white/5">
+                <strong className="text-yellow-400 block mb-0.5">Self-Introduction</strong>
+                저는 (이)예요, 저는 [Country] 사람이에요.
+              </div>
+              <div className="p-2.5 bg-zinc-950/80 rounded-xl border border-white/5">
+                <strong className="text-yellow-400 block mb-0.5">Numbers & Age</strong>
+                몇 살이에요?, [Age]살이에요.
+              </div>
+              <div className="p-2.5 bg-zinc-950/80 rounded-xl border border-white/5">
+                <strong className="text-yellow-400 block mb-0.5">Routines & Places</strong>
+                일어나요, 공부해요, 집에 있어요, 학교에 가요.
               </div>
             </div>
           </div>
 
-          {/* Example Dialogue */}
-          {examplesData?.examples?.[0] && (
-            <div className="space-y-2.5">
-              <div className="flex justify-between items-center">
-                <span className="text-[10px] text-zinc-500 font-black uppercase tracking-wider block">Example Mini-Dialogue</span>
-                <button 
-                  onClick={() => playAudio(examplesData.examples[0].dialogue.map((d: any) => d.ko).join(". "))}
-                  className="p-1 rounded bg-zinc-900 text-zinc-400 hover:text-white transition flex items-center gap-1 text-[10px] font-bold px-2.5 py-1"
+          {/* Micro-question 3 */}
+          <div className="bg-zinc-950 p-6 rounded-2xl border border-white/5 space-y-4 max-w-xl">
+            <h4 className="text-xs font-black uppercase text-yellow-400 tracking-wider">Concept Check</h4>
+            <p className="text-xs text-zinc-300 font-bold">{conceptQuestions[4][0].question}</p>
+            <div className="grid grid-cols-1 gap-2">
+              {conceptQuestions[4][0].options.map(opt => (
+                <button
+                  key={opt.id}
+                  onClick={() => handleCheckConcept(opt.id)}
+                  disabled={cChecked}
+                  className={`p-3 rounded-xl border text-left text-xs font-semibold transition ${
+                    cSelected === opt.id
+                      ? cCorrect
+                        ? "border-accent-teal bg-accent-teal/15 text-white"
+                        : "border-red-500 bg-red-500/10 text-white"
+                      : "border-white/5 bg-zinc-900 text-zinc-300 hover:border-white/10"
+                  } ${cChecked && opt.id === conceptQuestions[4][0].correctId ? "border-accent-teal bg-accent-teal/15 text-white" : ""}`}
                 >
-                  <Volume2 className="w-3.5 h-3.5" />
-                  <span>Listen to All</span>
+                  {opt.text}
+                </button>
+              ))}
+            </div>
+            {cChecked && (
+              <div className="animate-fade-in space-y-3">
+                <p className="text-xs text-zinc-400 leading-relaxed">{conceptQuestions[4][0].explanation}</p>
+                <button
+                  onClick={handleNextConcept}
+                  className="bg-yellow-500 hover:bg-yellow-400 text-zinc-950 px-5 py-2 rounded-xl text-xs font-bold transition cursor-pointer"
+                >
+                  Continue
                 </button>
               </div>
+            )}
+          </div>
+        </div>
+      )}
 
-              <div className="bg-zinc-950/60 p-4 rounded-2xl border border-white/5 space-y-3 max-h-48 overflow-y-auto">
-                {examplesData.examples[0].dialogue.map((line: any, idx: number) => (
-                  <div key={idx} className={`flex gap-3 text-xs ${line.speaker === "Learner" ? "justify-end" : "justify-start"}`}>
-                    <div className={`p-3 rounded-2xl max-w-sm ${
+      {/* Step 5: Screen C4 – Getting help from the AI tutor */}
+      {step === 5 && (
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
+          <h2 className="text-3xl font-black text-white">How Gwan-Sik Helps You</h2>
+          
+          <div className="bg-zinc-900/60 p-6 rounded-2xl border border-white/5 space-y-3 text-sm text-zinc-300">
+            <p>During the semi-free roleplay tasks, Gwan-Sik is built to assist A1 learners:</p>
+            <ul className="list-disc list-inside space-y-2 text-zinc-455 pl-2">
+              <li>He stays exactly at your level, avoiding complicated sentences.</li>
+              <li>He repeats or rephrases questions if you get stuck.</li>
+              <li>He provides helpful, lightweight feedback tips at the end of the chat session.</li>
+            </ul>
+            <p className="text-xs text-zinc-500 italic">Do not worry about making mistakes; the main goal is simply keeping the communication flowing!</p>
+          </div>
+
+          {/* Micro-question 4 */}
+          <div className="bg-zinc-950 p-6 rounded-2xl border border-white/5 space-y-4 max-w-xl">
+            <h4 className="text-xs font-black uppercase text-yellow-400 tracking-wider">Concept Check</h4>
+            <p className="text-xs text-zinc-300 font-bold">{conceptQuestions[5][0].question}</p>
+            <div className="grid grid-cols-1 gap-2">
+              {conceptQuestions[5][0].options.map(opt => (
+                <button
+                  key={opt.id}
+                  onClick={() => handleCheckConcept(opt.id)}
+                  disabled={cChecked}
+                  className={`p-3 rounded-xl border text-left text-xs font-semibold transition ${
+                    cSelected === opt.id
+                      ? cCorrect
+                        ? "border-accent-teal bg-accent-teal/15 text-white"
+                        : "border-red-500 bg-red-500/10 text-white"
+                      : "border-white/5 bg-zinc-900 text-zinc-300 hover:border-white/10"
+                  } ${cChecked && opt.id === conceptQuestions[5][0].correctId ? "border-accent-teal bg-accent-teal/15 text-white" : ""}`}
+                >
+                  {opt.text}
+                </button>
+              ))}
+            </div>
+            {cChecked && (
+              <div className="animate-fade-in space-y-3">
+                <p className="text-xs text-zinc-400 leading-relaxed">{conceptQuestions[5][0].explanation}</p>
+                <button
+                  onClick={handleNextConcept}
+                  className="bg-yellow-500 hover:bg-yellow-400 text-zinc-950 px-5 py-2 rounded-xl text-xs font-bold transition cursor-pointer"
+                >
+                  Continue
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Step 6: Activity 1A – Choose the next line */}
+      {step === 6 && (
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
+          <div className="flex justify-between items-center border-b border-white/5 pb-4">
+            <h2 className="text-2xl font-black text-white flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-yellow-400" />
+              <span>Activity 1A – Choose Next Line</span>
+            </h2>
+            <span className="text-xs text-zinc-500 font-bold">Step 6 of {totalSteps}</span>
+          </div>
+
+          {guidedItems.length === 0 ? (
+            <div className="text-center py-6"><Loader2 className="w-8 h-8 animate-spin mx-auto text-yellow-400" /></div>
+          ) : (
+            <div className="bg-zinc-900/30 p-5 rounded-2xl border border-white/5 space-y-4">
+              <div className="text-left text-center">
+                <span className="text-[9px] text-zinc-500 font-black uppercase tracking-wider block">Dialogue Context</span>
+                <p className="text-xs font-bold text-zinc-300 mt-1">"{guidedItems[guidedIdx]?.context}"</p>
+              </div>
+
+              {/* Chat turns leading up to question */}
+              <div className="space-y-2.5 max-w-md mx-auto">
+                {guidedItems[guidedIdx]?.lines.map((line: any, idx: number) => (
+                  <div key={idx} className={`flex ${line.speaker === "Learner" ? "justify-end" : "justify-start"}`}>
+                    <div className={`p-3 rounded-2xl text-xs ${
                       line.speaker === "Learner" 
-                        ? "bg-yellow-500/10 text-white border border-yellow-500/20 text-right" 
-                        : "bg-zinc-900 text-zinc-300 border border-white/5 text-left"
+                        ? "bg-yellow-500/10 text-white border border-yellow-500/15 text-right" 
+                        : "bg-zinc-950 text-zinc-300 border border-white/5 text-left"
                     }`}>
                       <span className="text-[9px] text-zinc-500 uppercase tracking-widest font-black block mb-0.5">{line.speaker}</span>
                       <p className="font-korean font-extrabold text-sm">{line.ko}</p>
@@ -562,52 +914,10 @@ export default function Course2Phase6ConversationWizard({
                   </div>
                 ))}
               </div>
-            </div>
-          )}
 
-          <div className="flex justify-between items-center pt-4 border-t border-white/5">
-            <button onClick={() => setStep(1)} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-sm font-bold transition flex items-center gap-2 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
-            <button onClick={() => setStep(3)} className="bg-yellow-500 hover:bg-yellow-400 text-zinc-950 px-5 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer">Start Activities <ChevronRight className="w-4 h-4" /></button>
-          </div>
-        </div>
-      )}
-
-      {/* Screen 3: Activity 1: Guided Dialogs */}
-      {step === 3 && (
-        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
-          <div className="flex justify-between items-center border-b border-white/5 pb-4">
-            <h2 className="text-2xl font-black text-white flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-yellow-400" />
-              <span>Activity 1 – Guided Dialogues</span>
-            </h2>
-            <span className="text-xs text-zinc-500 font-bold">Step 3 of {totalSteps}</span>
-          </div>
-
-          {/* Guided Items */}
-          {guidedItems.length > 0 && (
-            <div className="bg-zinc-900/30 p-5 rounded-2xl border border-white/5 space-y-4">
-              <div className="text-left space-y-1 text-center">
-                <span className="text-[9px] text-zinc-500 font-black uppercase tracking-wider block">Part A: Complete Dialogue (Next Line)</span>
-                <p className="text-[11px] text-zinc-400">{guidedItems[guidedIdx]?.context}</p>
+              <div className="text-center space-y-1">
+                <p className="text-xs font-bold text-yellow-400">{guidedItems[guidedIdx]?.prompt}</p>
               </div>
-
-              {/* Dialogue Bubble flow */}
-              <div className="space-y-2 max-w-md mx-auto">
-                {guidedItems[guidedIdx]?.lines.map((line: any, idx: number) => (
-                  <div key={idx} className={`flex ${line.speaker === "Learner" ? "justify-end" : "justify-start"}`}>
-                    <div className={`p-2.5 rounded-xl text-xs ${
-                      line.speaker === "Learner" 
-                        ? "bg-yellow-500/10 text-white border border-yellow-500/10" 
-                        : "bg-zinc-950 text-zinc-300 border border-white/5"
-                    }`}>
-                      <p className="font-korean font-bold">{line.ko}</p>
-                      <p className="text-[10px] text-zinc-500">{line.en}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <p className="text-xs text-center font-bold text-amber-400">{guidedItems[guidedIdx]?.prompt}</p>
 
               <div className="grid grid-cols-1 gap-2 max-w-sm mx-auto">
                 {guidedItems[guidedIdx]?.options.map((opt: any) => (
@@ -619,7 +929,7 @@ export default function Course2Phase6ConversationWizard({
                       selectedGuidedOptId === opt.id
                         ? "border-yellow-500 bg-yellow-500/10 text-white"
                         : "border-white/5 bg-zinc-950 text-zinc-300 hover:border-white/10"
-                    } ${guidedChecked && opt.correct ? "border-accent-teal bg-accent-teal/15 text-white" : ""}`}
+                    } ${guidedChecked && opt.correct ? "border-accent-teal bg-accent-teal/15 text-white" : ""} ${guidedChecked && selectedGuidedOptId === opt.id && !opt.correct ? "border-red-500 bg-red-500/10 text-white" : ""}`}
                   >
                     {opt.text}
                   </button>
@@ -627,8 +937,8 @@ export default function Course2Phase6ConversationWizard({
               </div>
 
               {guidedChecked && (
-                <div className="p-3 bg-zinc-950 rounded-xl border border-white/5 text-xs text-zinc-400 max-w-sm mx-auto text-left">
-                  <p className="font-extrabold text-white mb-1">{guidedCorrect ? "Correct Continuation!" : "Incorrect Continuation."}</p>
+                <div className="p-4 bg-zinc-950 rounded-xl border border-white/5 text-xs text-zinc-450 max-w-sm mx-auto text-left space-y-1">
+                  <p className="font-extrabold text-white">{guidedCorrect ? "Correct Continuation!" : "Incorrect Continuation."}</p>
                   <p>{guidedItems[guidedIdx]?.explanation}</p>
                 </div>
               )}
@@ -638,9 +948,9 @@ export default function Course2Phase6ConversationWizard({
                   <button
                     onClick={handleCheckGuided}
                     disabled={!selectedGuidedOptId}
-                    className="bg-yellow-500 hover:bg-yellow-400 text-zinc-950 disabled:opacity-50 px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer"
+                    className="bg-yellow-500 hover:bg-yellow-400 text-zinc-950 disabled:opacity-50 px-5 py-2.5 rounded-xl text-xs font-black transition cursor-pointer"
                   >
-                    Check Line
+                    Verify Line Choice
                   </button>
                 ) : (
                   <button
@@ -651,28 +961,42 @@ export default function Course2Phase6ConversationWizard({
                       if (guidedIdx < guidedItems.length - 1) {
                         setGuidedIdx(guidedIdx + 1);
                       } else {
-                        setGuidedIdx(0);
+                        setStep(7); // Move to scrambled solver step
                       }
                     }}
-                    className="bg-accent-teal text-zinc-950 hover:bg-accent-teal/90 px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer"
+                    className="bg-accent-teal text-zinc-950 hover:bg-accent-teal/90 px-5 py-2.5 rounded-xl text-xs font-black transition cursor-pointer"
                   >
-                    Next guided item
+                    {guidedIdx < guidedItems.length - 1 ? "Next Dialogue Challenge" : "Continue to Dialogue Scramble"}
                   </button>
                 )}
               </div>
             </div>
           )}
+        </div>
+      )}
 
-          {/* Part B: Scrambled solver */}
-          {orderItems.length > 0 && (
+      {/* Step 7: Activity 2A – Unscramble the dialogue */}
+      {step === 7 && (
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
+          <div className="flex justify-between items-center border-b border-white/5 pb-4">
+            <h2 className="text-2xl font-black text-white flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-yellow-400" />
+              <span>Activity 2A – Unscramble Dialogue</span>
+            </h2>
+            <span className="text-xs text-zinc-500 font-bold">Step 7 of {totalSteps}</span>
+          </div>
+
+          {orderItems.length === 0 ? (
+            <div className="text-center py-6"><Loader2 className="w-8 h-8 animate-spin mx-auto text-yellow-400" /></div>
+          ) : (
             <div className="bg-zinc-900/30 p-5 rounded-2xl border border-white/5 space-y-4">
-              <div className="text-left space-y-1 text-center">
-                <span className="text-[9px] text-zinc-500 font-black uppercase tracking-wider block">Part B: Dialogue Scramble (Sort Sequence)</span>
-                <p className="text-[11px] text-zinc-400">Click lines in order to assemble a natural conversation:</p>
+              <div className="text-center space-y-1">
+                <span className="text-[9px] text-zinc-500 font-black uppercase tracking-wider block">Dialogue Scramble solver</span>
+                <p className="text-xs text-zinc-300 font-extrabold">Click lines in order to assemble a natural conversation.</p>
               </div>
 
-              {/* Scrambled selection pool */}
-              <div className="space-y-2 max-w-md mx-auto">
+              {/* Scrambled lines pool */}
+              <div className="grid grid-cols-1 gap-2 max-w-md mx-auto">
                 {orderItems[orderIdx]?.scrambled_lines.map((line: any, idx: number) => {
                   const selectionOrder = userOrderedIndices.indexOf(idx);
                   const isSelected = selectionOrder !== -1;
@@ -681,18 +1005,18 @@ export default function Course2Phase6ConversationWizard({
                       key={idx}
                       onClick={() => handleToggleOrderSelection(idx)}
                       disabled={orderChecked}
-                      className={`w-full text-left p-3 rounded-xl border text-xs font-bold transition flex items-center justify-between ${
+                      className={`text-left p-3.5 rounded-xl border text-xs font-bold transition flex items-center justify-between cursor-pointer ${
                         isSelected 
                           ? "border-yellow-500 bg-yellow-500/10 text-white" 
                           : "border-white/5 bg-zinc-950 text-zinc-300 hover:border-white/10"
                       }`}
                     >
                       <div className="space-y-0.5">
-                        <p className="font-korean">{line.ko}</p>
+                        <p className="font-korean font-extrabold text-sm">{line.ko}</p>
                         <p className="text-[10px] text-zinc-500 font-normal">{line.en}</p>
                       </div>
                       {isSelected && (
-                        <span className="w-5 h-5 rounded-full bg-yellow-500 text-zinc-950 font-black flex items-center justify-center text-[10px]">
+                        <span className="w-5 h-5 rounded-full bg-yellow-500 text-zinc-950 font-black flex items-center justify-center text-[10px] shrink-0">
                           {selectionOrder + 1}
                         </span>
                       )}
@@ -701,13 +1025,13 @@ export default function Course2Phase6ConversationWizard({
                 })}
               </div>
 
-              {/* User ordered preview */}
+              {/* Live ordering preview */}
               {userOrderedIndices.length > 0 && (
-                <div className="bg-zinc-950 p-4 rounded-xl border border-white/5 space-y-1 text-xs text-left max-w-md mx-auto">
-                  <span className="text-[8px] text-zinc-500 uppercase block font-black mb-1">Your Ordered dialogue Preview:</span>
+                <div className="bg-zinc-950 p-4 rounded-xl border border-white/5 space-y-2 text-xs text-left max-w-md mx-auto animate-fade-in">
+                  <span className="text-[8px] text-zinc-500 uppercase block font-black">Ordered dialogue Preview:</span>
                   {userOrderedIndices.map((idx, i) => (
                     <div key={i} className="flex gap-2">
-                      <span className="text-yellow-400 font-bold font-mono">{i + 1}.</span>
+                      <span className="text-yellow-400 font-bold">{i + 1}.</span>
                       <span className="text-zinc-300 font-korean">{orderItems[orderIdx]?.scrambled_lines[idx]?.ko}</span>
                     </div>
                   ))}
@@ -718,7 +1042,7 @@ export default function Course2Phase6ConversationWizard({
                 <div className={`p-3 rounded-xl border text-xs text-center max-w-md mx-auto ${
                   orderCorrect ? "bg-accent-teal/5 border-accent-teal/20 text-accent-teal" : "bg-red-500/5 border-red-500/10 text-red-400"
                 }`}>
-                  {orderCorrect ? "Order is perfect!" : "Incorrect order. Read dialogues from greetings to closing statements."}
+                  {orderCorrect ? "Order is perfect!" : "Incorrect order. Hint: Start with a greeting line like '안녕하세요?' first."}
                 </div>
               )}
 
@@ -730,9 +1054,10 @@ export default function Course2Phase6ConversationWizard({
                     setOrderCorrect(null);
                   }}
                   disabled={orderChecked}
-                  className="text-xs text-zinc-500 hover:text-white underline cursor-pointer"
+                  className="text-xs text-zinc-550 hover:text-white underline cursor-pointer flex items-center gap-1"
                 >
-                  Reset Sequence
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  <span>Reset Sequence</span>
                 </button>
 
                 {!orderChecked ? (
@@ -752,195 +1077,243 @@ export default function Course2Phase6ConversationWizard({
                       if (orderIdx < orderItems.length - 1) {
                         setOrderIdx(orderIdx + 1);
                       } else {
-                        setOrderIdx(0);
+                        setStep(8); // Move to scramble reflection step
                       }
                     }}
-                    className="bg-yellow-500 hover:bg-yellow-400 text-zinc-950 px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer"
+                    className="bg-accent-teal text-zinc-950 hover:bg-accent-teal/90 px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer"
                   >
-                    Next Scramble item
+                    {orderIdx < orderItems.length - 1 ? "Next Scramble Solver" : "Continue to Dialogue Reflection"}
                   </button>
                 )}
               </div>
             </div>
           )}
+        </div>
+      )}
 
-          <div className="flex justify-between items-center pt-4 border-t border-white/5">
-            <button onClick={() => setStep(2)} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-sm font-bold transition flex items-center gap-2 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
-            <button onClick={() => setStep(4)} className="bg-yellow-500 hover:bg-yellow-400 text-zinc-950 px-5 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer">Move to Activity 2 <ChevronRight className="w-4 h-4" /></button>
+      {/* Step 8: Activity 2B – Dialogue reflection micro-question */}
+      {step === 8 && (
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
+          <div className="flex justify-between items-center border-b border-white/5 pb-4">
+            <h2 className="text-2xl font-black text-white flex items-center gap-2">
+              <HelpCircle className="w-5 h-5 text-yellow-400" />
+              <span>Dialogue Structure Reflection</span>
+            </h2>
+            <span className="text-xs text-zinc-500 font-bold">Step 8 of {totalSteps}</span>
+          </div>
+
+          <p className="text-sm text-zinc-300 leading-relaxed max-w-xl mx-auto text-center">
+            You successfully sorted conversation sequences. Let's analyze how standard Korean dialogue blocks operate:
+          </p>
+
+          <div className="bg-zinc-950 p-6 rounded-2xl border border-white/5 space-y-4 max-w-xl mx-auto w-full">
+            <h4 className="text-xs font-black uppercase text-yellow-400 tracking-wider">Concept Check</h4>
+            <p className="text-xs text-zinc-300 font-bold">Which line starts the conversation (greeting, question, or answer)?</p>
+            
+            <div className="grid grid-cols-1 gap-2">
+              {[
+                { id: "greeting", text: "Greeting (e.g. 안녕하세요!)" },
+                { id: "question", text: "Question (e.g. 이름이 뭐예요?)" },
+                { id: "answer", text: "Answer (e.g. 저는 지수예요.)" }
+              ].map(opt => (
+                <button
+                  key={opt.id}
+                  onClick={() => handleCheckReflection(opt.id)}
+                  disabled={reflectionChecked}
+                  className={`p-3 rounded-xl border text-left text-xs font-semibold transition ${
+                    reflectionSelected === opt.id
+                      ? reflectionCorrect
+                        ? "border-accent-teal bg-accent-teal/15 text-white"
+                        : "border-red-500 bg-red-500/10 text-white"
+                      : "border-white/5 bg-zinc-900 text-zinc-300 hover:border-white/10"
+                  } ${reflectionChecked && opt.id === "greeting" ? "border-accent-teal bg-accent-teal/15 text-white" : ""}`}
+                >
+                  {opt.text}
+                </button>
+              ))}
+            </div>
+
+            {reflectionChecked && (
+              <div className="animate-fade-in space-y-3">
+                <p className="text-xs text-zinc-400 leading-relaxed">
+                  Correct! Standard A1 conversations always initiate with a polite greeting turn to establish the conversation flow.
+                </p>
+                <button
+                  onClick={() => setStep(9)}
+                  className="bg-yellow-500 hover:bg-yellow-400 text-zinc-950 px-5 py-2 rounded-xl text-xs font-bold transition cursor-pointer"
+                >
+                  Go to AI Scenario Selection
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
 
-      {/* Screen 4: Activity 2: Semi-Free Chat */}
-      {step === 4 && (
+      {/* Step 9: Activity 3A – Scenario selection */}
+      {step === 9 && (
         <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
           <div className="flex justify-between items-center border-b border-white/5 pb-4">
             <h2 className="text-2xl font-black text-white flex items-center gap-2">
               <MessageSquare className="w-5 h-5 text-yellow-400" />
-              <span>Activity 2 – Semi-Free Roleplay</span>
+              <span>Activity 3A – Scenario Selection</span>
             </h2>
-            <span className="text-xs text-zinc-500 font-bold">Step 4 of {totalSteps}</span>
+            <span className="text-xs text-zinc-500 font-bold">Step 9 of {totalSteps}</span>
           </div>
 
-          {!selectedScenarioId ? (
-            /* Scenario selector view */
-            <div className="space-y-4">
-              <div className="text-center space-y-1">
-                <h3 className="text-sm font-black text-white">Select a Practice Scenario</h3>
-                <p className="text-xs text-zinc-500">Practice basic conversations in controlled settings.</p>
-              </div>
-
-              <div className="grid grid-cols-1 gap-3 max-w-md mx-auto">
-                {scenarios.map((scen) => (
-                  <button
-                    key={scen.id}
-                    onClick={() => handleStartChatSession(scen.id)}
-                    className="p-4 rounded-2xl border border-white/5 bg-zinc-950 hover:bg-zinc-900 text-left transition flex justify-between items-center"
-                  >
-                    <div className="space-y-1 pr-4">
-                      <span className="font-extrabold text-sm text-white">{scen.name}</span>
-                      <p className="text-xs text-zinc-400 leading-normal">{scen.description}</p>
-                    </div>
-                    <ArrowRight className="w-5 h-5 text-yellow-400 shrink-0" />
-                  </button>
-                ))}
-              </div>
+          <div className="space-y-4">
+            <div className="text-center space-y-1">
+              <h3 className="text-sm font-black text-white">Select a Practice Dialogue Scenario</h3>
+              <p className="text-xs text-zinc-500">Practice custom chats in simple A1 terms. Gwan-Sik will stay at your pace.</p>
             </div>
-          ) : (
-            /* Stateful chat view */
-            <div className="space-y-4 max-w-xl mx-auto w-full flex-grow flex flex-col justify-between">
-              
-              {/* Scenario target description header */}
-              <div className="p-3.5 bg-yellow-500/5 border border-yellow-500/15 rounded-xl text-[11px] text-zinc-300">
-                <span className="font-black text-yellow-400 block mb-0.5">Active Scenario Target:</span>
-                <p>{scenarios.find(s => s.id === selectedScenarioId)?.description}</p>
-              </div>
 
-              {/* Chat turns scrollarea */}
-              <div className="bg-zinc-950/80 rounded-2xl border border-white/5 p-4 space-y-3 h-64 overflow-y-auto flex flex-col justify-start">
-                {loadingChat ? (
-                  <div className="text-center py-10 my-auto"><Loader2 className="w-6 h-6 animate-spin mx-auto text-yellow-400" /></div>
-                ) : (
-                  chatMessages.map((msg, idx) => (
-                    <div key={idx} className={`flex ${msg.sender === "user" ? "justify-end" : "justify-start"}`}>
-                      <div className={`p-3 rounded-2xl text-xs max-w-[80%] ${
-                        msg.sender === "user" 
-                          ? "bg-yellow-500/10 text-white border border-yellow-500/20 text-right" 
-                          : "bg-zinc-900 text-zinc-300 border border-white/5 text-left"
-                      }`}>
-                        <span className="text-[8px] text-zinc-500 uppercase tracking-widest font-black block mb-0.5">
-                          {msg.sender === "user" ? "You" : "Gwan-Sik"}
-                        </span>
-                        <p className="font-korean font-bold text-sm leading-relaxed">{msg.text}</p>
-                      </div>
-                    </div>
-                  ))
-                )}
-                {sendingTurn && (
-                  <div className="flex justify-start">
-                    <div className="p-3 rounded-2xl bg-zinc-900 border border-white/5 text-zinc-500 text-[10px] animate-pulse">
-                      Gwan-Sik is replying...
-                    </div>
+            <div className="grid grid-cols-1 gap-3 max-w-md mx-auto">
+              {scenarios.map((scen) => (
+                <button
+                  key={scen.id}
+                  onClick={() => handleStartChatSession(scen.id)}
+                  className="p-4 rounded-2xl border border-white/5 bg-zinc-950 hover:bg-zinc-900 text-left transition flex justify-between items-center cursor-pointer hover:border-yellow-500/30"
+                >
+                  <div className="space-y-1 pr-4">
+                    <span className="font-extrabold text-sm text-white">{scen.name}</span>
+                    <p className="text-xs text-zinc-400 leading-normal">{scen.description}</p>
                   </div>
-                )}
-              </div>
-
-              {/* Scaffold phrase chips */}
-              {!chatEnded && (
-                <div className="space-y-2">
-                  <span className="text-[9px] text-zinc-500 uppercase font-black tracking-wider block text-left">Scaffold phrase Suggestions:</span>
-                  <div className="flex flex-wrap gap-1.5">
-                    {[
-                      "안녕하세요, 저는 영우예요.",
-                      "미국 사람이에요.",
-                      "집에 있어요.",
-                      "학교에 가요.",
-                      "공부해요."
-                    ].map(phrase => (
-                      <button
-                        key={phrase}
-                        onClick={() => setChatInput(phrase)}
-                        className="px-2.5 py-1.5 bg-zinc-900 hover:bg-zinc-800 rounded-lg border border-white/5 text-[10px] font-bold text-zinc-300 cursor-pointer"
-                      >
-                        {phrase}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Chat action controls */}
-              {chatEnded ? (
-                <div className="bg-zinc-950 p-4 rounded-xl border border-yellow-500/25 space-y-3 text-center">
-                  <span className="text-[10px] text-yellow-400 font-black uppercase tracking-wider block">Session completed Feedback</span>
-                  <p className="text-xs text-zinc-300 leading-normal">{chatFeedback}</p>
-                  <button
-                    onClick={() => {
-                      setSelectedScenarioId(null);
-                      setChatSessionId(null);
-                      setChatMessages([]);
-                    }}
-                    className="bg-zinc-900 border border-white/10 hover:bg-zinc-800 text-xs text-white font-bold py-1.5 px-4 rounded-lg cursor-pointer transition"
-                  >
-                    Select Another Scenario
-                  </button>
-                </div>
-              ) : (
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={chatInput}
-                    onChange={(e) => setChatInput(e.target.value)}
-                    placeholder="Type your reply in Korean..."
-                    className="flex-grow bg-zinc-950 p-3 rounded-xl border border-white/5 text-xs text-white outline-none focus:border-yellow-500 font-sans"
-                    onKeyDown={(e) => e.key === "Enter" && handleSendChatTurn()}
-                    disabled={sendingTurn || loadingChat}
-                  />
-                  <button
-                    onClick={handleSendChatTurn}
-                    disabled={sendingTurn || loadingChat || !chatInput.trim()}
-                    className="bg-yellow-500 hover:bg-yellow-400 text-zinc-950 p-3 rounded-xl transition cursor-pointer"
-                  >
-                    <Send className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={handleEndChatSession}
-                    className="bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 px-3 rounded-xl text-xs font-bold transition cursor-pointer"
-                  >
-                    End Chat
-                  </button>
-                </div>
-              )}
+                  <ArrowRight className="w-5 h-5 text-yellow-400 shrink-0" />
+                </button>
+              ))}
             </div>
-          )}
-
-          <div className="flex justify-between items-center pt-4 border-t border-white/5">
-            <button 
-              onClick={() => {
-                if (selectedScenarioId) {
-                  setSelectedScenarioId(null);
-                  setChatSessionId(null);
-                  setChatMessages([]);
-                } else {
-                  setStep(3);
-                }
-              }} 
-              className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-sm font-bold transition flex items-center gap-2 cursor-pointer"
-            >
-              <ChevronLeft className="w-4 h-4" /> Back
-            </button>
-            <button onClick={() => setStep(5)} className="bg-yellow-500 hover:bg-yellow-400 text-zinc-950 px-5 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer">Start Mini-Quiz <ChevronRight className="w-4 h-4" /></button>
           </div>
         </div>
       )}
 
-      {/* Screen 5: Mini-Quiz Checkpoint */}
-      {step === 5 && (
+      {/* Step 10: Activity 3B – Chat runtime */}
+      {step === 10 && (
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
+          <div className="flex justify-between items-center border-b border-white/5 pb-4">
+            <h2 className="text-2xl font-black text-white flex items-center gap-2">
+              <MessageSquare className="w-5 h-5 text-yellow-400" />
+              <span>Activity 3B – Roleplay Practice</span>
+            </h2>
+            <span className="text-xs text-zinc-500 font-bold">Step 10 of {totalSteps}</span>
+          </div>
+
+          <div className="space-y-4 max-w-xl mx-auto w-full flex-grow flex flex-col justify-between">
+            {/* Active Scenario Details */}
+            <div className="p-3.5 bg-yellow-500/5 border border-yellow-500/15 rounded-xl text-[11px] text-zinc-300 text-left">
+              <span className="font-black text-yellow-400 block mb-0.5">Active Scenario Objective:</span>
+              <p>{scenarios.find(s => s.id === selectedScenarioId)?.description}</p>
+            </div>
+
+            {/* Chat message threads */}
+            <div className="bg-zinc-950/80 rounded-2xl border border-white/5 p-4 space-y-3 h-64 overflow-y-auto flex flex-col justify-start">
+              {loadingChat ? (
+                <div className="text-center py-10 my-auto"><Loader2 className="w-6 h-6 animate-spin mx-auto text-yellow-400" /></div>
+              ) : (
+                chatMessages.map((msg, idx) => (
+                  <div key={idx} className={`flex ${msg.sender === "user" ? "justify-end" : "justify-start"}`}>
+                    <div className={`p-3 rounded-2xl text-xs max-w-[80%] ${
+                      msg.sender === "user" 
+                        ? "bg-yellow-500/10 text-white border border-yellow-500/20 text-right" 
+                        : "bg-zinc-900 text-zinc-300 border border-white/5 text-left"
+                    }`}>
+                      <span className="text-[8px] text-zinc-500 uppercase tracking-widest font-black block mb-0.5">
+                        {msg.sender === "user" ? "You" : "Gwan-Sik"}
+                      </span>
+                      <p className="font-korean font-bold text-sm leading-relaxed">{msg.text}</p>
+                    </div>
+                  </div>
+                ))
+              )}
+              {sendingTurn && (
+                <div className="flex justify-start">
+                  <div className="p-3 rounded-2xl bg-zinc-900 border border-white/5 text-zinc-500 text-[10px] animate-pulse">
+                    Gwan-Sik is typing a reply...
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Scaffold chips to assist */}
+            {!chatEnded && (
+              <div className="space-y-2">
+                <span className="text-[9px] text-zinc-500 uppercase font-black tracking-wider block text-left">Suggested Korean Statements:</span>
+                <div className="flex flex-wrap gap-1.5">
+                  {[
+                    "안녕하세요, 저는 영우예요.",
+                    "미국 사람이에요.",
+                    "집에 있어요.",
+                    "학교에 가요.",
+                    "공부해요."
+                  ].map(phrase => (
+                    <button
+                      key={phrase}
+                      onClick={() => setChatInput(phrase)}
+                      className="px-2.5 py-1.5 bg-zinc-900 hover:bg-zinc-800 rounded-lg border border-white/5 text-[10px] font-bold text-zinc-300 cursor-pointer"
+                    >
+                      {phrase}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Feedback box */}
+            {chatFeedback && (
+              <div className="p-3 bg-zinc-900 border border-white/5 rounded-xl text-left text-xs">
+                <span className="text-[8px] text-blue-400 font-bold uppercase block tracking-wider mb-1">Gwan-Sik's Feedback Tip</span>
+                <p className="text-zinc-300 leading-normal">{chatFeedback}</p>
+              </div>
+            )}
+
+            {/* Input actions */}
+            {chatEnded ? (
+              <div className="bg-zinc-950 p-4 rounded-xl border border-yellow-500/25 space-y-3 text-center animate-fade-in">
+                <span className="text-[10px] text-yellow-400 font-black uppercase tracking-wider block">Session Completed Feedback</span>
+                <p className="text-xs text-zinc-350 leading-normal">{chatFeedback || "Great job! You navigated this Capstone dialog smoothly."}</p>
+                <button
+                  onClick={() => setStep(11)}
+                  className="bg-yellow-500 hover:bg-yellow-400 text-zinc-950 font-bold py-2 px-6 rounded-xl text-xs transition cursor-pointer"
+                >
+                  Continue to Mini-Quiz
+                </button>
+              </div>
+            ) : (
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={chatInput}
+                  onChange={(e) => setChatInput(e.target.value)}
+                  placeholder="Type your reply in Korean..."
+                  className="flex-grow bg-zinc-950 p-3 rounded-xl border border-white/5 text-xs text-white outline-none focus:border-yellow-500 font-sans"
+                  onKeyDown={(e) => e.key === "Enter" && handleSendChatTurn()}
+                  disabled={sendingTurn || loadingChat}
+                />
+                <button
+                  onClick={handleSendChatTurn}
+                  disabled={sendingTurn || loadingChat || !chatInput.trim()}
+                  className="bg-yellow-500 hover:bg-yellow-400 text-zinc-950 p-3 rounded-xl transition cursor-pointer"
+                >
+                  <Send className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={handleEndChatSession}
+                  className="bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 px-4 rounded-xl text-xs font-bold transition cursor-pointer"
+                >
+                  Finish
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Step 11: Activity 4 – Graduating capstone checkpoints */}
+      {step === 11 && (
         <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
           <div className="flex justify-between items-center border-b border-white/5 pb-4">
             <h2 className="text-2xl font-black text-white flex items-center gap-2">
               <Award className="w-5 h-5 text-yellow-400" />
-              <span>Mini-Quiz: A1 Conversations Check</span>
+              <span>Capstone Mini-Quiz</span>
             </h2>
             <span className="text-xs text-zinc-500 font-bold">Question {quizIdx + 1} of {quizBlueprint.length}</span>
           </div>
@@ -972,7 +1345,7 @@ export default function Course2Phase6ConversationWizard({
                           quizSelectedOpt === opt
                             ? "border-yellow-500 bg-yellow-500/10 text-white"
                             : "border-white/5 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-300"
-                        } ${quizChecked && opt === quizBlueprint[quizIdx]?.correct_answer ? "border-accent-teal bg-accent-teal/10" : ""}`}
+                        } ${quizChecked && opt === quizBlueprint[quizIdx]?.correct_answer ? "border-accent-teal bg-accent-teal/15 text-white" : ""} ${quizChecked && quizSelectedOpt === opt && opt !== quizBlueprint[quizIdx]?.correct_answer ? "border-red-500 bg-red-500/10 text-white" : ""}`}
                       >
                         {opt}
                       </button>
@@ -992,7 +1365,7 @@ export default function Course2Phase6ConversationWizard({
                         quizSelectedOpt === opt
                           ? "border-yellow-500 bg-yellow-500/10 text-white"
                           : "border-white/5 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-300"
-                      } ${quizChecked && opt === quizBlueprint[quizIdx]?.correct_answer ? "border-accent-teal bg-accent-teal/10 text-white" : ""}`}
+                      } ${quizChecked && opt === quizBlueprint[quizIdx]?.correct_answer ? "border-accent-teal bg-accent-teal/15 text-white" : ""} ${quizChecked && quizSelectedOpt === opt && opt !== quizBlueprint[quizIdx]?.correct_answer ? "border-red-500 bg-red-500/10 text-white" : ""}`}
                     >
                       {opt}
                     </button>
@@ -1016,7 +1389,7 @@ export default function Course2Phase6ConversationWizard({
                         <button
                           key={ch}
                           onClick={() => setQuizWritingAns(v => v + ch)}
-                          className="px-3 py-1.5 bg-zinc-900 hover:bg-zinc-855 rounded border border-white/5 text-xs text-white"
+                          className="px-3 py-1.5 bg-zinc-900 hover:bg-zinc-850 rounded border border-white/5 text-xs text-white"
                         >
                           {ch}
                         </button>
@@ -1074,15 +1447,15 @@ export default function Course2Phase6ConversationWizard({
         </div>
       )}
 
-      {/* Screen 6: Homework & Completion */}
-      {step === 6 && (
+      {/* Step 12: Homework & Completion */}
+      {step === 12 && (
         <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center text-center animate-fade-in">
           <div className="p-3 bg-yellow-500/10 rounded-full border border-yellow-500/25 w-fit mx-auto text-yellow-400 shrink-0 animate-bounce">
             <Award className="w-10 h-10" />
           </div>
 
           <div className="space-y-1">
-            <h2 className="text-2xl font-black text-white">Course Complete! 🇰🇷🎓🎉</h2>
+            <h2 className="text-3xl font-black text-white">Course Complete! 🇰🇷🎓🎉</h2>
             <p className="text-zinc-400 text-xs">You scored {quizScore}% on your conversation checks! XP Awarded: **150 XP**.</p>
             <p className="text-yellow-400 text-sm font-extrabold mt-1">Korean 1: Everyday Basics — Completed!</p>
           </div>
@@ -1157,7 +1530,12 @@ export default function Course2Phase6ConversationWizard({
           </div>
 
           <button
-            onClick={onComplete}
+            onClick={() => {
+              if (typeof window !== "undefined") {
+                window.dispatchEvent(new CustomEvent("hangeulai-xp", { detail: { amount: 150, type: 'correct' } }));
+              }
+              onComplete();
+            }}
             className="bg-gradient-to-r from-yellow-500 via-orange-500 to-indigo-500 hover:from-yellow-600 text-zinc-950 font-black py-4 px-8 rounded-2xl transition text-sm flex items-center justify-center gap-2 mx-auto shadow-lg shadow-yellow-500/20 cursor-pointer w-full max-w-xs"
           >
             <span>Complete Course & Earn XP</span>
@@ -1167,7 +1545,7 @@ export default function Course2Phase6ConversationWizard({
       )}
       
       {/* Navigation bottom controls for non-quiz screens */}
-      {step < 5 && step > 1 && (
+      {step !== 11 && step !== 12 && step > 1 && (
         <div className="flex justify-between items-center py-4 border-t border-white/5 mt-6">
           <button 
             onClick={() => setStep(step - 1)} 

@@ -159,7 +159,7 @@ async def add_xp(
         raise HTTPException(status_code=404, detail="Profile not found")
     
     # Update XP
-    profile.total_xp += amount
+    profile.total_xp = max(0, profile.total_xp + amount)
     
     # Calculate real-time streak
     now = datetime.now(timezone.utc)
@@ -177,8 +177,7 @@ async def add_xp(
     # Level formula: level = floor(sqrt(xp / 100)) + 1
     import math
     new_level = math.floor(math.sqrt(profile.total_xp / 100)) + 1
-    if new_level > profile.level_progress:
-        profile.level_progress = new_level
+    profile.level_progress = max(1, new_level)
         
     await db.commit()
     await db.refresh(profile)
@@ -298,3 +297,113 @@ async def reset_progress(
     await db.refresh(profile)
     return profile
 
+@router.get("/activity-summary")
+async def get_activity_summary(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    stmt = select(Profile).where(Profile.user_id == current_user.id)
+    res_prof = await db.execute(stmt)
+    profile = res_prof.scalars().first()
+    
+    if not profile or not profile.course_states:
+        return {"summary": "You haven't started any courses yet. Once you complete a phase or study, a summary of your achievements will appear here!"}
+    
+    from backend.app.curriculum import PREGENERATED_LESSONS
+    
+    completed_info = []
+    for cid_str, state in profile.course_states.items():
+        try:
+            cid = int(cid_str)
+        except ValueError:
+            continue
+        completed_phases = state.get("completedPhases", [])
+        last_phase = state.get("lastPhase", 0)
+        
+        course_data = PREGENERATED_LESSONS.get(cid, {})
+        if not course_data:
+            continue
+        
+        # Course title (usually stored on one of the phases or we fallback)
+        first_phase_data = course_data.get(1, {})
+        course_title = first_phase_data.get("title", f"Course {cid}").split(" – ")[0]
+        
+        comp_names = []
+        for p in completed_phases:
+            p_data = course_data.get(p, {})
+            if p_data:
+                comp_names.append(p_data.get("title", f"Phase {p}"))
+                
+        last_phase_name = ""
+        if last_phase:
+            lp_data = course_data.get(last_phase, {})
+            if lp_data:
+                last_phase_name = lp_data.get("title", f"Phase {last_phase}")
+                
+        completed_info.append({
+            "course": course_title,
+            "completed_phases": comp_names,
+            "last_active_phase": last_phase_name
+        })
+        
+    if not completed_info:
+        return {"summary": "You haven't completed any phases yet. Start studying on the Lessons page!"}
+        
+    prompt = (
+        "You are an inspiring, warm, and expert Korean language coach.\n"
+        "Based on the student's curriculum completion data, generate a well-formatted markdown summary of what they have learned.\n"
+        "Keep the tone extremely encouraging, highlighting key linguistic milestones for each course/phase.\n\n"
+        "Here is the student's progress:\n"
+    )
+    for info in completed_info:
+        prompt += f"- **{info['course']}**:\n"
+        if info['completed_phases']:
+            prompt += f"  - Completed Phases: {', '.join(info['completed_phases'])}\n"
+        if info['last_active_phase']:
+            prompt += f"  - Currently Studying: {info['last_active_phase']}\n"
+            
+    prompt += (
+        "\nGenerate a beautifully structured markdown summary. For each course/phase listed above: \n"
+        "1. Summarize the key concepts covered (e.g. reading vowels/consonants, speaking polite present endings, Sino-Korean numbers, past/future routines, or tenses).\n"
+        "2. Keep the descriptions clear, distinct, and separate per course/phase.\n"
+        "3. Add a short, warm sentence of encouragement at the end.\n"
+        "Do not use generic text; tailor it directly to the topics in these specific phases."
+    )
+    
+    import httpx
+    try:
+        from backend.app.core.config import settings
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                "https://api.groq.com/openai/v1/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {settings.GROQ_API_KEY}",
+                    "Content-Type": "application/json"
+                },
+                json={
+                    "model": "llama-3.3-70b-versatile",
+                    "messages": [
+                        {"role": "system", "content": "You are a professional Korean language coaching assistant. Output markdown content."},
+                        {"role": "user", "content": prompt}
+                    ],
+                    "temperature": 0.7
+                },
+                timeout=30.0
+            )
+            if response.status_code == 200:
+                res_data = response.json()
+                summary = res_data["choices"][0]["message"]["content"]
+                return {"summary": summary}
+    except Exception as e:
+        print(f"!!! Groq activity summary failed: {e}", flush=True)
+        
+    fallback = "# Your Learning Achievements\n\n"
+    for info in completed_info:
+        fallback += f"### {info['course']}\n"
+        if info['completed_phases']:
+            fallback += f"- **Completed Phases**: {', '.join(info['completed_phases'])}\n"
+        if info['last_active_phase']:
+            fallback += f"- **Active Focus**: Currently studying {info['last_active_phase']}.\n"
+        fallback += "\n"
+    fallback += "\n*Excellent work! Keep going, consistency is key to mastering Korean!*"
+    return {"summary": fallback}

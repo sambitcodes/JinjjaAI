@@ -138,7 +138,7 @@ PHASE_2_DATA = {
         {
             "id": "q_pref_4",
             "type": "writing",
-            "question": "Type the Korean word meaning 'really' (정말):",
+            "question": "Type the Korean word meaning 'really':",
             "correct_answer": "정말",
             "explanation": "정말 is the adverb meaning 'really' or 'very' in Korean."
         }
