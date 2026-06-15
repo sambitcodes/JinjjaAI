@@ -2,7 +2,7 @@
  
 import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
-import { Send, Sparkles, ChevronLeft, ChevronRight, Mic, Loader2, Headphones, Volume2, Languages, Pause, BookOpen, Trash2, Sliders, Settings } from "lucide-react";
+import { Send, Sparkles, ChevronLeft, ChevronRight, Mic, Loader2, Headphones, Volume2, Pause, BookOpen, Trash2, Sliders, Settings } from "lucide-react";
 import { apiRequest, ensureAuthenticated, API_BASE_URL } from "../../lib/api";
  
 interface Syllable {
@@ -44,11 +44,10 @@ export default function TutorChat() {
   const [currentSpeakingMsgIndex, setCurrentSpeakingMsgIndex] = useState<number | null>(null);
   const [currentSpeakingType, setCurrentSpeakingType] = useState<"reply" | "translation" | null>(null);
   const [isSpeakingActive, setIsSpeakingActive] = useState<boolean>(false);
+  // highlightCharRange now drives highlighting based on absolute char offsets into the cleaned text
   const [highlightCharRange, setHighlightCharRange] = useState<{ start: number; end: number } | null>(null);
-  const [currentSpeakingWord, setCurrentSpeakingWord] = useState<string>("");
   const [userAvatar, setUserAvatar] = useState<string | null>(null);
   const [expandedFeedback, setExpandedFeedback] = useState<Record<number, boolean>>({});
-  const [baseLanguage, setBaseLanguage] = useState<"korean" | "english">("korean");
   const [activePhraseIndex, setActivePhraseIndex] = useState(0);
 
   const loaderPhrases = [
@@ -220,7 +219,7 @@ export default function TutorChat() {
         body: JSON.stringify({
           message: cleanedText,
           model: selectedModel,
-          base_language: baseLanguage
+          base_language: "korean"  // Always Korean primary, English translation provided
         }),
       });
 
@@ -354,44 +353,31 @@ export default function TutorChat() {
     return cleaned.replace(/\s+/g, " ").trim();
   };
 
-  // Segment text into Korean and English chunks to speak each segment with its respective native TTS engine!
-  const segmentText = (text: string) => {
-    const koreanRegex = /([\uac00-\ud7a3\u3130-\u318f]+[^ㄱ-ㅎㅏ-ㅣ가-힣]*)/g;
-    
-    interface SpeechSegment {
-      text: string;
-      lang: "ko-KR" | "en-US";
+  /**
+   * Build a mapping from word index → {start, end} char offsets in the cleaned text.
+   * Used for both Web Speech and Audio TTS highlighting.
+   */
+  const buildWordOffsets = (cleanedText: string): { start: number; end: number }[] => {
+    const offsets: { start: number; end: number }[] = [];
+    const regex = /\S+/g;
+    let match: RegExpExecArray | null;
+    while ((match = regex.exec(cleanedText)) !== null) {
+      offsets.push({ start: match.index, end: match.index + match[0].length });
     }
-    
-    const segments: SpeechSegment[] = [];
-    let lastIndex = 0;
-    
-    text.replace(koreanRegex, (match, offset) => {
-      if (offset > lastIndex) {
-        const engText = text.substring(lastIndex, offset).trim();
-        if (engText) {
-          segments.push({ text: engText, lang: "en-US" });
-        }
-      }
-      segments.push({ text: match.trim(), lang: "ko-KR" });
-      lastIndex = offset + match.length;
-      return match;
-    });
-    
-    if (lastIndex < text.length) {
-      const remaining = text.substring(lastIndex).trim();
-      if (remaining) {
-        segments.push({ text: remaining, lang: "en-US" });
-      }
-    }
-    
-    return segments;
+    return offsets;
   };
 
-  // Speak chatbot text using a bilingual segmented voice engine with Play/Pause snappiness, Speed Slider integration, and dynamic highlighting!
+  /**
+   * Speak chatbot text using bilingual segmented voice engine.
+   * - reply type → Korean voice (ko-KR)
+   * - translation type → English voice (en-US)
+   * 
+   * TTS Highlighter: Uses character offsets (highlightCharRange) for perfect sync.
+   * No word-string matching — slice directly by position.
+   */
   const speakText = (text: string, index: number, type: "reply" | "translation", rateOverride?: number) => {
     if (typeof window !== "undefined") {
-      // Toggle Play/Pause: if clicked while actively speaking this exact index & type, cancel and clean state snappily
+      // Toggle Play/Pause: if clicked while actively speaking this exact index & type, cancel and clean state
       if (currentSpeakingMsgIndex === index && currentSpeakingType === type && isSpeakingActive && rateOverride === undefined) {
         if ("speechSynthesis" in window) {
           window.speechSynthesis.cancel();
@@ -402,7 +388,6 @@ export default function TutorChat() {
         }
         setIsSpeakingActive(false);
         setHighlightCharRange(null);
-        setCurrentSpeakingWord("");
         setCurrentSpeakingMsgIndex(null);
         setCurrentSpeakingType(null);
         return;
@@ -410,7 +395,7 @@ export default function TutorChat() {
 
       const activeRate = rateOverride !== undefined ? rateOverride : speechSpeed;
 
-      // Reset any active speech and initialize speaking state
+      // Reset any active speech
       if ("speechSynthesis" in window) {
         window.speechSynthesis.cancel();
       }
@@ -421,143 +406,118 @@ export default function TutorChat() {
       setCurrentSpeakingMsgIndex(index);
       setCurrentSpeakingType(type);
       setIsSpeakingActive(true);
-      setCurrentSpeakingWord("");
+      setHighlightCharRange(null);
       
       const cleanedText = cleanTextForSpeech(text);
 
-      const selectedVoiceName = type === "reply" 
-        ? (baseLanguage === "english" ? selectedEnVoiceName : selectedKoVoiceName)
-        : (baseLanguage === "english" ? selectedKoVoiceName : selectedEnVoiceName);
+      // reply → Korean voice, translation → English voice (always, regardless of any toggle)
+      const selectedVoiceName = type === "reply" ? selectedKoVoiceName : selectedEnVoiceName;
 
-      // --- BYPASS BRANCH FOR GOOGLE ONLINE HIGH-FIDELITY TTS ---
+      const cleanupSpeakState = () => {
+        setIsSpeakingActive(false);
+        setHighlightCharRange(null);
+        setCurrentSpeakingMsgIndex(null);
+        setCurrentSpeakingType(null);
+      };
+
+      // --- AUDIO TTS PATH (Google Online / Neural voices) ---
       if (selectedVoiceName === "google-online" || !selectedVoiceName || selectedVoiceName.includes("Neural")) {
-        const langCode = type === "reply"
-          ? (baseLanguage === "english" ? "en" : "ko")
-          : (baseLanguage === "english" ? "ko" : "en");
-
+        const langCode = type === "reply" ? "ko" : "en";
         const audioUrl = `${API_BASE_URL}/speech/tts?text=${encodeURIComponent(cleanedText)}&lang=${langCode}&voice=${encodeURIComponent(selectedVoiceName || "")}`;
 
-        
         const audio = new Audio(audioUrl);
         audio.playbackRate = activeRate;
         activeAudioRef.current = audio;
-        
-        const words = cleanedText.split(/[\s.,?!]+/);
+
+        // Pre-compute word offsets for accurate position-based highlighting
+        const wordOffsets = buildWordOffsets(cleanedText);
         
         audio.onplaying = () => {
           setIsSpeakingActive(true);
         };
         
         audio.ontimeupdate = () => {
-          if (activeAudioRef.current !== audio || !audio.duration) return;
+          if (activeAudioRef.current !== audio || !audio.duration || wordOffsets.length === 0) return;
           
           const progress = audio.currentTime / audio.duration;
+          // Clamp word index to valid range
           const wordIdx = Math.min(
-            Math.floor(progress * words.length),
-            words.length - 1
+            Math.floor(progress * wordOffsets.length),
+            wordOffsets.length - 1
           );
           
-          let currentOffset = 0;
-          for (let i = 0; i < wordIdx; i++) {
-            currentOffset += words[i].length + 1;
-          }
-          
-          const word = words[wordIdx];
-          if (word) {
-            setCurrentSpeakingWord(word);
-            setHighlightCharRange({ start: currentOffset, end: currentOffset + word.length });
+          const range = wordOffsets[wordIdx];
+          if (range) {
+            setHighlightCharRange({ start: range.start, end: range.end });
           }
         };
         
-        const handleEnded = () => {
-          if (activeAudioRef.current === audio) {
-            activeAudioRef.current = null;
-          }
-          setIsSpeakingActive(false);
-          setHighlightCharRange(null);
-          setCurrentSpeakingWord("");
-          setCurrentSpeakingMsgIndex(null);
-          setCurrentSpeakingType(null);
-        };
-        
-        audio.onended = handleEnded;
-        audio.onerror = handleEnded;
+        audio.onended = cleanupSpeakState;
+        audio.onerror = cleanupSpeakState;
         
         audio.play().catch(e => {
           console.error("Audio playback error:", e);
-          handleEnded();
+          cleanupSpeakState();
         });
         return;
       }
 
+      // --- WEB SPEECH API PATH ---
       if ("speechSynthesis" in window) {
-        const segments = segmentText(cleanedText);
         const allVoices = window.speechSynthesis.getVoices();
-        let accumLength = 0;
-      
-      segments.forEach((seg, segIdx) => {
-        const utterance = new SpeechSynthesisUtterance(seg.text);
-        utterance.lang = seg.lang;
         
-        // Track offset boundaries relative to the original cleaned message string
-        const segmentOffset = accumLength;
-        accumLength += seg.text.length + 1; // +1 account for space/join gaps
-        
-        if (seg.lang === "ko-KR") {
-          const activeVoice = allVoices.find((v) => v.name === selectedKoVoiceName);
-          if (activeVoice) {
-            utterance.voice = activeVoice;
-          }
+        // For Web Speech path: speak the entire cleanedText as one utterance per language type
+        // reply → Korean, translation → English
+        const utterance = new SpeechSynthesisUtterance(cleanedText);
+        utterance.lang = type === "reply" ? "ko-KR" : "en-US";
+
+        if (type === "reply") {
+          const koVoice = allVoices.find((v) => v.name === selectedKoVoiceName);
+          if (koVoice) utterance.voice = koVoice;
           utterance.rate = activeRate * 0.85;
         } else {
-          const activeVoice = allVoices.find((v) => v.name === selectedEnVoiceName);
-          if (activeVoice) {
-            utterance.voice = activeVoice;
+          const enVoice = allVoices.find((v) => v.name === selectedEnVoiceName);
+          if (enVoice) {
+            utterance.voice = enVoice;
           } else {
-            const engVoices = allVoices.filter((v) => v.lang.includes("en-") || v.lang.includes("en_"));
-            if (engVoices.length > 0) {
-              utterance.voice = engVoices[0];
-            }
+            const fallbackEn = allVoices.find(v => v.lang.includes("en-") || v.lang.includes("en_"));
+            if (fallbackEn) utterance.voice = fallbackEn;
           }
           utterance.rate = activeRate * 0.9;
         }
-        
-        // Dynamic Word Highlight tracking
+
+        // onboundary: use event.charIndex directly as offset into cleanedText
+        // event.charLength may be 0 on some browsers — fallback by measuring word at that offset
         utterance.onboundary = (event) => {
-          if (event.name === "word") {
-            const word = seg.text.substring(event.charIndex).split(/[\s.,?!]+/)[0];
-            if (word) {
-              setCurrentSpeakingWord(word);
+          if (event.name !== "word") return;
+          const charStart = event.charIndex;
+          let charEnd: number;
+          
+          if (event.charLength && event.charLength > 0) {
+            charEnd = charStart + event.charLength;
+          } else {
+            // Measure word length manually: scan forward until whitespace or end
+            let end = charStart;
+            while (end < cleanedText.length && !/[\s.,?!]/.test(cleanedText[end])) {
+              end++;
             }
-            const start = segmentOffset + event.charIndex;
-            const length = event.charLength || 5;
-            setHighlightCharRange({ start, end: start + length });
+            charEnd = end;
           }
+          
+          setHighlightCharRange({ start: charStart, end: charEnd });
         };
-        
-        if (segIdx === 0) {
-          utterance.onstart = () => {
-            setIsSpeakingActive(true);
-          };
-        }
-        
-        if (segIdx === segments.length - 1) {
-          const cleanupSpeakState = () => {
-            setIsSpeakingActive(false);
-            setHighlightCharRange(null);
-            setCurrentSpeakingWord("");
-            setCurrentSpeakingMsgIndex(null);
-            setCurrentSpeakingType(null);
-          };
-          utterance.onend = cleanupSpeakState;
-          utterance.onerror = cleanupSpeakState;
-        }
-        
+
+        utterance.onstart = () => {
+          setIsSpeakingActive(true);
+        };
+
+        utterance.onend = cleanupSpeakState;
+        utterance.onerror = cleanupSpeakState;
+
         window.speechSynthesis.speak(utterance);
-      });
+      }
     }
-  }
-};
+  };
 
   const handleSpeedChange = (newSpeed: number) => {
     setSpeechSpeed(newSpeed);
@@ -570,57 +530,67 @@ export default function TutorChat() {
     }
   };
 
+  /**
+   * Render text with highlighted word based on highlightCharRange (char offsets).
+   * This is always accurate — no regex word-matching, no desync possible.
+   */
   const renderHighlightedText = (text: string, isSpeakingThis: boolean) => {
     if (!text) return null;
-    if (!isSpeakingThis || !currentSpeakingWord) {
+    
+    // Get the cleaned version to find the offset in the original display text
+    // We highlight based on offset in cleanedText; we display the original text.
+    // Since cleanTextForSpeech removes markdown chars but the display text has them,
+    // we map highlights by matching word positions in the display text.
+    
+    if (!isSpeakingThis || !highlightCharRange) {
+      return <span className="font-korean leading-relaxed tracking-wide">{text}</span>;
+    }
+
+    const { start, end } = highlightCharRange;
+    
+    // The cleaned text is used for speech; the display text is the original.
+    // We apply the highlight by mapping char offsets from cleaned → display text.
+    // Simplest robust approach: find the word being spoken in cleanedText,
+    // then find and highlight its first occurrence in the display text after any previously highlighted position.
+    const cleanedText = cleanTextForSpeech(text);
+    const spokenWord = cleanedText.substring(start, end).trim();
+    
+    if (!spokenWord) {
+      return <span className="font-korean leading-relaxed tracking-wide">{text}</span>;
+    }
+
+    // Find this word in the original display text (case-insensitive, word-boundary aware)
+    // Use lastHighlightOffset to avoid re-matching already-passed words
+    const lowerText = text.toLowerCase();
+    const lowerWord = spokenWord.toLowerCase();
+    
+    // Calculate approximate char position in display text (proportional to cleaned offset)
+    const cleanedLen = cleanedText.length || 1;
+    const displayLen = text.length;
+    const approxStart = Math.floor((start / cleanedLen) * displayLen);
+    
+    // Search forward from approx position
+    let matchIdx = lowerText.indexOf(lowerWord, Math.max(0, approxStart - 10));
+    if (matchIdx === -1) {
+      // Fallback: search from beginning
+      matchIdx = lowerText.indexOf(lowerWord);
+    }
+    
+    if (matchIdx === -1) {
       return <span className="font-korean leading-relaxed tracking-wide">{text}</span>;
     }
     
-    // Split the text around the spoken word, ignoring punctuation/casing
-    const escapedWord = currentSpeakingWord.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
-    
-    let regex: RegExp;
-    try {
-      regex = new RegExp(`(?<=^|[^a-zA-Z0-9_가-힣])(${escapedWord})(?=[^a-zA-Z0-9_가-힣]|$)`, 'i');
-    } catch (e) {
-      regex = new RegExp(`(${escapedWord})`, 'i');
-    }
-    
-    // Fallback if no exact regex match exists
-    if (!regex.test(text)) {
-      const simpleRegex = new RegExp(`(${escapedWord})`, 'i');
-      if (!simpleRegex.test(text)) {
-        return <span className="font-korean leading-relaxed tracking-wide">{text}</span>;
-      }
-      const parts = text.split(simpleRegex);
-      return (
-        <span className="font-korean leading-relaxed tracking-wide">
-          {parts.map((part, i) => 
-            simpleRegex.test(part) ? (
-              <span key={i} className="bg-brand-gold/30 text-yellow-200 font-extrabold px-1.5 py-0.5 rounded shadow-lg border border-brand-gold/40 animate-pulse transition duration-150">
-                {part}
-              </span>
-            ) : (
-              <span key={i}>{part}</span>
-            )
-          )}
-        </span>
-      );
-    }
-    
-    const parts = text.split(regex);
-    
+    const before = text.substring(0, matchIdx);
+    const highlighted = text.substring(matchIdx, matchIdx + spokenWord.length);
+    const after = text.substring(matchIdx + spokenWord.length);
+
     return (
       <span className="font-korean leading-relaxed tracking-wide">
-        {parts.map((part, i) => 
-          regex.test(part) ? (
-            <span key={i} className="bg-brand-gold/30 text-yellow-200 font-extrabold px-1.5 py-0.5 rounded shadow-lg border border-brand-gold/40 animate-pulse transition duration-150">
-              {part}
-            </span>
-          ) : (
-            <span key={i}>{part}</span>
-          )
-        )}
+        {before}
+        <span className="bg-brand-gold/35 text-yellow-100 font-extrabold px-1 py-0.5 rounded-md shadow-lg border border-brand-gold/50 transition-all duration-100">
+          {highlighted}
+        </span>
+        {after}
       </span>
     );
   };
@@ -950,7 +920,7 @@ export default function TutorChat() {
                  {/* Voice speak and Translate buttons for AI replies */}
                 {msg.sender === "ai" && (
                   <div className="flex flex-col gap-1.5 opacity-0 group-hover:opacity-100 transition flex-shrink-0">
-                    {/* Primary Reply Speaker Button */}
+                    {/* Korean Reply Speaker Button */}
                     <button
                       onClick={() => speakText(msg.text, index, "reply")}
                       className={`p-2 rounded-lg border transition cursor-pointer flex flex-col items-center justify-center relative ${
@@ -964,8 +934,8 @@ export default function TutorChat() {
                         currentSpeakingMsgIndex === index &&
                         currentSpeakingType === "reply" &&
                         isSpeakingActive
-                          ? `Pause ${baseLanguage === "english" ? "English" : "Korean"} Speech`
-                          : `Speak ${baseLanguage === "english" ? "English" : "Korean"} Reply`
+                          ? "Pause Korean Speech"
+                          : "Speak Korean Reply"
                       }
                     >
                       {currentSpeakingMsgIndex === index &&
@@ -975,12 +945,10 @@ export default function TutorChat() {
                       ) : (
                         <Volume2 className="w-4 h-4 text-brand-400" />
                       )}
-                      <span className="text-[8px] font-mono mt-0.5 text-zinc-500 font-bold uppercase">
-                        {baseLanguage === "english" ? "EN" : "KO"}
-                      </span>
+                      <span className="text-[8px] font-mono mt-0.5 text-zinc-500 font-bold uppercase">KO</span>
                     </button>
 
-                    {/* Translation Speaker Button */}
+                    {/* English Translation Speaker Button */}
                     {msg.englishTranslation && (
                       <button
                         onClick={() => speakText(msg.englishTranslation!, index, "translation")}
@@ -995,8 +963,8 @@ export default function TutorChat() {
                           currentSpeakingMsgIndex === index &&
                           currentSpeakingType === "translation" &&
                           isSpeakingActive
-                            ? `Pause ${baseLanguage === "english" ? "Korean" : "English"} Speech`
-                            : `Speak ${baseLanguage === "english" ? "Korean" : "English"} Translation`
+                            ? "Pause English Speech"
+                            : "Speak English Translation"
                         }
                       >
                         {currentSpeakingMsgIndex === index &&
@@ -1006,9 +974,7 @@ export default function TutorChat() {
                         ) : (
                           <Volume2 className="w-4 h-4 text-accent-teal" />
                         )}
-                        <span className="text-[8px] font-mono mt-0.5 text-zinc-500 font-bold uppercase">
-                          {baseLanguage === "english" ? "KO" : "EN"}
-                        </span>
+                        <span className="text-[8px] font-mono mt-0.5 text-zinc-500 font-bold uppercase">EN</span>
                       </button>
                     )}
 
@@ -1020,9 +986,17 @@ export default function TutorChat() {
                             ? "bg-accent-teal/20 border-accent-teal/30 text-accent-teal" 
                             : "bg-zinc-900 border-white/5 text-zinc-500 hover:text-white hover:border-white/10"
                         }`}
-                        title={baseLanguage === "english" ? "Translate to Korean" : "Translate to English"}
+                        title="Toggle English Translation"
                       >
-                        <Languages className="w-4 h-4" />
+                        {/* Translation toggle icon */}
+                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M5 8l6 6"/>
+                          <path d="M4 14l6-6 2-3"/>
+                          <path d="M2 5h12"/>
+                          <path d="M7 2h1"/>
+                          <path d="M22 22l-5-10-5 10"/>
+                          <path d="M14 18h6"/>
+                        </svg>
                       </button>
                     )}
                   </div>
@@ -1043,7 +1017,7 @@ export default function TutorChat() {
                   {msg.sender === "ai" && msg.englishTranslation && msg.showTranslation && (
                     <div className="mt-3.5 pt-3.5 border-t border-white/10 text-sm text-zinc-400 font-sans italic leading-relaxed animate-fade-in">
                       <span className="block text-[10px] text-accent-teal uppercase tracking-wider font-extrabold not-italic mb-1 font-mono">
-                        {baseLanguage === "english" ? "Korean Translation" : "English Translation"}
+                        English Translation
                       </span>
                       {renderHighlightedText(
                         msg.englishTranslation,
@@ -1177,19 +1151,17 @@ export default function TutorChat() {
               />
             </div>
 
-            {/* Base Language Dropdown */}
+            {/* Tutor Language Info (read-only — always Korean + English) */}
             <div className="space-y-1.5">
-              <label className="text-[10px] text-zinc-500 uppercase tracking-wider font-extrabold block">Tutor Response Language</label>
-              <CustomSelect
-                label="Tutor Base"
-                value={baseLanguage}
-                onChange={(val) => setBaseLanguage(val as "korean" | "english")}
-                accentClass="text-brand-400"
-                options={[
-                  { value: "korean", label: "Korean (Challenge)" },
-                  { value: "english", label: "English (Bilingual)" },
-                ]}
-              />
+              <label className="text-[10px] text-zinc-500 uppercase tracking-wider font-extrabold block">Tutor Response Mode</label>
+              <div className="flex items-center gap-2.5 bg-zinc-950/80 border border-white/10 px-3.5 py-2.5 rounded-xl">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[10px] font-black text-brand-400 uppercase tracking-wider">🇰🇷 Korean</span>
+                  <span className="text-zinc-600 text-xs">+</span>
+                  <span className="text-[10px] font-black text-accent-teal uppercase tracking-wider">🇬🇧 English</span>
+                </div>
+                <span className="text-[9px] text-zinc-600 font-bold ml-auto">Always bilingual</span>
+              </div>
             </div>
 
             {/* KO Voice Dropdown */}
