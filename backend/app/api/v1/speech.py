@@ -85,6 +85,42 @@ async def speech_to_text(
     transcription = await speech_ai_service.transcribe_audio(audio_bytes)
     return STTResponse(transcription=transcription, language="ko")
 
+@router.get("/tts-boundaries")
+async def text_to_speech_boundaries(text: str, lang: str = "ko", voice: str = None):
+    """
+    Get word boundary timing information for the given text and voice from edge-tts.
+    """
+    if not voice or voice == "google-online" or voice == "null" or voice == "undefined":
+        if lang == "ko":
+            voice = "ko-KR-SunHiNeural"
+        else:
+            voice = "en-US-AriaNeural"
+
+    if voice.startswith("Google ") or voice.startswith("Microsoft ") or "Desktop" in voice:
+        lower_v = voice.lower()
+        if "korean" in lower_v or "ko-kr" in lower_v:
+            voice = "ko-KR-InJoonNeural" if "male" in lower_v or "jinho" in lower_v else "ko-KR-SunHiNeural"
+        else:
+            voice = "en-US-GuyNeural" if "male" in lower_v or "david" in lower_v else "en-US-AriaNeural"
+
+    boundaries = []
+    try:
+        import edge_tts
+        communicate = edge_tts.Communicate(text, voice, boundary="WordBoundary")
+        async for chunk in communicate.stream():
+            if chunk["type"] == "WordBoundary":
+                offset_sec = chunk["offset"] / 10000000.0
+                duration_sec = chunk["duration"] / 10000000.0
+                boundaries.append({
+                    "text": chunk["text"],
+                    "start": offset_sec,
+                    "end": offset_sec + duration_sec
+                })
+        return boundaries
+    except Exception as e:
+        print(f"!!! Failed to get word boundaries: {e}", flush=True)
+        return []
+
 @router.get("/tts")
 async def text_to_speech(text: str, lang: str = "ko", voice: str = None):
     """

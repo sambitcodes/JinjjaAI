@@ -20,7 +20,9 @@ def parse_cors(v: Union[str, List[str]]) -> List[str]:
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=".env", env_ignore_empty=True, extra="ignore"
+        env_file=os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), ".env"),
+        env_ignore_empty=True,
+        extra="ignore"
     )
     
     API_V1_STR: str = "/api/v1"

@@ -368,6 +368,40 @@ export default function TutorChat() {
   };
 
   /**
+   * Align word boundary timestamps from backend with character start/end offsets in cleanedText.
+   */
+  const alignBoundariesWithOffsets = (
+    boundaries: { text: string; start: number; end: number }[],
+    cleanedText: string
+  ): { start: number; end: number; startTime: number; endTime: number }[] => {
+    const aligned: { start: number; end: number; startTime: number; endTime: number }[] = [];
+    let currentSearchIndex = 0;
+    const lowerCleaned = cleanedText.toLowerCase();
+
+    for (const boundary of boundaries) {
+      // Clean word text to match search logic
+      const word = boundary.text.toLowerCase().replace(/[.,?!]/g, "").trim();
+      if (!word) continue;
+
+      let idx = lowerCleaned.indexOf(word, currentSearchIndex);
+      if (idx === -1) {
+        // Fallback: search from beginning if we got out of sequence
+        idx = lowerCleaned.indexOf(word);
+      }
+      if (idx !== -1) {
+        aligned.push({
+          start: idx,
+          end: idx + word.length,
+          startTime: boundary.start,
+          endTime: boundary.end
+        });
+        currentSearchIndex = idx + word.length;
+      }
+    }
+    return aligned;
+  };
+
+  /**
    * Speak chatbot text using bilingual segmented voice engine.
    * - reply type → Korean voice (ko-KR)
    * - translation type → English voice (en-US)
@@ -429,32 +463,57 @@ export default function TutorChat() {
         audio.playbackRate = activeRate;
         activeAudioRef.current = audio;
 
-        // Pre-compute word offsets for accurate position-based highlighting
+        // Fallback linear word offsets
         const wordOffsets = buildWordOffsets(cleanedText);
+        let alignedBoundaries: { start: number; end: number; startTime: number; endTime: number }[] = [];
         
         audio.onplaying = () => {
           setIsSpeakingActive(true);
         };
         
         audio.ontimeupdate = () => {
-          if (activeAudioRef.current !== audio || !audio.duration || wordOffsets.length === 0) return;
+          if (activeAudioRef.current !== audio || !audio.duration) return;
           
-          const progress = audio.currentTime / audio.duration;
-          // Clamp word index to valid range
-          const wordIdx = Math.min(
-            Math.floor(progress * wordOffsets.length),
-            wordOffsets.length - 1
-          );
-          
-          const range = wordOffsets[wordIdx];
-          if (range) {
-            setHighlightCharRange({ start: range.start, end: range.end });
+          const currentTime = audio.currentTime;
+
+          if (alignedBoundaries.length > 0) {
+            // Find current active word boundary
+            const activeBoundary = alignedBoundaries.find(
+              b => currentTime >= b.startTime && currentTime <= b.endTime
+            );
+            if (activeBoundary) {
+              setHighlightCharRange({ start: activeBoundary.start, end: activeBoundary.end });
+            }
+          } else if (wordOffsets.length > 0) {
+            // Fallback linear estimation until boundaries load
+            const progress = currentTime / audio.duration;
+            const wordIdx = Math.min(
+              Math.floor(progress * wordOffsets.length),
+              wordOffsets.length - 1
+            );
+            const range = wordOffsets[wordIdx];
+            if (range) {
+              setHighlightCharRange({ start: range.start, end: range.end });
+            }
           }
         };
         
         audio.onended = cleanupSpeakState;
         audio.onerror = cleanupSpeakState;
         
+        // Fetch accurate word boundaries from backend concurrently
+        const boundariesUrl = `${API_BASE_URL}/speech/tts-boundaries?text=${encodeURIComponent(cleanedText)}&lang=${langCode}&voice=${encodeURIComponent(selectedVoiceName || "")}`;
+        fetch(boundariesUrl)
+          .then(res => res.json())
+          .then((data) => {
+            if (Array.isArray(data) && data.length > 0) {
+              alignedBoundaries = alignBoundariesWithOffsets(data, cleanedText);
+            }
+          })
+          .catch(err => {
+            console.error("Failed to fetch word boundaries:", err);
+          });
+
         audio.play().catch(e => {
           console.error("Audio playback error:", e);
           cleanupSpeakState();
