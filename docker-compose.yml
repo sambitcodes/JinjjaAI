@@ -65,6 +65,7 @@ services:
       - HOSTNAME=0.0.0.0
       - NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
       - WATCHPACK_POLLING=true
+      - NODE_ENV=development
     ports:
       - "3000:3000"
     volumes:

@@ -1,5 +1,5 @@
-@import "tailwindcss";
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&family=Gowun+Dodum:wght@400;700&family=Gamja+Flower&display=swap');
+@import "tailwindcss";
 
 @theme inline {
   --color-brand-50: #f5f3ff;
