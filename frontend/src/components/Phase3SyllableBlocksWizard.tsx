@@ -1,16 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { 
-  ChevronLeft, 
-  ChevronRight, 
-  Volume2, 
-  Sparkles, 
-  BookOpen, 
-  BrainCircuit, 
-  Award, 
-  Loader2, 
-  CheckCircle2, 
+import {
+  ChevronLeft,
+  ChevronRight,
+  Volume2,
+  Sparkles,
+  BookOpen,
+  BrainCircuit,
+  Award,
+  Loader2,
+  CheckCircle2,
   RotateCcw,
   BookMarked,
   HelpCircle,
@@ -29,12 +29,12 @@ const playCorrectSound = () => {
     const gain = ctx.createGain();
     osc.connect(gain);
     gain.connect(ctx.destination);
-    
+
     osc.type = "sine";
     osc.frequency.setValueAtTime(523.25, ctx.currentTime); // C5
     gain.gain.setValueAtTime(0.1, ctx.currentTime);
     osc.start();
-    
+
     osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.08); // E5
     osc.stop(ctx.currentTime + 0.22);
   } catch (e) {
@@ -50,7 +50,7 @@ const playWrongSound = () => {
     const gain = ctx.createGain();
     osc.connect(gain);
     gain.connect(ctx.destination);
-    
+
     osc.type = "sawtooth";
     osc.frequency.setValueAtTime(140, ctx.currentTime);
     gain.gain.setValueAtTime(0.1, ctx.currentTime);
@@ -79,7 +79,7 @@ export default function Phase3SyllableBlocksWizard({ activeLesson, speakWord, on
   const [showOutline, setShowOutline] = useState(false);
   const totalSteps = 11;
   const [metadata, setMetadata] = useState<any>(null);
-  
+
   // Step 2-6: Concept Content & Visualizer State
   const [content, setContent] = useState<any>(null);
   const [vizInitial, setVizInitial] = useState("ㄱ");
@@ -254,7 +254,7 @@ export default function Phase3SyllableBlocksWizard({ activeLesson, speakWord, on
     if (initial === "ㅂ" && vowel === "ㅏ" && final === "") return "바";
     if (initial === "ㄱ" && vowel === "ㅣ" && final === "ㅁ") return "김";
     if (initial === "ㄷ" && vowel === "ㅗ" && final === "ㅇ") return "동";
-    
+
     return `${initial}${vowel}${final}`;
   };
 
@@ -272,13 +272,13 @@ export default function Phase3SyllableBlocksWizard({ activeLesson, speakWord, on
     const currentQ = composeQuestions[composeIdx];
     if (!currentQ) return;
     const isCorrect = buildSlots.initial === currentQ.target_parts.initial &&
-                      buildSlots.vowel === currentQ.target_parts.vowel &&
-                      buildSlots.final === currentQ.target_parts.final;
+      buildSlots.vowel === currentQ.target_parts.vowel &&
+      buildSlots.final === currentQ.target_parts.final;
     setComposeChecked(true);
     setComposeCorrect(isCorrect);
     if (isCorrect) playCorrectSound();
     else playWrongSound();
-    
+
     await apiRequest("/lessons/practice/blocks/compose/answer", {
       method: "POST",
       body: JSON.stringify({ question_id: currentQ.id, correct: isCorrect, answer: "composition_checked" })
@@ -289,8 +289,8 @@ export default function Phase3SyllableBlocksWizard({ activeLesson, speakWord, on
     const currentQ = decomposeQuestions[decomposeIdx];
     if (!currentQ) return;
     const isCorrect = decSelected.initial === currentQ.correct_parts.initial &&
-                      decSelected.vowel === currentQ.correct_parts.vowel &&
-                      decSelected.final === currentQ.correct_parts.final;
+      decSelected.vowel === currentQ.correct_parts.vowel &&
+      decSelected.final === currentQ.correct_parts.final;
     setDecomposeChecked(true);
     setDecomposeCorrect(isCorrect);
     if (isCorrect) playCorrectSound();
@@ -392,12 +392,12 @@ export default function Phase3SyllableBlocksWizard({ activeLesson, speakWord, on
             <p className="text-xs text-zinc-400">Curated Topic: {activeLesson?.topic || "Hangeul Structure"}</p>
           </div>
         </div>
-        
+
         {/* Active progress bar */}
         <div className="flex items-center space-x-4 w-full md:w-auto">
           <div className="flex-grow md:w-48 h-3 bg-zinc-900/80 rounded-full overflow-hidden border border-white/5 p-[2px]">
-            <div 
-              className="h-full bg-gradient-to-r from-brand-500 via-orange-500 to-amber-500 rounded-full transition-all duration-500" 
+            <div
+              className="h-full bg-gradient-to-r from-brand-500 via-orange-500 to-amber-500 rounded-full transition-all duration-500"
               style={{ width: `${(step / totalSteps) * 100}%` }}
             />
           </div>
@@ -405,7 +405,7 @@ export default function Phase3SyllableBlocksWizard({ activeLesson, speakWord, on
             <span className="text-xs font-mono font-black text-white">{Math.round((step / totalSteps) * 100)}%</span>
             <span className="text-[10px] text-zinc-500 font-bold block">Step {step} of {totalSteps}</span>
           </div>
-          <button 
+          <button
             onClick={() => setShowOutline(!showOutline)}
             className="text-[10px] bg-zinc-950 border border-white/10 hover:bg-zinc-900 text-zinc-300 px-3 py-1.5 rounded-lg transition duration-200 cursor-pointer uppercase tracking-wider font-bold shrink-0"
           >
@@ -426,11 +426,10 @@ export default function Phase3SyllableBlocksWizard({ activeLesson, speakWord, on
                   setStep(s.num);
                   setShowOutline(false);
                 }}
-                className={`p-2.5 rounded-xl border text-left transition ${
-                  step === s.num
+                className={`p-2.5 rounded-xl border text-left transition ${step === s.num
                     ? "border-brand-500 bg-brand-500/10 text-white"
                     : "border-white/5 bg-zinc-900/40 text-zinc-400 hover:border-white/10 hover:text-white"
-                }`}
+                  }`}
               >
                 <div className="text-[9px] font-black font-mono text-zinc-500">STEP {s.num}</div>
                 <div className="text-xs font-bold truncate">{s.label}</div>
@@ -447,7 +446,7 @@ export default function Phase3SyllableBlocksWizard({ activeLesson, speakWord, on
             <Sparkles className="w-10 h-10" />
           </div>
           <div className="space-y-2">
-            <h2 className="text-5xl font-black text-white tracking-tight">Bootcamp A0→A1</h2>
+            <h2 className="text-5xl font-black text-white tracking-tight">Hangeul 0.3</h2>
             <h3 className="text-2xl font-extrabold text-brand-400">Syllable Blocks Bootcamp</h3>
           </div>
           <p className="text-zinc-300 text-sm md:text-base leading-relaxed font-sans">
@@ -466,7 +465,7 @@ export default function Phase3SyllableBlocksWizard({ activeLesson, speakWord, on
               <li>Read native vocabulary and English loanwords</li>
             </ul>
           </div>
-          <button 
+          <button
             onClick={() => setStep(2)}
             className="bg-brand-500 hover:bg-brand-600 text-zinc-950 font-black py-4 px-10 rounded-2xl transition duration-200 text-sm flex items-center justify-center gap-2 mx-auto cursor-pointer shadow-lg shadow-brand-500/20 active:scale-95"
           >
@@ -479,7 +478,7 @@ export default function Phase3SyllableBlocksWizard({ activeLesson, speakWord, on
       {/* Concept Screens C1-C5 Template with Embedded Micro-questions */}
       {step >= 2 && step <= 6 && (
         <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center transition duration-300">
-          
+
           {/* Concept Header */}
           <div className="flex justify-between items-center border-b border-white/5 pb-4">
             <h2 className="text-2xl font-black text-white flex items-center gap-2 font-sans tracking-tight">
@@ -594,7 +593,7 @@ export default function Phase3SyllableBlocksWizard({ activeLesson, speakWord, on
                   <HelpCircle className="w-4 h-4 text-brand-400 animate-pulse" />
                   <span className="text-[10px] font-black uppercase tracking-wider">Concept Checkpoint</span>
                 </div>
-                
+
                 <h4 className="text-sm font-black text-white leading-snug">
                   {conceptQuestions[step]?.question}
                 </h4>
@@ -605,19 +604,16 @@ export default function Phase3SyllableBlocksWizard({ activeLesson, speakWord, on
                       key={opt.id}
                       disabled={cChecked}
                       onClick={() => setCSelected(opt.id)}
-                      className={`w-full p-5 rounded-xl text-left text-sm md:text-base font-bold border transition duration-200 ${
-                        cSelected === opt.id
+                      className={`w-full p-5 rounded-xl text-left text-sm md:text-base font-bold border transition duration-200 ${cSelected === opt.id
                           ? "border-brand-500 bg-brand-500/10 text-white"
                           : "border-white/5 bg-zinc-900/60 text-zinc-300 hover:bg-zinc-900"
-                      } ${
-                        cChecked && opt.id === conceptQuestions[step]?.correctId
+                        } ${cChecked && opt.id === conceptQuestions[step]?.correctId
                           ? "border-accent-teal bg-accent-teal/10 text-white"
                           : ""
-                      } ${
-                        cChecked && cSelected === opt.id && cSelected !== conceptQuestions[step]?.correctId
+                        } ${cChecked && cSelected === opt.id && cSelected !== conceptQuestions[step]?.correctId
                           ? "border-red-500 bg-red-500/10 text-red-400"
                           : ""
-                      }`}
+                        }`}
                     >
                       <span className="inline-block mr-2 text-brand-400">{opt.id}.</span>
                       {opt.text}
@@ -636,9 +632,8 @@ export default function Phase3SyllableBlocksWizard({ activeLesson, speakWord, on
                     Submit Answer
                   </button>
                 ) : (
-                  <div className={`p-4 rounded-xl border text-xs text-left animate-in slide-in-from-bottom-2 duration-200 ${
-                    cCorrect ? "bg-accent-teal/5 border-accent-teal/20 text-accent-teal" : "bg-red-500/5 border-red-500/10 text-red-400"
-                  }`}>
+                  <div className={`p-4 rounded-xl border text-xs text-left animate-in slide-in-from-bottom-2 duration-200 ${cCorrect ? "bg-accent-teal/5 border-accent-teal/20 text-accent-teal" : "bg-red-500/5 border-red-500/10 text-red-400"
+                    }`}>
                     <div className="flex items-center gap-1.5 font-bold mb-1">
                       <span className="uppercase text-[9px] tracking-wider px-2 py-0.5 rounded bg-zinc-900 border border-white/5">
                         {cCorrect ? "맞아요 (Correct)" : "틀렸어요 (Incorrect)"}
@@ -653,14 +648,14 @@ export default function Phase3SyllableBlocksWizard({ activeLesson, speakWord, on
 
           {/* Navigation Controls */}
           <div className="flex justify-between items-center pt-6 border-t border-white/5">
-            <button 
-              onClick={() => setStep(step - 1)} 
+            <button
+              onClick={() => setStep(step - 1)}
               className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
             >
-              <ChevronLeft className="w-4 h-4" /> 
+              <ChevronLeft className="w-4 h-4" />
               <span>Back</span>
             </button>
-            <button 
+            <button
               onClick={() => setStep(step + 1)}
               disabled={!cChecked}
               className="bg-brand-500 hover:bg-brand-600 disabled:opacity-30 disabled:hover:bg-brand-500 text-zinc-955 px-6 py-3.5 rounded-xl text-sm font-black transition flex items-center gap-1.5 cursor-pointer"
@@ -711,7 +706,7 @@ export default function Phase3SyllableBlocksWizard({ activeLesson, speakWord, on
                       <span className="text-2xl font-black text-brand-400">{buildSlots.final || "None"}</span>
                     </div>
                   </div>
-                  
+
                   {/* Dynamic composite block preview inside composed panel */}
                   {buildSlots.initial && buildSlots.vowel && (
                     <div className="pt-2 border-t border-white/5">
@@ -722,7 +717,7 @@ export default function Phase3SyllableBlocksWizard({ activeLesson, speakWord, on
                 </div>
 
                 {/* Reset button */}
-                <button 
+                <button
                   onClick={() => setBuildSlots({ initial: "", vowel: "", final: "" })}
                   disabled={composeChecked}
                   className="px-3.5 py-2 bg-zinc-950 hover:bg-zinc-900 text-zinc-400 hover:text-white border border-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 mx-auto transition duration-200 cursor-pointer disabled:opacity-30"
@@ -736,7 +731,7 @@ export default function Phase3SyllableBlocksWizard({ activeLesson, speakWord, on
               <div className="space-y-6">
                 <div className="bg-zinc-950/80 p-6 rounded-3xl border border-white/5 shadow-inner space-y-4">
                   <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest block font-mono">Letter Tile Bank</span>
-                  
+
                   {/* Consonants */}
                   <div className="space-y-2">
                     <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest block font-sans">Consonants</span>
@@ -776,9 +771,8 @@ export default function Phase3SyllableBlocksWizard({ activeLesson, speakWord, on
                 </div>
 
                 {composeChecked && (
-                  <div className={`p-5 rounded-2xl border text-xs text-left space-y-2 animate-in slide-in-from-bottom-2 duration-200 ${
-                    composeCorrect ? "bg-accent-teal/5 border-accent-teal/20 text-accent-teal" : "bg-red-500/5 border-red-500/10 text-red-400"
-                  }`}>
+                  <div className={`p-5 rounded-2xl border text-xs text-left space-y-2 animate-in slide-in-from-bottom-2 duration-200 ${composeCorrect ? "bg-accent-teal/5 border-accent-teal/20 text-accent-teal" : "bg-red-500/5 border-red-500/10 text-red-400"
+                    }`}>
                     <p className="font-black text-sm">{composeCorrect ? "맞아요! Correct!" : "틀렸어요! Incorrect."}</p>
                     <p className="text-zinc-300">
                       Target parts: <strong className="text-white">{composeQuestions[composeIdx]?.target_parts.initial}</strong> + <strong className="text-white">{composeQuestions[composeIdx]?.target_parts.vowel}</strong> {composeQuestions[composeIdx]?.target_parts.final ? `+ final ${composeQuestions[composeIdx]?.target_parts.final}` : ""}
@@ -793,7 +787,7 @@ export default function Phase3SyllableBlocksWizard({ activeLesson, speakWord, on
           {/* Nav buttons */}
           <div className="flex justify-between items-center pt-6 border-t border-white/5">
             <button onClick={() => setStep(6)} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
-            
+
             {!composeChecked ? (
               <button
                 onClick={handleCheckCompose}
@@ -850,8 +844,8 @@ export default function Phase3SyllableBlocksWizard({ activeLesson, speakWord, on
                 {/* Initial Selection */}
                 <div className="space-y-2 text-left">
                   <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest block font-mono">Initial (초성)</label>
-                  <select 
-                    value={decSelected.initial} 
+                  <select
+                    value={decSelected.initial}
                     onChange={e => setDecSelected(prev => ({ ...prev, initial: e.target.value }))}
                     disabled={decomposeChecked}
                     className="w-full bg-zinc-950 border border-white/10 rounded-xl p-3 text-white outline-none focus:border-brand-500 text-sm font-bold shadow-inner"
@@ -866,8 +860,8 @@ export default function Phase3SyllableBlocksWizard({ activeLesson, speakWord, on
                 {/* Vowel Selection */}
                 <div className="space-y-2 text-left">
                   <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest block font-mono">Vowel (중성)</label>
-                  <select 
-                    value={decSelected.vowel} 
+                  <select
+                    value={decSelected.vowel}
                     onChange={e => setDecSelected(prev => ({ ...prev, vowel: e.target.value }))}
                     disabled={decomposeChecked}
                     className="w-full bg-zinc-950 border border-white/10 rounded-xl p-3 text-white outline-none focus:border-brand-500 text-sm font-bold shadow-inner"
@@ -882,8 +876,8 @@ export default function Phase3SyllableBlocksWizard({ activeLesson, speakWord, on
                 {/* Final Selection */}
                 <div className="space-y-2 text-left">
                   <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest block font-mono">Final (종성/받침)</label>
-                  <select 
-                    value={decSelected.final} 
+                  <select
+                    value={decSelected.final}
                     onChange={e => setDecSelected(prev => ({ ...prev, final: e.target.value }))}
                     disabled={decomposeChecked}
                     className="w-full bg-zinc-950 border border-white/10 rounded-xl p-3 text-white outline-none focus:border-brand-500 text-sm font-bold shadow-inner"
@@ -897,9 +891,8 @@ export default function Phase3SyllableBlocksWizard({ activeLesson, speakWord, on
               </div>
 
               {decomposeChecked && (
-                <div className={`p-5 rounded-2xl border text-xs text-left space-y-2 animate-in slide-in-from-bottom-2 duration-200 ${
-                  decomposeCorrect ? "bg-accent-teal/5 border-accent-teal/20 text-accent-teal" : "bg-red-500/5 border-red-500/10 text-red-400"
-                }`}>
+                <div className={`p-5 rounded-2xl border text-xs text-left space-y-2 animate-in slide-in-from-bottom-2 duration-200 ${decomposeCorrect ? "bg-accent-teal/5 border-accent-teal/20 text-accent-teal" : "bg-red-500/5 border-red-500/10 text-red-400"
+                  }`}>
                   <p className="font-black text-sm">{decomposeCorrect ? "Correct!" : "Oops! Incorrect."}</p>
                   <p className="text-zinc-300">
                     Correct elements for {decomposeQuestions[decomposeIdx]?.syllable}: <strong className="text-white">{decomposeQuestions[decomposeIdx]?.correct_parts.initial}</strong> (initial) + <strong className="text-white">{decomposeQuestions[decomposeIdx]?.correct_parts.vowel}</strong> (vowel) {decomposeQuestions[decomposeIdx]?.correct_parts.final ? `+ <strong className="text-white">${decomposeQuestions[decomposeIdx]?.correct_parts.final}</strong> (final/받침)` : ""}
@@ -909,7 +902,7 @@ export default function Phase3SyllableBlocksWizard({ activeLesson, speakWord, on
 
               <div className="flex justify-between items-center pt-6 border-t border-white/5">
                 <button onClick={() => setStep(7)} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
-                
+
                 {!decomposeChecked ? (
                   <button
                     onClick={handleCheckDecompose}
@@ -954,13 +947,13 @@ export default function Phase3SyllableBlocksWizard({ activeLesson, speakWord, on
 
           {/* Submode Selection */}
           <div className="flex justify-center gap-2 bg-zinc-950/80 p-2 rounded-2xl border border-white/5 max-w-md mx-auto shadow-inner">
-            <button 
+            <button
               onClick={() => setSyllableSubMode("read")}
               className={`flex-1 px-4 py-2.5 rounded-xl text-xs font-bold transition duration-200 ${syllableSubMode === "read" ? "bg-brand-500 text-zinc-950 font-black shadow-md shadow-brand-500/10" : "text-zinc-400 hover:text-white bg-transparent"}`}
             >
               Stage A: Reader Carousel
             </button>
-            <button 
+            <button
               onClick={() => setSyllableSubMode("listen")}
               className={`flex-1 px-4 py-2.5 rounded-xl text-xs font-bold transition duration-200 ${syllableSubMode === "listen" ? "bg-brand-500 text-zinc-950 font-black shadow-md shadow-brand-500/10" : "text-zinc-400 hover:text-white bg-transparent"}`}
             >
@@ -972,21 +965,21 @@ export default function Phase3SyllableBlocksWizard({ activeLesson, speakWord, on
           {syllableSubMode === "read" && (
             <div className="space-y-8 max-w-xl mx-auto w-full text-center animate-in fade-in duration-200">
               <h3 className="text-sm font-semibold text-zinc-400">Pronounce the syllable block out loud, then listen to verify:</h3>
-              
+
               <div className="glass-panel p-8 rounded-3xl border border-white/5 bg-zinc-900/40 space-y-6 max-w-xs mx-auto shadow-xl">
                 <div className="text-6xl font-black text-white filter drop-shadow-[0_0_10px_rgba(255,255,255,0.05)]">
                   {syllableReadList[readIdx]?.syllable}
                 </div>
-                
+
                 <div className="flex justify-center gap-3">
-                  <button 
+                  <button
                     onClick={() => speakWord(syllableReadList[readIdx]?.syllable)}
                     className="flex-1 p-3 rounded-xl bg-zinc-950 text-brand-400 hover:text-white border border-white/10 hover:border-brand-500/30 transition duration-200 flex items-center justify-center gap-1.5 text-xs font-black uppercase tracking-wider cursor-pointer"
                   >
                     <Volume2 className="w-4 h-4 animate-bounce" />
                     <span>Speak</span>
                   </button>
-                  <button 
+                  <button
                     onClick={() => setShowVowelHint(!showVowelHint)}
                     className="flex-1 p-3 rounded-xl bg-zinc-950 text-zinc-400 hover:text-white border border-white/10 transition duration-200 text-xs font-black uppercase tracking-wider"
                   >
@@ -997,7 +990,7 @@ export default function Phase3SyllableBlocksWizard({ activeLesson, speakWord, on
 
               <div className="flex justify-between items-center pt-6 border-t border-white/5">
                 <button onClick={() => setStep(8)} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
-                
+
                 <button
                   onClick={() => {
                     setShowVowelHint(false);
@@ -1020,7 +1013,7 @@ export default function Phase3SyllableBlocksWizard({ activeLesson, speakWord, on
             <div className="space-y-8 max-w-xl mx-auto w-full text-center animate-in fade-in duration-200">
               <h3 className="text-sm font-semibold text-zinc-400">Click to listen to the syllable, then choose the correct block:</h3>
 
-              <button 
+              <button
                 onClick={() => speakWord(listenQuestions[listenIdx]?.audio_text)}
                 className="p-6 bg-brand-500/10 hover:bg-brand-500/20 text-brand-400 border border-brand-500/20 rounded-full mx-auto transition duration-250 flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 cursor-pointer"
               >
@@ -1033,19 +1026,16 @@ export default function Phase3SyllableBlocksWizard({ activeLesson, speakWord, on
                     key={opt}
                     onClick={() => !listenChecked && setListenSelected(opt)}
                     disabled={listenChecked}
-                    className={`p-5 rounded-2xl font-black text-2xl border transition duration-150 ${
-                      listenSelected === opt
+                    className={`p-5 rounded-2xl font-black text-2xl border transition duration-150 ${listenSelected === opt
                         ? "border-brand-500 bg-brand-500/10 text-white"
                         : "border-white/5 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-300"
-                    } ${
-                      listenChecked && opt === listenQuestions[listenIdx]?.correct_answer 
-                        ? "border-accent-teal bg-accent-teal/10 text-white" 
+                      } ${listenChecked && opt === listenQuestions[listenIdx]?.correct_answer
+                        ? "border-accent-teal bg-accent-teal/10 text-white"
                         : ""
-                    } ${
-                      listenChecked && listenSelected === opt && listenSelected !== listenQuestions[listenIdx]?.correct_answer
+                      } ${listenChecked && listenSelected === opt && listenSelected !== listenQuestions[listenIdx]?.correct_answer
                         ? "border-red-500 bg-red-500/10 text-red-400"
                         : ""
-                    }`}
+                      }`}
                   >
                     {opt}
                   </button>
@@ -1053,9 +1043,8 @@ export default function Phase3SyllableBlocksWizard({ activeLesson, speakWord, on
               </div>
 
               {listenChecked && (
-                <div className={`p-5 rounded-2xl border text-xs text-left space-y-1 animate-in slide-in-from-bottom-2 duration-200 ${
-                  listenCorrect ? "bg-accent-teal/5 border-accent-teal/20 text-accent-teal" : "bg-red-500/5 border-red-500/10 text-red-400"
-                }`}>
+                <div className={`p-5 rounded-2xl border text-xs text-left space-y-1 animate-in slide-in-from-bottom-2 duration-200 ${listenCorrect ? "bg-accent-teal/5 border-accent-teal/20 text-accent-teal" : "bg-red-500/5 border-red-500/10 text-red-400"
+                  }`}>
                   <p className="font-black text-sm">{listenCorrect ? "Correct!" : "Oops! Incorrect."}</p>
                   <p className="text-zinc-300">You heard the syllable: <strong className="text-white select-all">{listenQuestions[listenIdx]?.correct_answer}</strong>.</p>
                 </div>
@@ -1063,7 +1052,7 @@ export default function Phase3SyllableBlocksWizard({ activeLesson, speakWord, on
 
               <div className="flex justify-between items-center pt-6 border-t border-white/5">
                 <button onClick={() => setSyllableSubMode("read")} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
-                
+
                 {!listenChecked ? (
                   <button
                     onClick={handleCheckListen}
@@ -1174,19 +1163,16 @@ export default function Phase3SyllableBlocksWizard({ activeLesson, speakWord, on
                       key={opt}
                       onClick={() => !quizChecked && setQuizSelected(opt)}
                       disabled={quizChecked}
-                      className={`p-4 rounded-xl font-black text-sm border transition duration-200 text-left ${
-                        quizSelected === opt
+                      className={`p-4 rounded-xl font-black text-sm border transition duration-200 text-left ${quizSelected === opt
                           ? "border-brand-500 bg-brand-500/10 text-white"
                           : "border-white/5 bg-zinc-900/60 hover:bg-zinc-900 text-zinc-300"
-                      } ${
-                        quizChecked && opt === quizQuestions[quizIdx]?.correct_answer 
-                          ? "border-accent-teal bg-accent-teal/10 text-white" 
+                        } ${quizChecked && opt === quizQuestions[quizIdx]?.correct_answer
+                          ? "border-accent-teal bg-accent-teal/10 text-white"
                           : ""
-                      } ${
-                        quizChecked && quizSelected === opt && quizSelected !== quizQuestions[quizIdx]?.correct_answer
+                        } ${quizChecked && quizSelected === opt && quizSelected !== quizQuestions[quizIdx]?.correct_answer
                           ? "border-red-500 bg-red-500/10 text-red-400"
                           : ""
-                      }`}
+                        }`}
                     >
                       {opt}
                     </button>
@@ -1227,9 +1213,8 @@ export default function Phase3SyllableBlocksWizard({ activeLesson, speakWord, on
               )}
 
               {quizChecked && (
-                <div className={`p-5 rounded-2xl border text-xs text-left space-y-2 animate-in slide-in-from-bottom-2 duration-200 ${
-                  quizCorrect ? "bg-accent-teal/5 border-accent-teal/20 text-accent-teal" : "bg-red-500/5 border-red-500/10 text-red-400"
-                }`}>
+                <div className={`p-5 rounded-2xl border text-xs text-left space-y-2 animate-in slide-in-from-bottom-2 duration-200 ${quizCorrect ? "bg-accent-teal/5 border-accent-teal/20 text-accent-teal" : "bg-red-500/5 border-red-500/10 text-red-400"
+                  }`}>
                   <p className="font-black text-sm">{quizCorrect ? "Correct! Excellent." : "Incorrect."}</p>
                   <p className="text-zinc-300">{quizQuestions[quizIdx]?.explanation}</p>
                   {!quizCorrect && <p className="font-mono text-zinc-400 mt-1">Correct Answer: {quizQuestions[quizIdx]?.correct_answer}</p>}
@@ -1311,20 +1296,20 @@ export default function Phase3SyllableBlocksWizard({ activeLesson, speakWord, on
               </div>
 
               <div className="flex justify-between items-center pt-6 border-t border-white/5">
-                <button 
+                <button
                   onClick={() => {
                     setQuizQuestions([]);
                     setQuizIdx(0);
                     setQuizScore(null);
                     setQuizMistakes([]);
                     setTutorSummary(null);
-                  }} 
+                  }}
                   className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-xs font-bold transition cursor-pointer"
                 >
                   Retake Quiz
                 </button>
-                <button 
-                  onClick={() => setStep(11)} 
+                <button
+                  onClick={() => setStep(11)}
                   className="bg-brand-500 hover:bg-brand-600 text-zinc-950 px-6 py-3 rounded-xl text-xs font-black transition flex items-center gap-1 cursor-pointer"
                 >
                   View Homework <ChevronRight className="w-4 h-4 text-zinc-950" />
@@ -1341,7 +1326,7 @@ export default function Phase3SyllableBlocksWizard({ activeLesson, speakWord, on
           <div className="p-4 bg-brand-500/10 rounded-3xl border border-brand-500/25 w-fit mx-auto text-brand-400 animate-bounce">
             <Award className="w-12 h-12" />
           </div>
-          
+
           <div className="space-y-2">
             <h2 className="text-3xl font-black text-white tracking-tight">Syllable blocks Complete! 🇰🇷✨</h2>
             <p className="text-zinc-400 text-xs font-sans">You are now equipped to read CV/CVC block patterns and initial native/loanwords.</p>

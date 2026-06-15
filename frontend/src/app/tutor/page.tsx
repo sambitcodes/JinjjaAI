@@ -879,8 +879,8 @@ export default function TutorChat() {
       )}
 
       {/* Main Active Chat Area */}
-      <div className="flex-grow flex flex-col justify-between w-full p-4 lg:p-8 bg-zinc-950/80 border-x border-white/5 backdrop-blur-3xl shadow-2xl h-screen overflow-y-auto z-10 relative">
-        <header className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-purple-950/20 via-zinc-900/60 to-zinc-950 p-6 shadow-2xl mb-6 flex flex-col gap-4 group">
+      <div className="flex-grow flex flex-col w-full p-3 lg:p-5 bg-zinc-950/80 border-x border-white/5 backdrop-blur-3xl shadow-2xl h-screen overflow-hidden z-10 relative">
+        <header className="relative overflow-visible rounded-2xl border border-white/5 bg-gradient-to-br from-purple-950/20 via-zinc-900/60 to-zinc-950 p-4.5 shadow-2xl mb-3 flex flex-col gap-4 group">
           {/* Glow orbs */}
           <div className="absolute -right-10 -top-10 w-44 h-44 bg-purple-500/15 rounded-full blur-3xl group-hover:scale-125 transition duration-700" />
           <div className="absolute -left-10 -bottom-10 w-44 h-44 bg-indigo-500/15 rounded-full blur-3xl group-hover:scale-125 transition duration-700" />
@@ -949,17 +949,25 @@ export default function TutorChat() {
             </div>
           </div>
 
-          {/* Collapsible Tutor Intro Section (Now inside the header below profile info) */}
+          {/* Floating Tutor Intro Popover Overlay (z-50 absolute positioning right under the header card) */}
           {introOpen && (
-            <div className="relative z-10 mt-4 pt-4 border-t border-white/5 animate-fade-in space-y-2">
-              <div className="flex items-center gap-2 text-brand-gold font-extrabold text-sm">
-                <Sparkles className="w-4 h-4 animate-pulse-slow" />
-                <span>진짜 AI Tutor: Meet Gwan-Sik! 🇰🇷✨</span>
+            <div className="absolute left-6 right-6 top-20 z-50 rounded-2xl border border-white/10 bg-zinc-950/98 p-5 shadow-2xl backdrop-blur-2xl animate-fade-in space-y-2 max-w-2xl">
+              <div className="flex items-center justify-between border-b border-white/5 pb-2">
+                <div className="flex items-center gap-2 text-brand-gold font-extrabold text-sm">
+                  <Sparkles className="w-4 h-4 animate-pulse-slow" />
+                  <span>진짜 AI Tutor: Meet Gwan-Sik! 🇰🇷✨</span>
+                </div>
+                <button 
+                  onClick={() => setIntroOpen(false)}
+                  className="text-zinc-500 hover:text-white text-[10px] font-extrabold font-mono px-2 py-0.5 rounded border border-white/5 hover:bg-white/5 transition cursor-pointer"
+                >
+                  ✕ Close
+                </button>
               </div>
               <h3 className="font-extrabold text-base md:text-lg text-white leading-tight font-korean">
                 안녕하세요! Welcome, dynamic language explorer! Let's study together! 같이 공부해요! 🤝
               </h3>
-              <p className="text-zinc-300 text-xs md:text-sm leading-relaxed max-w-3xl font-korean font-semibold">
+              <p className="text-zinc-300 text-xs md:text-sm leading-relaxed font-korean font-semibold">
                 I am **Gwan-Sik (관식)**, your personal bilingual buddy. 
                 Whether you want to refine your vocabulary, master daily conjugations, or level up your speech alignment, I am here to make your journey absolutely **대박 (awesome)**! Let's chat! 🚀
               </p>
@@ -982,7 +990,7 @@ export default function TutorChat() {
         </header>
 
         {/* Chat Messages */}
-        <main className="flex-grow my-6 overflow-y-auto space-y-6 max-h-[55vh] pr-2 select-text">
+        <main className="flex-grow my-2 overflow-y-auto space-y-4 pr-2 select-text">
           {messages.map((msg, index) => (
             <div key={index} className={`flex flex-col ${msg.sender === "user" ? "items-end" : "items-start"} animate-fade-in`}>
               <div className="flex items-start gap-3 max-w-xl group">
@@ -1193,7 +1201,7 @@ export default function TutorChat() {
         </main>
 
         {/* Input controls */}
-        <footer className="glass-panel neon-border p-4 rounded-2xl shadow-2xl flex items-center space-x-4">
+        <footer className="glass-panel neon-border p-2.5 rounded-2xl shadow-2xl flex items-center space-x-4">
           <button 
             onMouseDown={startRecording}
             onMouseUp={stopRecording}
