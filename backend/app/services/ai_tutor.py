@@ -78,10 +78,14 @@ class AITutorService:
                 translation_desc = "the clean, complete Korean translation of the entire reply. Since the reply is mostly in English, provide a beautiful and fully Korean version of the entire message"
             else:
                 language_instructions = (
-                    "Your conversational response ('reply' key) MUST be written completely in Korean. Do not include English sentences in your response. "
-                    "You must speak completely in Korean to challenge the student."
+                    "Your conversational response ('reply' key) MUST be written 100% in Korean. "
+                    "Do NOT include any English words, phrases, or sentences inside the 'reply' field — not even parenthetical English, not even a single English sentence. "
+                    "Every single sentence in 'reply' must be in Korean script (한글). "
+                    "The student will read the English translation separately from the 'english_translation' field. "
+                    "Example of CORRECT reply: '한국어 공부는 정말 중요하고 유익한 일이에요! 매일 조금씩 꾸준히 연습하면 실력이 빠르게 늘어요.' "
+                    "Example of WRONG reply (DO NOT DO THIS): '한국어 공부는 정말 유익해요! Studying Korean is very useful! 같이 공부해요.' — English sentences are strictly forbidden."
                 )
-                translation_desc = "the clean, complete English translation of the entire Korean reply"
+                translation_desc = "the clean, complete English translation of the entire Korean reply — this is the ONLY place English should appear"
 
             system_prompt = (
                 "You are Gwan-Sik, an elite, professional bilingual Korean language tutor teaching English speakers.\n"
@@ -172,50 +176,50 @@ class AITutorService:
             
             if "안녕" in msg or "hello" in msg or "hi" in msg:
                 return {
-                    "reply": "안녕하세요! 반갑습니다. 오늘 기분이 어떠신가요? Hello! Nice to meet you. How are you feeling today?",
+                    "reply": "안녕하세요! 반갑습니다. 오늘 기분이 어떠신가요?",
                     "english_translation": "Hello! Nice to meet you. How are you feeling today?",
                     "correction": None,
-                    "grammar_notes": "안녕하세요 matches 'An-nyeong-ha-se-yo' meaning Hello."
+                    "grammar_notes": "안녕하세요 (*An-nyeong-ha-se-yo*) is the standard polite greeting meaning 'Hello'. 기분이 어떠세요 means 'How are you feeling?'"
                 }
             elif "날씨" in msg or "weather" in msg or "warm" in msg or "cold" in msg:
                 return {
-                    "reply": "오늘 날씨가 정말 화창하네요! The weather is so sunny today! 비가 오거나 눈이 오는 날을 좋아하시나요?",
+                    "reply": "오늘 날씨가 정말 화창하네요! 비가 오거나 눈이 오는 날을 좋아하시나요?",
                     "english_translation": "The weather is really sunny today! Do you like rainy or snowy days?",
                     "correction": None,
-                    "grammar_notes": "날씨 means weather, and 화창하네요 corresponds to 'is sunny/bright'."
+                    "grammar_notes": "**날씨** means weather. **화창하네요** (*hwa-chang-ha-ne-yo*) means 'is bright and sunny'."
                 }
             elif "음식" in msg or "food" in msg or "먹" in msg or "eat" in msg or "delicious" in msg:
                 return {
-                    "reply": "한국 음식은 정말 맛있고 인기가 많아요! Korean food is really delicious and popular! 비빔밥이나 김치찌개를 드셔보셨나요?",
+                    "reply": "한국 음식은 정말 맛있고 인기가 많아요! 비빔밥이나 김치찌개를 드셔보셨나요?",
                     "english_translation": "Korean food is really delicious and popular! Have you tried bibimbap or kimchi stew?",
                     "correction": None,
-                    "grammar_notes": "음식 means food, and 맛있고 translates to 'is delicious and'."
+                    "grammar_notes": "**음식** means food. **맛있고** (*mat-it-go*) means 'is delicious and'. The particle **-나** connects two alternatives ('A or B')."
                 }
             elif "취미" in msg or "hobby" in msg or "music" in msg or "음악" in msg or "영화" in msg:
                 return {
-                    "reply": "제 취미는 새로운 언어를 공부하는 것이에요! My hobby is studying new languages! 당신의 취미는 무엇인가요?",
+                    "reply": "제 취미는 새로운 언어를 공부하는 것이에요! 당신의 취미는 무엇인가요?",
                     "english_translation": "My hobby is studying new languages! What is your hobby?",
                     "correction": None,
-                    "grammar_notes": "취미 means hobby, and 무엇인가요 represents the polite 'what is it?'."
+                    "grammar_notes": "**취미** (*chwi-mi*) means hobby. **무엇인가요** (*mu-eot-in-ga-yo*) is a polite way to ask 'What is it?'"
                 }
             elif "이름" in msg or "name" in msg or "who" in msg:
                 return {
-                    "reply": "제 이름은 관식(Gwan-Sik)이에요! 만나서 반갑습니다.",
+                    "reply": "제 이름은 관식이에요! 만나서 반갑습니다.",
                     "english_translation": "My name is Gwan-Sik! Nice to meet you.",
                     "correction": None,
-                    "grammar_notes": "이름 means name, and 관식이에요 translates to 'am Gwan-Sik'."
+                    "grammar_notes": "**이름** (*i-reum*) means name. **반갑습니다** (*ban-gap-seup-ni-da*) is the formal expression for 'Nice to meet you'."
                 }
             elif "공부" in msg or "learn" in msg or "study" in msg or "school" in msg:
                 return {
-                    "reply": "한국어 공부는 정말 유익하고 가치 있는 일이에요! Studying Korean is a very useful and valuable thing! 같이 매일 조금씩 공부해요.",
-                    "english_translation": "Studying Korean is a very beneficial and valuable thing! Let's study a little bit together every day.",
+                    "reply": "한국어 공부는 정말 유익하고 가치 있는 일이에요! 매일 조금씩 꾸준히 연습하면 실력이 빠르게 늘어요.",
+                    "english_translation": "Studying Korean is a very beneficial and valuable thing! If you practice a little bit every day consistently, your skills will improve quickly.",
                     "correction": None,
-                    "grammar_notes": "공부 means study, and 유익하고 means 'is beneficial and'."
+                    "grammar_notes": "**공부** (*gong-bu*) means study. **유익하고** means 'is beneficial and'. **꾸준히** (*kku-jun-hi*) means 'consistently/steadily'."
                 }
             
-            # Default generic mixed dialogue helper
+            # Default generic Korean-only dialogue
             return {
-                "reply": "정말 흥미로운 대화 주제네요! That is a very interesting topic! 더 자세하게 이야기해주시겠어요? Could you tell me more about it?",
+                "reply": "정말 흥미로운 대화 주제네요! 더 자세하게 이야기해주시겠어요?",
                 "english_translation": "That is a very interesting topic of conversation! Could you talk about it in more detail?",
                 "correction": "Your sentence structure looks excellent. Try incorporating particles (~은/는, ~이/가) next time!",
                 "grammar_notes": "Korean sentences place the verb at the very end, unlike English SVO layouts."

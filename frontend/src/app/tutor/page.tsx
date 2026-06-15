@@ -32,7 +32,7 @@ export default function TutorChat() {
   const [convId, setConvId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
-  const [selectedModel, setSelectedModel] = useState<string>("llama-3.3-70b-versatile");
+  const [selectedModel, setSelectedModel] = useState<string>("qwen-2.5-32b");
   const [introOpen, setIntroOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [rightSidebarOpen, setRightSidebarOpen] = useState(true);
