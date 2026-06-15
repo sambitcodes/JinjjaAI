@@ -3,25 +3,31 @@ from typing import Dict, Any
 
 class SpeechAIService:
     def __init__(self):
-        self.stt_model_path = os.getenv("WHISPER_MODEL_PATH", "large-v3")
+        self.stt_model_path = os.getenv("WHISPER_MODEL_PATH", "whisper-large-v3-turbo")
         self.tts_voice_path = os.getenv("KOKORO_VOICE_PATH", "ko_voice")
 
     async def transcribe_audio(self, audio_bytes: bytes) -> str:
         """
-        Transcribe Korean speech bytes to text using Groq Whisper Cloud API with fallback.
+        Transcribe Korean speech bytes to text using Groq Whisper Cloud API.
+        Returns empty string on any failure so callers can detect the error.
         """
         try:
             import httpx
             from backend.app.core.config import settings
             
+            if not settings.GROQ_API_KEY:
+                print("Groq API key not configured. Check GROQ_API_KEY env variable.", flush=True)
+                return ""
+            
             headers = {
                 "Authorization": f"Bearer {settings.GROQ_API_KEY}"
             }
+            # Use webm filename - Groq Whisper accepts webm/ogg/mp3/mp4/wav
             files = {
-                "file": ("recording.webm", audio_bytes, "audio/webm")
+                "file": ("audio.webm", audio_bytes, "audio/webm")
             }
             data = {
-                "model": "whisper-large-v3",
+                "model": "whisper-large-v3-turbo",
                 "language": "ko",
                 "response_format": "json"
             }
@@ -32,17 +38,18 @@ class SpeechAIService:
                     headers=headers,
                     files=files,
                     data=data,
-                    timeout=15.0
+                    timeout=30.0
                 )
                 if response.status_code == 200:
-                    return response.json().get("text", "").strip()
+                    text = response.json().get("text", "").strip()
+                    print(f"Groq Whisper transcription success: '{text}'", flush=True)
+                    return text
                 else:
-                    print(f"Groq Whisper API returned status {response.status_code}: {response.text}", flush=True)
+                    print(f"Groq Whisper API error {response.status_code}: {response.text[:500]}", flush=True)
+                    return ""
         except Exception as e:
             print(f"Groq Whisper API connection error: {e}", flush=True)
-            
-        # Fallback to local matching helper/mock if Whisper API is down
-        return "안녕하세요"
+            return ""
 
     async def text_to_speech(self, text: str) -> bytes:
         return b"MOCK_TTS_AUDIO_BYTES_FALLBACK"

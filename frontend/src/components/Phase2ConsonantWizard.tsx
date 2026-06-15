@@ -19,44 +19,15 @@ import {
 } from "lucide-react";
 import { apiRequest } from "../lib/api";
 
-// Web Audio API Sound synthesizers
 const playCorrectSound = () => {
-  if (typeof window === "undefined") return;
-  try {
-    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    
-    osc.type = "sine";
-    osc.frequency.setValueAtTime(523.25, ctx.currentTime); // C5
-    gain.gain.setValueAtTime(0.1, ctx.currentTime);
-    osc.start();
-    
-    osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.08); // E5
-    osc.stop(ctx.currentTime + 0.22);
-  } catch (e) {
-    console.warn("Audio synthesis error:", e);
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("hangeulai-xp", { detail: { amount: 20, type: 'correct' } }));
   }
 };
 
 const playWrongSound = () => {
-  if (typeof window === "undefined") return;
-  try {
-    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    
-    osc.type = "sawtooth";
-    osc.frequency.setValueAtTime(140, ctx.currentTime);
-    gain.gain.setValueAtTime(0.1, ctx.currentTime);
-    osc.start();
-    osc.stop(ctx.currentTime + 0.28);
-  } catch (e) {
-    console.warn("Audio synthesis error:", e);
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("hangeulai-xp", { detail: { amount: -10, type: 'wrong' } }));
   }
 };
 
@@ -81,6 +52,19 @@ export default function Phase2ConsonantWizard({
   const [step, setStep] = useState(1);
   const [showOutline, setShowOutline] = useState(false);
   const totalSteps = 11;
+
+  // Persist step to localStorage for refresh resilience
+  useEffect(() => {
+    const saved = localStorage.getItem("hangeulai_phase2_step");
+    if (saved) {
+      const parsedStep = parseInt(saved, 10);
+      if (parsedStep >= 1 && parsedStep <= 11) setStep(parsedStep);
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem("hangeulai_phase2_step", String(step));
+  }, [step]);
 
   // DB Data loaded dynamically
   const [metadata, setMetadata] = useState<any>(null);
@@ -342,39 +326,81 @@ export default function Phase2ConsonantWizard({
     }
   };
 
+  const outlineSteps = [
+    { num: 1, label: "Welcome & Goals" },
+    { num: 2, label: "C1: What Consonants Show" },
+    { num: 3, label: "C2: Core Consonants" },
+    { num: 4, label: "C3: Plain/Aspirated/Tense" },
+    { num: 5, label: "C4: Special ㅇ Letter" },
+    { num: 6, label: "C5: Consonants in Blocks" },
+    { num: 7, label: "Act 1: Visual Recognition" },
+    { num: 8, label: "Act 2: Ear Training" },
+    { num: 9, label: "Act 3: Syllable Reading" },
+    { num: 10, label: "Checkpoint Quiz" },
+    { num: 11, label: "Completion & Homework" }
+  ];
+
   return (
     <div className="flex-grow flex flex-col justify-between">
-      {/* Top Header tracking */}
-      <header className="flex justify-between items-center py-4 border-b border-white/5 mb-6">
-        <div className="flex items-center space-x-3 text-left">
-          <div className="p-2 rounded-xl bg-zinc-900 border border-white/10">
-            <BookOpen className="w-5 h-5 text-brand-400" />
+      <header className="flex flex-col md:flex-row justify-between items-start md:items-center py-5 border-b border-white/5 mb-8 gap-4">
+        <div className="flex items-center space-x-4">
+          <div className="p-3 rounded-2xl bg-zinc-950 border border-white/10 shadow-lg">
+            <BookOpen className="w-6 h-6 text-brand-400" />
           </div>
           <div>
-            <h2 className="font-extrabold text-lg flex items-center gap-2">
+            <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 font-mono">Phase 2</span>
+            <h2 className="font-black text-xl text-white tracking-tight flex items-center gap-2">
               <span>{activeLesson?.title || "Hangeul Consonants Bootcamp"}</span>
             </h2>
-            <p className="text-xs text-zinc-500 font-medium">Curated Topic: Consonant sounds & symbols</p>
+            <p className="text-xs text-zinc-400">Curated Topic: Consonant sounds &amp; symbols</p>
           </div>
         </div>
 
         {/* Active progress bar */}
-        <div className="flex items-center space-x-4">
-          <div className="w-32 h-2.5 bg-zinc-800 rounded-full overflow-hidden">
+        <div className="flex items-center space-x-4 w-full md:w-auto">
+          <div className="flex-grow md:w-48 h-3 bg-zinc-900/80 rounded-full overflow-hidden border border-white/5 p-[2px]">
             <div 
-              className="h-full bg-gradient-to-r from-yellow-500 via-orange-500 to-indigo-500 rounded-full transition-all duration-500" 
+              className="h-full bg-gradient-to-r from-brand-500 via-orange-500 to-amber-500 rounded-full transition-all duration-500" 
               style={{ width: `${(step / totalSteps) * 100}%` }}
             />
           </div>
-          <span className="text-xs text-zinc-400 font-bold">{Math.round((step / totalSteps) * 100)}%</span>
+          <div className="text-right shrink-0">
+            <span className="text-xs font-mono font-black text-white">{Math.round((step / totalSteps) * 100)}%</span>
+            <span className="text-[10px] text-zinc-500 font-bold block">Step {step} of {totalSteps}</span>
+          </div>
           <button 
             onClick={() => setShowOutline(!showOutline)}
-            className="text-[10px] bg-zinc-900 border border-white/10 hover:bg-zinc-800 text-zinc-300 px-2.5 py-1 rounded transition cursor-pointer"
+            className="text-[10px] bg-zinc-950 border border-white/10 hover:bg-zinc-900 text-zinc-300 px-3 py-1.5 rounded-lg transition duration-200 cursor-pointer uppercase tracking-wider font-bold shrink-0"
           >
-            {showOutline ? "Hide Outline" : "View Outline"}
+            {showOutline ? "Hide Maps" : "View Outline"}
           </button>
         </div>
       </header>
+
+      {/* Expanded Quick Outline Map Panel */}
+      {showOutline && (
+        <div className="mb-6 p-5 bg-zinc-950/80 rounded-3xl border border-white/5 shadow-2xl animate-in fade-in slide-in-from-top-4 duration-300">
+          <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest block mb-3 font-mono">Curriculum Syllabus Map</span>
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
+            {outlineSteps.map(s => (
+              <button
+                key={s.num}
+                onClick={() => {
+                  setStep(s.num);
+                  setShowOutline(false);
+                }}
+                className={`p-2.5 rounded-xl border text-left transition ${step === s.num
+                    ? "border-brand-500 bg-brand-500/10 text-white"
+                    : "border-white/5 bg-zinc-900/40 text-zinc-400 hover:border-white/10 hover:text-white"
+                  }`}
+              >
+                <div className="text-[9px] font-black font-mono text-zinc-500">STEP {s.num}</div>
+                <div className="text-xs font-bold truncate">{s.label}</div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Screen 1: Welcome/Overview */}
       {step === 1 && (
@@ -409,28 +435,16 @@ export default function Phase2ConsonantWizard({
           </div>
           <div className="flex flex-col gap-3 max-w-xs mx-auto">
             <button 
-              onClick={() => setStep(2)}
+              onClick={() => {
+                setStep(2);
+                window.dispatchEvent(new CustomEvent("hangeulai-xp", { detail: { amount: 15, type: 'theory' } }));
+              }}
               className="bg-brand-500 hover:bg-brand-600 text-white font-bold py-4 px-10 rounded-xl transition text-base flex items-center justify-center gap-2.5 cursor-pointer shadow-lg shadow-brand-500/20"
             >
               <span>Start Phase 2</span>
               <ChevronRight className="w-5 h-5" />
             </button>
           </div>
-
-          {showOutline && (
-            <div className="bg-zinc-955 p-6 rounded-xl border border-white/5 text-left text-sm text-zinc-400 space-y-2 animate-fade-in max-w-lg mx-auto w-full font-mono">
-              <p className="font-extrabold text-white text-center pb-2 text-base">Phase Activities Outline</p>
-              <p>1. C1 – What do consonants show?</p>
-              <p>2. C2 – Meet the core consonants</p>
-              <p>3. C3 – Plain vs aspirated vs tense</p>
-              <p>4. C4 – Special letter ㅇ</p>
-              <p>5. C5 – Consonants inside syllable blocks</p>
-              <p>6. Act 1 – Visual Consonant Recognition</p>
-              <p>7. Act 2 – Ear Training & Plain-Aspirated-Tense</p>
-              <p>8. Act 3 – Syllable Combining & Reading</p>
-              <p>9. Checkpoint Mini-Quiz & Homework</p>
-            </div>
-          )}
         </div>
       )}
 
@@ -571,7 +585,10 @@ export default function Phase2ConsonantWizard({
           <div className="flex justify-between items-center pt-4 border-t border-white/5 mt-4">
             <button onClick={() => setStep(step - 1)} className="glass-panel px-4 py-2.5 rounded-xl hover:bg-white/5 text-zinc-400 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
             <button 
-              onClick={() => setStep(step + 1)} 
+              onClick={() => {
+                setStep(step + 1);
+                window.dispatchEvent(new CustomEvent("hangeulai-xp", { detail: { amount: 15, type: 'theory' } }));
+              }}
               disabled={!cChecked}
               className="bg-brand-500 hover:bg-brand-600 disabled:opacity-40 text-white px-5 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
             >

@@ -28,44 +28,15 @@ import {
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
 
-// Web Audio API Sound synthesizers
 const playCorrectSound = () => {
-  if (typeof window === "undefined") return;
-  try {
-    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    
-    osc.type = "sine";
-    osc.frequency.setValueAtTime(523.25, ctx.currentTime); // C5
-    gain.gain.setValueAtTime(0.1, ctx.currentTime);
-    osc.start();
-    
-    osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.08); // E5
-    osc.stop(ctx.currentTime + 0.22);
-  } catch (e) {
-    console.warn("Audio synthesis error:", e);
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("hangeulai-xp", { detail: { amount: 20, type: 'correct' } }));
   }
 };
 
 const playWrongSound = () => {
-  if (typeof window === "undefined") return;
-  try {
-    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    
-    osc.type = "sawtooth";
-    osc.frequency.setValueAtTime(140, ctx.currentTime);
-    gain.gain.setValueAtTime(0.1, ctx.currentTime);
-    osc.start();
-    osc.stop(ctx.currentTime + 0.28);
-  } catch (e) {
-    console.warn("Audio synthesis error:", e);
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("hangeulai-xp", { detail: { amount: -10, type: 'wrong' } }));
   }
 };
 
@@ -323,6 +294,19 @@ export default function Phase6ConversationWizard({
   const [showOutline, setShowOutline] = useState(false);
   const [mode, setMode] = useState<"text" | "voice">("text");
 
+  // Persist step to localStorage for refresh resilience
+  useEffect(() => {
+    const saved = localStorage.getItem("hangeulai_phase6_step");
+    if (saved) {
+      const parsedStep = parseInt(saved, 10);
+      if (parsedStep >= 1 && parsedStep <= 10) setStep(parsedStep);
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem("hangeulai_phase6_step", String(step));
+  }, [step]);
+
   // DB States
   const [metadata, setMetadata] = useState<any>(null);
   const [scenarios, setScenarios] = useState<any[]>([]);
@@ -563,35 +547,77 @@ export default function Phase6ConversationWizard({
 
   const totalSteps = 10;
 
+  const outlineSteps = [
+    { num: 1, label: "Welcome & Mode Select" },
+    { num: 2, label: "C1: From Blocks to Speaking" },
+    { num: 3, label: "C2: Shadowing Works" },
+    { num: 4, label: "C3: ASR & Gwan-Sik Listens" },
+    { num: 5, label: "C4: Sentence Frames" },
+    { num: 6, label: "C5: Good Enough Pronunciation" },
+    { num: 7, label: "Scenario Selection" },
+    { num: 8, label: "Conversation Chat" },
+    { num: 9, label: "Post-Convo Feedback" },
+    { num: 10, label: "Transcript & Review" }
+  ];
+
   return (
     <div className="flex-grow flex flex-col justify-between">
       {/* Header */}
-      <header className="flex justify-between items-center py-5 border-b border-white/5 mb-8">
+      <header className="flex flex-col md:flex-row justify-between items-start md:items-center py-5 border-b border-white/5 mb-8 gap-4">
         <div className="flex items-center space-x-4">
           <div className="p-3 rounded-2xl bg-zinc-900 border border-white/10 shadow-lg">
             <Trophy className="w-6 h-6 text-yellow-400" />
           </div>
           <div>
+            <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 font-mono">Phase 6</span>
             <h2 className="font-black text-xl text-white tracking-tight">{activeLesson?.title || "Phase 6 – Conversation Lab"}</h2>
             <p className="text-xs text-zinc-400">Topic: Guided Interactive Role-Plays</p>
           </div>
         </div>
-        <div className="flex items-center space-x-4">
-          <div className="w-40 h-3 bg-zinc-900/80 rounded-full overflow-hidden border border-white/5 p-[2px]">
+        <div className="flex items-center space-x-4 w-full md:w-auto">
+          <div className="flex-grow md:w-48 h-3 bg-zinc-900/80 rounded-full overflow-hidden border border-white/5 p-[2px]">
             <div 
-              className="h-full bg-gradient-to-r from-yellow-500 via-orange-500 to-indigo-500 rounded-full transition-all duration-500" 
+              className="h-full bg-gradient-to-r from-yellow-500 via-orange-400 to-amber-500 rounded-full transition-all duration-500" 
               style={{ width: `${(step / totalSteps) * 100}%` }}
             />
           </div>
-          <span className="text-xs text-zinc-350 font-bold">{Math.round((step / totalSteps) * 100)}%</span>
+          <div className="text-right shrink-0">
+            <span className="text-xs font-mono font-black text-white">{Math.round((step / totalSteps) * 100)}%</span>
+            <span className="text-[10px] text-zinc-500 font-bold block">Step {step} of {totalSteps}</span>
+          </div>
           <button 
             onClick={() => setShowOutline(!showOutline)}
-            className="text-[10px] bg-zinc-900 border border-white/10 hover:bg-zinc-855 text-zinc-300 px-3 py-1.5 rounded-lg transition duration-200 cursor-pointer uppercase tracking-wider font-bold"
+            className="text-[10px] bg-zinc-950 border border-white/10 hover:bg-zinc-900 text-zinc-300 px-3 py-1.5 rounded-lg transition duration-200 cursor-pointer uppercase tracking-wider font-bold shrink-0"
           >
-            {showOutline ? "Hide Outline" : "View Outline"}
+            {showOutline ? "Hide Maps" : "View Outline"}
           </button>
         </div>
       </header>
+
+      {/* Expanded Quick Outline Map Panel */}
+      {showOutline && (
+        <div className="mb-6 p-5 bg-zinc-950/80 rounded-3xl border border-white/5 shadow-2xl animate-in fade-in slide-in-from-top-4 duration-300">
+          <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest block mb-3 font-mono">Curriculum Syllabus Map</span>
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-2">
+            {outlineSteps.map(s => (
+              <button
+                key={s.num}
+                onClick={() => {
+                  setStep(s.num);
+                  setShowOutline(false);
+                }}
+                className={`p-2.5 rounded-xl border text-left transition ${step === s.num
+                    ? "border-yellow-500 bg-yellow-500/10 text-white"
+                    : "border-white/5 bg-zinc-900/40 text-zinc-400 hover:border-white/10 hover:text-white"
+                  }`}
+              >
+                <div className="text-[9px] font-black font-mono text-zinc-500">STEP {s.num}</div>
+                <div className="text-xs font-bold truncate">{s.label}</div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* ====== Screen 1: Welcome & Mode Select ====== */}
       {step === 1 && (
@@ -663,24 +689,15 @@ export default function Phase6ConversationWizard({
 
           <div className="flex flex-col gap-3 max-w-sm mx-auto pt-4">
             <button
-              onClick={() => setStep(2)}
+              onClick={() => {
+                setStep(2);
+                window.dispatchEvent(new CustomEvent("hangeulai-xp", { detail: { amount: 15, type: 'theory' } }));
+              }}
               className="bg-yellow-500 hover:bg-yellow-400 text-zinc-950 font-black py-4 px-10 rounded-2xl transition text-base flex items-center justify-center gap-2.5 cursor-pointer shadow-lg shadow-yellow-500/20 animate-pulse"
             >
               <Trophy className="w-5 h-5" /> Start Capstone Phase
             </button>
           </div>
-
-          {showOutline && (
-            <div className="bg-zinc-950 p-6 rounded-2xl border border-white/5 text-left text-xs text-zinc-400 space-y-2 animate-fade-in max-w-2xl mx-auto w-full font-mono">
-              <p className="font-extrabold text-white text-center pb-2">Capstone Activities:</p>
-              <p>✓ Screen 1 – Welcome / Phase Overview</p>
-              <p>✓ Screen 2-6 – Concept Interactive Scaffolding</p>
-              <p>✓ Screen 7 – Scenario Selection</p>
-              <p>✓ Screen 8 – Chat Runtime UI & Checks</p>
-              <p>✓ Screen 9 – Post-Conversation Feedback</p>
-              <p>✓ Screen 10 – Transcript & Targeted Review</p>
-            </div>
-          )}
         </div>
       )}
 
@@ -777,9 +794,12 @@ export default function Phase6ConversationWizard({
                 Back
               </button>
               <button
-                onClick={() => setStep(step + 1)}
+                onClick={() => {
+                  setStep(step + 1);
+                  window.dispatchEvent(new CustomEvent("hangeulai-xp", { detail: { amount: 15, type: 'theory' } }));
+                }}
                 disabled={!questionChecked}
-                className="px-8 py-3 bg-yellow-500 disabled:opacity-40 hover:bg-yellow-400 text-zinc-950 font-black rounded-lg text-sm transition flex items-center gap-2 cursor-pointer shadow shadow-yellow-500/15"
+                className="px-8 py-3 bg-yellow-500 disabled:opacity-40 hover:bg-yellow-400 text-zinc-955 font-black rounded-lg text-sm transition flex items-center gap-2 cursor-pointer shadow shadow-yellow-500/15"
               >
                 <span>Continue</span>
                 <ChevronRight className="w-4 h-4 text-zinc-950" />

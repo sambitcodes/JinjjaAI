@@ -17,44 +17,15 @@ import {
 } from "lucide-react";
 import { apiRequest } from "../lib/api";
 
-// Web Audio API Sound synthesizers
 const playCorrectSound = () => {
-  if (typeof window === "undefined") return;
-  try {
-    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-
-    osc.type = "sine";
-    osc.frequency.setValueAtTime(523.25, ctx.currentTime); // C5
-    gain.gain.setValueAtTime(0.1, ctx.currentTime);
-    osc.start();
-
-    osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.08); // E5
-    osc.stop(ctx.currentTime + 0.22);
-  } catch (e) {
-    console.warn("Audio synthesis error:", e);
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("hangeulai-xp", { detail: { amount: 20, type: 'correct' } }));
   }
 };
 
 const playWrongSound = () => {
-  if (typeof window === "undefined") return;
-  try {
-    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-
-    osc.type = "sawtooth";
-    osc.frequency.setValueAtTime(140, ctx.currentTime);
-    gain.gain.setValueAtTime(0.1, ctx.currentTime);
-    osc.start();
-    osc.stop(ctx.currentTime + 0.28);
-  } catch (e) {
-    console.warn("Audio synthesis error:", e);
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("hangeulai-xp", { detail: { amount: -10, type: 'wrong' } }));
   }
 };
 
@@ -75,6 +46,20 @@ export default function Phase4RealWordsWizard({ activeLesson, speakWord, onCompl
   const [step, setStep] = useState(1);
   const [showOutline, setShowOutline] = useState(false);
   const totalSteps = 13;
+
+  // Persist step to localStorage for refresh resilience
+  useEffect(() => {
+    const saved = localStorage.getItem("hangeulai_phase4_step");
+    if (saved) {
+      const parsedStep = parseInt(saved, 10);
+      if (parsedStep >= 1 && parsedStep <= 13) setStep(parsedStep);
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem("hangeulai_phase4_step", String(step));
+  }, [step]);
+
   const [metadata, setMetadata] = useState<any>(null);
   const [content, setContent] = useState<any>(null);
 
@@ -725,7 +710,10 @@ export default function Phase4RealWordsWizard({ activeLesson, speakWord, onCompl
               <span>Back</span>
             </button>
             <button
-              onClick={() => setStep(step + 1)}
+              onClick={() => {
+                setStep(step + 1);
+                window.dispatchEvent(new CustomEvent("hangeulai-xp", { detail: { amount: 15, type: 'theory' } }));
+              }}
               disabled={!cChecked}
               className="bg-brand-500 hover:bg-brand-600 disabled:opacity-30 disabled:hover:bg-brand-500 text-zinc-955 px-6 py-3.5 rounded-xl text-sm font-black transition flex items-center gap-1.5 cursor-pointer"
             >

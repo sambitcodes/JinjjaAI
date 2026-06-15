@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import Link from "next/link";
 import { ChevronLeft, CheckCircle2, ChevronRight, Award, Loader2, BookOpen, Layers, Volume2, Sparkles, BookMarked, BrainCircuit, RefreshCw, Compass } from "lucide-react";
 import { apiRequest, ensureAuthenticated } from "../../lib/api";
@@ -108,6 +108,9 @@ export default function LessonPlayer() {
   
   const [quizChecked, setQuizChecked] = useState(false);
   const [quizCorrect, setQuizCorrect] = useState<boolean | null>(null);
+  
+  // Floating XP animation states
+  const [floatingTexts, setFloatingTexts] = useState<Array<{ id: number; text: string; type: string; x: number; y: number }>>([]);
   
   // Adaptive metrics tracker
   const [mistakesCount, setMistakesCount] = useState(0);
@@ -256,9 +259,107 @@ export default function LessonPlayer() {
     }
   }
 
+  const playCentralSound = (type: 'correct' | 'theory' | 'wrong') => {
+    if (typeof window === "undefined") return;
+    try {
+      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      
+      if (type === 'correct') {
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(523.25, ctx.currentTime); // C5
+        gain.gain.setValueAtTime(0.1, ctx.currentTime);
+        osc.start();
+        osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.08); // E5
+        osc.stop(ctx.currentTime + 0.22);
+      } else if (type === 'theory') {
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(440.00, ctx.currentTime); // A4
+        gain.gain.setValueAtTime(0.08, ctx.currentTime);
+        osc.start();
+        osc.frequency.setValueAtTime(554.37, ctx.currentTime + 0.08); // C#5
+        osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.16); // E5
+        osc.stop(ctx.currentTime + 0.30);
+      } else {
+        osc.type = "sawtooth";
+        osc.frequency.setValueAtTime(140.00, ctx.currentTime);
+        gain.gain.setValueAtTime(0.1, ctx.currentTime);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.28);
+      }
+    } catch (e) {
+      console.warn("Audio synthesis error:", e);
+    }
+  };
+
   useEffect(() => {
     loadLessons();
   }, []);
+
+  // Use a ref so the event handler is always current without re-subscribing
+  const xpHandlerRef = useRef<((e: Event) => Promise<void>) | null>(null);
+
+  useEffect(() => {
+    xpHandlerRef.current = async (e: Event) => {
+      const customEvent = e as CustomEvent;
+      const { amount, type } = customEvent.detail || { amount: 0, type: 'theory' };
+      if (amount === 0) return;
+      
+      // Play sound
+      playCentralSound(type);
+      
+      // Floating text coords - spread across screen for visibility
+      const id = Date.now() + Math.random();
+      const x = typeof window !== "undefined" ? window.innerWidth / 2 + (Math.random() - 0.5) * 200 : 300;
+      const y = typeof window !== "undefined" ? window.innerHeight * 0.4 + (Math.random() - 0.5) * 100 : 300;
+      setFloatingTexts(prev => [...prev, { id, text: amount > 0 ? `+${amount} XP` : `${amount} XP`, type, x, y }]);
+      setTimeout(() => {
+        setFloatingTexts(prev => prev.filter(item => item.id !== id));
+      }, 2000);
+      
+      // Update local state
+      setProfile((prev: any) => {
+        if (!prev) return prev;
+        return { ...prev, total_xp: Math.max(0, (prev.total_xp || 0) + amount) };
+      });
+      
+      // Update local storage course states if it is positive XP
+      if (amount > 0) {
+        try {
+          const courseStateKey = "hangeulai_course_state";
+          const stored = localStorage.getItem(courseStateKey);
+          const states = stored ? JSON.parse(stored) : {};
+          const courseId = 1; // Default course id for XP tracking
+          const existing = states[courseId] || { lastPhase: 0, completedPhases: [], totalXP: 0, lastVisited: null };
+          existing.totalXP = Math.max(0, (existing.totalXP || 0) + amount);
+          existing.lastVisited = new Date().toISOString();
+          states[courseId] = existing;
+          localStorage.setItem(courseStateKey, JSON.stringify(states));
+          setCourseStates(states);
+        } catch {}
+      }
+      
+      // Send to backend
+      try {
+        await apiRequest(`/progress/xp/add?amount=${amount}`, { method: "POST" });
+      } catch (err) {
+        console.error("Failed to add XP on event:", err);
+      }
+    };
+  });
+
+  useEffect(() => {
+    const stableHandler = (e: Event) => {
+      if (xpHandlerRef.current) xpHandlerRef.current(e);
+    };
+    window.addEventListener("hangeulai-xp", stableHandler);
+    return () => {
+      window.removeEventListener("hangeulai-xp", stableHandler);
+    };
+  }, []); // Only mount/unmount once
 
   const handleResetLessons = async () => {
     const ok = window.confirm("Are you absolutely sure you want to reset your curriculum path and start fresh?");
@@ -300,6 +401,11 @@ export default function LessonPlayer() {
     setQuizCorrect(isCorrect);
     if (!isCorrect) {
       setMistakesCount((prev) => prev + 1);
+      // Dispatch negative XP event
+      window.dispatchEvent(new CustomEvent("hangeulai-xp", { detail: { amount: -10, type: 'wrong' } }));
+    } else {
+      // Dispatch positive XP event for correct answer
+      window.dispatchEvent(new CustomEvent("hangeulai-xp", { detail: { amount: 20, type: 'correct' } }));
     }
 
     // ── Write quiz accuracy to localStorage for Dashboard Mastery Goals ──
@@ -1405,7 +1511,10 @@ export default function LessonPlayer() {
 
               {currentStep === 1 ? (
                 <button 
-                  onClick={() => setCurrentStep(2)}
+                  onClick={() => {
+                    setCurrentStep(2);
+                    window.dispatchEvent(new CustomEvent("hangeulai-xp", { detail: { amount: 15, type: 'theory' } }));
+                  }}
                   className="bg-brand-500 hover:bg-brand-600 text-white py-3 px-6 rounded-xl transition text-sm font-semibold flex items-center gap-2 cursor-pointer"
                 >
                   Go to Checkpoint <ChevronRight className="w-4 h-4" />
@@ -1445,6 +1554,44 @@ export default function LessonPlayer() {
         )}
       </main>
       </div>
+      {/* Floating XP animations */}
+      <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
+        {floatingTexts.map(t => (
+          <div
+            key={t.id}
+            className={`absolute font-black text-4xl select-none ${
+              t.type === 'correct' ? 'text-emerald-400 drop-shadow-[0_0_10px_rgba(16,185,129,0.5)]' :
+              t.type === 'theory' ? 'text-cyan-400 drop-shadow-[0_0_10px_rgba(6,182,212,0.5)]' :
+              'text-red-400 drop-shadow-[0_0_10px_rgba(239,68,68,0.5)]'
+            }`}
+            style={{
+              left: `${t.x}px`,
+              top: `${t.y}px`,
+              transform: 'translate(-50%, -50%)',
+              animation: 'floatUp 1.5s cubic-bezier(0.25, 1, 0.5, 1) forwards',
+            }}
+          >
+            {t.text}
+          </div>
+        ))}
+      </div>
+
+      <style>{`
+        @keyframes floatUp {
+          0% {
+            transform: translate(-50%, -50%) translateY(0) scale(0.6);
+            opacity: 0;
+          }
+          15% {
+            transform: translate(-50%, -50%) translateY(-30px) scale(1.3);
+            opacity: 1;
+          }
+          100% {
+            transform: translate(-50%, -50%) translateY(-140px) scale(0.85);
+            opacity: 0;
+          }
+        }
+      `}</style>
     </div>
   );
 }

@@ -21,7 +21,14 @@ import {
   BookMarked
 } from "lucide-react";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+const getApiBase = () => {
+  let url = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+  if (url && !url.includes("/api/v1")) {
+    url = url.replace(/\/$/, "") + "/api/v1";
+  }
+  return url;
+};
+const API_BASE = getApiBase();
 
 function getToken(): string | null {
   if (typeof window === "undefined") return null;
@@ -241,6 +248,20 @@ export default function Phase5SpeakingLabWizard({ activeLesson, speakWord, onCom
   const [showOutline, setShowOutline] = useState(false);
   const totalSteps = 12;
 
+  // Persist step to localStorage for refresh resilience
+  useEffect(() => {
+    const saved = localStorage.getItem("hangeulai_phase5_step");
+    if (saved) {
+      const parsedStep = parseInt(saved, 10);
+      if (parsedStep >= 1 && parsedStep <= 12) setStep(parsedStep);
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem("hangeulai_phase5_step", String(step));
+  }, [step]);
+
+
   // Screen 1 — Calibration
   const [metadata, setMetadata] = useState<any>(null);
   const [setupResult, setSetupResult] = useState<any>(null);
@@ -400,8 +421,11 @@ export default function Phase5SpeakingLabWizard({ activeLesson, speakWord, onCom
     const isCorrect = cSelected === q.correctId;
     setCChecked(true);
     setCCorrect(isCorrect);
-    if (isCorrect) playCorrectSound();
-    else playWrongSound();
+    if (isCorrect) {
+      window.dispatchEvent(new CustomEvent("hangeulai-xp", { detail: { amount: 20, type: 'correct' } }));
+    } else {
+      window.dispatchEvent(new CustomEvent("hangeulai-xp", { detail: { amount: -10, type: 'wrong' } }));
+    }
   };
 
   const handleSetupTest = async () => {
@@ -412,11 +436,14 @@ export default function Phase5SpeakingLabWizard({ activeLesson, speakWord, onCom
       fd.append("audio_file", rec1.audioBlob, "setup.webm");
       const res = await apiForm("/speaking/check-setup", fd);
       setSetupResult(res);
-      if (res.stt_ok) playCorrectSound();
-      else playWrongSound();
-    } catch {
-      setSetupResult({ stt_ok: false, hint: "Could not connect to the speech service. Check the backend." });
-      playWrongSound();
+      if (res.stt_ok) {
+        window.dispatchEvent(new CustomEvent("hangeulai-xp", { detail: { amount: 0, type: 'correct' } }));
+      } else {
+        window.dispatchEvent(new CustomEvent("hangeulai-xp", { detail: { amount: 0, type: 'wrong' } }));
+      }
+    } catch (err: any) {
+      setSetupResult({ stt_ok: false, hint: `Could not connect to the speech service. Check the backend. (Details: ${err.message || err})` });
+      window.dispatchEvent(new CustomEvent("hangeulai-xp", { detail: { amount: 0, type: 'wrong' } }));
     } finally {
       setTestingSetup(false);
     }
@@ -435,8 +462,11 @@ export default function Phase5SpeakingLabWizard({ activeLesson, speakWord, onCom
       const res = await apiForm("/speaking/shadowing/attempt", fd);
       setShadowResult(res);
       setShadowScores((prev) => [...prev, res.similarity_score]);
-      if (res.similarity_score >= 60) playCorrectSound();
-      else playWrongSound();
+      if (res.similarity_score >= 60) {
+        window.dispatchEvent(new CustomEvent("hangeulai-xp", { detail: { amount: 20, type: 'correct' } }));
+      } else {
+        window.dispatchEvent(new CustomEvent("hangeulai-xp", { detail: { amount: -10, type: 'wrong' } }));
+      }
     } catch (err) {
       console.error(err);
     } finally {
@@ -458,8 +488,11 @@ export default function Phase5SpeakingLabWizard({ activeLesson, speakWord, onCom
       fd.append("audio_file", rec3.audioBlob, "recording.webm");
       const res = await apiForm("/speaking/pronunciation/attempt", fd);
       setPhonemeResult(res);
-      if (res.similarity_score >= 60) playCorrectSound();
-      else playWrongSound();
+      if (res.similarity_score >= 60) {
+        window.dispatchEvent(new CustomEvent("hangeulai-xp", { detail: { amount: 20, type: 'correct' } }));
+      } else {
+        window.dispatchEvent(new CustomEvent("hangeulai-xp", { detail: { amount: -10, type: 'wrong' } }));
+      }
     } catch (err) {
       console.error(err);
     } finally {
@@ -503,8 +536,11 @@ export default function Phase5SpeakingLabWizard({ activeLesson, speakWord, onCom
       fd.append("audio_file", rec4.audioBlob, "recording.webm");
       const res = await apiForm("/speaking/pattern/attempt", fd);
       setPatResult(res);
-      if (res.similarity_score >= 60) playCorrectSound();
-      else playWrongSound();
+      if (res.similarity_score >= 60) {
+        window.dispatchEvent(new CustomEvent("hangeulai-xp", { detail: { amount: 20, type: 'correct' } }));
+      } else {
+        window.dispatchEvent(new CustomEvent("hangeulai-xp", { detail: { amount: -10, type: 'wrong' } }));
+      }
     } catch (err) {
       console.error(err);
     } finally {
@@ -547,8 +583,11 @@ export default function Phase5SpeakingLabWizard({ activeLesson, speakWord, onCom
       const res = await apiForm("/speaking/free-tasks/attempt", fd);
       setFreeResult(res);
       setFreeScores((prev) => [...prev, res.fluency_score]);
-      if (res.fluency_score >= 60) playCorrectSound();
-      else playWrongSound();
+      if (res.fluency_score >= 60) {
+        window.dispatchEvent(new CustomEvent("hangeulai-xp", { detail: { amount: 20, type: 'correct' } }));
+      } else {
+        window.dispatchEvent(new CustomEvent("hangeulai-xp", { detail: { amount: -10, type: 'wrong' } }));
+      }
     } catch (err) {
       console.error(err);
     } finally {
@@ -577,8 +616,11 @@ export default function Phase5SpeakingLabWizard({ activeLesson, speakWord, onCom
           type: item.type,
         },
       ]);
-      if (res.similarity_score >= 65) playCorrectSound();
-      else playWrongSound();
+      if (res.similarity_score >= 65) {
+        window.dispatchEvent(new CustomEvent("hangeulai-xp", { detail: { amount: 20, type: 'correct' } }));
+      } else {
+        window.dispatchEvent(new CustomEvent("hangeulai-xp", { detail: { amount: -10, type: 'wrong' } }));
+      }
     } catch (err) {
       console.error(err);
     } finally {
@@ -594,8 +636,11 @@ export default function Phase5SpeakingLabWizard({ activeLesson, speakWord, onCom
         body: JSON.stringify({ items: assessAttempts }),
       });
       setFinalAssessment(res);
-      if (res.passed) playCorrectSound();
-      else playWrongSound();
+      if (res.passed) {
+        window.dispatchEvent(new CustomEvent("hangeulai-xp", { detail: { amount: 50, type: 'correct' } }));
+      } else {
+        window.dispatchEvent(new CustomEvent("hangeulai-xp", { detail: { amount: -10, type: 'wrong' } }));
+      }
     } catch (err) {
       console.error(err);
     } finally {
@@ -740,7 +785,10 @@ export default function Phase5SpeakingLabWizard({ activeLesson, speakWord, onCom
           </div>
 
           <button 
-            onClick={() => setStep(2)}
+            onClick={() => {
+              setStep(2);
+              window.dispatchEvent(new CustomEvent("hangeulai-xp", { detail: { amount: 15, type: 'theory' } }));
+            }}
             className="bg-brand-500 hover:bg-brand-600 text-zinc-950 font-black py-4 px-10 rounded-2xl transition duration-200 text-sm flex items-center justify-center gap-2 mx-auto cursor-pointer shadow-lg shadow-brand-500/20 active:scale-95 animate-pulse"
           >
             <span>Begin Speaking Lab</span>
@@ -910,7 +958,10 @@ export default function Phase5SpeakingLabWizard({ activeLesson, speakWord, onCom
               <span>Back</span>
             </button>
             <button 
-              onClick={() => setStep(step + 1)}
+              onClick={() => {
+                setStep(step + 1);
+                window.dispatchEvent(new CustomEvent("hangeulai-xp", { detail: { amount: 15, type: 'theory' } }));
+              }}
               disabled={!cChecked}
               className="bg-brand-500 hover:bg-brand-600 disabled:opacity-30 disabled:hover:bg-brand-500 text-zinc-955 px-6 py-3.5 rounded-xl text-sm font-black transition flex items-center gap-1.5 cursor-pointer"
             >
