@@ -879,7 +879,7 @@ export default function TutorChat() {
       )}
 
       {/* Main Active Chat Area */}
-      <div className="flex-grow flex flex-col justify-between max-w-5xl mx-auto p-4 lg:p-8 bg-zinc-950/80 border-x border-white/5 backdrop-blur-3xl shadow-2xl h-screen overflow-y-auto z-10 relative">
+      <div className="flex-grow flex flex-col justify-between w-full p-4 lg:p-8 bg-zinc-950/80 border-x border-white/5 backdrop-blur-3xl shadow-2xl h-screen overflow-y-auto z-10 relative">
         <header className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-purple-950/20 via-zinc-900/60 to-zinc-950 p-6 shadow-2xl mb-6 flex flex-col gap-4 group">
           {/* Glow orbs */}
           <div className="absolute -right-10 -top-10 w-44 h-44 bg-purple-500/15 rounded-full blur-3xl group-hover:scale-125 transition duration-700" />
@@ -916,7 +916,16 @@ export default function TutorChat() {
                     </div>
                   )}
                 </h2>
-                <p className="text-xs text-zinc-500 font-semibold uppercase tracking-wider">Bilingual Korean Tutor</p>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <p className="text-xs text-zinc-500 font-semibold uppercase tracking-wider">Bilingual Korean Tutor</p>
+                  <span className="text-zinc-700 text-xs">•</span>
+                  <button 
+                    onClick={() => setIntroOpen(!introOpen)}
+                    className="text-[10px] text-brand-400 hover:text-brand-300 font-bold underline transition cursor-pointer animate-pulse-slow"
+                  >
+                    {introOpen ? "Hide Bio" : "Show Bio"}
+                  </button>
+                </div>
               </div>
             </div>
             
@@ -939,66 +948,38 @@ export default function TutorChat() {
               </button>
             </div>
           </div>
-        </header>
 
-        {/* Collapsible Tutor Intro Section */}
-        <div className="mt-4 transition-all duration-300">
-          {introOpen ? (
-            <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-purple-950/20 via-zinc-900/60 to-zinc-950 p-6 shadow-2xl transition-all duration-300 group animate-fade-in">
-              <div className="absolute -right-10 -top-10 w-32 h-32 bg-purple-500/10 rounded-full blur-2xl group-hover:scale-125 transition duration-700 pointer-events-none" />
-              <div className="absolute -left-10 -bottom-10 w-32 h-32 bg-indigo-500/10 rounded-full blur-2xl group-hover:scale-125 transition duration-700 pointer-events-none" />
-              
-              <div className="relative z-10 flex justify-between items-start gap-4">
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-brand-gold font-extrabold text-sm">
-                    <Sparkles className="w-4 h-4 animate-pulse-slow" />
-                    <span>진짜 AI Tutor: Meet Gwan-Sik! 🇰🇷✨</span>
-                  </div>
-                  <h3 className="font-extrabold text-base md:text-lg text-white leading-tight font-korean">
-                    안녕하세요! Welcome, dynamic language explorer! Let's study together! 같이 공부해요! 🤝
-                  </h3>
-                  <p className="text-zinc-300 text-xs md:text-sm leading-relaxed max-w-3xl font-korean">
-                    I am **Gwan-Sik (관식)**, your personal bilingual buddy. 
-                    Whether you want to refine your vocabulary, master daily conjugations, or level up your speech alignment, I am here to make your journey absolutely **대박 (awesome)**! Let's chat! 🚀
-                  </p>
-                  <div className="flex flex-wrap gap-x-6 gap-y-1.5 pt-1 text-[11px] text-zinc-400 font-bold font-korean">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-accent-teal font-extrabold">✓</span>
-                      <span>Hold Mic to talk naturally (말해보세요)</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-accent-pink font-extrabold">✓</span>
-                      <span>Get instant syntax breakdowns (문법 피드백)</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-brand-gold font-extrabold">✓</span>
-                      <span>Compare speech alignment (발음 분석)</span>
-                    </div>
-                  </div>
+          {/* Collapsible Tutor Intro Section (Now inside the header below profile info) */}
+          {introOpen && (
+            <div className="relative z-10 mt-4 pt-4 border-t border-white/5 animate-fade-in space-y-2">
+              <div className="flex items-center gap-2 text-brand-gold font-extrabold text-sm">
+                <Sparkles className="w-4 h-4 animate-pulse-slow" />
+                <span>진짜 AI Tutor: Meet Gwan-Sik! 🇰🇷✨</span>
+              </div>
+              <h3 className="font-extrabold text-base md:text-lg text-white leading-tight font-korean">
+                안녕하세요! Welcome, dynamic language explorer! Let's study together! 같이 공부해요! 🤝
+              </h3>
+              <p className="text-zinc-300 text-xs md:text-sm leading-relaxed max-w-3xl font-korean font-semibold">
+                I am **Gwan-Sik (관식)**, your personal bilingual buddy. 
+                Whether you want to refine your vocabulary, master daily conjugations, or level up your speech alignment, I am here to make your journey absolutely **대박 (awesome)**! Let's chat! 🚀
+              </p>
+              <div className="flex flex-wrap gap-x-6 gap-y-1.5 pt-1 text-[11px] text-zinc-400 font-bold font-korean">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-accent-teal font-extrabold">✓</span>
+                  <span>Hold Mic to talk naturally (말해보세요)</span>
                 </div>
-                <button 
-                  onClick={() => setIntroOpen(false)}
-                  className="text-zinc-500 hover:text-white p-1.5 rounded-xl hover:bg-white/5 transition flex-shrink-0 border border-white/5 bg-zinc-900/50 cursor-pointer"
-                  title="Collapse Intro"
-                >
-                  <ChevronLeft className="w-4.5 h-4.5 rotate-90" />
-                </button>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-accent-pink font-extrabold">✓</span>
+                  <span>Get instant syntax breakdowns (문법 피드백)</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-brand-gold font-extrabold">✓</span>
+                  <span>Compare speech alignment (발음 분석)</span>
+                </div>
               </div>
             </div>
-          ) : (
-            <div className="flex justify-center">
-              <button 
-                onClick={() => setIntroOpen(true)}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-zinc-900/90 border border-white/5 text-xs font-bold text-zinc-400 hover:text-white hover:bg-white/5 transition shadow-md cursor-pointer"
-                title="Expand Gwan-Sik Intro"
-              >
-                <Sparkles className="w-3.5 h-3.5 text-brand-400" />
-                <span className="font-korean">Show Tutor Introduction (관식 소개)</span>
-                <ChevronLeft className="w-4 h-4 -rotate-90 ml-1 text-zinc-500" />
-              </button>
-            </div>
           )}
-        </div>
+        </header>
 
         {/* Chat Messages */}
         <main className="flex-grow my-6 overflow-y-auto space-y-6 max-h-[55vh] pr-2 select-text">
