@@ -35,7 +35,7 @@ interface TranscriptLine {
 export default function OnlineMaterials() {
   const [resources, setResources] = useState<OnlineResource[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<string>("All");
+  const [activeTab, setActiveTab] = useState<string>("Beginner Path");
   const [searchQuery, setSearchQuery] = useState("");
   const [featuredIndex, setFeaturedIndex] = useState(0);
   const [featuredSummaries, setFeaturedSummaries] = useState<Record<string, string>>({});
@@ -59,7 +59,7 @@ export default function OnlineMaterials() {
   const [aiResponse, setAiResponse] = useState<string>("");
   const [selectedAiTab, setSelectedAiTab] = useState<"summary" | "explain" | "quiz">("summary");
 
-  const categories = ["All", "Beginner Path", "Grammar Focus", "Listening & Speak", "Vocabulary Hacks"];
+  const categories = ["Beginner Path", "Grammar Focus", "Listening & Speak", "Vocabulary Hacks"];
 
   const fetchOnlineMaterials = async () => {
     try {
@@ -168,6 +168,36 @@ export default function OnlineMaterials() {
             { title: "Learn Hangul Sound Mechanics", videoId: "0ZhOeA0RD9o", duration: "1:03:22" },
             { title: "Conjugating Verbs and Sound Flow", videoId: "fKk4x856v1k", duration: "12:15" },
             { title: "Essential Particles Pronunciation Rules", videoId: "fS_a-R6pW_M", duration: "15:40" }
+          ]
+        });
+
+        groupedResources.push({
+          id: "yt_kdrama_movie_phrases",
+          title: "Learn Korean via K-Dramas & Movies",
+          channel: "Talk To Me In Korean",
+          category: "Listening & Speak",
+          description: "Learn everyday basic words, idiomatic expressions, and standard conversational phrases used in popular Korean dramas and movies.",
+          avatar: "🎬",
+          bannerImage: "from-red-600/20 via-zinc-900/90 to-zinc-950 hover:border-red-500/40 hover:shadow-[0_0_35px_rgba(239,68,68,0.15)]",
+          playlist: [
+            { title: "50 Korean Phrases You Hear in Every K-Drama", videoId: "fS_a-R6pW_M", duration: "12:35" },
+            { title: "Learn Korean with Parasite & Squid Game", videoId: "UaO77_3b7g8", duration: "18:10" },
+            { title: "Expressing Emotions Like a Drama Character", videoId: "iYsq-Vij48Q", duration: "14:22" }
+          ]
+        });
+
+        groupedResources.push({
+          id: "yt_korean_englishman_culture",
+          title: "Korean Englishman Cultural Immersion",
+          channel: "Korean Englishman (영국남자)",
+          category: "Vocabulary Hacks",
+          description: "Join Josh and Ollie as they introduce Korean food, street markets, and modern culture to foreigners. Great for colloquial vocabulary and cultural slang.",
+          avatar: "🇬🇧",
+          bannerImage: "from-blue-600/20 via-zinc-900/90 to-zinc-950 hover:border-blue-500/40 hover:shadow-[0_0_35px_rgba(59,130,246,0.15)]",
+          playlist: [
+            { title: "British High Schoolers Try Korean Spicy Fried Chicken", videoId: "WCmh1zWUXdE", duration: "10:15" },
+            { title: "Korean BBQ Party with Hollywood Stars", videoId: "Cmvk3E3NThI", duration: "15:40" },
+            { title: "Exploring Gwangjang Street Market Food Guide", videoId: "0ZhOeA0RD9o", duration: "12:50" }
           ]
         });
 
@@ -389,8 +419,39 @@ export default function OnlineMaterials() {
     }
   };
 
+  const getAiResourceDetails = (title: string) => {
+    const lowerTitle = title.toLowerCase();
+    let summary = "A structured study pathway focusing on essential vocabulary, pronunciation control, and basic dialogue structures.";
+    let learnings = ["Understand basic conversation syntax", "Improve vocabulary retention", "Apply grammar rules in real conversations"];
+
+    if (lowerTitle.includes("grammar")) {
+      summary = "Deep dive into core Korean particles, copulas, verb conjugations, and politeness levels. Designed to build solid grammatical foundation.";
+      learnings = ["Master subject/topic markers", "Conjugate verbs in present/past/future", "Apply honorifics in social contexts"];
+    } else if (lowerTitle.includes("hangeul") || lowerTitle.includes("alphabet")) {
+      summary = "Comprehensive guide to mastering the Korean alphabet, syllable block formation, Batchim sound rules, and pronunciation mechanics.";
+      learnings = ["Write and read syllable blocks", "Pronounce silent consonants correctly", "Learn connected speech rules"];
+    } else if (lowerTitle.includes("vocabulary") || lowerTitle.includes("vocab") || lowerTitle.includes("words")) {
+      summary = "High-yield vocabulary boost focusing on high-frequency verbs, daily routine nouns, Sino vs. native Korean numbers, and counters.";
+      learnings = ["Memorize 100+ daily verbs/adjectives", "Tell time and date confidently", "Master counting unit classifiers"];
+    } else if (lowerTitle.includes("pronunciation") || lowerTitle.includes("listening") || lowerTitle.includes("speak")) {
+      summary = "Auditory and spoken clinic to achieve near-native intonation, sound flow, double Batchim rules, and speech level transitions.";
+      learnings = ["Perform syllable shadowing drills", "Understand natural sound assimilation", "Distinguish minimal sound pairs"];
+    } else if (lowerTitle.includes("drama") || lowerTitle.includes("movie") || lowerTitle.includes("k-drama") || lowerTitle.includes("show")) {
+      summary = "Learn real, natural Korean phrases and vocabulary used by native actors in popular dramas and movies.";
+      learnings = ["Understand emotive and character dialogues", "Master colloquial spacing and tone rules", "Analyze dialogue structures in real time"];
+    } else if (lowerTitle.includes("englishman") || lowerTitle.includes("culture") || lowerTitle.includes("food")) {
+      summary = "Immerse in authentic Korean culinary culture, street food, and slang with the world-famous Korean Englishman channel.";
+      learnings = ["Pick up popular slang and food expressions", "Examine cross-cultural conversation styling", "Gain listening comprehension in casual speech"];
+    } else if (lowerTitle.includes("conversation") || lowerTitle.includes("billy") || lowerTitle.includes("real life")) {
+      summary = "Real-life dialogues simulating cafes, shopping, taxi directions, and social chats. Focuses on conversational habits and idioms.";
+      learnings = ["Handle survival dialogue scenarios", "Use daily expressions and slang", "Express opinions and preferences"];
+    }
+
+    return { summary, learnings };
+  };
+
   const filteredResources = resources.filter(resource => {
-    const matchesTab = activeTab === "All" || resource.category === activeTab;
+    const matchesTab = resource.category === activeTab;
     const matchesSearch = resource.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
                           resource.channel.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           resource.description.toLowerCase().includes(searchQuery.toLowerCase());
@@ -688,46 +749,57 @@ export default function OnlineMaterials() {
         {/* Playlists Grid */}
         <motion.div 
           layout
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 w-full max-w-none"
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full max-w-none"
         >
           <AnimatePresence>
-            {filteredResources.map((resource) => (
-              <motion.div
-                layout
-                initial={{ opacity: 0, y: 15 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                transition={{ duration: 0.25 }}
-                key={resource.id}
-                onClick={() => handleSelectPlaylistCard(resource)}
-                className={`glass-panel rounded-3xl border border-white/5 overflow-hidden transition-all duration-300 transform hover:-translate-y-1.5 cursor-pointer bg-gradient-to-b ${resource.bannerImage}`}
-              >
-                <div className="p-6 flex flex-col justify-between h-full min-h-[220px]">
-                  <div className="space-y-3 text-left">
-                    <div className="flex justify-between items-start gap-2">
-                      <span className="text-2xl p-2 bg-zinc-950/80 rounded-2xl border border-white/5">{resource.avatar}</span>
-                      <span className="text-[9px] bg-zinc-950/60 border border-white/5 px-2.5 py-1 rounded-full text-zinc-400 font-black uppercase">
-                        {resource.category}
+            {filteredResources.map((resource) => {
+              const details = getAiResourceDetails(resource.title);
+              return (
+                <motion.div
+                  layout
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ duration: 0.25 }}
+                  key={resource.id}
+                  onClick={() => handleSelectPlaylistCard(resource)}
+                  className={`glass-panel rounded-3xl border border-white/5 overflow-hidden transition-all duration-300 transform hover:-translate-y-1.5 cursor-pointer bg-gradient-to-b ${resource.bannerImage}`}
+                >
+                  <div className="p-6 flex flex-col justify-between h-full min-h-[220px]">
+                    <div className="space-y-4 text-left">
+                      <div className="flex justify-between items-start gap-2">
+                        <span className="text-2xl p-2 bg-zinc-950/80 rounded-2xl border border-white/5">{resource.avatar}</span>
+                        <span className="text-[9px] bg-zinc-950/60 border border-white/5 px-2.5 py-1 rounded-full text-zinc-400 font-black uppercase">
+                          {resource.category}
+                        </span>
+                      </div>
+                      <div>
+                        <h3 className="text-base font-black text-white tracking-tight leading-snug">{resource.title}</h3>
+                        <p className="text-[10px] text-zinc-500 font-semibold">{resource.channel}</p>
+                      </div>
+                      
+                      {/* AI Generated Resource Details */}
+                      <p className="text-zinc-400 text-xs leading-relaxed font-medium">{details.summary}</p>
+                      <div className="space-y-1.5 pt-2 border-t border-white/[0.03]">
+                        <span className="text-[9px] uppercase tracking-widest text-red-400 font-extrabold font-mono">Key Takeaways:</span>
+                        <ul className="text-[10px] text-zinc-500 pl-4 list-disc space-y-0.5 leading-relaxed font-semibold">
+                          {details.learnings.map((l, i) => <li key={i}>{l}</li>)}
+                        </ul>
+                      </div>
+                    </div>
+
+                    <div className="pt-4 mt-4 border-t border-white/[0.04] flex items-center justify-between text-[11px] font-black text-zinc-400">
+                      <span className="flex items-center gap-1 text-[10px] bg-red-500/10 text-red-400 border border-red-500/20 px-2.5 py-0.5 rounded-full uppercase tracking-wider font-semibold">
+                        {resource.playlist.length} lessons
+                      </span>
+                      <span className="flex items-center gap-1 text-zinc-400 hover:text-white transition">
+                        Launch Playlist <ChevronRight className="w-3.5 h-3.5" />
                       </span>
                     </div>
-                    <div>
-                      <h3 className="text-base font-black text-white tracking-tight leading-snug">{resource.title}</h3>
-                      <p className="text-[10px] text-zinc-500 font-semibold">{resource.channel}</p>
-                    </div>
-                    <p className="text-zinc-400 text-xs leading-relaxed line-clamp-3">{resource.description}</p>
                   </div>
-
-                  <div className="pt-4 mt-4 border-t border-white/[0.04] flex items-center justify-between text-[11px] font-black text-zinc-400">
-                    <span className="flex items-center gap-1 text-[10px] bg-red-500/10 text-red-400 border border-red-500/20 px-2.5 py-0.5 rounded-full uppercase tracking-wider">
-                      {resource.playlist.length} lessons
-                    </span>
-                    <span className="flex items-center gap-1 text-zinc-400 hover:text-white transition">
-                      Launch Playlist <ChevronRight className="w-3.5 h-3.5" />
-                    </span>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
+                </motion.div>
+              );
+            })}
           </AnimatePresence>
         </motion.div>
       </div>

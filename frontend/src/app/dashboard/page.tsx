@@ -715,10 +715,15 @@ export default function Dashboard() {
     try {
       await apiRequest("/progress/reset", { method: "POST" });
       if (typeof window !== "undefined") {
-        localStorage.removeItem("hangeulai_activity_log");
-        localStorage.removeItem("hangeulai_quiz_accuracy");
-        localStorage.removeItem("hangeulai_course_state");
-        localStorage.removeItem("hangeulai_scheduled_courses");
+        const keysToRemove = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && key.startsWith("hangeulai_")) {
+            keysToRemove.push(key);
+          }
+        }
+        keysToRemove.forEach(k => localStorage.removeItem(k));
+        localStorage.removeItem("user_avatar");
       }
       window.location.reload();
     }

@@ -17,7 +17,7 @@ interface BookMaterial {
 export default function MaterialsWarehouse() {
   const [materials, setMaterials] = useState<BookMaterial[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeCategory, setActiveCategory] = useState<string>("All");
+  const [activeCategory, setActiveCategory] = useState<string>("Core Textbooks");
   const [searchQuery, setSearchQuery] = useState<string>("");
   
   // PDF Viewer Modal States
@@ -252,17 +252,43 @@ export default function MaterialsWarehouse() {
     return () => document.removeEventListener("fullscreenchange", handleFsChange);
   }, []);
 
-  const categories = ["All", "Core Textbooks", "TTMIK Textbooks", "TTMIK Workbooks", "Korean101 Workbooks"];
+  const getAiBookDetails = (name: string) => {
+    const lowerName = name.toLowerCase();
+    let summary = "A structured textbook focused on standard A1-B2 Korean communication. Develops vocabulary, key particles, grammar principles, and colloquial speaking skills.";
+    let learnings = ["Colloquial speaking structures", "Key grammar markers and syntax rules", "Everyday vocabulary and pronunciation guides"];
+
+    if (lowerName.includes("workbook")) {
+      summary = "An essential practice companion workbook designed to reinforce core grammatical rules. Packed with sentence-building exercises, listening tasks, and vocabulary recall drills.";
+      learnings = ["Practical sentence construction exercises", "Listening comprehension and dictation tasks", "Self-evaluation grammar reviews"];
+    } else if (lowerName.includes("ttmik") || lowerName.includes("talk to me in korean")) {
+      if (lowerName.includes("workbook")) {
+        summary = "Official Talk To Me In Korean workbook matching the level syllabus. Promotes language retention through reading comprehension, spelling quizzes, and dictation exercises.";
+        learnings = ["Level-specific spelling and spelling drills", "Creative dialogue creation prompts", "Listening comprehension matching exercises"];
+      } else {
+        summary = "Comprehensive Talk To Me In Korean grammar guidebook containing natural situational dialogues, conversational habits, and cultural context tips.";
+        learnings = ["Natural colloquial speech endings", "Essential particles and speech levels", "Cultural background and idiomatic explanations"];
+      }
+    } else if (lowerName.includes("korean101") || lowerName.includes("innovative language")) {
+      summary = "A highly practical workbook curated by KoreanClass101. Features extensive writing practice, flashcard reference lists, and pronunciation guides for fast-track fluency.";
+      learnings = ["Syllable writing and stroke order drills", "Top 100 high-frequency verbs and nouns", "Phonetic spelling and auditory training"];
+    } else if (lowerName.includes("active korean")) {
+      summary = "Kyung Hee University's famous communicative coursebook designed for rapid language acquisition, emphasizing oral communication and conversational fluency.";
+      learnings = ["Oral response templates for daily activities", "Audio-linked speaking prompts", "Pronunciation patterns and intonation coaching"];
+    }
+    
+    return { summary, learnings };
+  };
+
+  const categories = ["Core Textbooks", "TTMIK Textbooks", "TTMIK Workbooks", "Korean101 Workbooks"];
 
   // Search and Category filtering
   const filteredMaterials = materials.filter(m => {
-    const matchesCategory = activeCategory === "All" || m.category === activeCategory;
+    const matchesCategory = m.category === activeCategory;
     const matchesSearch = m.name.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCategory && matchesSearch;
   });
 
   const getCategoryCount = (catName: string) => {
-    if (catName === "All") return materials.length;
     return materials.filter(m => m.category === catName).length;
   };
 
@@ -377,7 +403,7 @@ export default function MaterialsWarehouse() {
 
       {/* Materials Grid */}
       {filteredMaterials.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 animate-fade-in">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in">
           {filteredMaterials.map((material, idx) => {
             // Find accent styles based on category
             let borderGlow = "hover:border-purple-500/30 hover:shadow-[0_0_30px_rgba(168,85,247,0.18)]";
@@ -402,11 +428,13 @@ export default function MaterialsWarehouse() {
               folderEmoji = "📗";
             }
 
+            const details = getAiBookDetails(material.name);
+
             return (
               <div
                 key={idx}
                 onClick={() => setSelectedPdf(material)}
-                className={`glass-panel p-5 rounded-3xl border border-white/5 bg-zinc-900/10 flex flex-col justify-between transition-all duration-300 transform hover:-translate-y-1.5 cursor-pointer overflow-hidden ${accent} ${borderGlow} group/card`}
+                className={`glass-panel p-6 rounded-3xl border border-white/5 bg-zinc-900/10 flex flex-col justify-between transition-all duration-300 transform hover:-translate-y-1.5 cursor-pointer overflow-hidden ${accent} ${borderGlow} group/card`}
                 style={{ animationDelay: `${idx * 50}ms` }}
               >
                 <div className="space-y-4">
@@ -418,7 +446,7 @@ export default function MaterialsWarehouse() {
                   </div>
                   
                   <div className="flex gap-3">
-                    <div className="p-3 bg-zinc-950 border border-white/5 rounded-2xl flex-shrink-0 flex items-center justify-center text-3xl group-hover/card:scale-110 transition duration-300">
+                    <div className="p-3.5 bg-zinc-950 border border-white/5 rounded-2xl flex-shrink-0 flex items-center justify-center text-3xl group-hover/card:scale-110 transition duration-300">
                       {folderEmoji}
                     </div>
                     <div className="min-w-0">
@@ -426,6 +454,17 @@ export default function MaterialsWarehouse() {
                         {material.name.replace(".pdf", "")}
                       </h3>
                       <p className="text-[10px] text-zinc-500 mt-1 font-extrabold uppercase tracking-wide">Interactive Guide</p>
+                    </div>
+                  </div>
+
+                  {/* AI Generated Book Details */}
+                  <div className="space-y-3 pt-2">
+                    <p className="text-zinc-400 text-xs leading-relaxed font-medium">{details.summary}</p>
+                    <div className="space-y-1.5 pt-2 border-t border-white/[0.03]">
+                      <span className="text-[9px] uppercase tracking-widest text-purple-400 font-extrabold font-mono">Learning Outcomes:</span>
+                      <ul className="text-[10px] text-zinc-500 pl-4 list-disc space-y-0.5 leading-relaxed font-semibold">
+                        {details.learnings.map((l, i) => <li key={i}>{l}</li>)}
+                      </ul>
                     </div>
                   </div>
                 </div>

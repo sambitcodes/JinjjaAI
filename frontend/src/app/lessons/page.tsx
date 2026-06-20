@@ -132,6 +132,7 @@ export default function LessonPlayer() {
   }
   const [courseStates, setCourseStates] = useState<Record<number, CourseState>>({});
   const [profile, setProfile] = useState<any>(null);
+  const activeStepRef = useRef<{ courseId: number; phaseNum: number; step: number } | null>(null);
 
   // Phase 1 Wizard States
   
@@ -307,6 +308,44 @@ export default function LessonPlayer() {
       const customEvent = e as CustomEvent;
       const { amount, type } = customEvent.detail || { amount: 0, type: 'theory' };
       if (amount === 0) return;
+
+      // For screen change theory XP, check if already rewarded
+      if (type === 'theory') {
+        // Wait briefly for step changes to commit to ref
+        await new Promise(resolve => setTimeout(resolve, 50));
+        
+        const activeStep = activeStepRef.current;
+        if (activeStep) {
+          const { courseId, phaseNum, step } = activeStep;
+          const courseStateKey = "hangeulai_course_state";
+          const stored = localStorage.getItem(courseStateKey);
+          const states = stored ? JSON.parse(stored) : {};
+          const existing = states[courseId] || { lastPhase: 1, completedPhases: [], totalXP: 0, lastVisited: null, phaseSteps: {}, rewardedSteps: [] };
+          existing.rewardedSteps = existing.rewardedSteps || [];
+          
+          const stepKey = `${phaseNum}_${step}`;
+          if (existing.rewardedSteps.includes(stepKey)) {
+            console.log(`XP for step ${stepKey} in course ${courseId} already rewarded. Skipping.`);
+            return;
+          }
+          
+          existing.rewardedSteps.push(stepKey);
+          states[courseId] = existing;
+          localStorage.setItem(courseStateKey, JSON.stringify(states));
+          setCourseStates(states);
+
+          try {
+            await apiRequest("/progress/profile", {
+              method: "PATCH",
+              body: JSON.stringify({
+                course_states: states
+              })
+            });
+          } catch (err) {
+            console.error("Failed to sync step change rewardedSteps:", err);
+          }
+        }
+      }
       
       // Play sound
       playCentralSound(type);
@@ -361,11 +400,13 @@ export default function LessonPlayer() {
       const { courseId, phaseNum, step } = customEvent.detail || {};
       if (!courseId || !phaseNum || !step) return;
 
+      activeStepRef.current = { courseId, phaseNum, step };
+
       try {
         const courseStateKey = "hangeulai_course_state";
         const stored = localStorage.getItem(courseStateKey);
         const states = stored ? JSON.parse(stored) : {};
-        const existing = states[courseId] || { lastPhase: 0, completedPhases: [], totalXP: 0, lastVisited: null, phaseSteps: {} };
+        const existing = states[courseId] || { lastPhase: 0, completedPhases: [], totalXP: 0, lastVisited: null, phaseSteps: {}, rewardedSteps: [] };
         existing.lastPhase = phaseNum;
         existing.lastVisited = new Date().toISOString();
         existing.phaseSteps = existing.phaseSteps || {};
@@ -395,13 +436,46 @@ export default function LessonPlayer() {
   }, []); // Only mount/unmount once
 
   const handleResetLessons = async () => {
-    const ok = window.confirm("Are you absolutely sure you want to reset your curriculum path and start fresh?");
+    const courseId = activeLesson?.level ?? 1;
+    const ok = window.confirm(`Are you absolutely sure you want to reset your curriculum path and progress for Course ID ${courseId}?`);
     if (!ok) return;
 
     setLoading(true);
     try {
-      await apiRequest("/progress/reset", { method: "POST" });
-      localStorage.removeItem("learning_track");
+      const courseStateKey = "hangeulai_course_state";
+      const stored = localStorage.getItem(courseStateKey);
+      const states = stored ? JSON.parse(stored) : {};
+      states[courseId] = {
+        lastPhase: 1,
+        completedPhases: [],
+        totalXP: 0,
+        lastVisited: new Date().toISOString(),
+        phaseSteps: { "1": 1 },
+        rewardedSteps: []
+      };
+      
+      localStorage.setItem(courseStateKey, JSON.stringify(states));
+      setCourseStates(states);
+
+      await apiRequest("/progress/profile", {
+        method: "PATCH",
+        body: JSON.stringify({
+          course_states: states
+        })
+      });
+
+      // Clear wizard step keys for this course
+      if (courseId === 1) {
+        for (let p = 1; p <= 6; p++) {
+          localStorage.removeItem(`hangeulai_phase${p}_step`);
+        }
+      } else {
+        for (let p = 1; p <= 12; p++) {
+          localStorage.removeItem(`hangeulai_c${courseId}p${p}_step`);
+          localStorage.removeItem(`hangeulai_c${courseId - 1}p${p}_step`);
+        }
+      }
+
       setLessons([]);
       setActiveIdx(0);
       setCurrentStep(1);
@@ -410,6 +484,8 @@ export default function LessonPlayer() {
       setWritingAnswer("");
       setQuizChecked(false);
       setQuizCorrect(null);
+      
+      await loadLessons();
     } catch (err) {
       console.error("Reset failed:", err);
     } finally {
