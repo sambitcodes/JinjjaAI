@@ -643,7 +643,20 @@ export default function Course3Phase3PastRoutinesWizard({
     { num: 10, label: "Activity 5 – Timeline paragraph builder & speaking practice" }
   ];
 
-  return (
+  
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("hangeulai-step-change", {
+        detail: {
+          courseId: 3,
+          phaseNum: 3,
+          step: step
+        }
+      }));
+    }
+  }, [step]);
+
+return (
     <div className="flex-grow flex flex-col justify-between">
       
       {/* Top Header tracking */}

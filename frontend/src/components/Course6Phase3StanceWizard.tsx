@@ -485,7 +485,20 @@ export default function Course6Phase3StanceWizard({
     { num: 6, label: "Screen 6 – Homework & Review logs" }
   ];
 
-  return (
+  
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("hangeulai-step-change", {
+        detail: {
+          courseId: 6,
+          phaseNum: 3,
+          step: step
+        }
+      }));
+    }
+  }, [step]);
+
+return (
     <div className="flex-grow flex flex-col justify-between">
       
       {/* Top Header tracking */}

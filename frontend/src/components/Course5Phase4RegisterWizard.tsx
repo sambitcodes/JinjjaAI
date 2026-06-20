@@ -459,7 +459,20 @@ export default function Course5Phase4RegisterWizard({
     { num: 6, label: "Screen 6 – Homework & AI Politeness Practices" }
   ];
 
-  return (
+  
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("hangeulai-step-change", {
+        detail: {
+          courseId: 5,
+          phaseNum: 4,
+          step: step
+        }
+      }));
+    }
+  }, [step]);
+
+return (
     <div className="flex-grow flex flex-col justify-between">
       
       {/* Top Header tracking */}

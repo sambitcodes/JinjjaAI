@@ -458,7 +458,20 @@ export default function Course7Phase1GrammarLabWizard({
     { num: 6, label: "Screen 6 – Homework & Main Course Integration" }
   ];
 
-  return (
+  
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("hangeulai-step-change", {
+        detail: {
+          courseId: 7,
+          phaseNum: 1,
+          step: step
+        }
+      }));
+    }
+  }, [step]);
+
+return (
     <div className="flex-grow flex flex-col justify-between">
       
       {/* Top Header */}

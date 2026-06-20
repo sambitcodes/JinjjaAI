@@ -391,7 +391,20 @@ export default function Course4Phase5ParagraphsWizard({
     { num: 5, label: "Activity 4 – Structuring checkpoint quiz" }
   ];
 
-  return (
+  
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("hangeulai-step-change", {
+        detail: {
+          courseId: 4,
+          phaseNum: 5,
+          step: step
+        }
+      }));
+    }
+  }, [step]);
+
+return (
     <div className="flex-grow flex flex-col justify-between">
       
       {/* Top Header tracking */}

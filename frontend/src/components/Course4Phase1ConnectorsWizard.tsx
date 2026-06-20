@@ -347,7 +347,20 @@ export default function Course4Phase1ConnectorsWizard({
     { num: 5, label: "Activity 4 – Strategy check quizzes" }
   ];
 
-  return (
+  
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("hangeulai-step-change", {
+        detail: {
+          courseId: 4,
+          phaseNum: 1,
+          step: step
+        }
+      }));
+    }
+  }, [step]);
+
+return (
     <div className="flex-grow flex flex-col justify-between">
       
       {/* Top Header tracking */}

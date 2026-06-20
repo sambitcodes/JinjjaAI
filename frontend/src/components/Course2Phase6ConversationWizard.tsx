@@ -543,7 +543,20 @@ export default function Course2Phase6ConversationWizard({
     { num: 12, label: "Activity 5 – Course 1 Everyday Basics graduation" }
   ];
 
-  return (
+  
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("hangeulai-step-change", {
+        detail: {
+          courseId: 2,
+          phaseNum: 6,
+          step: step
+        }
+      }));
+    }
+  }, [step]);
+
+return (
     <div className="flex-grow flex flex-col justify-between">
       
       {/* Top Header tracking */}

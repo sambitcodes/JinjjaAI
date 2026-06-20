@@ -332,7 +332,7 @@ export default function LessonPlayer() {
           const courseStateKey = "hangeulai_course_state";
           const stored = localStorage.getItem(courseStateKey);
           const states = stored ? JSON.parse(stored) : {};
-          const courseId = 1; // Default course id for XP tracking
+          const courseId = activeLesson?.level ?? 1;
           const existing = states[courseId] || { lastPhase: 0, completedPhases: [], totalXP: 0, lastVisited: null };
           existing.totalXP = Math.max(0, (existing.totalXP || 0) + amount);
           existing.lastVisited = new Date().toISOString();
@@ -355,9 +355,42 @@ export default function LessonPlayer() {
     const stableHandler = (e: Event) => {
       if (xpHandlerRef.current) xpHandlerRef.current(e);
     };
+    
+    const handleStepChange = async (e: Event) => {
+      const customEvent = e as CustomEvent;
+      const { courseId, phaseNum, step } = customEvent.detail || {};
+      if (!courseId || !phaseNum || !step) return;
+
+      try {
+        const courseStateKey = "hangeulai_course_state";
+        const stored = localStorage.getItem(courseStateKey);
+        const states = stored ? JSON.parse(stored) : {};
+        const existing = states[courseId] || { lastPhase: 0, completedPhases: [], totalXP: 0, lastVisited: null, phaseSteps: {} };
+        existing.lastPhase = phaseNum;
+        existing.lastVisited = new Date().toISOString();
+        existing.phaseSteps = existing.phaseSteps || {};
+        existing.phaseSteps[phaseNum] = step;
+        states[courseId] = existing;
+        
+        localStorage.setItem(courseStateKey, JSON.stringify(states));
+        setCourseStates(states);
+
+        await apiRequest("/progress/profile", {
+          method: "PATCH",
+          body: JSON.stringify({
+            course_states: states
+          })
+        });
+      } catch (err) {
+        console.error("Failed to sync step change progress:", err);
+      }
+    };
+
     window.addEventListener("hangeulai-xp", stableHandler);
+    window.addEventListener("hangeulai-step-change", handleStepChange);
     return () => {
       window.removeEventListener("hangeulai-xp", stableHandler);
+      window.removeEventListener("hangeulai-step-change", handleStepChange);
     };
   }, []); // Only mount/unmount once
 
@@ -727,6 +760,32 @@ export default function LessonPlayer() {
       setQuizIdx(0);
       setShowCourseSelector(false);
       setShowSyllabus(true);
+
+      // Initialize course progress state live
+      try {
+        const courseStateKey = "hangeulai_course_state";
+        const stored = localStorage.getItem(courseStateKey);
+        const states = stored ? JSON.parse(stored) : {};
+        const courseId = level;
+        const existing = states[courseId] || { lastPhase: 1, completedPhases: [], totalXP: 0, lastVisited: null, phaseSteps: {} };
+        existing.lastVisited = new Date().toISOString();
+        existing.phaseSteps = existing.phaseSteps || {};
+        if (!existing.phaseSteps[existing.lastPhase]) {
+          existing.phaseSteps[existing.lastPhase] = 1;
+        }
+        states[courseId] = existing;
+        localStorage.setItem(courseStateKey, JSON.stringify(states));
+        setCourseStates(states);
+
+        await apiRequest("/progress/profile", {
+          method: "PATCH",
+          body: JSON.stringify({
+            course_states: states
+          })
+        });
+      } catch (e) {
+        console.error("Failed to initialize course launch state:", e);
+      }
     } catch (err) {
       console.error("Course load failed:", err);
     } finally {

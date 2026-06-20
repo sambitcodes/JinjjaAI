@@ -374,7 +374,20 @@ export default function Course6Phase4RegisterWizard({
     { num: 6, label: "Screen 6 – Homework & Coaching review" }
   ];
 
-  return (
+  
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("hangeulai-step-change", {
+        detail: {
+          courseId: 6,
+          phaseNum: 4,
+          step: step
+        }
+      }));
+    }
+  }, [step]);
+
+return (
     <div className="flex-grow flex flex-col justify-between">
 
       {/* Top Header */}

@@ -195,15 +195,38 @@ export default function Course2Phase5LocationWizard({
   const [cCorrect, setCCorrect] = useState<boolean | null>(null);
   const [cIdx, setCIdx] = useState(0);
 
-  // Reset concept states on step change
+  // Persist answered concepts state
+  const [answeredConcepts, setAnsweredConcepts] = useState<Record<string, { selected: string, correct: boolean }>>({});
+
+  // Reset/Restore micro-question state when moving between concept screens
   useEffect(() => {
     if (step >= 2 && step <= 6) {
-      setCSelected(null);
-      setCChecked(false);
-      setCCorrect(null);
-      setCIdx(0);
+      const key = `${step}_${cIdx}`;
+      const answered = answeredConcepts[key];
+      if (answered) {
+        setCSelected(answered.selected);
+        setCChecked(true);
+        setCCorrect(answered.correct);
+      } else {
+        setCSelected(null);
+        setCChecked(false);
+        setCCorrect(null);
+      }
     }
-  }, [step]);
+  }, [step, cIdx, answeredConcepts]);
+
+  // Automatically save answered concept states when checked
+  useEffect(() => {
+    if (cChecked && cSelected !== null && cCorrect !== null && step >= 2 && step <= 6) {
+      const key = `${step}_${cIdx}`;
+      if (!answeredConcepts[key]) {
+        setAnsweredConcepts(prev => ({
+          ...prev,
+          [key]: { selected: cSelected, correct: cCorrect }
+        }));
+      }
+    }
+  }, [cChecked, cSelected, cCorrect, step, cIdx, answeredConcepts]);
 
   // Concept Micro-questions definitions
   const conceptQuestions: Record<number, MicroQuestion[]> = {
@@ -639,7 +662,20 @@ export default function Course2Phase5LocationWizard({
     { num: 12, label: "Activity 6 – Location tutor dialogue practice room" }
   ];
 
-  return (
+  
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("hangeulai-step-change", {
+        detail: {
+          courseId: 2,
+          phaseNum: 5,
+          step: step
+        }
+      }));
+    }
+  }, [step]);
+
+return (
     <div className="flex-grow flex flex-col justify-between">
       
       {/* Top Header tracking */}

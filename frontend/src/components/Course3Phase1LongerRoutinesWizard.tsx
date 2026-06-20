@@ -626,7 +626,20 @@ export default function Course3Phase1LongerRoutinesWizard({
     { num: 10, label: "Activity 5 – Graduating checkpoint mini-quiz checks" }
   ];
 
-  return (
+  
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("hangeulai-step-change", {
+        detail: {
+          courseId: 3,
+          phaseNum: 1,
+          step: step
+        }
+      }));
+    }
+  }, [step]);
+
+return (
     <div className="flex-grow flex flex-col justify-between">
       
       {/* Top Header tracking */}

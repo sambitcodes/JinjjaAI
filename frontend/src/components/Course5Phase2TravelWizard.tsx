@@ -433,7 +433,20 @@ export default function Course5Phase2TravelWizard({
     { num: 6, label: "Screen 6 – Homework & AI Travel Day Simulation" }
   ];
 
-  return (
+  
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("hangeulai-step-change", {
+        detail: {
+          courseId: 5,
+          phaseNum: 2,
+          step: step
+        }
+      }));
+    }
+  }, [step]);
+
+return (
     <div className="flex-grow flex flex-col justify-between">
       
       {/* Top Header tracking */}

@@ -580,7 +580,20 @@ export default function Course3Phase5StoriesWizard({
     { num: 10, label: "Activity 5 – Story read-aloud voice check" }
   ];
 
-  return (
+  
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("hangeulai-step-change", {
+        detail: {
+          courseId: 3,
+          phaseNum: 5,
+          step: step
+        }
+      }));
+    }
+  }, [step]);
+
+return (
     <div className="flex-grow flex flex-col justify-between font-sans">
       
       {/* Top Header tracking */}

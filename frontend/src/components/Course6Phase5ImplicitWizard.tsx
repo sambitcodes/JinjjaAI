@@ -402,7 +402,20 @@ export default function Course6Phase5ImplicitWizard({
     { num: 6, label: "Screen 6 – Homework & AI Subtext Coaching" }
   ];
 
-  return (
+  
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("hangeulai-step-change", {
+        detail: {
+          courseId: 6,
+          phaseNum: 5,
+          step: step
+        }
+      }));
+    }
+  }, [step]);
+
+return (
     <div className="flex-grow flex flex-col justify-between">
 
       {/* Header */}

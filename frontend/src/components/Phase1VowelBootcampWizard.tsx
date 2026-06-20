@@ -74,14 +74,36 @@ export default function Phase1VowelBootcampWizard({
   const [cChecked, setCChecked] = useState(false);
   const [cCorrect, setCCorrect] = useState<boolean | null>(null);
 
-  // Reset micro-question state when moving between concept screens
+  /// Persist answered concepts state
+  const [answeredConcepts, setAnsweredConcepts] = useState<Record<number, { selected: string, correct: boolean }>>({});
+
+  // Reset/Restore micro-question state when moving between concept screens
   useEffect(() => {
     if (step >= 2 && step <= 6) {
-      setCSelected(null);
-      setCChecked(false);
-      setCCorrect(null);
+      const answered = answeredConcepts[step];
+      if (answered) {
+        setCSelected(answered.selected);
+        setCChecked(true);
+        setCCorrect(answered.correct);
+      } else {
+        setCSelected(null);
+        setCChecked(false);
+        setCCorrect(null);
+      }
     }
-  }, [step]);
+  }, [step, answeredConcepts]);
+
+  // Automatically save answered concept states when checked
+  useEffect(() => {
+    if (cChecked && cSelected !== null && cCorrect !== null && step >= 2 && step <= 6) {
+      if (!answeredConcepts[step]) {
+        setAnsweredConcepts(prev => ({
+          ...prev,
+          [step]: { selected: cSelected, correct: cCorrect }
+        }));
+      }
+    }
+  }, [cChecked, cSelected, cCorrect, step, answeredConcepts]);
 
   // Concept Micro-questions definitions
   const conceptQuestions: Record<number, MicroQuestion> = {
@@ -347,7 +369,20 @@ export default function Phase1VowelBootcampWizard({
     { num: 11, label: "Completion & Homework" }
   ];
 
-  return (
+  
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("hangeulai-step-change", {
+        detail: {
+          courseId: 1,
+          phaseNum: 1,
+          step: step
+        }
+      }));
+    }
+  }, [step]);
+
+return (
     <div className="flex-grow flex flex-col justify-between">
       <header className="flex flex-col md:flex-row justify-between items-start md:items-center py-5 border-b border-white/5 mb-8 gap-4">
         <div className="flex items-center space-x-4">

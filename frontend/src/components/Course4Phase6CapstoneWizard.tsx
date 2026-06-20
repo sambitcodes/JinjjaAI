@@ -340,7 +340,20 @@ export default function Course4Phase6CapstoneWizard({
     { num: 5, label: "Activity 4 – Homework & course graduation checklist" }
   ];
 
-  return (
+  
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("hangeulai-step-change", {
+        detail: {
+          courseId: 4,
+          phaseNum: 6,
+          step: step
+        }
+      }));
+    }
+  }, [step]);
+
+return (
     <div className="flex-grow flex flex-col justify-between">
       
       {/* Top Header tracking */}

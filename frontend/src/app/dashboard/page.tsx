@@ -47,8 +47,67 @@ interface CourseState {
 
 type DashTab = "overview" | "journey" | "achievements" | "activity" | "calendar";
 
+const getPhaseSteps = (courseId: number, phaseNum: number): string[] => {
+  // Course 0 / id: 1 (Pre-A1 Hangeul & Sound System Bootcamp)
+  if (courseId === 1) {
+    if (phaseNum === 1) return ["Vowel Bootcamp", "Concept Drill", "Listening Lab", "Writing Board", "Checkpoint Quiz", "Activity Practice"];
+    if (phaseNum === 2) return ["Consonants", "Concept Drill", "Listening Lab", "Writing Board", "Checkpoint Quiz", "Activity Practice"];
+    if (phaseNum === 3) return ["Syllable Blocks", "Concept Drill", "Listening Lab", "Writing Board", "Checkpoint Quiz", "Activity Practice"];
+    if (phaseNum === 4) return ["Real Words", "Concept Drill", "Listening Lab", "Writing Board", "Checkpoint Quiz", "Activity Practice"];
+    if (phaseNum === 5) return ["Speaking Lab", "Concept Drill", "Listening Lab", "Writing Board", "Checkpoint Quiz", "Activity Practice"];
+    if (phaseNum === 6) return ["Conversation", "Concept Drill", "Listening Lab", "Writing Board", "Checkpoint Quiz", "Activity Practice"];
+  }
+  // Course 1 / id: 2 (A1 Everyday Basics)
+  if (courseId === 2) {
+    if (phaseNum === 1) return ["Greetings", "Concept Drill", "Listening Lab", "Writing Board", "Checkpoint Quiz", "Activity Practice"];
+    if (phaseNum === 2) return ["Self-Intro", "Concept Drill", "Listening Lab", "Writing Board", "Checkpoint Quiz", "Activity Practice"];
+    if (phaseNum === 3) return ["Numbers", "Concept Drill", "Listening Lab", "Writing Board", "Checkpoint Quiz", "Activity Practice"];
+    if (phaseNum === 4) return ["Routine", "Concept Drill", "Listening Lab", "Writing Board", "Checkpoint Quiz", "Activity Practice"];
+    if (phaseNum === 5) return ["Location", "Concept Drill", "Listening Lab", "Writing Board", "Checkpoint Quiz", "Activity Practice"];
+    if (phaseNum === 6) return ["Conversation", "Concept Drill", "Listening Lab", "Writing Board", "Checkpoint Quiz", "Activity Practice"];
+  }
+  // Course 2 / id: 3 (A2 Daily Life & Routines)
+  if (courseId === 3) {
+    if (phaseNum === 1) return ["Longer Routines", "Concept Drill", "Listening Lab", "Writing Board", "Checkpoint Quiz", "Activity Practice"];
+    if (phaseNum === 2) return ["Preferences", "Concept Drill", "Listening Lab", "Writing Board", "Checkpoint Quiz", "Activity Practice"];
+    if (phaseNum === 3) return ["Past Routines", "Concept Drill", "Listening Lab", "Writing Board", "Checkpoint Quiz", "Activity Practice"];
+    if (phaseNum === 4) return ["Future Plans", "Concept Drill", "Listening Lab", "Writing Board", "Checkpoint Quiz", "Activity Practice"];
+    if (phaseNum === 5) return ["Stories", "Concept Drill", "Listening Lab", "Writing Board", "Checkpoint Quiz", "Activity Practice"];
+    if (phaseNum === 6) return [
+      "Guided Lines Setup", "Reaction Selection Practice", "Semi-Free Dialogue Scenarios",
+      "Clarifying Strategy", "Polite Reaction Strategy", "Asking Back Strategy",
+      "Strategy Quiz Checkpoint", "Groq AI Tutor Homework", "Phase Completion"
+    ];
+  }
+  // Course 7 / id: 8 (Pronunciation Lab)
+  if (courseId === 8) {
+    if (phaseNum === 1) return ["Pronunciation Basics", "Sound Systems", "Accent Drills", "Interactive Practice", "Sound Assessment", "Shadowing Homework"];
+    if (phaseNum === 2) return ["Batchim Intro", "Linking Consonants", "Aspirated Sounds", "Speech Rules Drill", "Pronunciation Assessment", "Sentence Readings"];
+    if (phaseNum === 3) return ["Rhythm Intro", "Word Stress Patterns", "Sentence Cadence", "Rhythmic Drills", "Speaking Checkpoint", "Practice Dialogues"];
+    if (phaseNum === 4) return ["Listening Intro", "Gist Extraction", "Detail Tracking", "Nuance Identification", "Listening Quiz", "Review Activity"];
+    if (phaseNum === 5) return ["Polite Ending Rules", "Speech Level Drills", "Formal vs Informal", "Situational Practice", "Speech Checkpoint", "Dialogue Homework"];
+    if (phaseNum === 6) return ["Connected Speech Intro", "Flapping & Assimilation", "Vowel Reduction", "Flow Exercises", "Pronunciation Checkpoint", "Shadowing Challenge"];
+    if (phaseNum === 7) return ["Intonation Patterns", "Declarative vs Interrogative", "Expressing Emotion", "Melody Drills", "Pitch Assessment", "Speaking Homework"];
+    if (phaseNum === 8) return ["Everyday Chat Setup", "Informal Dialogue Drills", "Slang & Contractions", "Speed Speaking Lab", "Conversation Quiz", "Groq AI Homework"];
+    if (phaseNum === 9) return ["Listening Details", "Homophones & Ambiguity", "Dictation Practice", "Speed Listening Lab", "Aural Checkpoint", "Homework Exercise"];
+    if (phaseNum === 10) return ["Reaction Setup", "Backchannel Selections", "Active Listening Drills", "Dialogue Scenarios", "Response Checkpoint", "Practice Task"];
+    if (phaseNum === 11) return ["Storytelling Setup", "Narrative Connectors", "Past Tense Flow", "Paragraph Speaking", "Storytelling Quiz", "Shadowing Practice"];
+    if (phaseNum === 12) return ["Media Setup", "Shadowing K-Dramas", "News Broadcasts", "Native Speed Drills", "Fluency Capstone", "Final AI Assessment"];
+  }
+
+  // General fallback for other courses/phases
+  return [
+    "Welcome & Overview",
+    "Concept Explanation",
+    "Practice & Drills",
+    "Writing & Listening Lab",
+    "Checkpoint Quiz",
+    "Completion & Homework"
+  ];
+};
+
 // ─────────────────────────────────────────────────────────────────────────────
-// CONSTANTS — All 7 courses matching the lessons page
+// CONSTANTS — All 8 courses matching the lessons page
 // ─────────────────────────────────────────────────────────────────────────────
 
 const ALL_COURSES = [
@@ -149,6 +208,24 @@ const ALL_COURSES = [
     description: "Systematic form-focused grammar: particles, tense, speech levels, irregulars, dense drills.",
     phaseNames: ["Grammar Lab", "Particles", "Politeness", "Adjectives", "Connectors", "Tense & Aspect"],
     badge: "👑",
+  },
+  {
+    id: 8, level: 8, phases: 12,
+    title: "Pronunciation & Media Lab",
+    subtitle: "Korean 8",
+    cefr: "Pre-A1–B2", duration: "Parallel Track",
+    icon: "Volume2",
+    accent: "#f43f5e", glow: "rgba(244,63,94,0.4)",
+    gradient: "from-rose-950/60 via-rose-900/20 to-zinc-950",
+    borderColor: "border-rose-500/30",
+    xpPerPhase: 150,
+    description: "Master native-like accent, speech patterns, Batchim linking rules, and advanced listening skills.",
+    phaseNames: [
+      "Pronunciation", "Batchim Rules", "Rhythm & Stress", "Listening Lab", 
+      "Polite Endings", "Connected Speech", "Intonation", "Everyday Chat", 
+      "Listening Detail", "Reacting & Backchanneling", "Storytelling Lab", "Media & Shadowing"
+    ],
+    badge: "🎤",
   },
 ];
 

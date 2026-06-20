@@ -396,7 +396,20 @@ export default function Course5Phase6CapstoneWizard({
     { num: 6, label: "Screen 6 – Homework & Exit reflections" }
   ];
 
-  return (
+  
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("hangeulai-step-change", {
+        detail: {
+          courseId: 5,
+          phaseNum: 6,
+          step: step
+        }
+      }));
+    }
+  }, [step]);
+
+return (
     <div className="flex-grow flex flex-col justify-between">
       
       {/* Top Header tracking */}

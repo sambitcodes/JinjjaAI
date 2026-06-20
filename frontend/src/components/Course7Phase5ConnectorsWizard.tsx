@@ -484,7 +484,20 @@ export default function Course7Phase5ConnectorsWizard({
     { num: 6, label: "Screen 6 – Homework & AI Verification" }
   ];
 
-  return (
+  
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("hangeulai-step-change", {
+        detail: {
+          courseId: 7,
+          phaseNum: 5,
+          step: step
+        }
+      }));
+    }
+  }, [step]);
+
+return (
     <div className="flex-grow flex flex-col justify-between">
       {/* Top Header */}
       <header className="flex justify-between items-center py-4 border-b border-white/5 mb-6">

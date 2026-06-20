@@ -319,6 +319,8 @@ async def get_activity_summary(
             continue
         completed_phases = state.get("completedPhases", [])
         last_phase = state.get("lastPhase", 0)
+        phase_steps = state.get("phaseSteps", {})
+        active_step = phase_steps.get(str(last_phase)) or phase_steps.get(last_phase)
         
         course_data = PREGENERATED_LESSONS.get(cid, {})
         if not course_data:
@@ -343,7 +345,8 @@ async def get_activity_summary(
         completed_info.append({
             "course": course_title,
             "completed_phases": comp_names,
-            "last_active_phase": last_phase_name
+            "last_active_phase": last_phase_name,
+            "active_step": active_step
         })
         
     if not completed_info:
@@ -360,7 +363,10 @@ async def get_activity_summary(
         if info['completed_phases']:
             prompt += f"  - Completed Phases: {', '.join(info['completed_phases'])}\n"
         if info['last_active_phase']:
-            prompt += f"  - Currently Studying: {info['last_active_phase']}\n"
+            prompt += f"  - Currently Studying: {info['last_active_phase']}"
+            if info.get("active_step"):
+                prompt += f" (at Step {info['active_step']})"
+            prompt += "\n"
             
     prompt += (
         "\nGenerate a beautifully structured markdown summary. For each course/phase listed above: \n"
