@@ -28,7 +28,10 @@ import {
   Star
 } from "lucide-react";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+let API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+if (API_BASE && !API_BASE.includes("/api/v1")) {
+  API_BASE = API_BASE.replace(/\/$/, "") + "/api/v1";
+}
 
 function getToken(): string | null {
   if (typeof window === "undefined") return null;
@@ -329,6 +332,14 @@ export default function Course4Phase6CapstoneWizard({
     }
   };
 
+    const outlineSteps = [
+    { num: 1, label: "Welcome & Overview" },
+    { num: 2, label: "Activity 1 – Guided Conversational Analysis & missing lines" },
+    { num: 3, label: "Activity 2 – Live AI Conversation Tutor (Text/Voice) Simulation" },
+    { num: 4, label: "Activity 3 – Conversational coherence checkpoint quiz" },
+    { num: 5, label: "Activity 4 – Homework & course graduation checklist" }
+  ];
+
   return (
     <div className="flex-grow flex flex-col justify-between">
       
@@ -363,6 +374,29 @@ export default function Course4Phase6CapstoneWizard({
           </button>
         </div>
       </header>
+      {showOutline && (
+        <div className="mb-6 p-5 bg-zinc-950/80 rounded-3xl border border-white/5 shadow-2xl animate-in fade-in slide-in-from-top-4 duration-300">
+          <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest block mb-3 font-mono">Curriculum Syllabus Map</span>
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
+            {outlineSteps.map(s => (
+              <button
+                key={s.num}
+                onClick={() => {
+                  setStep(s.num);
+                  setShowOutline(false);
+                }}
+                className={`p-2.5 rounded-xl border text-left transition ${step === s.num
+                    ? "border-brand-500 bg-brand-500/10 text-white"
+                    : "border-white/5 bg-zinc-900/40 text-zinc-400 hover:border-white/10 hover:text-white"
+                  }`}
+              >
+                <div className="text-[9px] font-black font-mono text-zinc-500">STEP {s.num}</div>
+                <div className="text-xs font-bold truncate">{s.label}</div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Screen 1: Welcome/Overview */}
       {step === 1 && (
@@ -438,15 +472,7 @@ export default function Course4Phase6CapstoneWizard({
             
           </div>
 
-          {showOutline && (
-            <div className="bg-zinc-950 p-6 rounded-2xl border border-white/5 text-left text-xs text-zinc-400 space-y-2 animate-fade-in max-w-2xl mx-auto w-full font-mono">
-              <p className="font-extrabold text-white text-center pb-2">Phase Activities Outline</p>
-              <p>✓ Activity 1 – Guided Conversational Analysis & missing lines</p>
-              <p>✓ Activity 2 – Live AI Conversation Tutor (Text/Voice) Simulation</p>
-              <p>✓ Activity 3 – Conversational coherence checkpoint quiz</p>
-              <p>✓ Activity 4 – Homework & course graduation checklist</p>
-            </div>
-          )}
+          
         </div>
       )}
 

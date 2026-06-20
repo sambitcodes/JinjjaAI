@@ -811,16 +811,16 @@ export default function LessonPlayer() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 w-full z-10 max-w-none">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 w-full z-10 max-w-none">
           {courses.map((course) => {
             const isStarted = courseStates[course.id] && courseStates[course.id].completedPhases && courseStates[course.id].completedPhases.length > 0;
             return (
               <div 
                 key={course.id}
-                className={`border border-white/10 rounded-[2.2rem] shadow-2xl flex flex-col justify-between transition-all duration-300 transform hover:-translate-y-1.5 bg-gradient-to-b ${course.accentBorder} ${course.gradient} ${course.borderGlow} overflow-hidden`}
+                className={`border border-white/10 rounded-[2.2rem] shadow-2xl flex flex-col md:flex-row justify-between transition-all duration-300 transform hover:-translate-y-1.5 bg-gradient-to-b ${course.accentBorder} ${course.gradient} ${course.borderGlow} overflow-hidden`}
               >
                 {/* Decorative mini top bar overlay */}
-                <div className="p-6 space-y-4 text-left flex-grow">
+                <div className="p-8 space-y-4 text-left flex-grow">
                   <div className="flex justify-between items-center gap-2">
                     <span className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full border ${course.badgeColor}`}>
                       {course.levelBand}
@@ -834,7 +834,7 @@ export default function LessonPlayer() {
                     <div className="p-2.5 rounded-xl bg-zinc-950/80 border border-white/10 shrink-0">
                       {renderCourseIcon(course.icon, course.badgeColor.split(" ").pop() || "text-white")}
                     </div>
-                    <h3 className="text-lg leading-snug text-white font-sans font-black tracking-tight">
+                    <h3 className="text-xl leading-snug text-white font-sans font-black tracking-tight">
                       {course.title}
                     </h3>
                   </div>
@@ -862,13 +862,14 @@ export default function LessonPlayer() {
                   type="button"
                   disabled={generatingOnSpot}
                   onClick={() => !generatingOnSpot && handleSelectCourse(course.level, course.title)}
-                  className="p-5 bg-zinc-950/60 hover:bg-zinc-900 border-t border-white/[0.05] flex items-center justify-between text-xs font-black text-white hover:text-brand-300 transition-colors w-full text-left cursor-pointer disabled:cursor-not-allowed"
+                  className="p-8 bg-zinc-950/60 hover:bg-zinc-900 border-t md:border-t-0 md:border-l border-white/[0.05] flex flex-col justify-center items-center text-center gap-3 text-xs font-black text-white hover:text-brand-300 transition-colors shrink-0 w-full md:w-56 cursor-pointer disabled:cursor-not-allowed"
                 >
-                  <span className="tracking-wide font-sans">
-                    {isStarted ? "Continue with the Course" : "Launch Course"}
+                  <span className="tracking-wide uppercase text-[9px] font-sans font-black text-zinc-500 block">Course Status</span>
+                  <span className="text-sm font-black text-white font-sans max-w-[150px] leading-tight">
+                    {isStarted ? "Continue Course" : "Launch Course"}
                   </span>
-                  <div className="p-1 rounded-lg bg-white/5 hover:bg-white/10 transition">
-                    <ChevronRight className="w-4 h-4" />
+                  <div className="p-2.5 rounded-full bg-white/5 hover:bg-white/10 transition mt-2">
+                    <ChevronRight className="w-4.5 h-4.5" />
                   </div>
                 </button>
               </div>

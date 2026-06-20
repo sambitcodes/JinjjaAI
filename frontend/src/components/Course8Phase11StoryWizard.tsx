@@ -24,7 +24,10 @@ import {
   Image as ImageIcon
 } from "lucide-react";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+let API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+if (API_BASE && !API_BASE.includes("/api/v1")) {
+  API_BASE = API_BASE.replace(/\/$/, "") + "/api/v1";
+}
 
 function getToken(): string | null {
   if (typeof window === "undefined") return null;
@@ -395,6 +398,15 @@ export default function Course8Phase11StoryWizard({
     }
   };
 
+    const outlineSteps = [
+    { num: 1, label: "= 1 ? \"bg-cyan-500\" : \"bg-slate-700\"}`} /> Screen 1: Welcome & Phase Overview" },
+    { num: 2, label: "= 2 ? \"bg-teal-500\" : \"bg-slate-700\"}`} /> Screen 2: B2 Story & Description Skills" },
+    { num: 3, label: "= 3 ? \"bg-indigo-500\" : \"bg-slate-700\"}`} /> Screen 3: Activity 1: Listening & Structure Analysis" },
+    { num: 4, label: "= 4 ? \"bg-purple-500\" : \"bg-slate-700\"}`} /> Screen 4: Activity 2: Guided Storytelling & Description" },
+    { num: 5, label: "= 5 ? \"bg-pink-500\" : \"bg-slate-700\"}`} /> Screen 5: Mini-Quiz: Story Structure & Organisation" },
+    { num: 6, label: "= 6 ? \"bg-emerald-500\" : \"bg-slate-700\"}`} /> Screen 6: Homework & AI Storytelling Coach" }
+  ];
+
   return (
     <div className="flex-grow flex flex-col justify-between">
       {/* Header bar */}
@@ -430,42 +442,32 @@ export default function Course8Phase11StoryWizard({
           </button>
         </div>
       </header>
-
-      {/* Outline panel */}
       {showOutline && (
-        <div className="w-full bg-zinc-900 border border-white/5 rounded-xl p-5 mb-6 animate-fade-in">
-          <h3 className="font-bold text-zinc-200 mb-2 flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-cyan-400" />
-            Story Lab Outline
-          </h3>
-          <ul className="text-sm text-zinc-300 space-y-2">
-            <li className="flex items-center gap-2">
-              <span className={`w-2 h-2 rounded-full ${step >= 1 ? "bg-cyan-500" : "bg-slate-700"}`} />
-              <span>Screen 1: Welcome & Phase Overview</span>
-            </li>
-            <li className="flex items-center gap-2">
-              <span className={`w-2 h-2 rounded-full ${step >= 2 ? "bg-teal-500" : "bg-slate-700"}`} />
-              <span>Screen 2: B2 Story & Description Skills</span>
-            </li>
-            <li className="flex items-center gap-2">
-              <span className={`w-2 h-2 rounded-full ${step >= 3 ? "bg-indigo-500" : "bg-slate-700"}`} />
-              <span>Screen 3: Activity 1: Listening & Structure Analysis</span>
-            </li>
-            <li className="flex items-center gap-2">
-              <span className={`w-2 h-2 rounded-full ${step >= 4 ? "bg-purple-500" : "bg-slate-700"}`} />
-              <span>Screen 4: Activity 2: Guided Storytelling & Description</span>
-            </li>
-            <li className="flex items-center gap-2">
-              <span className={`w-2 h-2 rounded-full ${step >= 5 ? "bg-pink-500" : "bg-slate-700"}`} />
-              <span>Screen 5: Mini-Quiz: Story Structure & Organisation</span>
-            </li>
-            <li className="flex items-center gap-2">
-              <span className={`w-2 h-2 rounded-full ${step >= 6 ? "bg-emerald-500" : "bg-slate-700"}`} />
-              <span>Screen 6: Homework & AI Storytelling Coach</span>
-            </li>
-          </ul>
+        <div className="mb-6 p-5 bg-zinc-950/80 rounded-3xl border border-white/5 shadow-2xl animate-in fade-in slide-in-from-top-4 duration-300">
+          <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest block mb-3 font-mono">Curriculum Syllabus Map</span>
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
+            {outlineSteps.map(s => (
+              <button
+                key={s.num}
+                onClick={() => {
+                  setStep(s.num);
+                  setShowOutline(false);
+                }}
+                className={`p-2.5 rounded-xl border text-left transition ${step === s.num
+                    ? "border-brand-500 bg-brand-500/10 text-white"
+                    : "border-white/5 bg-zinc-900/40 text-zinc-400 hover:border-white/10 hover:text-white"
+                  }`}
+              >
+                <div className="text-[9px] font-black font-mono text-zinc-500">STEP {s.num}</div>
+                <div className="text-xs font-bold truncate">{s.label}</div>
+              </button>
+            ))}
+          </div>
         </div>
       )}
+
+      {/* Outline panel */}
+      
 
       {/* SCREEN 1: WELCOME */}
       {step === 1 && (

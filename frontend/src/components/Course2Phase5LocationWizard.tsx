@@ -19,7 +19,10 @@ import {
   MessageSquare
 } from "lucide-react";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+let API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+if (API_BASE && !API_BASE.includes("/api/v1")) {
+  API_BASE = API_BASE.replace(/\/$/, "") + "/api/v1";
+}
 
 function getToken(): string | null {
   if (typeof window === "undefined") return null;
@@ -621,6 +624,21 @@ export default function Course2Phase5LocationWizard({
     }
   };
 
+    const outlineSteps = [
+    { num: 1, label: "Welcome & Overview" },
+    { num: 2, label: "C1 – Talking about places in Korean" },
+    { num: 3, label: "C2 – Core place vocabulary (집, 학교, 회사...)" },
+    { num: 4, label: "C3 – Particle 에: at/in vs to" },
+    { num: 5, label: "C4 – Where-questions with 어디" },
+    { num: 6, label: "C5 – Dialogue structures" },
+    { num: 7, label: "Activity 1 – Places vocabulary grid & card flips" },
+    { num: 8, label: "Activity 2 – Location/Destination particles comparison" },
+    { num: 9, label: "Activity 3 – Places listening MCQ & sentence translation" },
+    { num: 10, label: "Activity 4 – Dialogue Q&A matching & custom sentence builder" },
+    { num: 11, label: "Activity 5 – Graduating checkpoint mini-quiz checks" },
+    { num: 12, label: "Activity 6 – Location tutor dialogue practice room" }
+  ];
+
   return (
     <div className="flex-grow flex flex-col justify-between">
       
@@ -655,6 +673,29 @@ export default function Course2Phase5LocationWizard({
           </button>
         </div>
       </header>
+      {showOutline && (
+        <div className="mb-6 p-5 bg-zinc-950/80 rounded-3xl border border-white/5 shadow-2xl animate-in fade-in slide-in-from-top-4 duration-300">
+          <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest block mb-3 font-mono">Curriculum Syllabus Map</span>
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
+            {outlineSteps.map(s => (
+              <button
+                key={s.num}
+                onClick={() => {
+                  setStep(s.num);
+                  setShowOutline(false);
+                }}
+                className={`p-2.5 rounded-xl border text-left transition ${step === s.num
+                    ? "border-brand-500 bg-brand-500/10 text-white"
+                    : "border-white/5 bg-zinc-900/40 text-zinc-400 hover:border-white/10 hover:text-white"
+                  }`}
+              >
+                <div className="text-[9px] font-black font-mono text-zinc-500">STEP {s.num}</div>
+                <div className="text-xs font-bold truncate">{s.label}</div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Screen 1: Welcome/Overview */}
       {step === 1 && (
@@ -695,22 +736,7 @@ export default function Course2Phase5LocationWizard({
             </button>
           </div>
 
-          {showOutline && (
-            <div className="bg-zinc-950 p-6 rounded-2xl border border-white/5 text-left text-xs text-zinc-400 space-y-2 animate-fade-in max-w-2xl mx-auto w-full font-mono">
-              <p className="font-extrabold text-white text-center pb-2">Phase Activities Outline</p>
-              <p>✓ C1 – Talking about places in Korean</p>
-              <p>✓ C2 – Core place vocabulary (집, 학교, 회사...)</p>
-              <p>✓ C3 – Particle 에: at/in vs to</p>
-              <p>✓ C4 – Where-questions with 어디</p>
-              <p>✓ C5 – Dialogue structures</p>
-              <p>✓ Activity 1 – Places vocabulary grid & card flips</p>
-              <p>✓ Activity 2 – Location/Destination particles comparison</p>
-              <p>✓ Activity 3 – Places listening MCQ & sentence translation</p>
-              <p>✓ Activity 4 – Dialogue Q&A matching & custom sentence builder</p>
-              <p>✓ Activity 5 – Graduating checkpoint mini-quiz checks</p>
-              <p>✓ Activity 6 – Location tutor dialogue practice room</p>
-            </div>
-          )}
+          
         </div>
       )}
 

@@ -20,7 +20,10 @@ import {
   RefreshCw
 } from "lucide-react";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+let API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+if (API_BASE && !API_BASE.includes("/api/v1")) {
+  API_BASE = API_BASE.replace(/\/$/, "") + "/api/v1";
+}
 
 function getToken(): string | null {
   if (typeof window === "undefined") return null;
@@ -606,6 +609,20 @@ export default function Course3Phase2PreferencesWizard({
     }
   };
 
+    const outlineSteps = [
+    { num: 1, label: "Welcome & Overview" },
+    { num: 2, label: "C1 – Preferences at A2 level" },
+    { num: 3, label: "C2 – Core sentiment frames (좋아해요/싫어해요)" },
+    { num: 4, label: "C3 – Combining frequency + preferences" },
+    { num: 5, label: "C4 – Giving short reasons with 서 / 그래서" },
+    { num: 6, label: "C5 – Example preference monologues analysis" },
+    { num: 7, label: "Activity 1 – Sentiment pattern flips & grids" },
+    { num: 8, label: "Activity 2 – Hobby lists & reason builders" },
+    { num: 9, label: "Activity 3 – Hobbies listening MCQs (likes vs dislikes)" },
+    { num: 10, label: "Activity 4 – Sentiment sentence builders & speaking checks" },
+    { num: 11, label: "Activity 5 – Graduating checkpoint mini-quiz checks" }
+  ];
+
   return (
     <div className="flex-grow flex flex-col justify-between">
       
@@ -640,6 +657,29 @@ export default function Course3Phase2PreferencesWizard({
           </button>
         </div>
       </header>
+      {showOutline && (
+        <div className="mb-6 p-5 bg-zinc-950/80 rounded-3xl border border-white/5 shadow-2xl animate-in fade-in slide-in-from-top-4 duration-300">
+          <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest block mb-3 font-mono">Curriculum Syllabus Map</span>
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
+            {outlineSteps.map(s => (
+              <button
+                key={s.num}
+                onClick={() => {
+                  setStep(s.num);
+                  setShowOutline(false);
+                }}
+                className={`p-2.5 rounded-xl border text-left transition ${step === s.num
+                    ? "border-brand-500 bg-brand-500/10 text-white"
+                    : "border-white/5 bg-zinc-900/40 text-zinc-400 hover:border-white/10 hover:text-white"
+                  }`}
+              >
+                <div className="text-[9px] font-black font-mono text-zinc-500">STEP {s.num}</div>
+                <div className="text-xs font-bold truncate">{s.label}</div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Step 1: Welcome Overview */}
       {step === 1 && (
@@ -680,21 +720,7 @@ export default function Course3Phase2PreferencesWizard({
             </button>
           </div>
 
-          {showOutline && (
-            <div className="bg-zinc-950 p-6 rounded-2xl border border-white/5 text-left text-xs text-zinc-400 space-y-2 animate-fade-in max-w-2xl mx-auto w-full font-mono">
-              <p className="font-extrabold text-white text-center pb-2">Phase Activities Outline</p>
-              <p>✓ C1 – Preferences at A2 level</p>
-              <p>✓ C2 – Core sentiment frames (좋아해요/싫어해요)</p>
-              <p>✓ C3 – Combining frequency + preferences</p>
-              <p>✓ C4 – Giving short reasons with 서 / 그래서</p>
-              <p>✓ C5 – Example preference monologues analysis</p>
-              <p>✓ Activity 1 – Sentiment pattern flips & grids</p>
-              <p>✓ Activity 2 – Hobby lists & reason builders</p>
-              <p>✓ Activity 3 – Hobbies listening MCQs (likes vs dislikes)</p>
-              <p>✓ Activity 4 – Sentiment sentence builders & speaking checks</p>
-              <p>✓ Activity 5 – Graduating checkpoint mini-quiz checks</p>
-            </div>
-          )}
+          
         </div>
       )}
 

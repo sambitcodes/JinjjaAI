@@ -16,7 +16,10 @@ import {
   Volume2
 } from "lucide-react";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+let API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+if (API_BASE && !API_BASE.includes("/api/v1")) {
+  API_BASE = API_BASE.replace(/\/$/, "") + "/api/v1";
+}
 
 function getToken(): string | null {
   if (typeof window === "undefined") return null;
@@ -400,6 +403,15 @@ export default function Course7Phase6TenseAspectWizard({
 
   const sandboxRes = getSandboxAspectConjugation();
 
+    const outlineSteps = [
+    { num: 1, label: "= 1 ? \"bg-amber-500\" : \"bg-slate-700\"}`} /> Screen 1: Welcome & Goals Overview" },
+    { num: 2, label: "= 2 ? \"bg-orange-500\" : \"bg-slate-700\"}`} /> Screen 2: Aspect Explanations & Sandbox" },
+    { num: 3, label: "= 3 ? \"bg-blue-500\" : \"bg-slate-700\"}`} /> Screen 3: Aspect Recognition (Habit, Progressive, Time Status)" },
+    { num: 4, label: "= 4 ? \"bg-green-500\" : \"bg-slate-700\"}`} /> Screen 4: Aspect Production (Habitual, Background Event, adverbs)" },
+    { num: 5, label: "= 5 ? \"bg-purple-500\" : \"bg-slate-700\"}`} /> Screen 5: Aspect Mastery Quiz (5 Questions)" },
+    { num: 6, label: "= 6 ? \"bg-pink-500\" : \"bg-slate-700\"}`} /> Screen 6: Homework & AI Aspect Verification" }
+  ];
+
   return (
     <div className="flex-grow flex flex-col justify-between">
       {/* Header bar */}
@@ -435,43 +447,33 @@ export default function Course7Phase6TenseAspectWizard({
           </button>
         </div>
       </header>
+      {showOutline && (
+        <div className="mb-6 p-5 bg-zinc-950/80 rounded-3xl border border-white/5 shadow-2xl animate-in fade-in slide-in-from-top-4 duration-300">
+          <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest block mb-3 font-mono">Curriculum Syllabus Map</span>
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
+            {outlineSteps.map(s => (
+              <button
+                key={s.num}
+                onClick={() => {
+                  setStep(s.num);
+                  setShowOutline(false);
+                }}
+                className={`p-2.5 rounded-xl border text-left transition ${step === s.num
+                    ? "border-brand-500 bg-brand-500/10 text-white"
+                    : "border-white/5 bg-zinc-900/40 text-zinc-400 hover:border-white/10 hover:text-white"
+                  }`}
+              >
+                <div className="text-[9px] font-black font-mono text-zinc-500">STEP {s.num}</div>
+                <div className="text-xs font-bold truncate">{s.label}</div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Main Container */}
       
-        {showOutline && (
-          <div className="w-full bg-zinc-900 border border-white/5 rounded-xl p-5 mb-6">
-            <h3 className="font-bold text-zinc-200 mb-2 flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-yellow-500" />
-              Grammar Lab Phase Outline
-            </h3>
-            <ul className="text-sm text-zinc-300 space-y-2">
-              <li className="flex items-center gap-2">
-                <span className={`w-2 h-2 rounded-full ${step >= 1 ? "bg-amber-500" : "bg-slate-700"}`} />
-                <span>Screen 1: Welcome & Goals Overview</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <span className={`w-2 h-2 rounded-full ${step >= 2 ? "bg-orange-500" : "bg-slate-700"}`} />
-                <span>Screen 2: Aspect Explanations & Sandbox</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <span className={`w-2 h-2 rounded-full ${step >= 3 ? "bg-blue-500" : "bg-slate-700"}`} />
-                <span>Screen 3: Aspect Recognition (Habit, Progressive, Time Status)</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <span className={`w-2 h-2 rounded-full ${step >= 4 ? "bg-green-500" : "bg-slate-700"}`} />
-                <span>Screen 4: Aspect Production (Habitual, Background Event, adverbs)</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <span className={`w-2 h-2 rounded-full ${step >= 5 ? "bg-purple-500" : "bg-slate-700"}`} />
-                <span>Screen 5: Aspect Mastery Quiz (5 Questions)</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <span className={`w-2 h-2 rounded-full ${step >= 6 ? "bg-pink-500" : "bg-slate-700"}`} />
-                <span>Screen 6: Homework & AI Aspect Verification</span>
-              </li>
-            </ul>
-          </div>
-        )}
+        
 
         {/* SCREEN 1: WELCOME */}
         {step === 1 && (

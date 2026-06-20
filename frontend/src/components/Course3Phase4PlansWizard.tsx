@@ -18,7 +18,10 @@ import {
   RefreshCw
 } from "lucide-react";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+let API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+if (API_BASE && !API_BASE.includes("/api/v1")) {
+  API_BASE = API_BASE.replace(/\/$/, "") + "/api/v1";
+}
 
 function getToken(): string | null {
   if (typeof window === "undefined") return null;
@@ -635,6 +638,19 @@ export default function Course3Phase4PlansWizard({
     }
   };
 
+    const outlineSteps = [
+    { num: 1, label: "Welcome & Overview" },
+    { num: 2, label: "C1 – Future plans introduction" },
+    { num: 3, label: "C2 – Pattern 1 (~ㄹ 거예요)" },
+    { num: 4, label: "C3 – Pattern 2 (~려고 해요)" },
+    { num: 5, label: "C4 – Near-future time expressions" },
+    { num: 6, label: "C5 – Example plan paragraph breakdown" },
+    { num: 7, label: "Activity 1 – Future tense conjugation guides" },
+    { num: 8, label: "Activity 2 – Near future time expressions & MCQs" },
+    { num: 9, label: "Activity 3 – Plans listening summaries & details" },
+    { num: 10, label: "Activity 4 – Horizon plan builder & speaking practice" }
+  ];
+
   return (
     <div className="flex-grow flex flex-col justify-between">
       
@@ -669,6 +685,29 @@ export default function Course3Phase4PlansWizard({
           </button>
         </div>
       </header>
+      {showOutline && (
+        <div className="mb-6 p-5 bg-zinc-950/80 rounded-3xl border border-white/5 shadow-2xl animate-in fade-in slide-in-from-top-4 duration-300">
+          <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest block mb-3 font-mono">Curriculum Syllabus Map</span>
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
+            {outlineSteps.map(s => (
+              <button
+                key={s.num}
+                onClick={() => {
+                  setStep(s.num);
+                  setShowOutline(false);
+                }}
+                className={`p-2.5 rounded-xl border text-left transition ${step === s.num
+                    ? "border-brand-500 bg-brand-500/10 text-white"
+                    : "border-white/5 bg-zinc-900/40 text-zinc-400 hover:border-white/10 hover:text-white"
+                  }`}
+              >
+                <div className="text-[9px] font-black font-mono text-zinc-500">STEP {s.num}</div>
+                <div className="text-xs font-bold truncate">{s.label}</div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Step 1: Welcome Overview */}
       {step === 1 && (
@@ -709,20 +748,7 @@ export default function Course3Phase4PlansWizard({
             </button>
           </div>
 
-          {showOutline && (
-            <div className="bg-zinc-950 p-6 rounded-2xl border border-white/5 text-left text-xs text-zinc-400 space-y-2 animate-fade-in max-w-2xl mx-auto w-full font-mono">
-              <p className="font-extrabold text-white text-center pb-2">Phase Activities Outline</p>
-              <p>✓ C1 – Future plans introduction</p>
-              <p>✓ C2 – Pattern 1 (~ㄹ 거예요)</p>
-              <p>✓ C3 – Pattern 2 (~려고 해요)</p>
-              <p>✓ C4 – Near-future time expressions</p>
-              <p>✓ C5 – Example plan paragraph breakdown</p>
-              <p>✓ Activity 1 – Future tense conjugation guides</p>
-              <p>✓ Activity 2 – Near future time expressions & MCQs</p>
-              <p>✓ Activity 3 – Plans listening summaries & details</p>
-              <p>✓ Activity 4 – Horizon plan builder & speaking practice</p>
-            </div>
-          )}
+          
         </div>
       )}
 

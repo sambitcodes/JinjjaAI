@@ -22,7 +22,10 @@ import {
   RefreshCw
 } from "lucide-react";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+let API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+if (API_BASE && !API_BASE.includes("/api/v1")) {
+  API_BASE = API_BASE.replace(/\/$/, "") + "/api/v1";
+}
 
 function getToken(): string | null {
   if (typeof window === "undefined") return null;
@@ -525,6 +528,21 @@ export default function Course2Phase6ConversationWizard({
     }
   };
 
+    const outlineSteps = [
+    { num: 1, label: "Welcome & Overview" },
+    { num: 2, label: "C1 – What \"A1 conversation\" means" },
+    { num: 3, label: "C2 – Conversations as \"lines\" (turns)" },
+    { num: 4, label: "C3 – Using patterns you already know" },
+    { num: 5, label: "C4 – How Gwan-Sik helps you in chats" },
+    { num: 6, label: "Activity 1A – Choose the next line" },
+    { num: 7, label: "Activity 2A – Scrambled dialogue solver" },
+    { num: 8, label: "Activity 2B – Scramble review check" },
+    { num: 9, label: "Activity 3A – AI Scenario selection" },
+    { num: 10, label: "Activity 3B – ASR Chat Room Practice" },
+    { num: 11, label: "Activity 4 – Graduating capstone quiz checks" },
+    { num: 12, label: "Activity 5 – Course 1 Everyday Basics graduation" }
+  ];
+
   return (
     <div className="flex-grow flex flex-col justify-between">
       
@@ -559,6 +577,29 @@ export default function Course2Phase6ConversationWizard({
           </button>
         </div>
       </header>
+      {showOutline && (
+        <div className="mb-6 p-5 bg-zinc-950/80 rounded-3xl border border-white/5 shadow-2xl animate-in fade-in slide-in-from-top-4 duration-300">
+          <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest block mb-3 font-mono">Curriculum Syllabus Map</span>
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
+            {outlineSteps.map(s => (
+              <button
+                key={s.num}
+                onClick={() => {
+                  setStep(s.num);
+                  setShowOutline(false);
+                }}
+                className={`p-2.5 rounded-xl border text-left transition ${step === s.num
+                    ? "border-brand-500 bg-brand-500/10 text-white"
+                    : "border-white/5 bg-zinc-900/40 text-zinc-400 hover:border-white/10 hover:text-white"
+                  }`}
+              >
+                <div className="text-[9px] font-black font-mono text-zinc-500">STEP {s.num}</div>
+                <div className="text-xs font-bold truncate">{s.label}</div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Step 1: Welcome Overview */}
       {step === 1 && (
@@ -639,22 +680,7 @@ export default function Course2Phase6ConversationWizard({
             </button>
           </div>
 
-          {showOutline && (
-            <div className="bg-zinc-955 p-6 rounded-2xl border border-white/5 text-left text-xs text-zinc-400 space-y-2 animate-fade-in max-w-2xl mx-auto w-full font-mono">
-              <p className="font-extrabold text-white text-center pb-2">Phase Activities Outline</p>
-              <p>✓ C1 – What "A1 conversation" means</p>
-              <p>✓ C2 – Conversations as "lines" (turns)</p>
-              <p>✓ C3 – Using patterns you already know</p>
-              <p>✓ C4 – How Gwan-Sik helps you in chats</p>
-              <p>✓ Activity 1A – Choose the next line</p>
-              <p>✓ Activity 2A – Scrambled dialogue solver</p>
-              <p>✓ Activity 2B – Scramble review check</p>
-              <p>✓ Activity 3A – AI Scenario selection</p>
-              <p>✓ Activity 3B – ASR Chat Room Practice</p>
-              <p>✓ Activity 4 – Graduating capstone quiz checks</p>
-              <p>✓ Activity 5 – Course 1 Everyday Basics graduation</p>
-            </div>
-          )}
+          
         </div>
       )}
 
