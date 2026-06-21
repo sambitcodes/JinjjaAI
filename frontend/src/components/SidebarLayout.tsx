@@ -34,8 +34,8 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
     window.location.href = "/";
   };
 
-  // Hide sidebar on landing page
-  if (pathname === "/") {
+  // Hide sidebar on landing page, login/signup page, and onboarding questionnaire
+  if (pathname === "/" || pathname === "/login" || pathname === "/onboarding") {
     return <>{children}</>;
   }
 

@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { ChevronLeft, CheckCircle2, ChevronRight, Award, Loader2, BookOpen, Layers, Volume2, Sparkles, BookMarked, BrainCircuit, RefreshCw, Compass } from "lucide-react";
 import { apiRequest, ensureAuthenticated } from "../../lib/api";
+import { motion, AnimatePresence } from "framer-motion";
 import Phase1VowelBootcampWizard from "../../components/Phase1VowelBootcampWizard";
 import Phase2ConsonantWizard from "../../components/Phase2ConsonantWizard";
 import Phase3SyllableBlocksWizard from "../../components/Phase3SyllableBlocksWizard";
@@ -122,6 +123,8 @@ export default function LessonPlayer() {
 
   const [generatingOnSpot, setGeneratingOnSpot] = useState(false);
   const [showCourseSelector, setShowCourseSelector] = useState(true);
+  const [activeCategory, setActiveCategory] = useState<string>("Core Path");
+  const [searchQuery, setSearchQuery] = useState<string>("");
 
   // Course progress states
   interface CourseState {
@@ -660,7 +663,8 @@ export default function LessonPlayer() {
       borderGlow: "hover:border-[#818cf8]/50 hover:shadow-[0_0_35px_rgba(79,70,229,0.3)]",
       badgeColor: "bg-[#4f46e5]/20 text-[#818cf8] border-[#4f46e5]/30",
       titleFont: "font-serif",
-      focusFont: "font-mono"
+      focusFont: "font-mono",
+      category: "Core Path"
     },
     {
       id: 2,
@@ -677,7 +681,8 @@ export default function LessonPlayer() {
       borderGlow: "hover:border-[#2dd4bf]/50 hover:shadow-[0_0_35px_rgba(13,148,136,0.3)]",
       badgeColor: "bg-[#0d9488]/20 text-[#2dd4bf] border-[#0d9488]/30",
       titleFont: "font-sans font-black",
-      focusFont: "font-sans"
+      focusFont: "font-sans",
+      category: "Core Path"
     },
     {
       id: 3,
@@ -694,7 +699,8 @@ export default function LessonPlayer() {
       borderGlow: "hover:border-[#f472b6]/50 hover:shadow-[0_0_35px_rgba(219,39,119,0.3)]",
       badgeColor: "bg-[#db2777]/20 text-[#f472b6] border-[#db2777]/30",
       titleFont: "font-mono font-black",
-      focusFont: "font-mono"
+      focusFont: "font-mono",
+      category: "Core Path"
     },
     {
       id: 4,
@@ -711,7 +717,8 @@ export default function LessonPlayer() {
       borderGlow: "hover:border-[#60a5fa]/50 hover:shadow-[0_0_35px_rgba(37,99,235,0.3)]",
       badgeColor: "bg-[#2563eb]/20 text-[#60a5fa] border-[#2563eb]/30",
       titleFont: "font-serif tracking-tight",
-      focusFont: "font-sans"
+      focusFont: "font-sans",
+      category: "Core Path"
     },
     {
       id: 5,
@@ -728,7 +735,8 @@ export default function LessonPlayer() {
       borderGlow: "hover:border-[#fbbf24]/50 hover:shadow-[0_0_35px_rgba(217,119,6,0.3)]",
       badgeColor: "bg-[#d97706]/20 text-[#fbbf24] border-[#d97706]/30",
       titleFont: "font-sans font-black tracking-widest",
-      focusFont: "font-mono"
+      focusFont: "font-mono",
+      category: "Core Path"
     },
     {
       id: 6,
@@ -745,7 +753,8 @@ export default function LessonPlayer() {
       borderGlow: "hover:border-[#a78bfa]/50 hover:shadow-[0_0_35px_rgba(124,58,237,0.3)]",
       badgeColor: "bg-[#7c3aed]/20 text-[#a78bfa] border-[#7c3aed]/30",
       titleFont: "font-serif italic font-bold",
-      focusFont: "font-mono"
+      focusFont: "font-mono",
+      category: "Core Path"
     },
     {
       id: 7,
@@ -762,7 +771,8 @@ export default function LessonPlayer() {
       borderGlow: "hover:border-[#a5b4fc]/50 hover:shadow-[0_0_35px_rgba(99,102,241,0.3)]",
       badgeColor: "bg-[#6366f1]/20 text-[#a5b4fc] border-[#6366f1]/30",
       titleFont: "font-mono font-semibold",
-      focusFont: "font-sans"
+      focusFont: "font-sans",
+      category: "Practice Labs"
     },
     {
       id: 8,
@@ -779,7 +789,8 @@ export default function LessonPlayer() {
       borderGlow: "hover:border-[#22d3ee]/50 hover:shadow-[0_0_35px_rgba(8,145,178,0.3)]",
       badgeColor: "bg-[#0891b2]/20 text-[#22d3ee] border-[#0891b2]/30",
       titleFont: "font-sans font-black",
-      focusFont: "font-mono"
+      focusFont: "font-mono",
+      category: "Practice Labs"
     },
     {
       id: 9,
@@ -796,7 +807,8 @@ export default function LessonPlayer() {
       borderGlow: "hover:border-[#ff7849]/50 hover:shadow-[0_0_35px_rgba(234,88,12,0.3)]",
       badgeColor: "bg-[#ea580c]/20 text-[#ff7849] border-[#ea580c]/30",
       titleFont: "font-serif font-black tracking-wide",
-      focusFont: "font-sans"
+      focusFont: "font-sans",
+      category: "Workshops"
     },
     {
       id: 10,
@@ -813,7 +825,8 @@ export default function LessonPlayer() {
       borderGlow: "hover:border-[#a3e635]/50 hover:shadow-[0_0_35px_rgba(101,163,13,0.3)]",
       badgeColor: "bg-[#65a30d]/20 text-[#a3e635] border-[#65a30d]/30",
       titleFont: "font-mono font-bold tracking-tight",
-      focusFont: "font-mono"
+      focusFont: "font-mono",
+      category: "Workshops"
     }
   ];
 
@@ -885,6 +898,14 @@ export default function LessonPlayer() {
     }
   };
 
+  const filteredCourses = courses.filter((course) => {
+    const matchesCategory = course.category === activeCategory;
+    const matchesSearch = course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          course.goal.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          course.focus.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesCategory && matchesSearch;
+  });
+
   if (lessons.length === 0 || showCourseSelector) {
     return (
       <div className="min-h-screen text-foreground w-full max-w-[98%] mx-auto p-4 md:p-8 flex flex-col justify-center items-center relative overflow-hidden font-sans">
@@ -946,72 +967,131 @@ export default function LessonPlayer() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 w-full z-10 max-w-none">
-          {courses.map((course) => {
-            const isStarted = courseStates[course.id] && courseStates[course.id].completedPhases && courseStates[course.id].completedPhases.length > 0;
-            return (
-              <div 
-                key={course.id}
-                className={`border border-white/10 rounded-[2.2rem] shadow-2xl flex flex-col md:flex-row justify-between transition-all duration-300 transform hover:-translate-y-1.5 bg-gradient-to-b ${course.accentBorder} ${course.gradient} ${course.borderGlow} overflow-hidden`}
-              >
-                {/* Decorative mini top bar overlay */}
-                <div className="p-8 space-y-4 text-left flex-grow">
-                  <div className="flex justify-between items-center gap-2">
-                    <span className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full border ${course.badgeColor}`}>
-                      {course.levelBand}
-                    </span>
-                    <span className="text-[10px] font-extrabold text-zinc-400 bg-zinc-950/60 px-2 py-0.5 rounded-md border border-white/5">
-                      {course.duration}
-                    </span>
-                  </div>
-                  
-                  <div className="flex items-start gap-3 pt-2">
-                    <div className="p-2.5 rounded-xl bg-zinc-950/80 border border-white/10 shrink-0">
-                      {renderCourseIcon(course.icon, course.badgeColor.split(" ").pop() || "text-white")}
-                    </div>
-                    <h3 className="text-xl leading-snug text-white font-sans font-black tracking-tight">
-                      {course.title}
-                    </h3>
-                  </div>
-                  
-                  <div className="space-y-3 pt-2">
-                    <div className="text-xs font-medium text-zinc-300 bg-zinc-950/30 p-4 rounded-xl border border-white/[0.04]">
-                      <span className="text-[9px] font-sans font-black uppercase tracking-wider text-purple-400 block mb-1">Course Goal</span>
-                      <p className="font-serif italic leading-relaxed text-zinc-200 text-[13px] md:text-sm">{course.goal}</p>
-                    </div>
-                    
-                    <div className="text-[11px] leading-relaxed text-zinc-300 space-y-2">
-                      <div>
-                        <span className="text-[9px] font-sans font-black uppercase tracking-wider text-cyan-400 block">Focus Syllabus</span>
-                        <p className="font-mono text-zinc-300 opacity-90 pl-1 text-[11px] leading-relaxed">{course.focus}</p>
-                      </div>
-                      <div>
-                        <span className="text-[9px] font-sans font-black uppercase tracking-wider text-zinc-500 block">Course Materials</span>
-                        <p className="font-mono opacity-75 italic pl-1 text-[10px] text-zinc-400">{course.primaryRefs}</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                
+        {/* Controls: Category Selection & Search */}
+        <div className="w-full flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4 mb-8 bg-zinc-900/20 p-4 rounded-3xl border border-white/5 backdrop-blur-sm relative z-10">
+          {/* Category tabs */}
+          <div className="flex flex-wrap gap-1.5">
+            {["Core Path", "Practice Labs", "Workshops"].map(cat => {
+              const count = courses.filter(c => c.category === cat).length;
+              const isActive = activeCategory === cat;
+              return (
                 <button
-                  type="button"
-                  disabled={generatingOnSpot}
-                  onClick={() => !generatingOnSpot && handleSelectCourse(course.level, course.title)}
-                  className="p-8 bg-zinc-950/60 hover:bg-zinc-900 border-t md:border-t-0 md:border-l border-white/[0.05] flex flex-col justify-center items-center text-center gap-3 text-xs font-black text-white hover:text-brand-300 transition-colors shrink-0 w-full md:w-56 cursor-pointer disabled:cursor-not-allowed"
+                  key={cat}
+                  onClick={() => setActiveCategory(cat)}
+                  className={`px-3.5 py-2 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-2 ${
+                    isActive
+                      ? "bg-gradient-to-r from-purple-600 to-indigo-500 text-white shadow-lg shadow-purple-500/25 scale-105"
+                      : "text-zinc-400 hover:text-white hover:bg-white/5"
+                  }`}
                 >
-                  <span className="tracking-wide uppercase text-[9px] font-sans font-black text-zinc-500 block">Course Status</span>
-                  <span className="text-sm font-black text-white font-sans max-w-[150px] leading-tight">
-                    {isStarted ? "Continue Course" : "Launch Course"}
+                  <span>{cat}</span>
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded-md font-mono ${isActive ? "bg-white/20 text-white" : "bg-zinc-850 text-zinc-500"}`}>
+                    {count}
                   </span>
-                  <div className="p-2.5 rounded-full bg-white/5 hover:bg-white/10 transition mt-2">
-                    <ChevronRight className="w-4.5 h-4.5" />
-                  </div>
                 </button>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
+
+          {/* Search Input */}
+          <div className="relative md:max-w-xs w-full">
+            <input
+              type="text"
+              placeholder="Search pathways..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-zinc-950 border border-white/10 rounded-xl px-4 py-2.5 pl-10 text-xs text-zinc-200 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/25 transition placeholder-zinc-600"
+            />
+            <div className="absolute left-3 top-3 text-zinc-500 pointer-events-none">
+              🔍
+            </div>
+            {searchQuery && (
+              <button 
+                onClick={() => setSearchQuery("")} 
+                className="absolute right-3 top-3 text-zinc-500 hover:text-white text-xs font-bold cursor-pointer"
+              >
+                &times;
+              </button>
+            )}
+          </div>
         </div>
 
+        {/* Playlists Grid */}
+        <motion.div 
+          layout
+          className="grid grid-cols-1 xl:grid-cols-2 gap-8 w-full z-10 max-w-none"
+        >
+          <AnimatePresence>
+            {filteredCourses.map((course) => {
+              const isStarted = courseStates[course.id] && courseStates[course.id].completedPhases && courseStates[course.id].completedPhases.length > 0;
+              return (
+                <motion.div 
+                  layout
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ duration: 0.25 }}
+                  key={course.id}
+                  className={`border border-white/10 rounded-[2.2rem] shadow-2xl flex flex-col md:flex-row justify-between transition-all duration-300 transform hover:-translate-y-1.5 bg-gradient-to-b ${course.accentBorder} ${course.gradient} ${course.borderGlow} overflow-hidden`}
+                >
+                  {/* Decorative mini top bar overlay */}
+                  <div className="p-8 space-y-4 text-left flex-grow">
+                    <div className="flex justify-between items-center gap-2">
+                      <span className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full border ${course.badgeColor}`}>
+                        {course.levelBand}
+                      </span>
+                      <span className="text-[10px] font-extrabold text-zinc-400 bg-zinc-950/60 px-2 py-0.5 rounded-md border border-white/5">
+                        {course.duration}
+                      </span>
+                    </div>
+                    
+                    <div className="flex items-start gap-3 pt-2">
+                      <div className="p-2.5 rounded-xl bg-zinc-950/80 border border-white/10 shrink-0">
+                        {renderCourseIcon(course.icon, course.badgeColor.split(" ").pop() || "text-white")}
+                      </div>
+                      <h3 className="text-xl leading-snug text-white font-sans font-black tracking-tight">
+                        {course.title}
+                      </h3>
+                    </div>
+                    
+                    <div className="space-y-3 pt-2">
+                      <div className="text-xs font-medium text-zinc-300 bg-zinc-950/30 p-4 rounded-xl border border-white/[0.04]">
+                        <span className="text-[9px] font-sans font-black uppercase tracking-wider text-purple-400 block mb-1">Course Goal</span>
+                        <p className="font-serif italic leading-relaxed text-zinc-200 text-[13px] md:text-sm">{course.goal}</p>
+                      </div>
+                      
+                      <div className="text-[11px] leading-relaxed text-zinc-300 space-y-2">
+                        <div>
+                          <span className="text-[9px] font-sans font-black uppercase tracking-wider text-cyan-400 block">Focus Syllabus</span>
+                          <p className="font-mono text-zinc-300 opacity-90 pl-1 text-[11px] leading-relaxed">{course.focus}</p>
+                        </div>
+                        <div>
+                          <span className="text-[9px] font-sans font-black uppercase tracking-wider text-zinc-500 block">Course Materials</span>
+                          <p className="font-mono opacity-75 italic pl-1 text-[10px] text-zinc-400">{course.primaryRefs}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <button
+                    type="button"
+                    disabled={generatingOnSpot}
+                    onClick={() => !generatingOnSpot && handleSelectCourse(course.level, course.title)}
+                    className="p-8 bg-zinc-950/60 hover:bg-zinc-900 border-t md:border-t-0 md:border-l border-white/[0.05] flex flex-col justify-center items-center text-center gap-3 text-xs font-black text-white hover:text-brand-300 transition-colors shrink-0 w-full md:w-56 cursor-pointer disabled:cursor-not-allowed"
+                  >
+                    <span className="tracking-wide uppercase text-[9px] font-sans font-black text-zinc-500 block">Course Status</span>
+                    <span className="text-sm font-black text-white font-sans max-w-[150px] leading-tight">
+                      {isStarted ? "Continue Course" : "Launch Course"}
+                    </span>
+                    <div className="p-2.5 rounded-full bg-white/5 hover:bg-white/10 transition mt-2">
+                      <ChevronRight className="w-4.5 h-4.5" />
+                    </div>
+                  </button>
+                </motion.div>
+              );
+            })}
+          </AnimatePresence>
+        </motion.div>
       </div>
     );
   }

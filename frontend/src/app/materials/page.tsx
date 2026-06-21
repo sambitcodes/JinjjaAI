@@ -6,6 +6,7 @@ import {
   ChevronLeft, ChevronRight, Layout, BookOpenCheck, Loader2, ArrowLeft, Download
 } from "lucide-react";
 import { apiRequest, ensureAuthenticated } from "../../lib/api";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface BookMaterial {
   name: string;
@@ -32,6 +33,55 @@ export default function MaterialsWarehouse() {
   const [pdfLoading, setPdfLoading] = useState(false);
   const [pageTurning, setPageTurning] = useState(false);
   const [turnDirection, setTurnDirection] = useState<"next" | "prev">("next");
+
+  // Bookmarks States
+  const [bookmarks, setBookmarks] = useState<Record<string, number>>({});
+  const [showBookmarkPrompt, setShowBookmarkPrompt] = useState(false);
+  const [bookmarkPageToResume, setBookmarkPageToResume] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem("hangeulai_book_bookmarks");
+        if (saved) {
+          setBookmarks(JSON.parse(saved));
+        }
+      } catch (err) {
+        console.error("Failed to load bookmarks:", err);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (selectedPdf) {
+      const bookmarked = bookmarks[selectedPdf.name];
+      if (bookmarked && bookmarked > 1) {
+        setBookmarkPageToResume(bookmarked);
+        setShowBookmarkPrompt(true);
+      } else {
+        setBookmarkPageToResume(null);
+        setShowBookmarkPrompt(false);
+      }
+    }
+  }, [selectedPdf, bookmarks]);
+
+  const toggleBookmark = () => {
+    if (!selectedPdf) return;
+    const name = selectedPdf.name;
+    const isBookmarked = bookmarks[name] === currentPage;
+    const updated = { ...bookmarks };
+    
+    if (isBookmarked) {
+      delete updated[name];
+    } else {
+      updated[name] = currentPage;
+    }
+    
+    setBookmarks(updated);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("hangeulai_book_bookmarks", JSON.stringify(updated));
+    }
+  };
 
   const canvasContainerRef = useRef<HTMLDivElement>(null);
   const leftCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -187,14 +237,9 @@ export default function MaterialsWarehouse() {
 
   const handleNextPage = () => {
     if (readMode === "scroll") {
-      // In scroll mode, let's just scroll down to the next page smoothly
       const nextPage = currentPage + 1;
       if (nextPage <= numPages) {
         setCurrentPage(nextPage);
-        const nextEl = document.getElementById(`pdf-page-${nextPage}`);
-        if (nextEl) {
-          nextEl.scrollIntoView({ behavior: "smooth", block: "start" });
-        }
       }
       return;
     }
@@ -214,10 +259,6 @@ export default function MaterialsWarehouse() {
       const prevPage = currentPage - 1;
       if (prevPage >= 1) {
         setCurrentPage(prevPage);
-        const prevEl = document.getElementById(`pdf-page-${prevPage}`);
-        if (prevEl) {
-          prevEl.scrollIntoView({ behavior: "smooth", block: "start" });
-        }
       }
       return;
     }
@@ -403,83 +444,93 @@ export default function MaterialsWarehouse() {
 
       {/* Materials Grid */}
       {filteredMaterials.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in">
-          {filteredMaterials.map((material, idx) => {
-            // Find accent styles based on category
-            let borderGlow = "hover:border-purple-500/30 hover:shadow-[0_0_30px_rgba(168,85,247,0.18)]";
-            let badgeColor = "bg-purple-500/10 text-purple-400 border-purple-500/20";
-            let accent = "border-t-4 border-t-purple-500";
-            let folderEmoji = "📘";
+        <motion.div 
+          layout
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full max-w-none"
+        >
+          <AnimatePresence>
+            {filteredMaterials.map((material, idx) => {
+              // Find accent styles based on category
+              let borderGlow = "hover:border-purple-500/30 hover:shadow-[0_0_30px_rgba(168,85,247,0.18)]";
+              let badgeColor = "bg-purple-500/10 text-purple-400 border-purple-500/20";
+              let accent = "border-t-4 border-t-purple-500";
+              let folderEmoji = "📘";
 
-            if (material.category === "TTMIK Textbooks") {
-              borderGlow = "hover:border-amber-500/30 hover:shadow-[0_0_30px_rgba(245,158,11,0.18)]";
-              badgeColor = "bg-amber-500/10 text-amber-400 border-amber-500/20";
-              accent = "border-t-4 border-t-amber-500";
-              folderEmoji = "📙";
-            } else if (material.category === "TTMIK Workbooks") {
-              borderGlow = "hover:border-pink-500/30 hover:shadow-[0_0_30px_rgba(236,72,153,0.18)]";
-              badgeColor = "bg-pink-500/10 text-pink-400 border-pink-500/20";
-              accent = "border-t-4 border-t-pink-500";
-              folderEmoji = "📕";
-            } else if (material.category === "Core Textbooks") {
-              borderGlow = "hover:border-cyan-500/30 hover:shadow-[0_0_30px_rgba(6,182,212,0.18)]";
-              badgeColor = "bg-cyan-500/10 text-cyan-400 border-cyan-500/20";
-              accent = "border-t-4 border-t-cyan-500";
-              folderEmoji = "📗";
-            }
+              if (material.category === "TTMIK Textbooks") {
+                borderGlow = "hover:border-amber-500/30 hover:shadow-[0_0_30px_rgba(245,158,11,0.18)]";
+                badgeColor = "bg-amber-500/10 text-amber-400 border-amber-500/20";
+                accent = "border-t-4 border-t-amber-500";
+                folderEmoji = "📙";
+              } else if (material.category === "TTMIK Workbooks") {
+                borderGlow = "hover:border-pink-500/30 hover:shadow-[0_0_30px_rgba(236,72,153,0.18)]";
+                badgeColor = "bg-pink-500/10 text-pink-400 border-pink-500/20";
+                accent = "border-t-4 border-t-pink-500";
+                folderEmoji = "📕";
+              } else if (material.category === "Core Textbooks") {
+                borderGlow = "hover:border-cyan-500/30 hover:shadow-[0_0_30px_rgba(6,182,212,0.18)]";
+                badgeColor = "bg-cyan-500/10 text-cyan-400 border-cyan-500/20";
+                accent = "border-t-4 border-t-cyan-500";
+                folderEmoji = "📗";
+              }
 
-            const details = getAiBookDetails(material.name);
+              const details = getAiBookDetails(material.name);
 
-            return (
-              <div
-                key={idx}
-                onClick={() => setSelectedPdf(material)}
-                className={`glass-panel p-6 rounded-3xl border border-white/5 bg-zinc-900/10 flex flex-col justify-between transition-all duration-300 transform hover:-translate-y-1.5 cursor-pointer overflow-hidden ${accent} ${borderGlow} group/card`}
-                style={{ animationDelay: `${idx * 50}ms` }}
-              >
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded border ${badgeColor}`}>
-                      {material.category.split(" ")[0]}
-                    </span>
-                    <span className="text-[9px] text-zinc-500 font-mono font-bold">{formatSize(material.size_bytes)}</span>
-                  </div>
-                  
-                  <div className="flex gap-3">
-                    <div className="p-3.5 bg-zinc-950 border border-white/5 rounded-2xl flex-shrink-0 flex items-center justify-center text-3xl group-hover/card:scale-110 transition duration-300">
-                      {folderEmoji}
+              return (
+                <motion.div
+                  layout
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ duration: 0.25 }}
+                  key={material.name}
+                  onClick={() => setSelectedPdf(material)}
+                  className={`glass-panel p-6 rounded-3xl border border-white/5 bg-zinc-900/10 flex flex-col justify-between transition-all duration-300 transform hover:-translate-y-1.5 cursor-pointer overflow-hidden ${accent} ${borderGlow} group/card`}
+                  style={{ animationDelay: `${idx * 50}ms` }}
+                >
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded border ${badgeColor}`}>
+                        {material.category.split(" ")[0]}
+                      </span>
+                      <span className="text-[9px] text-zinc-500 font-mono font-bold">{formatSize(material.size_bytes)}</span>
                     </div>
-                    <div className="min-w-0">
-                      <h3 className="text-sm font-black text-zinc-100 leading-snug line-clamp-2 group-hover/card:text-white transition" title={material.name}>
-                        {material.name.replace(".pdf", "")}
-                      </h3>
-                      <p className="text-[10px] text-zinc-500 mt-1 font-extrabold uppercase tracking-wide">Interactive Guide</p>
+                    
+                    <div className="flex gap-3">
+                      <div className="p-3.5 bg-zinc-950 border border-white/5 rounded-2xl flex-shrink-0 flex items-center justify-center text-3xl group-hover/card:scale-110 transition duration-300">
+                        {folderEmoji}
+                      </div>
+                      <div className="min-w-0">
+                        <h3 className="text-sm font-black text-zinc-100 leading-snug line-clamp-2 group-hover/card:text-white transition" title={material.name}>
+                          {material.name.replace(".pdf", "")}
+                        </h3>
+                        <p className="text-[10px] text-zinc-500 mt-1 font-extrabold uppercase tracking-wide">Interactive Guide</p>
+                      </div>
+                    </div>
+
+                    {/* AI Generated Book Details */}
+                    <div className="space-y-3 pt-2">
+                      <p className="text-zinc-400 text-xs leading-relaxed font-medium">{details.summary}</p>
+                      <div className="space-y-1.5 pt-2 border-t border-white/[0.03]">
+                        <span className="text-[9px] uppercase tracking-widest text-purple-400 font-extrabold font-mono">Learning Outcomes:</span>
+                        <ul className="text-[10px] text-zinc-500 pl-4 list-disc space-y-0.5 leading-relaxed font-semibold">
+                          {details.learnings.map((l, i) => <li key={i}>{l}</li>)}
+                        </ul>
+                      </div>
                     </div>
                   </div>
 
-                  {/* AI Generated Book Details */}
-                  <div className="space-y-3 pt-2">
-                    <p className="text-zinc-400 text-xs leading-relaxed font-medium">{details.summary}</p>
-                    <div className="space-y-1.5 pt-2 border-t border-white/[0.03]">
-                      <span className="text-[9px] uppercase tracking-widest text-purple-400 font-extrabold font-mono">Learning Outcomes:</span>
-                      <ul className="text-[10px] text-zinc-500 pl-4 list-disc space-y-0.5 leading-relaxed font-semibold">
-                        {details.learnings.map((l, i) => <li key={i}>{l}</li>)}
-                      </ul>
+                  <div className="pt-4 mt-4 border-t border-white/[0.03] flex items-center justify-between text-[11px] font-black text-zinc-400 group-hover/card:text-white transition duration-300">
+                    <span>Open Document</span>
+                    <div className="flex items-center gap-1">
+                      <span className="text-[9px] font-mono text-zinc-600 group-hover/card:text-purple-400 group-hover/card:translate-x-[-2px] transition duration-300 font-black">READ</span>
+                      <ChevronRight className="w-3.5 h-3.5 group-hover/card:translate-x-1 transition duration-300" />
                     </div>
                   </div>
-                </div>
-
-                <div className="pt-4 mt-4 border-t border-white/[0.03] flex items-center justify-between text-[11px] font-black text-zinc-400 group-hover/card:text-white transition duration-300">
-                  <span>Open Document</span>
-                  <div className="flex items-center gap-1">
-                    <span className="text-[9px] font-mono text-zinc-600 group-hover/card:text-purple-400 group-hover/card:translate-x-[-2px] transition duration-300 font-black">READ</span>
-                    <ChevronRight className="w-3.5 h-3.5 group-hover/card:translate-x-1 transition duration-300" />
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+                </motion.div>
+              );
+            })}
+          </AnimatePresence>
+        </motion.div>
       ) : (
         <div className="text-center py-16 bg-zinc-900/10 border border-dashed border-white/10 rounded-3xl">
           <p className="text-zinc-500 text-sm">No textbook resources match your current query or category.</p>
@@ -550,7 +601,7 @@ export default function MaterialsWarehouse() {
 
       {/* FULLSCREEN PDF VIEWER MODAL */}
       {selectedPdf && (
-        <div className="fixed inset-0 z-[100] flex flex-col bg-zinc-950/95 backdrop-blur-md animate-fade-in">
+        <div className="fixed inset-0 z-[100] flex flex-col bg-zinc-950/95 backdrop-blur-md animate-fade-in relative text-foreground">
           
           {/* Modal Header */}
           <header className="flex justify-between items-center bg-zinc-900 border-b border-white/5 px-6 py-4 flex-shrink-0 z-10">
@@ -654,6 +705,28 @@ export default function MaterialsWarehouse() {
             ref={viewerModalRef} 
             className="flex-grow overflow-auto p-6 flex flex-col items-center justify-start bg-zinc-900/60 relative"
           >
+            {/* Physical Bookmark Ribbon */}
+            <div 
+              onClick={toggleBookmark}
+              className={`absolute top-0 right-10 w-10 h-20 cursor-pointer transition-all duration-300 z-[70] origin-top hover:h-24 ${
+                bookmarks[selectedPdf.name] === currentPage
+                  ? "bg-gradient-to-b from-red-600 to-red-500 shadow-[0_8px_16px_rgba(220,38,38,0.4)]" 
+                  : "bg-zinc-850 hover:bg-zinc-700 shadow-md opacity-60 hover:opacity-100"
+              }`}
+              style={{
+                clipPath: "polygon(0 0, 100% 0, 100% 100%, 50% 85%, 0 100%)",
+              }}
+              title={bookmarks[selectedPdf.name] === currentPage ? "Remove Bookmark" : "Bookmark this Page"}
+            >
+              <div className="flex flex-col items-center pt-2 text-white font-mono text-[10px] font-black select-none">
+                <span>🔖</span>
+                <span className="mt-1 leading-none">{currentPage}</span>
+              </div>
+              {bookmarks[selectedPdf.name] === currentPage && (
+                <div className="absolute inset-y-0 left-1/2 w-0.5 -translate-x-1/2 bg-amber-400 opacity-60" />
+              )}
+            </div>
+
             {pdfLoading && (
               <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-950/80 gap-3">
                 <Loader2 className="w-10 h-10 text-purple-400 animate-spin" />
@@ -665,10 +738,11 @@ export default function MaterialsWarehouse() {
             {readMode === "scroll" ? (
               <div className="w-full h-full flex-grow rounded-2xl overflow-hidden border border-white/10 bg-zinc-950 mt-2">
                 <iframe
+                  key={currentPage}
                   src={(() => {
                     const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
                     const cleanBaseUrl = API_URL.replace("/api/v1", "");
-                    return `${cleanBaseUrl}${selectedPdf.url}#toolbar=1&navpanes=0`;
+                    return `${cleanBaseUrl}${selectedPdf.url}#page=${currentPage}&toolbar=1&navpanes=0`;
                   })()}
                   title={selectedPdf.name}
                   className="w-full h-full border-0"
@@ -692,8 +766,8 @@ export default function MaterialsWarehouse() {
               </div>
             )}
             
-            {/* Pagination Footer (Only for Book Mode) */}
-            {readMode === "book" && !pdfLoading && pdfDocument && (
+            {/* Pagination Footer */}
+            {!pdfLoading && pdfDocument && (
               <div className="fixed bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-3 bg-zinc-950/95 border border-white/10 p-2.5 rounded-2xl shadow-2xl backdrop-blur-md z-[60]">
                 <button
                   onClick={handlePrevPage}
@@ -703,11 +777,14 @@ export default function MaterialsWarehouse() {
                   <ChevronLeft className="w-5 h-5" />
                 </button>
                 <span className="text-xs font-black text-zinc-300 font-mono min-w-[130px] text-center">
-                  PAGES {currentPage}-${Math.min(currentPage + 1, numPages)} of {numPages}
+                  {readMode === "scroll" 
+                    ? `PAGE ${currentPage} of ${numPages}`
+                    : `PAGES ${currentPage}-${Math.min(currentPage + 1, numPages)} of ${numPages}`
+                  }
                 </span>
                 <button
                   onClick={handleNextPage}
-                  disabled={currentPage + 2 > numPages}
+                  disabled={readMode === "scroll" ? currentPage >= numPages : currentPage + 2 > numPages}
                   className="p-2 bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white disabled:opacity-30 disabled:hover:bg-zinc-900 rounded-xl transition cursor-pointer"
                 >
                   <ChevronRight className="w-5 h-5" />
@@ -717,9 +794,50 @@ export default function MaterialsWarehouse() {
 
           </div>
 
-        </div>
-      )}
+          {/* Bookmark Resume Prompt Modal */}
+          <AnimatePresence>
+            {showBookmarkPrompt && bookmarkPageToResume && (
+              <div className="fixed inset-0 z-[110] bg-black/60 backdrop-blur-sm flex items-center justify-center">
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  className="glass-panel p-6 max-w-md w-full rounded-3xl border border-white/10 text-center space-y-6 bg-zinc-950 shadow-2xl relative"
+                >
+                  <div className="p-3 w-16 h-16 bg-purple-500/10 border border-purple-500/20 text-purple-400 rounded-2xl flex items-center justify-center text-3xl mx-auto">
+                    🔖
+                  </div>
+                  <div className="space-y-2">
+                    <h3 className="text-lg font-black text-white">Resume Reading?</h3>
+                    <p className="text-zinc-400 text-xs leading-relaxed">
+                      You previously bookmarked <span className="text-purple-400 font-bold">Page {bookmarkPageToResume}</span> of <span className="text-white font-medium">{selectedPdf.name.replace(".pdf", "")}</span>. Would you like to jump there now?
+                    </p>
+                  </div>
+                  <div className="flex gap-3 justify-center">
+                    <button
+                      onClick={() => {
+                        setShowBookmarkPrompt(false);
+                      }}
+                      className="px-4 py-2.5 bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white rounded-xl border border-white/5 text-xs font-bold transition cursor-pointer"
+                    >
+                      Start from Page 1
+                    </button>
+                    <button
+                      onClick={() => {
+                        setCurrentPage(bookmarkPageToResume);
+                        setShowBookmarkPrompt(false);
+                      }}
+                      className="px-5 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-500 hover:from-purple-500 hover:to-indigo-400 text-white rounded-xl text-xs font-black shadow-lg shadow-purple-500/25 transition cursor-pointer"
+                    >
+                      Resume Page {bookmarkPageToResume}
+                    </button>
+                  </div>
+                </motion.div>
+              </div>
+            )}
+          </AnimatePresence>
 
-    </div>
+        </div>
+      )} </div>
   );
 }
