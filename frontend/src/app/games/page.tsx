@@ -200,7 +200,7 @@ export default function GamesArcade() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-zinc-950">
         <div className="text-center space-y-4">
-          <Loader2 className="w-12 h-12 text-brand-500 animate-spin mx-auto" />
+          <Loader2 className="w-12 h-12 text-orange-500 animate-spin mx-auto" />
           <p className="text-zinc-500 text-sm font-bold">Powering up Hangeul AI Arcade...</p>
         </div>
       </div>
@@ -211,7 +211,7 @@ export default function GamesArcade() {
     <div className="min-h-screen text-foreground relative pb-16 overflow-hidden w-full max-w-[98%] mx-auto px-4 md:px-6">
       
       {/* Background ambient depth glows */}
-      <div className="absolute -top-10 left-1/4 w-[400px] h-[400px] bg-gradient-to-tr from-orange-500/10 to-amber-500/5 rounded-full blur-[140px] pointer-events-none animate-pulse duration-10000" />
+      <div className="absolute -top-10 left-1/4 w-[400px] h-[400px] bg-gradient-to-tr from-orange-500/10 to-red-500/5 rounded-full blur-[140px] pointer-events-none animate-pulse duration-10000" />
       <div className="absolute bottom-10 right-1/4 w-[450px] h-[450px] bg-gradient-to-tr from-red-500/10 to-orange-500/5 rounded-full blur-[160px] pointer-events-none animate-pulse duration-8000" />
 
       {activeTab !== "arcade" && (
@@ -233,7 +233,7 @@ export default function GamesArcade() {
           <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-orange-950/20 via-zinc-900/60 to-zinc-950 p-6 md:p-8 shadow-2xl transition-all hover:border-orange-500/20 duration-500 group">
             {/* Glow orbs */}
             <div className="absolute -right-10 -top-10 w-44 h-44 bg-orange-500/15 rounded-full blur-3xl group-hover:scale-125 transition duration-700" />
-            <div className="absolute -left-10 -bottom-10 w-44 h-44 bg-amber-500/15 rounded-full blur-3xl group-hover:scale-125 transition duration-700" />
+            <div className="absolute -left-10 -bottom-10 w-44 h-44 bg-red-500/15 rounded-full blur-3xl group-hover:scale-125 transition duration-700" />
             
             <div className="relative z-10 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
               <div className="space-y-3 max-w-xl text-left">
@@ -242,7 +242,7 @@ export default function GamesArcade() {
                   <span>Arcade Arena</span>
                 </div>
                 <h1 className="text-3xl md:text-5xl font-black text-white leading-tight tracking-tight">
-                  Games <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 via-yellow-400 to-amber-500 font-black animate-gradient-x">Universe</span>
+                  Games <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 via-rose-400 to-red-500 font-black animate-gradient-x">Universe</span>
                 </h1>
                 <p className="text-zinc-400 text-sm leading-relaxed">
                   Step into the AI-powered Korean gaming zone! Play scientifically useful lessons wrapped in rich arcade gameplay to level up your language intuition.
@@ -257,7 +257,7 @@ export default function GamesArcade() {
                 </div>
                 <div className="w-px bg-white/5" />
                 <div className="text-center px-2">
-                  <div className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-amber-400 font-mono">⚡ {earnedXpTotal}</div>
+                  <div className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-red-400 font-mono">⚡ {earnedXpTotal}</div>
                   <div className="text-[8px] text-zinc-500 font-extrabold uppercase tracking-widest mt-1">Arcade XP</div>
                 </div>
                 <div className="w-px bg-white/5" />
@@ -274,7 +274,7 @@ export default function GamesArcade() {
             
             {/* Tangerine Orchard Card */}
             <div 
-              className="glass-panel p-6 rounded-3xl border border-white/5 bg-gradient-to-br from-orange-950/10 to-zinc-900/10 hover:border-orange-500/50 hover:shadow-[0_0_35px_rgba(249,115,22,0.3)] transition duration-300 group flex flex-col justify-between"
+              className="glass-panel p-6 rounded-[2.2rem] border border-white/10 bg-gradient-to-br from-orange-950/10 to-zinc-900/10 hover:border-orange-500/50 hover:shadow-[0_0_30px_rgba(249,115,22,0.35)] transition duration-300 group flex flex-col justify-between"
             >
               <div className="space-y-4 text-left">
                 <div className="flex justify-between items-center">
@@ -300,7 +300,7 @@ export default function GamesArcade() {
 
             {/* Korean Sniper Card */}
             <div 
-              className="glass-panel p-6 rounded-3xl border border-white/5 bg-gradient-to-br from-cyan-950/10 to-zinc-900/10 hover:border-cyan-500/50 hover:shadow-[0_0_35px_rgba(6,182,212,0.3)] transition duration-300 group flex flex-col justify-between"
+              className="glass-panel p-6 rounded-[2.2rem] border border-white/10 bg-gradient-to-br from-cyan-950/10 to-zinc-900/10 hover:border-cyan-500/50 hover:shadow-[0_0_30px_rgba(6,182,212,0.35)] transition duration-300 group flex flex-col justify-between"
             >
               <div className="space-y-4 text-left">
                 <div className="flex justify-between items-center">
@@ -326,7 +326,7 @@ export default function GamesArcade() {
 
             {/* Sentence Builder Card */}
             <div 
-              className="glass-panel p-6 rounded-3xl border border-white/5 bg-gradient-to-br from-indigo-950/10 to-zinc-900/10 hover:border-indigo-500/50 hover:shadow-[0_0_35px_rgba(99,102,241,0.3)] transition duration-300 group flex flex-col justify-between"
+              className="glass-panel p-6 rounded-[2.2rem] border border-white/10 bg-gradient-to-br from-indigo-950/10 to-zinc-900/10 hover:border-indigo-500/50 hover:shadow-[0_0_30px_rgba(99,102,241,0.35)] transition duration-300 group flex flex-col justify-between"
             >
               <div className="space-y-4 text-left">
                 <div className="flex justify-between items-center">
@@ -352,7 +352,7 @@ export default function GamesArcade() {
 
             {/* Boss Battles Card */}
             <div 
-              className="glass-panel p-6 rounded-3xl border border-white/5 bg-gradient-to-br from-red-950/10 to-zinc-900/10 hover:border-red-500/50 hover:shadow-[0_0_35px_rgba(239,68,68,0.3)] transition duration-300 group flex flex-col justify-between"
+              className="glass-panel p-6 rounded-[2.2rem] border border-white/10 bg-gradient-to-br from-red-950/10 to-zinc-900/10 hover:border-red-500/50 hover:shadow-[0_0_30px_rgba(239,68,68,0.35)] transition duration-300 group flex flex-col justify-between"
             >
               <div className="space-y-4 text-left">
                 <div className="flex justify-between items-center">

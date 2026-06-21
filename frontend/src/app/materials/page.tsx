@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { 
   BookOpen, Folder, ZoomIn, ZoomOut, Maximize, Minimize, 
-  ChevronLeft, ChevronRight, Layout, BookOpenCheck, Loader2, ArrowLeft, Download
+  ChevronLeft, ChevronRight, Layout, BookOpenCheck, Loader2, ArrowLeft, Download, Star
 } from "lucide-react";
 import { apiRequest, ensureAuthenticated } from "../../lib/api";
 import { motion, AnimatePresence } from "framer-motion";
@@ -21,6 +21,37 @@ export default function MaterialsWarehouse() {
   const [activeCategory, setActiveCategory] = useState<string>("Core Textbooks");
   const [searchQuery, setSearchQuery] = useState<string>("");
   
+  // Starred state
+  const [starredNames, setStarredNames] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem("hangeulai_starred_materials");
+        if (stored) {
+          setStarredNames(JSON.parse(stored));
+        }
+      } catch {}
+    }
+  }, []);
+
+  const toggleStarMaterial = (e: React.MouseEvent, materialName: string) => {
+    e.stopPropagation();
+    const isStarred = starredNames.includes(materialName);
+    let nextStarred: string[];
+    if (isStarred) {
+      nextStarred = starredNames.filter(name => name !== materialName);
+    } else {
+      nextStarred = [...starredNames, materialName];
+    }
+    setStarredNames(nextStarred);
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("hangeulai_starred_materials", JSON.stringify(nextStarred));
+      } catch {}
+    }
+  };
+
   // PDF Viewer Modal States
   const [selectedPdf, setSelectedPdf] = useState<BookMaterial | null>(null);
   const [pdfJsLoaded, setPdfJsLoaded] = useState(false);
@@ -320,17 +351,17 @@ export default function MaterialsWarehouse() {
     return { summary, learnings };
   };
 
-  const categories = ["Core Textbooks", "TTMIK Textbooks", "TTMIK Workbooks", "Korean101 Workbooks"];
+  const categories = ["Core Textbooks", "TTMIK Textbooks", "TTMIK Workbooks", "Korean101 Workbooks", "Starred"];
 
   // Search and Category filtering
   const filteredMaterials = materials.filter(m => {
-    const matchesCategory = m.category === activeCategory;
+    const matchesCategory = activeCategory === "Starred" ? starredNames.includes(m.name) : m.category === activeCategory;
     const matchesSearch = m.name.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCategory && matchesSearch;
   });
 
   const getCategoryCount = (catName: string) => {
-    return materials.filter(m => m.category === catName).length;
+    return catName === "Starred" ? materials.filter(m => starredNames.includes(m.name)).length : materials.filter(m => m.category === catName).length;
   };
 
   const formatSize = (bytes: number) => {
@@ -491,7 +522,17 @@ export default function MaterialsWarehouse() {
                       <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded border ${badgeColor}`}>
                         {material.category.split(" ")[0]}
                       </span>
-                      <span className="text-[9px] text-zinc-500 font-mono font-bold">{formatSize(material.size_bytes)}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[9px] text-zinc-500 font-mono font-bold">{formatSize(material.size_bytes)}</span>
+                        <button
+                          type="button"
+                          onClick={(e) => toggleStarMaterial(e, material.name)}
+                          className="p-1 rounded-lg bg-zinc-950/60 hover:bg-zinc-900 border border-white/10 text-zinc-400 hover:text-white transition cursor-pointer flex items-center justify-center relative z-20"
+                          title={starredNames.includes(material.name) ? "Unstar Material" : "Star Material"}
+                        >
+                          <Star className={`w-3 h-3 ${starredNames.includes(material.name) ? "text-amber-400 fill-amber-400" : "text-zinc-500"}`} />
+                        </button>
+                      </div>
                     </div>
                     
                     <div className="flex gap-3">

@@ -41,6 +41,37 @@ export default function OnlineMaterials() {
   const [featuredSummaries, setFeaturedSummaries] = useState<Record<string, string>>({});
   const [featuredSummaryLoading, setFeaturedSummaryLoading] = useState(false);
   
+  // Starred state
+  const [starredPlaylists, setStarredPlaylists] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem("hangeulai_starred_playlists");
+        if (stored) {
+          setStarredPlaylists(JSON.parse(stored));
+        }
+      } catch {}
+    }
+  }, []);
+
+  const toggleStarPlaylist = (e: React.MouseEvent, playlistId: string) => {
+    e.stopPropagation();
+    const isStarred = starredPlaylists.includes(playlistId);
+    let nextStarred: string[];
+    if (isStarred) {
+      nextStarred = starredPlaylists.filter(id => id !== playlistId);
+    } else {
+      nextStarred = [...starredPlaylists, playlistId];
+    }
+    setStarredPlaylists(nextStarred);
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("hangeulai_starred_playlists", JSON.stringify(nextStarred));
+      } catch {}
+    }
+  };
+  
   // Page state: showCards matches user request to show cards first
   const [showWorkspace, setShowWorkspace] = useState(false);
   const [selectedResource, setSelectedResource] = useState<OnlineResource | null>(null);
@@ -60,7 +91,7 @@ export default function OnlineMaterials() {
   const [aiResponse, setAiResponse] = useState<string>("");
   const [selectedAiTab, setSelectedAiTab] = useState<"summary" | "explain" | "quiz">("summary");
 
-  const categories = ["Beginner", "Intermediate", "Stories", "Culture", "Music & Media"];
+  const categories = ["Beginner", "Intermediate", "Stories", "Culture", "Music & Media", "Starred"];
 
   const fetchOnlineMaterials = async () => {
     try {
@@ -76,10 +107,10 @@ export default function OnlineMaterials() {
           
           if (!groups[seedId]) {
             const banners = [
-              "from-blue-600/20 via-zinc-900/90 to-zinc-950 hover:border-blue-500/50 hover:shadow-[0_0_35px_rgba(59,130,246,0.3)]",
-              "from-cyan-600/20 via-zinc-900/90 to-zinc-950 hover:border-cyan-500/50 hover:shadow-[0_0_35px_rgba(6,182,212,0.3)]",
-              "from-indigo-600/20 via-zinc-900/90 to-zinc-950 hover:border-indigo-500/50 hover:shadow-[0_0_35px_rgba(99,102,241,0.3)]",
-              "from-sky-600/20 via-zinc-900/90 to-zinc-950 hover:border-sky-500/50 hover:shadow-[0_0_35px_rgba(14,165,233,0.3)]"
+              "from-cyan-600/25 via-zinc-900/90 to-zinc-950 hover:border-cyan-400/50 hover:shadow-[0_0_30px_rgba(34,211,238,0.35)]",
+              "from-teal-600/25 via-zinc-900/90 to-zinc-950 hover:border-teal-400/50 hover:shadow-[0_0_30px_rgba(20,184,166,0.35)]",
+              "from-emerald-600/25 via-zinc-900/90 to-zinc-950 hover:border-emerald-400/50 hover:shadow-[0_0_30px_rgba(16,185,129,0.35)]",
+              "from-sky-600/25 via-zinc-900/90 to-zinc-950 hover:border-sky-400/50 hover:shadow-[0_0_30px_rgba(56,189,248,0.35)]"
             ];
             const bannerImage = banners[Object.keys(groups).length % banners.length];
             
@@ -433,7 +464,7 @@ export default function OnlineMaterials() {
   };
 
   const filteredResources = resources.filter(resource => {
-    const matchesTab = resource.category === activeTab;
+    const matchesTab = activeTab === "Starred" ? starredPlaylists.includes(resource.id) : resource.category === activeTab;
     const matchesSearch = resource.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
                           resource.channel.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           resource.description.toLowerCase().includes(searchQuery.toLowerCase());
@@ -567,23 +598,23 @@ export default function OnlineMaterials() {
     return (
       <div className="min-h-screen text-foreground relative pb-16 w-full max-w-[98%] mx-auto px-4 md:px-6">
         {/* Background glowing decorations */}
-        <div className="absolute -top-10 left-1/4 w-[400px] h-[400px] bg-gradient-to-tr from-blue-500/10 to-cyan-500/5 rounded-full blur-[140px] pointer-events-none animate-pulse duration-10000" />
-        <div className="absolute bottom-10 right-1/4 w-[450px] h-[450px] bg-gradient-to-tr from-blue-600/10 to-indigo-500/5 rounded-full blur-[160px] pointer-events-none animate-pulse duration-8000" />
+        <div className="absolute -top-10 left-1/4 w-[400px] h-[400px] bg-gradient-to-tr from-cyan-500/10 to-teal-500/5 rounded-full blur-[140px] pointer-events-none animate-pulse duration-10000" />
+        <div className="absolute bottom-10 right-1/4 w-[450px] h-[450px] bg-gradient-to-tr from-teal-500/10 to-cyan-500/5 rounded-full blur-[160px] pointer-events-none animate-pulse duration-8000" />
 
         {/* Hero Header */}
-        <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-blue-950/20 via-zinc-900/60 to-zinc-950 p-6 md:p-8 mb-10 shadow-2xl transition-all hover:border-blue-500/20 duration-500 group">
+        <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-cyan-950/20 via-zinc-900/60 to-zinc-950 p-6 md:p-8 mb-10 shadow-2xl transition-all hover:border-cyan-500/20 duration-500 group">
           {/* Glow orb */}
-          <div className="absolute -right-10 -top-10 w-44 h-44 bg-blue-500/15 rounded-full blur-3xl group-hover:scale-125 transition duration-700" />
-          <div className="absolute -left-10 -bottom-10 w-44 h-44 bg-cyan-500/15 rounded-full blur-3xl group-hover:scale-125 transition duration-700" />
+          <div className="absolute -right-10 -top-10 w-44 h-44 bg-cyan-500/15 rounded-full blur-3xl group-hover:scale-125 transition duration-700" />
+          <div className="absolute -left-10 -bottom-10 w-44 h-44 bg-teal-500/15 rounded-full blur-3xl group-hover:scale-125 transition duration-700" />
           
           <div className="relative z-10 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
             <div className="space-y-3 max-w-xl text-left">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/25 text-[10px] text-blue-300 font-extrabold uppercase tracking-widest">
-                <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-ping" />
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/25 text-[10px] text-cyan-300 font-extrabold uppercase tracking-widest">
+                <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping" />
                 <span>Vault Repository</span>
               </div>
               <h1 className="text-3xl md:text-5xl font-black text-white leading-tight tracking-tight">
-                Online <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-cyan-400 to-indigo-500 font-black">hub</span>
+                Online <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-teal-400 to-emerald-500 font-black">Hub</span>
               </h1>
               <p className="text-zinc-400 text-sm leading-relaxed">
                 Explore handpicked playlists, sync live transcripts, and query Gwan-Sik's Groq AI Helper for custom summaries and quizzes.
@@ -597,7 +628,7 @@ export default function OnlineMaterials() {
               </div>
               <div className="w-px bg-white/5" />
               <div className="text-center px-4">
-                <div className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400 font-mono">Live</div>
+                <div className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-teal-400 font-mono">Live</div>
                 <div className="text-[9px] text-zinc-500 font-extrabold uppercase tracking-widest mt-1">Transcription</div>
               </div>
             </div>
@@ -609,7 +640,7 @@ export default function OnlineMaterials() {
           {/* Category tabs */}
           <div className="flex flex-wrap gap-1.5">
             {categories.map(cat => {
-              const count = cat === "All" ? resources.length : resources.filter(r => r.category === cat).length;
+              const count = cat === "Starred" ? resources.filter(r => starredPlaylists.includes(r.id)).length : resources.filter(r => r.category === cat).length;
               const isActive = activeTab === cat;
               return (
                 <button
@@ -617,7 +648,7 @@ export default function OnlineMaterials() {
                   onClick={() => setActiveTab(cat)}
                   className={`px-3.5 py-2 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-2 ${
                     isActive
-                      ? "bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-lg shadow-blue-500/25 scale-105"
+                      ? "bg-gradient-to-r from-cyan-600 to-teal-505 text-white shadow-lg shadow-cyan-500/25 scale-105"
                       : "text-zinc-400 hover:text-white hover:bg-white/5"
                   }`}
                 >
@@ -637,7 +668,7 @@ export default function OnlineMaterials() {
               placeholder="Search playlist or channel..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-zinc-950 border border-white/10 rounded-xl px-4 py-2.5 pl-10 text-xs text-zinc-200 focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/25 transition placeholder-zinc-600"
+              className="w-full bg-zinc-950 border border-white/10 rounded-xl px-4 py-2.5 pl-10 text-xs text-zinc-200 focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/25 transition placeholder-zinc-600"
             />
             <div className="absolute left-3 top-3 text-zinc-500 pointer-events-none">
               🔍
@@ -669,15 +700,25 @@ export default function OnlineMaterials() {
                   exit={{ opacity: 0, scale: 0.95 }}
                   transition={{ duration: 0.25 }}
                   key={resource.id}
-                  className={`glass-panel rounded-3xl border border-white/5 overflow-hidden transition-all duration-300 transform hover:-translate-y-1.5 bg-gradient-to-b ${resource.bannerImage}`}
+                  className={`glass-panel rounded-3xl border border-white/5 overflow-hidden transition-all duration-300 transform hover:-translate-y-1.5 hover:border-cyan-400/50 hover:shadow-[0_0_30px_rgba(34,211,238,0.35)] bg-gradient-to-b ${resource.bannerImage}`}
                 >
                   <div className="p-6 flex flex-col justify-between h-full min-h-[220px]">
                     <div className="space-y-4 text-left">
                       <div className="flex justify-between items-start gap-2">
                         <span className="text-2xl p-2 bg-zinc-950/80 rounded-2xl border border-white/5">{resource.avatar}</span>
-                        <span className="text-[9px] bg-zinc-950/60 border border-white/5 px-2.5 py-1 rounded-full text-zinc-400 font-black uppercase">
-                          {resource.category}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[9px] bg-zinc-950/60 border border-white/5 px-2.5 py-1 rounded-full text-zinc-400 font-black uppercase">
+                            {resource.category}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={(e) => toggleStarPlaylist(e, resource.id)}
+                            className="p-1.5 rounded-lg bg-zinc-950/60 hover:bg-zinc-900 border border-white/10 text-zinc-400 hover:text-white transition cursor-pointer flex items-center justify-center relative z-20"
+                            title={starredPlaylists.includes(resource.id) ? "Unstar Playlist" : "Star Playlist"}
+                          >
+                            <Star className={`w-3.5 h-3.5 ${starredPlaylists.includes(resource.id) ? "text-amber-400 fill-amber-400" : "text-zinc-500"}`} />
+                          </button>
+                        </div>
                       </div>
                       <div>
                         <h3 className="text-base font-black text-white tracking-tight leading-snug">{resource.title}</h3>
@@ -687,7 +728,7 @@ export default function OnlineMaterials() {
                       {/* AI Generated Resource Details */}
                       <p className="text-zinc-400 text-xs leading-relaxed font-medium">{details.summary}</p>
                       <div className="space-y-1.5 pt-2 border-t border-white/[0.03]">
-                        <span className="text-[9px] uppercase tracking-widest text-blue-400 font-extrabold font-mono">Key Takeaways:</span>
+                        <span className="text-[9px] uppercase tracking-widest text-cyan-400 font-extrabold font-mono">Key Takeaways:</span>
                         <ul className="text-[10px] text-zinc-500 pl-4 list-disc space-y-0.5 leading-relaxed font-semibold">
                           {details.learnings.map((l, i) => <li key={i}>{l}</li>)}
                         </ul>
@@ -695,7 +736,7 @@ export default function OnlineMaterials() {
                     </div>
 
                     <div className="pt-4 mt-4 border-t border-white/[0.04] flex items-center justify-between text-[11px] font-black text-zinc-400">
-                      <span className="flex items-center gap-1 text-[10px] bg-blue-500/10 text-blue-400 border border-blue-500/20 px-2.5 py-0.5 rounded-full uppercase tracking-wider font-semibold">
+                      <span className="flex items-center gap-1 text-[10px] bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 px-2.5 py-0.5 rounded-full uppercase tracking-wider font-semibold">
                         {resource.playlist.length} lessons
                       </span>
                       <button

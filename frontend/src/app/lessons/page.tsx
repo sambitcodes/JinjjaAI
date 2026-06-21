@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
-import { ChevronLeft, CheckCircle2, ChevronRight, Award, Loader2, BookOpen, Layers, Volume2, Sparkles, BookMarked, BrainCircuit, RefreshCw, Compass } from "lucide-react";
+import { ChevronLeft, CheckCircle2, ChevronRight, Award, Loader2, BookOpen, Layers, Volume2, Sparkles, BookMarked, BrainCircuit, RefreshCw, Compass, Star } from "lucide-react";
 import { apiRequest, ensureAuthenticated } from "../../lib/api";
 import { motion, AnimatePresence } from "framer-motion";
 import Phase1VowelBootcampWizard from "../../components/Phase1VowelBootcampWizard";
@@ -136,6 +136,36 @@ export default function LessonPlayer() {
   const [courseStates, setCourseStates] = useState<Record<number, CourseState>>({});
   const [profile, setProfile] = useState<any>(null);
   const activeStepRef = useRef<{ courseId: number; phaseNum: number; step: number } | null>(null);
+
+  const [starredIds, setStarredIds] = useState<number[]>([]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem("hangeulai_starred_lessons");
+        if (stored) {
+          setStarredIds(JSON.parse(stored));
+        }
+      } catch {}
+    }
+  }, []);
+
+  const toggleStarLesson = (e: React.MouseEvent, courseId: number) => {
+    e.stopPropagation();
+    const isStarred = starredIds.includes(courseId);
+    let nextStarred: number[];
+    if (isStarred) {
+      nextStarred = starredIds.filter(id => id !== courseId);
+    } else {
+      nextStarred = [...starredIds, courseId];
+    }
+    setStarredIds(nextStarred);
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("hangeulai_starred_lessons", JSON.stringify(nextStarred));
+      } catch {}
+    }
+  };
 
   // Phase 1 Wizard States
   
@@ -899,7 +929,7 @@ export default function LessonPlayer() {
   };
 
   const filteredCourses = courses.filter((course) => {
-    const matchesCategory = course.category === activeCategory;
+    const matchesCategory = activeCategory === "Starred" ? starredIds.includes(course.id) : course.category === activeCategory;
     const matchesSearch = course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           course.goal.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           course.focus.toLowerCase().includes(searchQuery.toLowerCase());
@@ -971,8 +1001,8 @@ export default function LessonPlayer() {
         <div className="w-full flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4 mb-8 bg-zinc-900/20 p-4 rounded-3xl border border-white/5 backdrop-blur-sm relative z-10">
           {/* Category tabs */}
           <div className="flex flex-wrap gap-1.5">
-            {["Core Path", "Practice Labs", "Workshops"].map(cat => {
-              const count = courses.filter(c => c.category === cat).length;
+            {["Core Path", "Practice Labs", "Workshops", "Starred"].map(cat => {
+              const count = cat === "Starred" ? courses.filter(c => starredIds.includes(c.id)).length : courses.filter(c => c.category === cat).length;
               const isActive = activeCategory === cat;
               return (
                 <button
@@ -1040,9 +1070,19 @@ export default function LessonPlayer() {
                       <span className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full border ${course.badgeColor}`}>
                         {course.levelBand}
                       </span>
-                      <span className="text-[10px] font-extrabold text-zinc-400 bg-zinc-950/60 px-2 py-0.5 rounded-md border border-white/5">
-                        {course.duration}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-extrabold text-zinc-400 bg-zinc-950/60 px-2 py-0.5 rounded-md border border-white/5">
+                          {course.duration}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={(e) => toggleStarLesson(e, course.id)}
+                          className="p-1.5 rounded-lg bg-zinc-950/60 hover:bg-zinc-900 border border-white/10 text-zinc-400 hover:text-white transition cursor-pointer flex items-center justify-center relative z-20"
+                          title={starredIds.includes(course.id) ? "Unstar Course" : "Star Course"}
+                        >
+                          <Star className={`w-3.5 h-3.5 ${starredIds.includes(course.id) ? "text-amber-400 fill-amber-400" : "text-zinc-500"}`} />
+                        </button>
+                      </div>
                     </div>
                     
                     <div className="flex items-start gap-3 pt-2">

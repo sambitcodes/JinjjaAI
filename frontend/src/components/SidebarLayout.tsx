@@ -42,11 +42,11 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
   const menuItems = [
     { name: "Dashboard", href: "/dashboard", icon: Home, colorClass: "text-amber-500 hover:text-amber-400", activeBg: "bg-amber-500/10 text-amber-300 border border-amber-500/25 shadow-[0_0_15px_rgba(245,158,11,0.15)]" },
     { name: "Lessons Path", href: "/lessons", icon: BookOpen, colorClass: "text-indigo-400 hover:text-indigo-300", activeBg: "bg-indigo-500/10 text-indigo-300 border border-indigo-500/25 shadow-[0_0_15px_rgba(99,102,241,0.15)]" },
-    { name: "AI Tutor Chat", href: "/tutor", icon: MessageSquare, colorClass: "text-teal-400 hover:text-teal-300", activeBg: "bg-teal-500/10 text-teal-300 border border-teal-500/25 shadow-[0_0_15px_rgba(20,184,166,0.15)]" },
-    { name: "Games Arcade", href: "/games", icon: Gamepad2, colorClass: "text-orange-500 hover:text-orange-400", activeBg: "bg-orange-500/10 text-orange-300 border border-orange-500/25 shadow-[0_0_15px_rgba(249,115,22,0.15)]" },
     { name: "Materials Warehouse", href: "/materials", icon: Library, colorClass: "text-pink-500 hover:text-pink-400", activeBg: "bg-pink-500/10 text-pink-300 border border-pink-500/25 shadow-[0_0_15px_rgba(236,72,153,0.15)]" },
-    { name: "Online hub", href: "/online", icon: Globe, colorClass: "text-blue-400 hover:text-blue-300", activeBg: "bg-blue-500/10 text-blue-300 border border-blue-500/25 shadow-[0_0_15px_rgba(59,130,246,0.15)]" },
-    { name: "AI Benchmarks", href: "/benchmarks", icon: Award, colorClass: "text-purple-400 hover:text-purple-300", activeBg: "bg-purple-500/10 text-purple-300 border border-purple-500/25 shadow-[0_0_15px_rgba(168,85,247,0.15)]" },
+    { name: "Online Hub", href: "/online", icon: Globe, colorClass: "text-cyan-400 hover:text-cyan-300", activeBg: "bg-cyan-500/10 text-cyan-300 border border-cyan-500/25 shadow-[0_0_15px_rgba(6,182,212,0.15)]" },
+    { name: "AI Tutor Chat", href: "/tutor", icon: MessageSquare, colorClass: "text-emerald-400 hover:text-emerald-300", activeBg: "bg-emerald-500/10 text-emerald-300 border border-emerald-500/25 shadow-[0_0_15px_rgba(16,185,129,0.15)]" },
+    { name: "Games Arcade", href: "/games", icon: Gamepad2, colorClass: "text-orange-500 hover:text-orange-400", activeBg: "bg-orange-500/10 text-orange-300 border border-orange-500/25 shadow-[0_0_15px_rgba(249,115,22,0.15)]" },
+    { name: "AI Benchmarks", href: "/benchmarks", icon: Award, colorClass: "text-fuchsia-400 hover:text-fuchsia-300", activeBg: "bg-fuchsia-500/10 text-fuchsia-300 border border-fuchsia-500/25 shadow-[0_0_15px_rgba(217,70,239,0.15)]" },
   ];
 
   return (
