@@ -60,3 +60,7 @@ frontend/yarn-error.log*
 backend/app/services/ai_tutor_orig.py
 frontend/.next/
 frontend/out/
+
+# YouTube API key file
+youtube-api-key
+

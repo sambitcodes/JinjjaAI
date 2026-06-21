@@ -21,9 +21,37 @@ MAX_RESULTS_PER_PAGE = 50  # YouTube max for list calls
 def get_api_key(env_key: str = "YOUTUBE_API_KEY") -> str:
     # Allow passing key directly or fallback to environment variables
     api_key = os.getenv(env_key)
-    if not api_key:
-        raise RuntimeError(f"Missing {env_key} environment variable.")
-    return api_key
+    if api_key:
+        return api_key
+
+    # Check for youtube-api-key file in workspace root
+    # __file__ is backend/app/services/youtube_metadata_fetcher.py
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    paths_to_try = [
+        os.path.join(current_dir, "..", "..", "..", "youtube-api-key"),
+        os.path.join(current_dir, "..", "..", "youtube-api-key"),
+        os.path.join(current_dir, "youtube-api-key"),
+        "youtube-api-key",
+    ]
+    for p in paths_to_try:
+        if os.path.exists(p):
+            try:
+                with open(p, "r", encoding="utf-8") as f:
+                    content = f.read().strip()
+                    if "=" in content:
+                        parts = content.split("=", 1)
+                        val = parts[1].strip().strip('"').strip("'")
+                        if val:
+                            print(f"[INFO] Loaded API key from file: {p}")
+                            return val
+                    elif content:
+                        print(f"[INFO] Loaded API key from file: {p}")
+                        return content
+            except Exception as e:
+                print(f"[WARN] Failed to read key file {p}: {e}")
+
+    raise RuntimeError(f"Missing {env_key} environment variable and youtube-api-key file not found.")
+
 
 
 def build_youtube_client(api_key: str):
@@ -231,6 +259,54 @@ def process_seed_entry(youtube, seed: Dict[str, Any]) -> List[Dict[str, Any]]:
                 **detail,
                 "yt_playlist_id": None,
                 "resource_url": f"https://www.youtube.com/watch?v={video_id}",
+                "cefr_range": cefr_range,
+                "topics": topics,
+                "skills": skills,
+                "source_seed_id": seed_id
+            }
+            results.append(combined)
+
+    elif seed_type == "search":
+        query = seed.get("query")
+        print(f"[INFO] Searching YouTube for query: '{query}'...")
+        results = []
+        video_ids = []
+        page_token = None
+        
+        # We need up to 100 videos, so we do up to 2 pages of 50 results
+        for page in range(2):
+            try:
+                req = youtube.search().list(
+                    part="id,snippet",
+                    q=query,
+                    maxResults=50,
+                    type="video",
+                    pageToken=page_token
+                )
+                resp = req.execute()
+                items = resp.get("items", [])
+                for it in items:
+                    vid = it.get("id", {}).get("videoId")
+                    if vid:
+                        video_ids.append(vid)
+                page_token = resp.get("nextPageToken")
+                if not page_token or len(video_ids) >= 100:
+                    break
+            except Exception as e:
+                print(f"[ERROR] Search failed for query '{query}': {e}")
+                break
+                
+        # Batch fetch details for these video IDs
+        print(f"[INFO] Found {len(video_ids)} videos for query '{query}'. Fetching details...")
+        details_map = fetch_videos_details(youtube, video_ids[:100])
+        for vid in video_ids[:100]:
+            detail = details_map.get(vid)
+            if not detail:
+                continue
+            combined = {
+                **detail,
+                "yt_playlist_id": None,
+                "resource_url": f"https://www.youtube.com/watch?v={vid}",
                 "cefr_range": cefr_range,
                 "topics": topics,
                 "skills": skills,

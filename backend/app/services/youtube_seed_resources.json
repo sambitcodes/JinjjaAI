@@ -1,96 +1,65 @@
 [
   {
-    "id": "yt_missvicky_grammar",
-    "type": "playlist",
-    "channel_name": "Korean with Miss Vicky 빅키쌤",
-    "resource_url": "https://www.youtube.com/playlist?list=PLECz2rpRD3Z1q8NmzAOG5cuLYq-rU0BQO",
+    "id": "yt_learn_korean_beginner",
+    "type": "search",
+    "query": "Learn Korean language beginner basics level 1",
+    "channel_name": "Learn Korean",
     "cefr_range": "A1-A2",
-    "topics": ["Grammar", "Speaking Patterns"],
-    "skills": ["Speaking", "Listening"]
+    "topics": ["Beginner Path", "Everyday Basics"],
+    "skills": ["Listening", "Speaking", "Vocabulary"]
   },
   {
-    "id": "yt_missvicky_alphabet",
-    "type": "playlist",
+    "id": "yt_missvicky",
+    "type": "search",
+    "query": "Korean with Miss Vicky grammar vocabulary speaking",
     "channel_name": "Korean with Miss Vicky 빅키쌤",
-    "resource_url": "https://www.youtube.com/playlist?list=PLECz2rpRD3Z0EeOU0z3aoafwgjHyth7MN",
-    "cefr_range": "A1",
-    "topics": ["Hangeul Alphabet", "Reading", "Pronunciation"],
-    "skills": ["Reading", "Listening"]
-  },
-  {
-    "id": "yt_missvicky_vocabulary",
-    "type": "playlist",
-    "channel_name": "Korean with Miss Vicky 빅키쌤",
-    "resource_url": "https://www.youtube.com/playlist?list=PLECz2rpRD3Z0BoUjRuwlTYM9oyKvV6D68",
     "cefr_range": "A1-B1",
-    "topics": ["Vocabulary Hacks", "Essential Words"],
-    "skills": ["Vocabulary", "Listening"]
-  },
-  {
-    "id": "yt_gobilly_beginner_course",
-    "type": "playlist",
-    "channel_name": "Go! Billy Korean",
-    "resource_url": "https://www.youtube.com/playlist?list=PLbFrQnW0BNMUkAFj4MjYauXBPtO3I9O_k",
-    "cefr_range": "A1-A2",
-    "topics": ["Beginner Path", "Grammar Focus", "Conversational Phrases"],
+    "topics": ["Grammar Focus", "Speaking Patterns"],
     "skills": ["Speaking", "Listening", "Vocabulary"]
   },
   {
-    "id": "yt_single_hangul_billy",
-    "type": "video",
-    "channel_name": "Go! Billy Korean",
-    "resource_url": "https://www.youtube.com/watch?v=0ZhOeA0RD9o",
-    "cefr_range": "A1",
-    "topics": ["Hangeul Alphabet", "Reading", "Bootcamp"],
-    "skills": ["Reading", "Listening"],
-    "duration_iso8601": "PT1H3M22S"
-  },
-  {
-    "id": "yt_single_grammar_billy",
-    "type": "video",
-    "channel_name": "Go! Billy Korean",
-    "resource_url": "https://www.youtube.com/watch?v=fKk4x856v1k",
-    "cefr_range": "A1",
-    "topics": ["SOV Sentence Structure", "Grammar Focus"],
-    "skills": ["Reading", "Listening"],
-    "duration_iso8601": "PT12M15S"
-  },
-  {
-    "id": "yt_single_particles_billy",
-    "type": "video",
-    "channel_name": "Go! Billy Korean",
-    "resource_url": "https://www.youtube.com/watch?v=fS_a-R6pW_M",
-    "cefr_range": "A1",
-    "topics": ["Topic vs Subject Particles", "Grammar Focus"],
-    "skills": ["Reading", "Listening"],
-    "duration_iso8601": "PT15M40S"
-  },
-  {
-    "id": "yt_single_numbers_billy",
-    "type": "video",
-    "channel_name": "Go! Billy Korean",
-    "resource_url": "https://www.youtube.com/watch?v=UaO77_3b7g8",
-    "cefr_range": "A1-A2",
-    "topics": ["Native vs Sino Korean Numbers", "Vocabulary Hacks"],
-    "skills": ["Listening", "Vocabulary"],
-    "duration_iso8601": "PT18M25S"
-  },
-  {
-    "id": "yt_gobilly_grammar_lessons",
-    "type": "playlist",
-    "channel_name": "Go! Billy Korean",
-    "resource_url": "https://www.youtube.com/playlist?list=PLbFrQnW0KC2EYy_8k1G-DkF-s4W8NfN4T",
-    "cefr_range": "A1-B1",
-    "topics": ["Grammar Focus", "Conversational Phrases"],
-    "skills": ["Reading", "Listening", "Speaking"]
-  },
-  {
-    "id": "yt_vicky_conversational_korean",
-    "type": "playlist",
-    "channel_name": "Korean with Miss Vicky 빅키쌤",
-    "resource_url": "https://www.youtube.com/playlist?list=PLECz2rpRD3Z2_n0vM_8b_pC6kG5rM3qfB",
-    "cefr_range": "A1-A2",
-    "topics": ["Conversational Phrases", "Everyday Basics"],
+    "id": "yt_ttmik",
+    "type": "search",
+    "query": "Talk To Me In Korean conversation speaking listening practice",
+    "channel_name": "Talk To Me In Korean",
+    "cefr_range": "A1-B2",
+    "topics": ["Listening & Speak", "Everyday Basics"],
     "skills": ["Listening", "Speaking"]
+  },
+  {
+    "id": "yt_gobilly_pronunciation",
+    "type": "search",
+    "query": "Go! Billy Korean pronunciation skills sound change rules",
+    "channel_name": "Go! Billy Korean",
+    "cefr_range": "A1-B1",
+    "topics": ["Listening & Speak", "Hangeul Alphabet", "Pronunciation"],
+    "skills": ["Listening", "Speaking", "Reading"]
+  },
+  {
+    "id": "yt_koreanclass101",
+    "type": "search",
+    "query": "KoreanClass101 vocabulary grammar list hacks",
+    "channel_name": "KoreanClass101.com",
+    "cefr_range": "A1-B2",
+    "topics": ["Vocabulary Hacks", "Essential Words"],
+    "skills": ["Listening", "Vocabulary"]
+  },
+  {
+    "id": "yt_kdrama_movie_phrases",
+    "type": "search",
+    "query": "Learn Korean via K-Dramas & Movies phrases expressions drama",
+    "channel_name": "Talk To Me In Korean",
+    "cefr_range": "A1-B2",
+    "topics": ["Listening & Speak", "Conversational Phrases"],
+    "skills": ["Listening", "Speaking"]
+  },
+  {
+    "id": "yt_korean_englishman_culture",
+    "type": "search",
+    "query": "Korean Englishman",
+    "channel_name": "Korean Englishman (영국남자)",
+    "cefr_range": "A2-B2",
+    "topics": ["Vocabulary Hacks", "Everyday Basics"],
+    "skills": ["Listening", "Vocabulary"]
   }
 ]

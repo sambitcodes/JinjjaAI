@@ -72,7 +72,6 @@ export default function OnlineMaterials() {
         
         rawVideos.forEach((video: any, index: number) => {
           const seedId = video.source_seed_id || `seed_${index}`;
-          const isPlaylist = !!video.yt_playlist_id;
           
           if (!groups[seedId]) {
             const banners = [
@@ -94,22 +93,35 @@ export default function OnlineMaterials() {
             }
             
             let groupTitle = video.channel_title;
-            if (isPlaylist) {
-              if (seedId.includes("grammar")) groupTitle = "Core Korean Grammar Masterclass";
-              else if (seedId.includes("alphabet")) groupTitle = "Ultimate Hangeul Alphabet Course";
-              else if (seedId.includes("vocabulary")) groupTitle = "Everyday Essential Korean Words";
-              else if (seedId.includes("beginner")) groupTitle = "Go! Billy's Complete Beginner Path";
-            } else {
-              groupTitle = video.title;
-            }
+            if (seedId === "yt_learn_korean_beginner") groupTitle = "Learn Korean Language (Beginner Course)";
+            else if (seedId === "yt_missvicky") groupTitle = "Korean with Miss Vicky";
+            else if (seedId === "yt_ttmik") groupTitle = "Talk To Me In Korean (TTMIK)";
+            else if (seedId === "yt_gobilly_pronunciation") groupTitle = "Go! Billy's Korean Pronunciation Skills";
+            else if (seedId === "yt_koreanclass101") groupTitle = "KoreanClass101.com Lessons";
+            else if (seedId === "yt_kdrama_movie_phrases") groupTitle = "Learn Korean via K-Dramas & Movies";
+            else if (seedId === "yt_korean_englishman_culture") groupTitle = "Korean Englishman Cultural Immersion";
+            else if (seedId.includes("grammar") && !seedId.includes("missvicky")) groupTitle = "Core Korean Grammar Masterclass";
+            else if (seedId.includes("alphabet")) groupTitle = "Ultimate Hangeul Alphabet Course";
+            else if (seedId.includes("vocabulary")) groupTitle = "Everyday Essential Korean Words";
+            else if (seedId === "yt_gobilly_beginner_course") groupTitle = "Go! Billy's Complete Beginner Path";
  
+            let avatar = "🎥";
+            if (seedId.includes("missvicky")) avatar = "👩‍🏫";
+            else if (seedId.includes("ttmik")) avatar = "🗣️";
+            else if (seedId.includes("gobilly")) avatar = "🎙️";
+            else if (seedId.includes("koreanclass101")) avatar = "💡";
+            else if (seedId.includes("kdrama")) avatar = "🎬";
+            else if (seedId.includes("englishman")) avatar = "🇬🇧";
+            else if (seedId.includes("beginner")) avatar = "🌱";
+            else if (seedId.includes("grammar") || seedId.includes("alphabet") || seedId.includes("vocabulary")) avatar = "📚";
+
             groups[seedId] = {
               id: seedId,
               title: groupTitle,
               channel: video.channel_title,
               category,
               description: video.description || `Highly recommended study video series provided by ${video.channel_title} for practicing pronunciation, spacing, and sentence building structure.`,
-              avatar: isPlaylist ? "📚" : "🎥",
+              avatar,
               bannerImage,
               playlist: []
             };
@@ -123,84 +135,6 @@ export default function OnlineMaterials() {
         });
 
         const groupedResources = Object.values(groups);
-        
-        // Add 3 more high-quality curated virtual playlists to expand resources
-        groupedResources.push({
-          id: "yt_ttmik_real_life_convos",
-          title: "TTMIK Real Life Korean Conversations",
-          channel: "Talk To Me In Korean",
-          category: "Listening & Speak",
-          description: "Learn natural everyday Korean conversations, common vocabulary, and sentence structures with native speakers.",
-          avatar: "🗣️",
-          bannerImage: "from-indigo-600/20 via-zinc-900/90 to-zinc-950 hover:border-indigo-500/40 hover:shadow-[0_0_35px_rgba(99,102,241,0.15)]",
-          playlist: [
-            { title: "Ordering Coffee & Customizing Drinks", videoId: "fS_a-R6pW_M", duration: "15:40" },
-            { title: "Shopping in Myeongdong & Asking for Prices", videoId: "UaO77_3b7g8", duration: "18:25" },
-            { title: "Getting a Taxi & Directions in Seoul", videoId: "zIwLPeRuQkM", duration: "14:45" },
-            { title: "Conversing with Friends at a Café", videoId: "iYsq-Vij48Q", duration: "07:19" }
-          ]
-        });
-
-        groupedResources.push({
-          id: "yt_koreanclass101_vocab_hacks",
-          title: "KoreanClass101 Weekly Vocabulary Hacks",
-          channel: "KoreanClass101.com",
-          category: "Vocabulary Hacks",
-          description: "Supercharge your vocabulary retention with weekly high-yield words, essential verbs, and daily conversation patterns.",
-          avatar: "💡",
-          bannerImage: "from-pink-600/20 via-zinc-900/90 to-zinc-950 hover:border-pink-500/40 hover:shadow-[0_0_35px_rgba(236,72,153,0.15)]",
-          playlist: [
-            { title: "Top 25 Essential Korean Verbs", videoId: "WCmh1zWUXdE", duration: "29:38" },
-            { title: "Must-Know Expressions for Beginners", videoId: "Cmvk3E3NThI", duration: "11:53" },
-            { title: "Native vs. Sino Korean Numbers Hack", videoId: "UaO77_3b7g8", duration: "18:25" }
-          ]
-        });
-
-        groupedResources.push({
-          id: "yt_gobilly_pronunciation_clinic",
-          title: "Go! Billy's Korean Pronunciation Clinic",
-          channel: "Go! Billy Korean",
-          category: "Listening & Speak",
-          description: "Learn how to sound natural, Master Hangul pronunciation rules, double batchim, and sound assimilation rules.",
-          avatar: "🎙️",
-          bannerImage: "from-emerald-600/20 via-zinc-900/90 to-zinc-950 hover:border-emerald-500/40 hover:shadow-[0_0_35px_rgba(16,185,129,0.15)]",
-          playlist: [
-            { title: "Learn Hangul Sound Mechanics", videoId: "0ZhOeA0RD9o", duration: "1:03:22" },
-            { title: "Conjugating Verbs and Sound Flow", videoId: "fKk4x856v1k", duration: "12:15" },
-            { title: "Essential Particles Pronunciation Rules", videoId: "fS_a-R6pW_M", duration: "15:40" }
-          ]
-        });
-
-        groupedResources.push({
-          id: "yt_kdrama_movie_phrases",
-          title: "Learn Korean via K-Dramas & Movies",
-          channel: "Talk To Me In Korean",
-          category: "Listening & Speak",
-          description: "Learn everyday basic words, idiomatic expressions, and standard conversational phrases used in popular Korean dramas and movies.",
-          avatar: "🎬",
-          bannerImage: "from-red-600/20 via-zinc-900/90 to-zinc-950 hover:border-red-500/40 hover:shadow-[0_0_35px_rgba(239,68,68,0.15)]",
-          playlist: [
-            { title: "50 Korean Phrases You Hear in Every K-Drama", videoId: "fS_a-R6pW_M", duration: "12:35" },
-            { title: "Learn Korean with Parasite & Squid Game", videoId: "UaO77_3b7g8", duration: "18:10" },
-            { title: "Expressing Emotions Like a Drama Character", videoId: "iYsq-Vij48Q", duration: "14:22" }
-          ]
-        });
-
-        groupedResources.push({
-          id: "yt_korean_englishman_culture",
-          title: "Korean Englishman Cultural Immersion",
-          channel: "Korean Englishman (영국남자)",
-          category: "Vocabulary Hacks",
-          description: "Join Josh and Ollie as they introduce Korean food, street markets, and modern culture to foreigners. Great for colloquial vocabulary and cultural slang.",
-          avatar: "🇬🇧",
-          bannerImage: "from-blue-600/20 via-zinc-900/90 to-zinc-950 hover:border-blue-500/40 hover:shadow-[0_0_35px_rgba(59,130,246,0.15)]",
-          playlist: [
-            { title: "British High Schoolers Try Korean Spicy Fried Chicken", videoId: "WCmh1zWUXdE", duration: "10:15" },
-            { title: "Korean BBQ Party with Hollywood Stars", videoId: "Cmvk3E3NThI", duration: "15:40" },
-            { title: "Exploring Gwangjang Street Market Food Guide", videoId: "0ZhOeA0RD9o", duration: "12:50" }
-          ]
-        });
-
         setResources(groupedResources);
     } catch (err) {
       console.error("Failed to load online materials:", err);

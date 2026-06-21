@@ -7,7 +7,8 @@ import {
   Trash2, RotateCcw, Scroll, ShieldAlert, Crop, X, ChevronRight, CheckCircle2,
   Trophy, Calendar, Briefcase, Volume2, BarChart3, BrainCircuit, Zap,
   Mic, GraduationCap, BookMarked, Layers, RefreshCw, Compass,
-  Activity, Clock, Lock, Heart, Medal, Map, Pencil, Save, User as UserIcon
+  Activity, Clock, Lock, Heart, Medal, Map, Pencil, Save, User as UserIcon,
+  Library, Globe, Gamepad2
 } from "lucide-react";
 import { ensureAuthenticated, apiRequest } from "../../lib/api";
 
@@ -45,7 +46,7 @@ interface CourseState {
   lastVisited: string | null;
 }
 
-type DashTab = "overview" | "journey" | "achievements" | "activity" | "calendar";
+type DashTab = "profile" | "journey" | "achievements" | "activity" | "calendar" | "quick_access";
 
 const getPhaseSteps = (courseId: number, phaseNum: number): string[] => {
   // Course 0 / id: 1 (Pre-A1 Hangeul & Sound System Bootcamp)
@@ -338,28 +339,28 @@ const APP_FEATURES = [
     link: "/tutor", cta: "Start Chat",
   },
   {
-    icon: <Volume2 className="w-6 h-6 text-pink-400" />, bg: "bg-pink-500/10 border-pink-500/20",
-    title: "Neural TTS Voice Engine",
-    desc: "Premium Microsoft Edge Neural TTS with bilingual auto-segmentation. 3 Korean voices + 5 English voices. Adjustable playback speed, word-by-word karaoke highlighting.",
-    link: "/tutor", cta: "Try TTS",
+    icon: <Gamepad2 className="w-6 h-6 text-emerald-400" />, bg: "bg-emerald-500/10 border-emerald-500/20",
+    title: "Games Arcade",
+    desc: "Practice Korean vocabulary, spelling, and character recognition with fun, interactive gaming challenges in our Arcade.",
+    link: "/games", cta: "Play Games",
   },
   {
-    icon: <Mic className="w-6 h-6 text-red-400" />, bg: "bg-red-500/10 border-red-500/20",
-    title: "Speech Lab & Pronunciation",
-    desc: "Record your Korean pronunciation, get phoneme-level accuracy scores powered by Faster Whisper. See syllable-by-syllable color feedback and track your improvement over time.",
-    link: "/lessons", cta: "Practice Speaking",
+    icon: <Library className="w-6 h-6 text-pink-400" />, bg: "bg-pink-500/10 border-pink-500/20",
+    title: "Materials Warehouse",
+    desc: "Access physical Korean textbooks, Talk To Me In Korean Workbooks, and save your progress with physical ribbon bookmarks.",
+    link: "/materials", cta: "Open Warehouse",
   },
   {
-    icon: <BarChart3 className="w-6 h-6 text-blue-400" />, bg: "bg-blue-500/10 border-blue-500/20",
-    title: "AI Benchmarks Dashboard",
-    desc: "Compare all 9 brain models and all TTS voices with interactive heatmaps, per-dimension breakdowns, and ranked leaderboards. See which model gives the best Korean tutor responses.",
+    icon: <Globe className="w-6 h-6 text-blue-400" />, bg: "bg-blue-500/10 border-blue-500/20",
+    title: "Online Hub Playlists",
+    desc: "Watch and learn from selected YouTube channels like Miss Vicky, Go Billy, TTMIK, and Korean Englishman with interactive transcripts.",
+    link: "/online", cta: "Visit Online Hub",
+  },
+  {
+    icon: <BarChart3 className="w-6 h-6 text-purple-400" />, bg: "bg-purple-500/10 border-purple-500/20",
+    title: "AI Benchmarks",
+    desc: "Compare all 9 brain models and all Edge TTS voices with ranked leaderboards and leader heatmaps to see which model responds best.",
     link: "/benchmarks", cta: "View Benchmarks",
-  },
-  {
-    icon: <BrainCircuit className="w-6 h-6 text-purple-400" />, bg: "bg-purple-500/10 border-purple-500/20",
-    title: "Adaptive RAG Curriculum",
-    desc: "Retrieval-Augmented Generation engine creates context-aware lessons from uploaded Korean textbook PDFs. Each lesson adapts to your mistakes — more mistakes = more scaffolding.",
-    link: "/lessons", cta: "Launch Lessons",
   },
 ];
 
@@ -450,7 +451,7 @@ export default function Dashboard() {
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [stats, setStats] = useState<StatsData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<DashTab>("overview");
+  const [activeTab, setActiveTab] = useState<DashTab>("profile");
   const [activitySummary, setActivitySummary] = useState<string | null>(null);
   const [loadingSummary, setLoadingSummary] = useState(false);
 
@@ -804,11 +805,12 @@ export default function Dashboard() {
   }
 
   const TABS: { id: DashTab; label: string; emoji: string }[] = [
-    { id: "overview",      label: "Overview",      emoji: "🏠" },
+    { id: "profile",       label: "Profile",        emoji: "👤" },
     { id: "journey",       label: "My Journey",    emoji: "📚" },
     { id: "achievements",  label: "Achievements",  emoji: "🏆" },
     { id: "activity",      label: "Activity",      emoji: "📅" },
     { id: "calendar",      label: "Study Calendar", emoji: "🗓️" },
+    { id: "quick_access",  label: "Quick Access",  emoji: "⚡" },
   ];
 
   return (
@@ -817,279 +819,294 @@ export default function Dashboard() {
       <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-blue-600/3 rounded-full blur-[180px] pointer-events-none" />
       <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-amber-600/3 rounded-full blur-[160px] pointer-events-none" />
 
-      <div className="w-full max-w-[98%] mx-auto p-4 md:p-6 flex flex-col lg:flex-row gap-6 relative z-10">
+      <div className="w-full max-w-[98%] mx-auto p-4 md:p-6 flex flex-col gap-6 relative z-10">
+
+        {/* Tab Bar at the very top */}
+        <div className="flex gap-1.5 bg-zinc-900/60 p-1.5 rounded-2xl border border-white/5 overflow-x-auto w-full">
+          {TABS.map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 cursor-pointer whitespace-nowrap flex-shrink-0 ${
+                activeTab === tab.id
+                  ? "bg-gradient-to-r from-brand-600 to-brand-500 text-white shadow-lg shadow-brand-500/20"
+                  : "text-zinc-400 hover:text-white hover:bg-white/5"
+              }`}
+            >
+              <span>{tab.emoji}</span>
+              <span>{tab.label}</span>
+            </button>
+          ))}
+        </div>
 
         {/* ═══════════════════════════════════════════════════════
-            LEFT SIDEBAR — Profile + Stats
+            MAIN CONTENT — Tabbed panels
         ═══════════════════════════════════════════════════════ */}
-        <aside className="w-full lg:w-80 flex flex-col gap-5 flex-shrink-0">
-
-          {/* User Card */}
-          <div className="glass-panel p-6 rounded-3xl border border-white/5 bg-zinc-900/30 space-y-5">
-            {/* Avatar */}
-            <div className="flex flex-col items-center text-center gap-3">
-              <div
-                onClick={() => fileInputRef.current?.click()}
-                className="w-24 h-24 rounded-full bg-gradient-to-tr from-blue-600 via-amber-400 to-red-600 p-1 shadow-xl cursor-pointer relative group"
-                title="Click to upload photo"
-              >
-                <input type="file" ref={fileInputRef} onChange={handleFileSelect} className="hidden" accept="image/*" />
-                <div className="w-full h-full bg-zinc-950 rounded-full flex items-center justify-center text-3xl overflow-hidden relative">
-                  {userAvatar ? <img src={userAvatar} alt="Profile" className="w-full h-full object-cover" /> : <span>🇰🇷</span>}
-                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-[10px] font-black uppercase text-white tracking-widest">Edit</div>
-                </div>
-              </div>
-
-              <div>
-                <h2 className="font-extrabold text-2xl text-white">{profile?.display_name || "Learner"}</h2>
-                {profile?.korean_name && <p className="text-brand-gold font-korean font-extrabold text-base">한국명: {profile.korean_name}</p>}
-                <p className="text-zinc-500 text-xs mt-0.5">Native: {profile?.native_language || "English"}</p>
-              </div>
-
-              {/* XP Tier Badge */}
-              <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-black ${currentTier.bg} ${currentTier.color}`}>
-                <span className="text-base">{currentTier.emoji}</span>
-                <span>{currentTier.name}</span>
-              </div>
-
-              {/* Profile details */}
-              <div className="w-full space-y-2">
-                {profile?.dob && (
-                  <div className="flex items-center gap-3 bg-zinc-950/60 p-2.5 rounded-xl border border-white/5">
-                    <div className="p-1.5 bg-pink-500/10 text-pink-400 rounded-lg border border-pink-500/20"><Calendar className="w-3.5 h-3.5" /></div>
-                    <div className="text-left">
-                      <span className="block text-[8px] text-zinc-500 uppercase tracking-widest font-black">Age</span>
-                      <span className="block text-xs font-extrabold text-zinc-200">{calculateAge(profile.dob)} Years Old</span>
-                    </div>
-                  </div>
-                )}
-                {profile?.occupation && (
-                  <div className="flex items-center gap-3 bg-zinc-950/60 p-2.5 rounded-xl border border-white/5">
-                    <div className="p-1.5 bg-brand-400/10 text-brand-400 rounded-lg border border-brand-400/20"><Briefcase className="w-3.5 h-3.5" /></div>
-                    <div className="text-left truncate max-w-[190px]">
-                      <span className="block text-[8px] text-zinc-500 uppercase tracking-widest font-black">Occupation</span>
-                      <span className="block text-xs font-extrabold text-zinc-200 truncate">{profile.occupation}</span>
-                    </div>
-                  </div>
-                )}
-                {profile?.korean_proficiency && (
-                  <div className="flex items-center gap-3 bg-zinc-950/60 p-2.5 rounded-xl border border-white/5">
-                    <div className="p-1.5 bg-teal-500/10 text-teal-400 rounded-lg border border-teal-500/20"><Trophy className="w-3.5 h-3.5" /></div>
-                    <div className="text-left truncate max-w-[190px]">
-                      <span className="block text-[8px] text-zinc-500 uppercase tracking-widest font-black">Proficiency</span>
-                      <span className="block text-xs font-extrabold text-teal-400 truncate">{profile.korean_proficiency.split(" (")[0]}</span>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Edit Profile Button */}
-              <button
-                onClick={openEditModal}
-                className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-brand-500/10 hover:bg-brand-500/20 border border-brand-500/20 text-brand-400 hover:text-brand-300 text-xs font-bold transition cursor-pointer"
-              >
-                <Pencil className="w-3.5 h-3.5" /><span>Edit Profile</span>
-              </button>
-
-              {/* Reset / Delete */}
-              <div className="flex gap-2 w-full pt-1">
-                <button onClick={() => { setResetConfirmInput(""); setShowResetModal(true); }}
-                  className="flex-1 flex items-center justify-center gap-1 px-3 py-2 rounded-xl bg-zinc-950 hover:bg-red-500/10 border border-white/5 text-zinc-500 hover:text-red-400 hover:border-red-500/20 text-xs font-semibold transition cursor-pointer">
-                  <RotateCcw className="w-3 h-3" /><span>Reset</span>
-                </button>
-                <button onClick={() => { setDeleteConfirmInput(""); setShowDeleteModal(true); }}
-                  className="flex-1 flex items-center justify-center gap-1 px-3 py-2 rounded-xl bg-red-950/20 hover:bg-red-500/20 border border-red-500/10 text-red-500/70 hover:text-red-400 text-xs font-semibold transition cursor-pointer">
-                  <Trash2 className="w-3 h-3" /><span>Delete</span>
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Quick Stats */}
-          <div className="grid grid-cols-2 gap-3">
-            {[
-              { label: "Daily Streak", val: `${streak}`, unit: "days", icon: <Flame className="w-5 h-5 text-orange-400 animate-pulse" />, color: "border-orange-500/20 bg-orange-500/5" },
-              { label: "Total XP", val: totalXP.toLocaleString(), unit: "xp", icon: <Zap className="w-5 h-5 text-amber-400" />, color: "border-amber-500/20 bg-amber-500/5" },
-              { label: "Lessons Done", val: `${lessonsCompleted}`, unit: "lessons", icon: <CheckCircle2 className="w-5 h-5 text-emerald-400" />, color: "border-emerald-500/20 bg-emerald-500/5" },
-              { label: "Badges Earned", val: `${earnedBadges}`, unit: `/ ${badges.length}`, icon: <Medal className="w-5 h-5 text-blue-400" />, color: "border-blue-500/20 bg-blue-500/5" },
-            ].map(c => (
-              <div key={c.label} className={`glass-panel p-4 rounded-2xl border ${c.color} text-center space-y-1`}>
-                <div className="flex justify-center">{c.icon}</div>
-                <div className="text-xl font-black text-white">{c.val}</div>
-                <div className="text-[9px] text-zinc-500 font-black uppercase tracking-widest">{c.label}</div>
-              </div>
-            ))}
-          </div>
-
-          {/* XP Tier Progress */}
-          <div className="glass-panel p-5 rounded-2xl border border-white/5 bg-zinc-900/20 space-y-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <span className="text-[10px] text-zinc-500 uppercase tracking-widest font-black block">XP Tier</span>
-                <div className={`text-base font-black flex items-center gap-1.5 ${currentTier.color}`}>
-                  <span>{currentTier.emoji}</span> {currentTier.name}
-                </div>
-              </div>
-              {nextTier && (
-                <div className="text-right">
-                  <span className="text-[10px] text-zinc-500 uppercase tracking-widest block">Next</span>
-                  <span className="text-xs font-black text-zinc-400">{nextTier.emoji} {nextTier.name}</span>
-                </div>
-              )}
-            </div>
-            <div className="h-2 w-full bg-zinc-900 rounded-full overflow-hidden border border-white/5">
-              <div className="h-full rounded-full bg-gradient-to-r from-amber-500 to-yellow-400 transition-all duration-1000" style={{ width: `${xpProgress}%` }} />
-            </div>
-            {nextTier && <p className="text-[10px] text-zinc-500 text-center">{xpToNext.toLocaleString()} XP to {nextTier.name}</p>}
-          </div>
-
-          {/* Quick Navigation */}
-          <div className="glass-panel p-4 rounded-2xl border border-white/5 space-y-2">
-            <span className="text-[10px] text-zinc-500 uppercase tracking-widest font-black block mb-3">Quick Access</span>
-            {[
-              { href: "/lessons", label: "Open Lessons", icon: <BookOpen className="w-4 h-4 text-teal-400" /> },
-              { href: "/tutor", label: "Chat with Gwan-Sik", icon: <MessageSquare className="w-4 h-4 text-blue-400" /> },
-              { href: "/benchmarks", label: "AI Benchmarks", icon: <BarChart3 className="w-4 h-4 text-purple-400" /> },
-            ].map(l => (
-              <Link key={l.href} href={l.href}
-                className="flex items-center gap-3 p-3 rounded-xl bg-zinc-950/40 border border-white/5 hover:bg-white/5 hover:border-white/10 transition text-sm font-bold text-zinc-300 hover:text-white group cursor-pointer">
-                {l.icon}
-                <span className="flex-1">{l.label}</span>
-                <ChevronRight className="w-3.5 h-3.5 text-zinc-600 group-hover:text-zinc-300 transition" />
-              </Link>
-            ))}
-          </div>
-
-        </aside>
-
-        {/* ═══════════════════════════════════════════════════════
-            MAIN CONTENT — Tabbed
-        ═══════════════════════════════════════════════════════ */}
-        <main className="flex-grow min-w-0 space-y-6">
-
-          {/* Welcome Banner */}
-          <section className="glass-panel p-6 md:p-8 rounded-3xl border border-white/5 bg-gradient-to-r from-zinc-950 via-zinc-900/80 to-amber-950/10 relative overflow-hidden">
-            <div className="absolute -right-10 -top-10 text-[140px] font-black text-white/3 select-none font-korean">한</div>
-            <div className="flex flex-col md:flex-row items-center md:items-start gap-5 relative z-10">
-              <img src="/LOGO.png" className="w-20 h-20 rounded-2xl object-contain bg-zinc-950/80 p-2.5 border border-white/10 shadow-xl shadow-amber-500/10 flex-shrink-0" alt="HangeulAI" />
-              <div className="space-y-2 text-center md:text-left">
-                <div className="inline-flex items-center gap-1.5 bg-amber-500/10 text-amber-400 font-extrabold text-xs py-1 px-3 rounded-full border border-amber-500/20">
-                  <Sparkles className="w-3.5 h-3.5" /> <span>진짜 AI (Jinjja AI)</span>
-                </div>
-                <h1 className="text-3xl md:text-4xl font-black tracking-tight text-white">
-                  Annyeong, <span className="bg-gradient-to-r from-amber-400 via-red-400 to-blue-400 bg-clip-text text-transparent">{profile?.display_name || "Learner"}</span>! 🌸
-                </h1>
-                <p className="text-zinc-400 text-sm leading-relaxed max-w-xl">
-                  Your scientific Korean learning command center. Track your progress, practice with AI, and master Hangeul one phase at a time.
-                </p>
-                <div className="flex flex-wrap gap-3 pt-2 justify-center md:justify-start">
-                  <Link href="/lessons" className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-zinc-950 font-black py-2.5 px-5 rounded-xl shadow-lg shadow-amber-500/20 transition text-sm cursor-pointer">
-                    <PlayCircle className="w-4 h-4" /> Continue Learning
-                  </Link>
-                  <Link href="/tutor" className="inline-flex items-center gap-2 bg-zinc-900 hover:bg-zinc-800 text-zinc-200 font-bold py-2.5 px-5 rounded-xl border border-white/10 hover:border-blue-500/30 transition text-sm cursor-pointer">
-                    <MessageSquare className="w-4 h-4 text-blue-400" /> Chat with Gwan-Sik
-                  </Link>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          {/* Tab Bar */}
-          <div className="flex gap-1.5 bg-zinc-900/60 p-1.5 rounded-2xl border border-white/5 overflow-x-auto">
-            {TABS.map(tab => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 cursor-pointer whitespace-nowrap flex-shrink-0 ${
-                  activeTab === tab.id
-                    ? "bg-gradient-to-r from-brand-600 to-brand-500 text-white shadow-lg shadow-brand-500/20"
-                    : "text-zinc-400 hover:text-white hover:bg-white/5"
-                }`}
-              >
-                <span>{tab.emoji}</span>
-                <span>{tab.label}</span>
-              </button>
-            ))}
-          </div>
+        <main className="w-full space-y-6">
 
           {/* ─────────────────────────────────────────────────────
-              TAB: OVERVIEW
+              TAB: PROFILE (Replacing Overview)
           ───────────────────────────────────────────────────── */}
-          {activeTab === "overview" && (
+          {activeTab === "profile" && (
             <div className="space-y-6">
-
-              {/* Mastery Goals */}
-              <section className="glass-panel p-6 rounded-3xl border border-white/5 space-y-5">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Target className="w-5 h-5 text-amber-400" />
-                    <h2 className="text-xl font-bold text-white">Mastery Goals</h2>
+              {/* Welcome Banner */}
+              <section className="glass-panel p-6 md:p-8 rounded-3xl border border-white/5 bg-gradient-to-r from-zinc-950 via-zinc-900/80 to-amber-950/10 relative overflow-hidden">
+                <div className="absolute -right-10 -top-10 text-[140px] font-black text-white/3 select-none font-korean">한</div>
+                <div className="flex flex-col md:flex-row items-center md:items-start gap-5 relative z-10">
+                  <img src="/LOGO.png" className="w-20 h-20 rounded-2xl object-contain bg-zinc-950/80 p-2.5 border border-white/10 shadow-xl shadow-amber-500/10 flex-shrink-0" alt="HangeulAI" />
+                  <div className="space-y-2 text-center md:text-left">
+                    <div className="inline-flex items-center gap-1.5 bg-amber-500/10 text-amber-400 font-extrabold text-xs py-1 px-3 rounded-full border border-amber-500/20">
+                      <Sparkles className="w-3.5 h-3.5" /> <span>진짜 AI (Jinjja AI)</span>
+                    </div>
+                    <h1 className="text-3xl md:text-4xl font-black tracking-tight text-white">
+                      Annyeong, <span className="bg-gradient-to-r from-amber-400 via-red-400 to-blue-400 bg-clip-text text-transparent">{profile?.display_name || "Learner"}</span>! 🌸
+                    </h1>
+                    <p className="text-zinc-400 text-sm leading-relaxed max-w-xl">
+                      Your scientific Korean learning command center. Track your progress, practice with AI, and master Hangeul one phase at a time.
+                    </p>
+                    <div className="flex flex-wrap gap-3 pt-2 justify-center md:justify-start">
+                      <Link href="/lessons" className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-zinc-950 font-black py-2.5 px-5 rounded-xl shadow-lg shadow-amber-500/20 transition text-sm cursor-pointer">
+                        <PlayCircle className="w-4 h-4" /> Continue Learning
+                      </Link>
+                      <Link href="/tutor" className="inline-flex items-center gap-2 bg-zinc-900 hover:bg-zinc-800 text-zinc-200 font-bold py-2.5 px-5 rounded-xl border border-white/10 hover:border-blue-500/30 transition text-sm cursor-pointer">
+                        <MessageSquare className="w-4 h-4 text-blue-400" /> Chat with Gwan-Sik
+                      </Link>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2 text-xs text-zinc-500">
-                    <span className="font-mono bg-zinc-900 px-2 py-0.5 rounded border border-white/5">
-                      {quizAccuracy.total > 0 ? `${quizAccuracy.correct}/${quizAccuracy.total} quiz correct` : "No quiz data yet"}
-                    </span>
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                  <MasteryBar
-                    label="Vocabulary" emoji="📖"
-                    value={vocabMastery}
-                    color="bg-gradient-to-r from-amber-600 to-yellow-400"
-                    sublabel="from lesson history"
-                  />
-                  <MasteryBar
-                    label="Grammar Accuracy" emoji="📝"
-                    value={blendedGrammar}
-                    color="bg-gradient-to-r from-blue-700 to-blue-400"
-                    sublabel={quizAccuracy.total > 0 ? `blended with ${quizAccuracyPct}% quiz score` : "from API stats"}
-                  />
-                  <MasteryBar
-                    label="Pronunciation / Speech Lab" emoji="🎤"
-                    value={pronunciationAvg}
-                    color="bg-gradient-to-r from-red-700 to-red-400"
-                    sublabel="from recording sessions"
-                  />
-                  <MasteryBar
-                    label="Overall Fluency" emoji="🌸"
-                    value={overallFluency}
-                    color="bg-gradient-to-r from-purple-600 via-pink-500 to-orange-400"
-                    sublabel="weighted average"
-                  />
-                </div>
-                <div className="bg-zinc-950/40 p-4 rounded-2xl border border-white/5 text-xs text-zinc-400 flex items-start gap-2">
-                  <span className="text-blue-400 font-black mt-0.5">ℹ</span>
-                  <span>Grammar Accuracy blends API lesson stats with your live quiz correct-answer rate as you complete lessons and checkpoints.</span>
                 </div>
               </section>
 
-              {/* Hangeul History */}
-              <section className="glass-panel p-6 rounded-3xl border border-white/5 space-y-4 bg-zinc-900/10 relative overflow-hidden">
-                <div className="absolute -right-8 -bottom-8 text-[110px] font-black text-white/4 select-none font-korean">訓民正音</div>
-                <div className="flex items-center gap-2 text-amber-400 font-extrabold">
-                  <Scroll className="w-5 h-5" />
-                  <h2 className="text-lg font-bold">The Story of Hangeul (한글의 역사)</h2>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 relative z-10">
-                  {[
-                    { dot: "bg-blue-500", title: "King Sejong's Vision", content: "In 1443, King Sejong the Great created Hangeul specifically to increase literacy for all Korean citizens — before this, only nobles who learned Chinese Hanja could read and write." },
-                    { dot: "bg-amber-400", title: "Scientifically Designed", content: "Linguists call Hangeul the most scientific writing system in the world. Consonants are modeled after the mouth and tongue positions when making each sound, while vowels represent Sky, Earth, and Humanity." },
-                    { dot: "bg-red-500", title: "\"A Morning's Study\"", content: "From the 1446 Hunminjeongeum manual: 'A wise man can acquaint himself before the morning is over; a stupid man can learn them in ten days.' Still the world's most accessible alphabet." },
-                  ].map(c => (
-                    <div key={c.title} className="bg-zinc-950/50 p-4 rounded-2xl border border-white/5 hover:border-zinc-700 transition space-y-2">
-                      <h4 className="font-bold text-zinc-200 text-sm flex items-center gap-1.5">
-                        <span className={`w-2 h-2 rounded-full ${c.dot}`} />{c.title}
-                      </h4>
-                      <p className="text-xs text-zinc-400 leading-relaxed">{c.content}</p>
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                
+                {/* Left Column: User Card */}
+                <div className="lg:col-span-4 space-y-5">
+                  <div className="glass-panel p-6 rounded-3xl border border-white/5 bg-zinc-900/30 space-y-5">
+                    {/* Avatar */}
+                    <div className="flex flex-col items-center text-center gap-3">
+                      <div
+                        onClick={() => fileInputRef.current?.click()}
+                        className="w-24 h-24 rounded-full bg-gradient-to-tr from-blue-600 via-amber-400 to-red-600 p-1 shadow-xl cursor-pointer relative group"
+                        title="Click to upload photo"
+                      >
+                        <input type="file" ref={fileInputRef} onChange={handleFileSelect} className="hidden" accept="image/*" />
+                        <div className="w-full h-full bg-zinc-950 rounded-full flex items-center justify-center text-3xl overflow-hidden relative">
+                          {userAvatar ? <img src={userAvatar} alt="Profile" className="w-full h-full object-cover" /> : <span>🇰🇷</span>}
+                          <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-[10px] font-black uppercase text-white tracking-widest">Edit</div>
+                        </div>
+                      </div>
+
+                      <div>
+                        <h2 className="font-extrabold text-2xl text-white">{profile?.display_name || "Learner"}</h2>
+                        {profile?.korean_name && <p className="text-brand-gold font-korean font-extrabold text-base">한국명: {profile.korean_name}</p>}
+                        <p className="text-zinc-500 text-xs mt-0.5">Native: {profile?.native_language || "English"}</p>
+                      </div>
+
+                      {/* XP Tier Badge */}
+                      <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-black ${currentTier.bg} ${currentTier.color}`}>
+                        <span className="text-base">{currentTier.emoji}</span>
+                        <span>{currentTier.name}</span>
+                      </div>
+
+                      {/* Profile details */}
+                      <div className="w-full space-y-2">
+                        {profile?.dob && (
+                          <div className="flex items-center gap-3 bg-zinc-950/60 p-2.5 rounded-xl border border-white/5">
+                            <div className="p-1.5 bg-pink-500/10 text-pink-400 rounded-lg border border-pink-500/20"><Calendar className="w-3.5 h-3.5" /></div>
+                            <div className="text-left">
+                              <span className="block text-[8px] text-zinc-500 uppercase tracking-widest font-black">Age</span>
+                              <span className="block text-xs font-extrabold text-zinc-200">{calculateAge(profile.dob)} Years Old</span>
+                            </div>
+                          </div>
+                        )}
+                        {profile?.occupation && (
+                          <div className="flex items-center gap-3 bg-zinc-950/60 p-2.5 rounded-xl border border-white/5">
+                            <div className="p-1.5 bg-brand-400/10 text-brand-400 rounded-lg border border-brand-400/20"><Briefcase className="w-3.5 h-3.5" /></div>
+                            <div className="text-left truncate max-w-[190px]">
+                              <span className="block text-[8px] text-zinc-500 uppercase tracking-widest font-black">Occupation</span>
+                              <span className="block text-xs font-extrabold text-zinc-200 truncate">{profile.occupation}</span>
+                            </div>
+                          </div>
+                        )}
+                        {profile?.korean_proficiency && (
+                          <div className="flex items-center gap-3 bg-zinc-950/60 p-2.5 rounded-xl border border-white/5">
+                            <div className="p-1.5 bg-teal-500/10 text-teal-400 rounded-lg border border-teal-500/20"><Trophy className="w-3.5 h-3.5" /></div>
+                            <div className="text-left truncate max-w-[190px]">
+                              <span className="block text-[8px] text-zinc-500 uppercase tracking-widest font-black">Proficiency</span>
+                              <span className="block text-xs font-extrabold text-teal-400 truncate">{profile.korean_proficiency.split(" (")[0]}</span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Edit Profile Button */}
+                      <button
+                        onClick={openEditModal}
+                        className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-brand-500/10 hover:bg-brand-500/20 border border-brand-500/20 text-brand-400 hover:text-brand-300 text-xs font-bold transition cursor-pointer"
+                      >
+                        <Pencil className="w-3.5 h-3.5" /><span>Edit Profile</span>
+                      </button>
+
+                      {/* Reset / Delete */}
+                      <div className="flex gap-2 w-full pt-1">
+                        <button onClick={() => { setResetConfirmInput(""); setShowResetModal(true); }}
+                          className="flex-1 flex items-center justify-center gap-1 px-3 py-2 rounded-xl bg-zinc-950 hover:bg-red-500/10 border border-white/5 text-zinc-500 hover:text-red-400 hover:border-red-500/20 text-xs font-semibold transition cursor-pointer">
+                          <RotateCcw className="w-3.5 h-3.5" /><span>Reset</span>
+                        </button>
+                        <button onClick={() => { setDeleteConfirmInput(""); setShowDeleteModal(true); }}
+                          className="flex-1 flex items-center justify-center gap-1 px-3 py-2 rounded-xl bg-red-950/20 hover:bg-red-500/20 border border-red-500/10 text-red-500/70 hover:text-red-400 text-xs font-semibold transition cursor-pointer">
+                          <Trash2 className="w-3.5 h-3.5" /><span>Delete</span>
+                        </button>
+                      </div>
                     </div>
+                  </div>
+                </div>
+
+                {/* Right Column: Streaks/Stats/Badges bodies, Mastery goals, Hangeul story */}
+                <div className="lg:col-span-8 space-y-6">
+                  {/* Quick Stats */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    {[
+                      { label: "Daily Streak", val: `${streak}`, unit: "days", icon: <Flame className="w-5 h-5 text-orange-400 animate-pulse" />, color: "border-orange-500/20 bg-orange-500/5" },
+                      { label: "Total XP", val: totalXP.toLocaleString(), unit: "xp", icon: <Zap className="w-5 h-5 text-amber-400" />, color: "border-amber-500/20 bg-amber-500/5" },
+                      { label: "Lessons Done", val: `${lessonsCompleted}`, unit: "lessons", icon: <CheckCircle2 className="w-5 h-5 text-emerald-400" />, color: "border-emerald-500/20 bg-emerald-500/5" },
+                      { label: "Badges Earned", val: `${earnedBadges}`, unit: `/ ${badges.length}`, icon: <Medal className="w-5 h-5 text-blue-400" />, color: "border-blue-500/20 bg-blue-500/5" },
+                    ].map(c => (
+                      <div key={c.label} className={`glass-panel p-4 rounded-2xl border ${c.color} text-center space-y-1`}>
+                        <div className="flex justify-center">{c.icon}</div>
+                        <div className="text-xl font-black text-white">{c.val}</div>
+                        <div className="text-[9px] text-zinc-500 font-black uppercase tracking-widest">{c.label}</div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* XP Tier Progress */}
+                  <div className="glass-panel p-5 rounded-2xl border border-white/5 bg-zinc-900/20 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <span className="text-[10px] text-zinc-500 uppercase tracking-widest font-black block">XP Tier</span>
+                        <div className={`text-base font-black flex items-center gap-1.5 ${currentTier.color}`}>
+                          <span>{currentTier.emoji}</span> {currentTier.name}
+                        </div>
+                      </div>
+                      {nextTier && (
+                        <div className="text-right">
+                          <span className="text-[10px] text-zinc-500 uppercase tracking-widest block">Next</span>
+                          <span className="text-xs font-black text-zinc-400">{nextTier.emoji} {nextTier.name}</span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="h-2 w-full bg-zinc-900 rounded-full overflow-hidden border border-white/5">
+                      <div className="h-full rounded-full bg-gradient-to-r from-amber-500 to-yellow-400 transition-all duration-1000" style={{ width: `${xpProgress}%` }} />
+                    </div>
+                    {nextTier && <p className="text-[10px] text-zinc-500 text-center">{xpToNext.toLocaleString()} XP to {nextTier.name}</p>}
+                  </div>
+
+                  {/* Mastery Goals */}
+                  <section className="glass-panel p-6 rounded-3xl border border-white/5 space-y-5">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Target className="w-5 h-5 text-amber-400" />
+                        <h2 className="text-xl font-bold text-white">Mastery Goals</h2>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-zinc-500">
+                        <span className="font-mono bg-zinc-900 px-2 py-0.5 rounded border border-white/5">
+                          {quizAccuracy.total > 0 ? `${quizAccuracy.correct}/${quizAccuracy.total} quiz correct` : "No quiz data yet"}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                      <MasteryBar
+                        label="Vocabulary" emoji="📖"
+                        value={vocabMastery}
+                        color="bg-gradient-to-r from-amber-600 to-yellow-400"
+                        sublabel="from lesson history"
+                      />
+                      <MasteryBar
+                        label="Grammar Accuracy" emoji="📝"
+                        value={blendedGrammar}
+                        color="bg-gradient-to-r from-blue-700 to-blue-400"
+                        sublabel={quizAccuracy.total > 0 ? `blended with ${quizAccuracyPct}% quiz score` : "from API stats"}
+                      />
+                      <MasteryBar
+                        label="Pronunciation / Speech Lab" emoji="🎤"
+                        value={pronunciationAvg}
+                        color="bg-gradient-to-r from-red-700 to-red-400"
+                        sublabel="from recording sessions"
+                      />
+                      <MasteryBar
+                        label="Overall Fluency" emoji="🌸"
+                        value={overallFluency}
+                        color="bg-gradient-to-r from-purple-600 via-pink-500 to-orange-400"
+                        sublabel="weighted average"
+                      />
+                    </div>
+                    <div className="bg-zinc-950/40 p-4 rounded-2xl border border-white/5 text-xs text-zinc-400 flex items-start gap-2">
+                      <span className="text-blue-400 font-black mt-0.5">ℹ</span>
+                      <span>Grammar Accuracy blends API lesson stats with your live quiz correct-answer rate as you complete lessons and checkpoints.</span>
+                    </div>
+                  </section>
+
+                  {/* Story of Hangeul */}
+                  <section className="glass-panel p-6 rounded-3xl border border-white/5 space-y-4 bg-zinc-900/10 relative overflow-hidden">
+                    <div className="absolute -right-8 -bottom-8 text-[110px] font-black text-white/4 select-none font-korean">訓民正音</div>
+                    <div className="flex items-center gap-2 text-amber-400 font-extrabold">
+                      <Scroll className="w-5 h-5" />
+                      <h2 className="text-lg font-bold">The Story of Hangeul (한글의 역사)</h2>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 relative z-10">
+                      {[
+                        { dot: "bg-blue-500", title: "King Sejong's Vision", content: "In 1443, King Sejong the Great created Hangeul specifically to increase literacy for all Korean citizens — before this, only nobles who learned Chinese Hanja could read and write." },
+                        { dot: "bg-amber-400", title: "Scientifically Designed", content: "Linguists call Hangeul the most scientific writing system in the world. Consonants are modeled after the mouth and tongue positions when making each sound, while vowels represent Sky, Earth, and Humanity." },
+                        { dot: "bg-red-500", title: "\"A Morning's Study\"", content: "From the 1446 Hunminjeongeum manual: 'A wise man can acquaint himself before the morning is over; a stupid man can learn them in ten days.' Still the world's most accessible alphabet." },
+                      ].map(c => (
+                        <div key={c.title} className="bg-zinc-950/50 p-4 rounded-2xl border border-white/5 hover:border-zinc-700 transition space-y-2">
+                          <h4 className="font-bold text-zinc-200 text-sm flex items-center gap-1.5">
+                            <span className={`w-2 h-2 rounded-full ${c.dot}`} />{c.title}
+                          </h4>
+                          <p className="text-xs text-zinc-400 leading-relaxed">{c.content}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ─────────────────────────────────────────────────────
+              TAB: QUICK ACCESS
+          ───────────────────────────────────────────────────── */}
+          {activeTab === "quick_access" && (
+            <div className="space-y-6">
+              {/* Quick Navigation Card */}
+              <div className="glass-panel p-6 rounded-3xl border border-white/5 space-y-4">
+                <h3 className="font-bold text-white flex items-center gap-2">
+                  <Compass className="w-5 h-5 text-teal-400" />
+                  Quick Navigation Shortcuts
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {[
+                    { href: "/lessons", label: "Open Lessons Path", icon: <BookOpen className="w-4 h-4 text-teal-400" /> },
+                    { href: "/tutor", label: "Chat with Gwan-Sik", icon: <MessageSquare className="w-4 h-4 text-blue-400" /> },
+                    { href: "/games", label: "Playground Arcade", icon: <Gamepad2 className="w-4 h-4 text-emerald-400" /> },
+                    { href: "/materials", label: "Materials Warehouse", icon: <Library className="w-4 h-4 text-pink-400" /> },
+                    { href: "/online", label: "Online Media Hub", icon: <Globe className="w-4 h-4 text-blue-400" /> },
+                    { href: "/benchmarks", label: "AI Benchmarks", icon: <BarChart3 className="w-4 h-4 text-purple-400" /> },
+                  ].map(l => (
+                    <Link key={l.href} href={l.href}
+                      className="flex items-center gap-3 p-4 rounded-2xl bg-zinc-950/40 border border-white/5 hover:bg-white/5 hover:border-white/10 transition text-sm font-bold text-zinc-300 hover:text-white group cursor-pointer">
+                      {l.icon}
+                      <span className="flex-1">{l.label}</span>
+                      <ChevronRight className="w-3.5 h-3.5 text-zinc-600 group-hover:text-zinc-300 transition" />
+                    </Link>
                   ))}
                 </div>
-              </section>
+              </div>
 
               {/* App Features Grid */}
               <section className="space-y-4">
                 <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                  <Compass className="w-5 h-5 text-blue-400" />
+                  <Sparkles className="w-5 h-5 text-blue-400" />
                   Everything in HangeulAI
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -1109,7 +1126,6 @@ export default function Dashboard() {
               </section>
             </div>
           )}
-
           {/* ─────────────────────────────────────────────────────
               TAB: MY JOURNEY (Course Progress Hub)
           ───────────────────────────────────────────────────── */}
