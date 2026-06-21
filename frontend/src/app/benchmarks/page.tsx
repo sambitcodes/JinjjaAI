@@ -471,23 +471,23 @@ export default function BenchmarkDashboard() {
   return (
     <div className="space-y-8 w-full max-w-[98%] mx-auto p-4 md:p-6 text-zinc-300 pb-16 relative">
       {/* Background glowing decorations */}
-      <div className="absolute -top-10 left-1/4 w-[400px] h-[400px] bg-gradient-to-tr from-purple-500/10 to-indigo-500/5 rounded-full blur-[140px] pointer-events-none animate-pulse duration-10000" />
-      <div className="absolute bottom-10 right-1/4 w-[450px] h-[450px] bg-gradient-to-tr from-cyan-500/10 to-blue-500/5 rounded-full blur-[160px] pointer-events-none animate-pulse duration-8000" />
+      <div className="absolute -top-10 left-1/4 w-[400px] h-[400px] bg-gradient-to-tr from-purple-500/10 to-fuchsia-500/5 rounded-full blur-[140px] pointer-events-none animate-pulse duration-10000" />
+      <div className="absolute bottom-10 right-1/4 w-[450px] h-[450px] bg-gradient-to-tr from-violet-500/10 to-fuchsia-500/5 rounded-full blur-[160px] pointer-events-none animate-pulse duration-8000" />
 
       {/* Hero Header */}
-      <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-brand-950/20 via-zinc-900/60 to-zinc-950 p-6 md:p-8 mb-10 shadow-2xl transition-all hover:border-brand-500/20 duration-500 group">
+      <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-purple-950/20 via-zinc-900/60 to-zinc-950 p-6 md:p-8 mb-10 shadow-2xl transition-all hover:border-fuchsia-500/20 duration-500 group">
         {/* Glow orb */}
-        <div className="absolute -right-10 -top-10 w-44 h-44 bg-brand-500/15 rounded-full blur-3xl group-hover:scale-125 transition duration-700" />
+        <div className="absolute -right-10 -top-10 w-44 h-44 bg-fuchsia-500/15 rounded-full blur-3xl group-hover:scale-125 transition duration-700" />
         <div className="absolute -left-10 -bottom-10 w-44 h-44 bg-purple-500/15 rounded-full blur-3xl group-hover:scale-125 transition duration-700" />
         
         <div className="relative z-10 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
           <div className="space-y-3 max-w-xl text-left">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-500/10 border border-brand-500/25 text-[10px] text-brand-400 font-extrabold uppercase tracking-widest">
-              <span className="w-1.5 h-1.5 rounded-full bg-brand-400 animate-ping" />
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-fuchsia-500/10 border border-fuchsia-500/25 text-[10px] text-fuchsia-400 font-extrabold uppercase tracking-widest">
+              <span className="w-1.5 h-1.5 rounded-full bg-fuchsia-400 animate-ping" />
               <span>Vault Repository</span>
             </div>
             <h1 className="text-3xl md:text-5xl font-black text-white leading-tight tracking-tight">
-              AI Benchmarks & <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-400 via-purple-400 to-cyan-400 font-black">Performance</span>
+              AI Benchmarks & <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-fuchsia-400 to-violet-400 font-black">Performance</span>
             </h1>
             <p className="text-zinc-400 text-sm leading-relaxed">
               Evaluating the actual models and TTS voices used in the HangeulAI Tutor across Korean & English language tasks.
@@ -501,7 +501,7 @@ export default function BenchmarkDashboard() {
             </div>
             <div className="w-px bg-white/5" />
             <div className="text-center px-4">
-              <div className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-brand-400 to-purple-400 font-mono">{brainModels.length}</div>
+              <div className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-400 to-purple-400 font-mono">{brainModels.length}</div>
               <div className="text-[9px] text-zinc-500 font-extrabold uppercase tracking-widest mt-1">Brain Models</div>
             </div>
           </div>
@@ -511,7 +511,7 @@ export default function BenchmarkDashboard() {
       {/* ───── EDUCATIONAL CONTEXT SECTION ───── */}
       <section className="glass-panel p-6 rounded-3xl border border-white/5 bg-zinc-900/10 space-y-4">
         <div className="flex items-center gap-2 text-white">
-          <Info className="w-5 h-5 text-brand-400" />
+          <Info className="w-5 h-5 text-fuchsia-400" />
           <h2 className="text-sm font-black uppercase tracking-wider">Benchmark Metrology Guide</h2>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -531,7 +531,7 @@ export default function BenchmarkDashboard() {
             </ul>
           </div>
           <div className="bg-zinc-950/40 p-5 rounded-2xl border border-white/5 space-y-3">
-            <h3 className="font-extrabold text-sm text-brand-400 flex items-center gap-2">
+            <h3 className="font-extrabold text-sm text-fuchsia-400 flex items-center gap-2">
               <Brain className="w-4 h-4" /> Brain Model Metrology
             </h3>
             <p className="text-xs text-zinc-400 leading-relaxed">
@@ -555,7 +555,7 @@ export default function BenchmarkDashboard() {
           onClick={() => setActiveTab("tts")}
           className={`flex items-center gap-2.5 px-6 py-3 rounded-xl text-sm font-black transition-all duration-200 cursor-pointer ${
             activeTab === "tts"
-              ? "bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-lg shadow-blue-500/20"
+              ? "bg-gradient-to-r from-purple-600 to-fuchsia-500 text-white shadow-lg shadow-purple-500/20"
               : "text-zinc-400 hover:text-white hover:bg-white/5"
           }`}
         >
@@ -566,7 +566,7 @@ export default function BenchmarkDashboard() {
           onClick={() => setActiveTab("text")}
           className={`flex items-center gap-2.5 px-6 py-3 rounded-xl text-sm font-black transition-all duration-200 cursor-pointer ${
             activeTab === "text"
-              ? "bg-gradient-to-r from-brand-500 to-purple-500 text-white shadow-lg shadow-brand-500/20"
+              ? "bg-gradient-to-r from-fuchsia-600 to-violet-500 text-white shadow-lg shadow-fuchsia-500/20"
               : "text-zinc-400 hover:text-white hover:bg-white/5"
           }`}
         >
@@ -606,7 +606,7 @@ export default function BenchmarkDashboard() {
               <button
                 key={l}
                 onClick={() => { setTtsLang(l); setSelTTSVoiceId(l === "Korean" ? "ko-KR-SunHiNeural" : "en-US-AriaNeural"); setSelTTSQId(l === "Korean" ? 1 : 6); }}
-                className={`px-4 py-2 rounded-xl text-xs font-black cursor-pointer transition ${ttsLang === l ? "bg-blue-500/20 text-blue-300 border border-blue-500/30" : "text-zinc-400 hover:text-white bg-zinc-900 border border-white/5"}`}
+                className={`px-4 py-2 rounded-xl text-xs font-black cursor-pointer transition ${ttsLang === l ? "bg-fuchsia-500/20 text-fuchsia-300 border border-fuchsia-500/30" : "text-zinc-400 hover:text-white bg-zinc-900 border border-white/5"}`}
               >
                 {l === "Korean" ? "🇰🇷 Korean TTS" : "🇺🇸 English TTS"}
               </button>
@@ -618,7 +618,7 @@ export default function BenchmarkDashboard() {
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
               <div>
                 <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                  <BarChart3 className="w-5 h-5 text-blue-400" />
+                  <BarChart3 className="w-5 h-5 text-fuchsia-400" />
                   {ttsLang} TTS Voice × Question Heatmap
                 </h2>
                 <p className="text-xs text-zinc-400 mt-0.5">Click a cell to view per-dimension scores and inspect the voice/question details.</p>
@@ -708,7 +708,7 @@ export default function BenchmarkDashboard() {
                   <h3 className="text-lg font-bold text-white mt-0.5">Q{selTTSQ.id}: {selTTSQ.topic}</h3>
                 </div>
                 <div className="bg-zinc-950/60 p-4 rounded-xl border border-white/5">
-                  <span className="text-[9px] font-black text-blue-400 uppercase tracking-wider block mb-2">Text to Synthesize</span>
+                  <span className="text-[9px] font-black text-fuchsia-400 uppercase tracking-wider block mb-2">Text to Synthesize</span>
                   <p className="text-sm text-zinc-200 leading-relaxed font-korean">{selTTSQ.text}</p>
                 </div>
                 <div className="grid grid-cols-2 gap-3 text-xs">
@@ -732,7 +732,7 @@ export default function BenchmarkDashboard() {
           <section className="glass-panel p-6 rounded-3xl border border-white/5 space-y-5">
             <div>
               <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                <Activity className="w-5 h-5 text-cyan-400" />
+                <Activity className="w-5 h-5 text-fuchsia-400" />
                 All Voices — Average Performance Across All {ttsLang} Dimensions
               </h2>
               <p className="text-xs text-zinc-400 mt-0.5">Averaged across all {activeTTSQuestions.length} {ttsLang} questions.</p>
@@ -744,7 +744,7 @@ export default function BenchmarkDashboard() {
                   <button
                     key={v.id}
                     onClick={() => setSelTTSVoiceId(v.id)}
-                    className={`w-full text-left p-4 rounded-2xl border transition cursor-pointer group ${selTTSVoiceId === v.id ? "bg-blue-500/10 border-blue-500/30" : "bg-zinc-950/30 border-white/5 hover:bg-white/5"}`}
+                    className={`w-full text-left p-4 rounded-2xl border transition cursor-pointer group ${selTTSVoiceId === v.id ? "bg-fuchsia-500/10 border-fuchsia-500/30" : "bg-zinc-950/30 border-white/5 hover:bg-white/5"}`}
                   >
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-3">
@@ -812,7 +812,7 @@ export default function BenchmarkDashboard() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
               { label: "Total Models",    val: `${brainModels.length} models`,         icon: <Brain className="w-4 h-4 text-purple-400" />,  cls: "to-purple-950/10" },
-              { label: "Test Questions",  val: `${textQuestions.length} questions`,     icon: <MessageSquare className="w-4 h-4 text-brand-400" />, cls: "to-brand-950/10" },
+              { label: "Test Questions",  val: `${textQuestions.length} questions`,     icon: <MessageSquare className="w-4 h-4 text-fuchsia-400" />, cls: "to-brand-950/10" },
               { label: "Top Brain Model", val: rankedModels[0]?.shortName || "-",       icon: <Award className="w-4 h-4 text-amber-400" />,   cls: "to-amber-950/10" },
               { label: "Top Score",       val: `${textAvgScore(rankedModels[0])}/10`,   icon: <Zap className="w-4 h-4 text-emerald-400" />,   cls: "to-emerald-950/10" },
             ].map(c => (
@@ -831,7 +831,7 @@ export default function BenchmarkDashboard() {
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
               <div>
                 <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                  <BarChart3 className="w-5 h-5 text-brand-400" />
+                  <BarChart3 className="w-5 h-5 text-fuchsia-400" />
                   Model × Question Performance Heatmap
                 </h2>
                 <p className="text-xs text-zinc-400 mt-0.5">Click any cell to inspect that model's full response to the selected question below.</p>
@@ -915,7 +915,7 @@ export default function BenchmarkDashboard() {
               <div className="pt-2 border-t border-white/5 flex items-center gap-3">
                 <span className={`text-[10px] font-black px-2.5 py-1 rounded-full border ${
                   selModel?.type === "Local (Ollama)" ? "bg-teal-500/10 text-teal-400 border-teal-500/20" :
-                  selModel?.type === "Groq Cloud" ? "bg-brand-500/10 text-brand-400 border-brand-500/20" :
+                  selModel?.type === "Groq Cloud" ? "bg-fuchsia-500/10 text-fuchsia-400 border-fuchsia-500/20" :
                   "bg-purple-500/10 text-purple-400 border-purple-500/20"
                 }`}>{selModel?.type}</span>
                 <span className="text-xs text-zinc-500 font-mono">Size: {selModel?.size}</span>
@@ -929,7 +929,7 @@ export default function BenchmarkDashboard() {
                 <h3 className="text-lg font-bold text-white mt-0.5">Q{selTextQ.id}: {selTextQ.topic}</h3>
               </div>
               <div className="bg-zinc-950/60 p-4 rounded-xl border border-white/5 space-y-1">
-                <span className="text-[9px] font-black text-brand-400 uppercase tracking-wider">Question</span>
+                <span className="text-[9px] font-black text-fuchsia-400 uppercase tracking-wider">Question</span>
                 <p className="text-sm text-zinc-200 leading-relaxed font-korean">{selTextQ.question}</p>
               </div>
               <div className="bg-zinc-950/60 p-4 rounded-xl border border-white/5 space-y-1">
@@ -948,7 +948,7 @@ export default function BenchmarkDashboard() {
           <section className="glass-panel p-6 rounded-3xl border border-white/5 space-y-5">
             <div>
               <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                <Activity className="w-5 h-5 text-brand-400" />
+                <Activity className="w-5 h-5 text-fuchsia-400" />
                 All Brain Models — Average Performance Across All {textQuestions.length} Questions
               </h2>
             </div>
@@ -959,14 +959,14 @@ export default function BenchmarkDashboard() {
                   <button
                     key={m.id}
                     onClick={() => setSelModelId(m.id)}
-                    className={`w-full text-left p-4 rounded-2xl border transition cursor-pointer ${selModelId === m.id ? "bg-brand-500/10 border-brand-500/30" : "bg-zinc-950/30 border-white/5 hover:bg-white/5"}`}
+                    className={`w-full text-left p-4 rounded-2xl border transition cursor-pointer ${selModelId === m.id ? "bg-fuchsia-500/10 border-fuchsia-500/30" : "bg-zinc-950/30 border-white/5 hover:bg-white/5"}`}
                   >
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-3">
                         <span className="text-sm font-black text-white">{m.name}</span>
                         <span className={`text-[9px] font-black px-2 py-0.5 rounded-full border ${
                           m.type === "Local (Ollama)" ? "bg-teal-500/10 text-teal-400 border-teal-500/20" :
-                          m.type === "Groq Cloud" ? "bg-brand-500/10 text-brand-400 border-brand-500/20" :
+                          m.type === "Groq Cloud" ? "bg-fuchsia-500/10 text-fuchsia-400 border-fuchsia-500/20" :
                           "bg-purple-500/10 text-purple-400 border-purple-500/20"
                         }`}>{m.type}</span>
                         <span className="text-[9px] font-bold text-zinc-500 font-mono">{m.size}</span>
@@ -1018,7 +1018,7 @@ export default function BenchmarkDashboard() {
                       <tr
                         key={m.id}
                         onClick={() => setSelModelId(m.id)}
-                        className={`hover:bg-white/5 transition cursor-pointer ${selModelId === m.id ? "bg-white/5 border-l-2 border-brand-500" : ""}`}
+                        className={`hover:bg-white/5 transition cursor-pointer ${selModelId === m.id ? "bg-white/5 border-l-2 border-fuchsia-500" : ""}`}
                       >
                         <td className="py-3.5 px-4 font-black text-zinc-400">
                           {i === 0 ? <span className="text-amber-400">🥇</span> : i === 1 ? <span className="text-zinc-300">🥈</span> : i === 2 ? <span className="text-orange-400">🥉</span> : <span>#{i + 1}</span>}
@@ -1032,7 +1032,7 @@ export default function BenchmarkDashboard() {
                         <td className="py-3.5 px-4">
                           <span className={`text-[10px] font-black px-2 py-0.5 rounded-full border ${
                             m.type === "Local (Ollama)" ? "bg-teal-500/10 text-teal-400 border-teal-500/20" :
-                            m.type === "Groq Cloud" ? "bg-brand-500/10 text-brand-400 border-brand-500/20" :
+                            m.type === "Groq Cloud" ? "bg-fuchsia-500/10 text-fuchsia-400 border-fuchsia-500/20" :
                             "bg-purple-500/10 text-purple-400 border-purple-500/20"
                           }`}>{m.type}</span>
                         </td>
@@ -1058,7 +1058,7 @@ export default function BenchmarkDashboard() {
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
               <div>
                 <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                  <MessageSquare className="w-5 h-5 text-brand-400" />
+                  <MessageSquare className="w-5 h-5 text-fuchsia-400" />
                   Side-by-Side Model Response Browser
                 </h2>
                 <p className="text-xs text-zinc-400 mt-0.5">Select a question and cycle through all 9 models to compare their answers directly.</p>
@@ -1069,7 +1069,7 @@ export default function BenchmarkDashboard() {
                     key={q.id}
                     onClick={() => setSelTextQId(q.id)}
                     className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
-                      selTextQId === q.id ? "bg-brand-500 text-white" : "text-zinc-400 hover:text-white"
+                      selTextQId === q.id ? "bg-fuchsia-500 text-white" : "text-zinc-400 hover:text-white"
                     }`}
                   >
                     Q{q.id} <span className={`text-[8px] ${q.lang === "Korean" ? "text-rose-400" : "text-blue-400"}`}>{q.lang === "Korean" ? "KO" : "EN"}</span>
@@ -1080,7 +1080,7 @@ export default function BenchmarkDashboard() {
 
             <div className="bg-zinc-950/60 p-5 rounded-2xl border border-white/5 space-y-2">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="text-[9px] font-black bg-brand-500/10 text-brand-400 border border-brand-500/20 px-2 py-0.5 rounded uppercase font-mono">Topic</span>
+                <span className="text-[9px] font-black bg-fuchsia-500/10 text-fuchsia-400 border border-fuchsia-500/20 px-2 py-0.5 rounded uppercase font-mono">Topic</span>
                 <span className="text-sm font-bold text-white">{selTextQ.topic}</span>
                 <span className={`text-[9px] font-black px-2 py-0.5 rounded-full border ${
                   selTextQ.difficulty === "Beginner" ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" :
@@ -1104,7 +1104,7 @@ export default function BenchmarkDashboard() {
                       onClick={() => setSelModelId(m.id)}
                       className={`w-full text-left p-3 rounded-xl border transition flex items-center justify-between gap-2 cursor-pointer flex-shrink-0 lg:flex-shrink ${
                         m.id === selModelId
-                          ? "bg-brand-500/10 border-brand-500/30 text-white"
+                          ? "bg-fuchsia-500/10 border-fuchsia-500/30 text-white"
                           : "bg-zinc-950/20 border-white/5 text-zinc-400 hover:text-white hover:bg-white/5"
                       }`}
                     >
@@ -1125,7 +1125,7 @@ export default function BenchmarkDashboard() {
                   <div className="flex items-center gap-2">
                     <span className={`text-[10px] font-black px-2 py-0.5 rounded-full border ${
                       selModel?.type === "Local (Ollama)" ? "bg-teal-500/10 text-teal-400 border-teal-500/20" :
-                      selModel?.type === "Groq Cloud" ? "bg-brand-500/10 text-brand-400 border-brand-500/20" :
+                      selModel?.type === "Groq Cloud" ? "bg-fuchsia-500/10 text-fuchsia-400 border-fuchsia-500/20" :
                       "bg-purple-500/10 text-purple-400 border-purple-500/20"
                     }`}>{selModel?.type}</span>
                     {(() => {

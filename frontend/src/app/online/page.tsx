@@ -76,10 +76,10 @@ export default function OnlineMaterials() {
           
           if (!groups[seedId]) {
             const banners = [
-              "from-blue-600/20 via-zinc-900/90 to-zinc-950 hover:border-blue-500/40 hover:shadow-[0_0_35px_rgba(59,130,246,0.15)]",
-              "from-amber-600/20 via-zinc-900/90 to-zinc-950 hover:border-amber-500/40 hover:shadow-[0_0_35px_rgba(245,158,11,0.15)]",
-              "from-purple-600/20 via-zinc-900/90 to-zinc-950 hover:border-purple-500/40 hover:shadow-[0_0_35px_rgba(168,85,247,0.15)]",
-              "from-teal-600/20 via-zinc-900/90 to-zinc-950 hover:border-teal-500/40 hover:shadow-[0_0_35px_rgba(20,184,166,0.15)]"
+              "from-blue-600/20 via-zinc-900/90 to-zinc-950 hover:border-blue-500/50 hover:shadow-[0_0_35px_rgba(59,130,246,0.3)]",
+              "from-cyan-600/20 via-zinc-900/90 to-zinc-950 hover:border-cyan-500/50 hover:shadow-[0_0_35px_rgba(6,182,212,0.3)]",
+              "from-indigo-600/20 via-zinc-900/90 to-zinc-950 hover:border-indigo-500/50 hover:shadow-[0_0_35px_rgba(99,102,241,0.3)]",
+              "from-sky-600/20 via-zinc-900/90 to-zinc-950 hover:border-sky-500/50 hover:shadow-[0_0_35px_rgba(14,165,233,0.3)]"
             ];
             const bannerImage = banners[Object.keys(groups).length % banners.length];
             
@@ -564,28 +564,26 @@ export default function OnlineMaterials() {
 
   // --- CARDS SELECTION VIEW ---
   if (!showWorkspace) {
-    const featuredResource = resources[featuredIndex] || resources[0];
-
     return (
       <div className="min-h-screen text-foreground relative pb-16 w-full max-w-[98%] mx-auto px-4 md:px-6">
         {/* Background glowing decorations */}
-        <div className="absolute -top-10 left-1/4 w-[400px] h-[400px] bg-gradient-to-tr from-purple-500/10 to-indigo-500/5 rounded-full blur-[140px] pointer-events-none animate-pulse duration-10000" />
-        <div className="absolute bottom-10 right-1/4 w-[450px] h-[450px] bg-gradient-to-tr from-cyan-500/10 to-blue-500/5 rounded-full blur-[160px] pointer-events-none animate-pulse duration-8000" />
+        <div className="absolute -top-10 left-1/4 w-[400px] h-[400px] bg-gradient-to-tr from-blue-500/10 to-cyan-500/5 rounded-full blur-[140px] pointer-events-none animate-pulse duration-10000" />
+        <div className="absolute bottom-10 right-1/4 w-[450px] h-[450px] bg-gradient-to-tr from-blue-600/10 to-indigo-500/5 rounded-full blur-[160px] pointer-events-none animate-pulse duration-8000" />
 
         {/* Hero Header */}
-        <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-red-950/20 via-zinc-900/60 to-zinc-950 p-6 md:p-8 mb-10 shadow-2xl transition-all hover:border-red-500/20 duration-500 group">
+        <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-blue-950/20 via-zinc-900/60 to-zinc-950 p-6 md:p-8 mb-10 shadow-2xl transition-all hover:border-blue-500/20 duration-500 group">
           {/* Glow orb */}
-          <div className="absolute -right-10 -top-10 w-44 h-44 bg-red-500/15 rounded-full blur-3xl group-hover:scale-125 transition duration-700" />
-          <div className="absolute -left-10 -bottom-10 w-44 h-44 bg-amber-500/15 rounded-full blur-3xl group-hover:scale-125 transition duration-700" />
+          <div className="absolute -right-10 -top-10 w-44 h-44 bg-blue-500/15 rounded-full blur-3xl group-hover:scale-125 transition duration-700" />
+          <div className="absolute -left-10 -bottom-10 w-44 h-44 bg-cyan-500/15 rounded-full blur-3xl group-hover:scale-125 transition duration-700" />
           
           <div className="relative z-10 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
             <div className="space-y-3 max-w-xl text-left">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-500/10 border border-red-500/25 text-[10px] text-red-300 font-extrabold uppercase tracking-widest">
-                <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-ping" />
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/25 text-[10px] text-blue-300 font-extrabold uppercase tracking-widest">
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-ping" />
                 <span>Vault Repository</span>
               </div>
               <h1 className="text-3xl md:text-5xl font-black text-white leading-tight tracking-tight">
-                Online <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-400 via-amber-400 to-red-500 font-black">hub</span>
+                Online <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-cyan-400 to-indigo-500 font-black">hub</span>
               </h1>
               <p className="text-zinc-400 text-sm leading-relaxed">
                 Explore handpicked playlists, sync live transcripts, and query Gwan-Sik's Groq AI Helper for custom summaries and quizzes.
@@ -599,85 +597,12 @@ export default function OnlineMaterials() {
               </div>
               <div className="w-px bg-white/5" />
               <div className="text-center px-4">
-                <div className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-amber-400 font-mono">Live</div>
+                <div className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400 font-mono">Live</div>
                 <div className="text-[9px] text-zinc-500 font-extrabold uppercase tracking-widest mt-1">Transcription</div>
               </div>
             </div>
           </div>
         </div>
-
-        {/* Featured Curated Playlists Carousel */}
-        {featuredResource && (
-          <div className="mb-10 relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-r from-zinc-950 via-zinc-900/50 to-zinc-950 p-6 md:p-8">
-            <div className="absolute top-0 right-0 w-[300px] h-[300px] bg-gradient-to-br from-red-500/10 to-transparent blur-3xl pointer-events-none" />
-            
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-              <div className="space-y-4 max-w-2xl text-left">
-                <div className="flex items-center gap-2">
-                  <span className="bg-red-500/20 text-red-400 text-[10px] font-black uppercase px-2.5 py-1 rounded-full border border-red-500/30">
-                    Featured Course
-                  </span>
-                  <span className="text-[10px] text-zinc-500 font-mono font-bold">
-                    {featuredResource.channel}
-                  </span>
-                </div>
-                <h2 className="text-2xl md:text-3xl font-black text-white leading-tight">
-                  {featuredResource.title}
-                </h2>
-                {featuredSummaryLoading ? (
-                  <div className="space-y-2 py-1 max-w-xl">
-                    <div className="h-4 bg-zinc-800 rounded w-5/6 animate-pulse" />
-                    <div className="h-4 bg-zinc-800 rounded w-4/5 animate-pulse" />
-                    <div className="h-4 bg-zinc-800 rounded w-2/3 animate-pulse" />
-                  </div>
-                ) : (
-                  <p className="text-zinc-300 text-xs md:text-sm leading-relaxed font-sans italic border-l-2 border-red-500/50 pl-3 max-w-2xl">
-                    {featuredSummaries[featuredResource.id] || featuredResource.description}
-                  </p>
-                )}
-                <div className="flex items-center gap-4">
-                  <button
-                    onClick={() => handleSelectPlaylistCard(featuredResource)}
-                    className="inline-flex items-center gap-2 bg-gradient-to-r from-red-600 to-amber-600 hover:from-red-700 hover:to-amber-700 text-white font-black py-2.5 px-6 rounded-xl shadow-lg shadow-red-600/20 transition cursor-pointer"
-                  >
-                    <Play className="w-4 h-4 fill-current" />
-                    <span>Watch & Study Now</span>
-                  </button>
-                  <span className="text-xs text-zinc-500 font-bold">
-                    Contains {featuredResource.playlist.length} curated lessons
-                  </span>
-                </div>
-              </div>
-
-              {/* Navigation Arrows for Carousel */}
-              <div className="flex gap-2 self-end md:self-auto">
-                <button
-                  onClick={() => setFeaturedIndex(prev => (prev - 1 + resources.length) % resources.length)}
-                  className="p-3 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-white/5 text-zinc-400 hover:text-white transition cursor-pointer"
-                >
-                  <ChevronLeft className="w-5 h-5" />
-                </button>
-                <button
-                  onClick={() => setFeaturedIndex(prev => (prev + 1) % resources.length)}
-                  className="p-3 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-white/5 text-zinc-400 hover:text-white transition cursor-pointer"
-                >
-                  <ChevronRight className="w-5 h-5" />
-                </button>
-              </div>
-            </div>
-
-            {/* Slides Indicator dots */}
-            <div className="flex gap-1.5 justify-center mt-6">
-              {resources.map((_, i) => (
-                <button
-                  key={i}
-                  onClick={() => setFeaturedIndex(i)}
-                  className={`h-1.5 rounded-full transition-all duration-300 ${i === featuredIndex ? "w-6 bg-red-500" : "w-1.5 bg-zinc-800 hover:bg-zinc-700"}`}
-                />
-              ))}
-            </div>
-          </div>
-        )}
 
         {/* Controls: Category Selection & Search */}
         <div className="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4 mb-8 bg-zinc-900/20 p-4 rounded-3xl border border-white/5 backdrop-blur-sm">
@@ -692,7 +617,7 @@ export default function OnlineMaterials() {
                   onClick={() => setActiveTab(cat)}
                   className={`px-3.5 py-2 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-2 ${
                     isActive
-                      ? "bg-gradient-to-r from-red-600 to-amber-500 text-white shadow-lg shadow-red-500/25 scale-105"
+                      ? "bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-lg shadow-blue-500/25 scale-105"
                       : "text-zinc-400 hover:text-white hover:bg-white/5"
                   }`}
                 >
@@ -712,7 +637,7 @@ export default function OnlineMaterials() {
               placeholder="Search playlist or channel..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-zinc-950 border border-white/10 rounded-xl px-4 py-2.5 pl-10 text-xs text-zinc-200 focus:outline-none focus:border-red-500/50 focus:ring-1 focus:ring-red-500/25 transition placeholder-zinc-600"
+              className="w-full bg-zinc-950 border border-white/10 rounded-xl px-4 py-2.5 pl-10 text-xs text-zinc-200 focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/25 transition placeholder-zinc-600"
             />
             <div className="absolute left-3 top-3 text-zinc-500 pointer-events-none">
               🔍
@@ -744,8 +669,7 @@ export default function OnlineMaterials() {
                   exit={{ opacity: 0, scale: 0.95 }}
                   transition={{ duration: 0.25 }}
                   key={resource.id}
-                  onClick={() => handleSelectPlaylistCard(resource)}
-                  className={`glass-panel rounded-3xl border border-white/5 overflow-hidden transition-all duration-300 transform hover:-translate-y-1.5 cursor-pointer bg-gradient-to-b ${resource.bannerImage}`}
+                  className={`glass-panel rounded-3xl border border-white/5 overflow-hidden transition-all duration-300 transform hover:-translate-y-1.5 bg-gradient-to-b ${resource.bannerImage}`}
                 >
                   <div className="p-6 flex flex-col justify-between h-full min-h-[220px]">
                     <div className="space-y-4 text-left">
@@ -763,7 +687,7 @@ export default function OnlineMaterials() {
                       {/* AI Generated Resource Details */}
                       <p className="text-zinc-400 text-xs leading-relaxed font-medium">{details.summary}</p>
                       <div className="space-y-1.5 pt-2 border-t border-white/[0.03]">
-                        <span className="text-[9px] uppercase tracking-widest text-red-400 font-extrabold font-mono">Key Takeaways:</span>
+                        <span className="text-[9px] uppercase tracking-widest text-blue-400 font-extrabold font-mono">Key Takeaways:</span>
                         <ul className="text-[10px] text-zinc-500 pl-4 list-disc space-y-0.5 leading-relaxed font-semibold">
                           {details.learnings.map((l, i) => <li key={i}>{l}</li>)}
                         </ul>
@@ -771,12 +695,16 @@ export default function OnlineMaterials() {
                     </div>
 
                     <div className="pt-4 mt-4 border-t border-white/[0.04] flex items-center justify-between text-[11px] font-black text-zinc-400">
-                      <span className="flex items-center gap-1 text-[10px] bg-red-500/10 text-red-400 border border-red-500/20 px-2.5 py-0.5 rounded-full uppercase tracking-wider font-semibold">
+                      <span className="flex items-center gap-1 text-[10px] bg-blue-500/10 text-blue-400 border border-blue-500/20 px-2.5 py-0.5 rounded-full uppercase tracking-wider font-semibold">
                         {resource.playlist.length} lessons
                       </span>
-                      <span className="flex items-center gap-1 text-zinc-400 hover:text-white transition">
+                      <button
+                        type="button"
+                        onClick={() => handleSelectPlaylistCard(resource)}
+                        className="flex items-center gap-1 text-zinc-400 hover:text-white transition cursor-pointer"
+                      >
                         Launch Playlist <ChevronRight className="w-3.5 h-3.5" />
-                      </span>
+                      </button>
                     </div>
                   </div>
                 </motion.div>
@@ -792,7 +720,7 @@ export default function OnlineMaterials() {
   return (
     <div className="min-h-screen text-foreground relative pb-16 w-full max-w-[98%] mx-auto px-4 md:px-6">
       {/* Background glowing decorations */}
-      <div className="absolute -top-10 left-1/4 w-[400px] h-[400px] bg-gradient-to-tr from-purple-500/10 to-indigo-500/5 rounded-full blur-[140px] pointer-events-none animate-pulse duration-10000" />
+      <div className="absolute -top-10 left-1/4 w-[400px] h-[400px] bg-gradient-to-tr from-blue-500/10 to-cyan-500/5 rounded-full blur-[140px] pointer-events-none animate-pulse duration-10000" />
       <div className="absolute bottom-10 right-1/4 w-[450px] h-[450px] bg-gradient-to-tr from-cyan-500/10 to-blue-500/5 rounded-full blur-[160px] pointer-events-none animate-pulse duration-8000" />
       
       {/* Top Header Controls */}

@@ -40,13 +40,13 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
   }
 
   const menuItems = [
-    { name: "Dashboard", href: "/dashboard", icon: Home },
-    { name: "Lessons Path", href: "/lessons", icon: BookOpen },
-    { name: "AI Tutor Chat", href: "/tutor", icon: MessageSquare },
-    { name: "Games Arcade", href: "/games", icon: Gamepad2 },
-    { name: "Materials Warehouse", href: "/materials", icon: Library },
-    { name: "Online hub", href: "/online", icon: Globe },
-    { name: "AI Benchmarks", href: "/benchmarks", icon: Award },
+    { name: "Dashboard", href: "/dashboard", icon: Home, colorClass: "text-amber-500 hover:text-amber-400", activeBg: "bg-amber-500/10 text-amber-300 border border-amber-500/25 shadow-[0_0_15px_rgba(245,158,11,0.15)]" },
+    { name: "Lessons Path", href: "/lessons", icon: BookOpen, colorClass: "text-indigo-400 hover:text-indigo-300", activeBg: "bg-indigo-500/10 text-indigo-300 border border-indigo-500/25 shadow-[0_0_15px_rgba(99,102,241,0.15)]" },
+    { name: "AI Tutor Chat", href: "/tutor", icon: MessageSquare, colorClass: "text-teal-400 hover:text-teal-300", activeBg: "bg-teal-500/10 text-teal-300 border border-teal-500/25 shadow-[0_0_15px_rgba(20,184,166,0.15)]" },
+    { name: "Games Arcade", href: "/games", icon: Gamepad2, colorClass: "text-orange-500 hover:text-orange-400", activeBg: "bg-orange-500/10 text-orange-300 border border-orange-500/25 shadow-[0_0_15px_rgba(249,115,22,0.15)]" },
+    { name: "Materials Warehouse", href: "/materials", icon: Library, colorClass: "text-pink-500 hover:text-pink-400", activeBg: "bg-pink-500/10 text-pink-300 border border-pink-500/25 shadow-[0_0_15px_rgba(236,72,153,0.15)]" },
+    { name: "Online hub", href: "/online", icon: Globe, colorClass: "text-blue-400 hover:text-blue-300", activeBg: "bg-blue-500/10 text-blue-300 border border-blue-500/25 shadow-[0_0_15px_rgba(59,130,246,0.15)]" },
+    { name: "AI Benchmarks", href: "/benchmarks", icon: Award, colorClass: "text-purple-400 hover:text-purple-300", activeBg: "bg-purple-500/10 text-purple-300 border border-purple-500/25 shadow-[0_0_15px_rgba(168,85,247,0.15)]" },
   ];
 
   return (
@@ -108,8 +108,8 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
                     isCollapsed ? "justify-center p-3" : "space-x-3 px-4 py-3"
                   } ${
                     active
-                      ? "bg-brand-500/10 text-brand-300 border border-brand-500/20"
-                      : "text-zinc-400 hover:text-white hover:bg-white/5"
+                      ? `${item.activeBg}`
+                      : `${item.colorClass} hover:bg-white/5`
                   }`}
                   title={isCollapsed ? item.name : undefined}
                 >
@@ -190,7 +190,7 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
                 key={item.href}
                 href={item.href}
                 className={`flex flex-col items-center space-y-1 ${
-                  active ? "text-brand-400" : "text-zinc-500"
+                  active ? `${item.colorClass.split(" ")[0]} font-black scale-105 transition` : "text-zinc-500 hover:text-zinc-300"
                 }`}
               >
                 <Icon className="w-5 h-5" />

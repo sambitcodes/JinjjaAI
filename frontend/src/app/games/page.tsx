@@ -211,8 +211,8 @@ export default function GamesArcade() {
     <div className="min-h-screen text-foreground relative pb-16 overflow-hidden w-full max-w-[98%] mx-auto px-4 md:px-6">
       
       {/* Background ambient depth glows */}
-      <div className="absolute -top-10 left-1/4 w-[400px] h-[400px] bg-gradient-to-tr from-purple-500/10 to-indigo-500/5 rounded-full blur-[140px] pointer-events-none animate-pulse duration-10000" />
-      <div className="absolute bottom-10 right-1/4 w-[450px] h-[450px] bg-gradient-to-tr from-cyan-500/10 to-blue-500/5 rounded-full blur-[160px] pointer-events-none animate-pulse duration-8000" />
+      <div className="absolute -top-10 left-1/4 w-[400px] h-[400px] bg-gradient-to-tr from-orange-500/10 to-amber-500/5 rounded-full blur-[140px] pointer-events-none animate-pulse duration-10000" />
+      <div className="absolute bottom-10 right-1/4 w-[450px] h-[450px] bg-gradient-to-tr from-red-500/10 to-orange-500/5 rounded-full blur-[160px] pointer-events-none animate-pulse duration-8000" />
 
       {activeTab !== "arcade" && (
         <button
@@ -230,19 +230,19 @@ export default function GamesArcade() {
       {activeTab === "arcade" && (
         <div className="space-y-10 relative z-10 w-full max-w-none">
           {/* Hero Header */}
-          <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-purple-950/20 via-zinc-900/60 to-zinc-950 p-6 md:p-8 shadow-2xl transition-all hover:border-purple-500/20 duration-500 group">
+          <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-orange-950/20 via-zinc-900/60 to-zinc-950 p-6 md:p-8 shadow-2xl transition-all hover:border-orange-500/20 duration-500 group">
             {/* Glow orbs */}
-            <div className="absolute -right-10 -top-10 w-44 h-44 bg-purple-500/15 rounded-full blur-3xl group-hover:scale-125 transition duration-700" />
-            <div className="absolute -left-10 -bottom-10 w-44 h-44 bg-indigo-500/15 rounded-full blur-3xl group-hover:scale-125 transition duration-700" />
+            <div className="absolute -right-10 -top-10 w-44 h-44 bg-orange-500/15 rounded-full blur-3xl group-hover:scale-125 transition duration-700" />
+            <div className="absolute -left-10 -bottom-10 w-44 h-44 bg-amber-500/15 rounded-full blur-3xl group-hover:scale-125 transition duration-700" />
             
             <div className="relative z-10 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
               <div className="space-y-3 max-w-xl text-left">
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/25 text-[10px] text-purple-300 font-extrabold uppercase tracking-widest">
-                  <span className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-ping" />
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-500/10 border border-orange-500/25 text-[10px] text-orange-300 font-extrabold uppercase tracking-widest">
+                  <span className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-ping" />
                   <span>Arcade Arena</span>
                 </div>
                 <h1 className="text-3xl md:text-5xl font-black text-white leading-tight tracking-tight">
-                  Games <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-400 to-indigo-400 font-black animate-gradient-x">Universe</span>
+                  Games <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 via-yellow-400 to-amber-500 font-black animate-gradient-x">Universe</span>
                 </h1>
                 <p className="text-zinc-400 text-sm leading-relaxed">
                   Step into the AI-powered Korean gaming zone! Play scientifically useful lessons wrapped in rich arcade gameplay to level up your language intuition.
@@ -257,7 +257,7 @@ export default function GamesArcade() {
                 </div>
                 <div className="w-px bg-white/5" />
                 <div className="text-center px-2">
-                  <div className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-indigo-400 font-mono">⚡ {earnedXpTotal}</div>
+                  <div className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-amber-400 font-mono">⚡ {earnedXpTotal}</div>
                   <div className="text-[8px] text-zinc-500 font-extrabold uppercase tracking-widest mt-1">Arcade XP</div>
                 </div>
                 <div className="w-px bg-white/5" />
@@ -274,8 +274,7 @@ export default function GamesArcade() {
             
             {/* Tangerine Orchard Card */}
             <div 
-              onClick={() => setActiveTab("orchard")}
-              className="glass-panel p-6 rounded-3xl border border-white/5 bg-gradient-to-br from-orange-950/10 to-zinc-900/10 hover:border-orange-500/25 hover:shadow-[0_0_35px_rgba(249,115,22,0.12)] transition duration-300 cursor-pointer group flex flex-col justify-between"
+              className="glass-panel p-6 rounded-3xl border border-white/5 bg-gradient-to-br from-orange-950/10 to-zinc-900/10 hover:border-orange-500/50 hover:shadow-[0_0_35px_rgba(249,115,22,0.3)] transition duration-300 group flex flex-col justify-between"
             >
               <div className="space-y-4 text-left">
                 <div className="flex justify-between items-center">
@@ -289,16 +288,19 @@ export default function GamesArcade() {
                   Grow and harvest delicious tangerines by matching Korean vocabulary definitions. Collect rare golden fruits and build your orchard rank!
                 </p>
               </div>
-              <div className="pt-6 mt-6 border-t border-white/[0.04] flex items-center justify-between text-xs font-black text-zinc-400 group-hover:text-white transition">
+              <button
+                type="button"
+                onClick={() => setActiveTab("orchard")}
+                className="w-full pt-6 mt-6 border-t border-white/[0.04] flex items-center justify-between text-xs font-black text-zinc-400 hover:text-white transition cursor-pointer"
+              >
                 <span>Play Orchard Harvest</span>
                 <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition duration-300" />
-              </div>
+              </button>
             </div>
 
             {/* Korean Sniper Card */}
             <div 
-              onClick={() => setActiveTab("sniper")}
-              className="glass-panel p-6 rounded-3xl border border-white/5 bg-gradient-to-br from-cyan-950/10 to-zinc-900/10 hover:border-cyan-500/25 hover:shadow-[0_0_35px_rgba(6,182,212,0.12)] transition duration-300 cursor-pointer group flex flex-col justify-between"
+              className="glass-panel p-6 rounded-3xl border border-white/5 bg-gradient-to-br from-cyan-950/10 to-zinc-900/10 hover:border-cyan-500/50 hover:shadow-[0_0_35px_rgba(6,182,212,0.3)] transition duration-300 group flex flex-col justify-between"
             >
               <div className="space-y-4 text-left">
                 <div className="flex justify-between items-center">
@@ -312,16 +314,19 @@ export default function GamesArcade() {
                   Shoot down the correct Korean translations as targets drift down the screen. Test your fast recall and vocabulary recognition speeds.
                 </p>
               </div>
-              <div className="pt-6 mt-6 border-t border-white/[0.04] flex items-center justify-between text-xs font-black text-zinc-400 group-hover:text-white transition">
+              <button
+                type="button"
+                onClick={() => setActiveTab("sniper")}
+                className="w-full pt-6 mt-6 border-t border-white/[0.04] flex items-center justify-between text-xs font-black text-zinc-400 hover:text-white transition cursor-pointer"
+              >
                 <span>Play Sniper Gallery</span>
                 <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition duration-300" />
-              </div>
+              </button>
             </div>
 
             {/* Sentence Builder Card */}
             <div 
-              onClick={() => setActiveTab("sentence")}
-              className="glass-panel p-6 rounded-3xl border border-white/5 bg-gradient-to-br from-indigo-950/10 to-zinc-900/10 hover:border-indigo-500/25 hover:shadow-[0_0_35px_rgba(99,102,241,0.12)] transition duration-300 cursor-pointer group flex flex-col justify-between"
+              className="glass-panel p-6 rounded-3xl border border-white/5 bg-gradient-to-br from-indigo-950/10 to-zinc-900/10 hover:border-indigo-500/50 hover:shadow-[0_0_35px_rgba(99,102,241,0.3)] transition duration-300 group flex flex-col justify-between"
             >
               <div className="space-y-4 text-left">
                 <div className="flex justify-between items-center">
@@ -335,16 +340,19 @@ export default function GamesArcade() {
                   Drag and re-order word pieces to construct grammatically correct Korean clauses. Master SOV word ordering rules and conjugation patterns.
                 </p>
               </div>
-              <div className="pt-6 mt-6 border-t border-white/[0.04] flex items-center justify-between text-xs font-black text-zinc-400 group-hover:text-white transition">
+              <button
+                type="button"
+                onClick={() => setActiveTab("sentence")}
+                className="w-full pt-6 mt-6 border-t border-white/[0.04] flex items-center justify-between text-xs font-black text-zinc-400 hover:text-white transition cursor-pointer"
+              >
                 <span>Play Word Builder</span>
                 <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition duration-300" />
-              </div>
+              </button>
             </div>
 
             {/* Boss Battles Card */}
             <div 
-              onClick={() => setActiveTab("boss")}
-              className="glass-panel p-6 rounded-3xl border border-white/5 bg-gradient-to-br from-red-950/10 to-zinc-900/10 hover:border-red-500/25 hover:shadow-[0_0_35px_rgba(239,68,68,0.12)] transition duration-300 cursor-pointer group flex flex-col justify-between"
+              className="glass-panel p-6 rounded-3xl border border-white/5 bg-gradient-to-br from-red-950/10 to-zinc-900/10 hover:border-red-500/50 hover:shadow-[0_0_35px_rgba(239,68,68,0.3)] transition duration-300 group flex flex-col justify-between"
             >
               <div className="space-y-4 text-left">
                 <div className="flex justify-between items-center">
@@ -358,10 +366,14 @@ export default function GamesArcade() {
                   Equip magic spells and fight the Particle King in turn-based combat! Solve grammar and particle conjugation challenges to deal massive spell damage.
                 </p>
               </div>
-              <div className="pt-6 mt-6 border-t border-white/[0.04] flex items-center justify-between text-xs font-black text-zinc-400 group-hover:text-white transition">
+              <button
+                type="button"
+                onClick={() => setActiveTab("boss")}
+                className="w-full pt-6 mt-6 border-t border-white/[0.04] flex items-center justify-between text-xs font-black text-zinc-400 hover:text-white transition cursor-pointer"
+              >
                 <span>Launch Boss Battle</span>
                 <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition duration-300" />
-              </div>
+              </button>
             </div>
 
           </div>

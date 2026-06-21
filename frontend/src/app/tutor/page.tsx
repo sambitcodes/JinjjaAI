@@ -782,11 +782,10 @@ export default function TutorChat() {
   }
 
   return (
-    <div className="min-h-screen text-foreground w-full flex bg-transparent relative overflow-hidden">
-
+    <div className="flex h-screen overflow-hidden text-zinc-300 relative">
       {/* Background glowing decorations */}
-      <div className="absolute -top-10 left-1/4 w-[400px] h-[400px] bg-gradient-to-tr from-purple-500/10 to-indigo-500/5 rounded-full blur-[140px] pointer-events-none animate-pulse duration-10000" />
-      <div className="absolute bottom-10 right-1/4 w-[450px] h-[450px] bg-gradient-to-tr from-cyan-500/10 to-blue-500/5 rounded-full blur-[160px] pointer-events-none animate-pulse duration-8000" />
+      <div className="absolute -top-10 left-1/4 w-[400px] h-[400px] bg-gradient-to-tr from-teal-500/10 to-emerald-500/5 rounded-full blur-[140px] pointer-events-none animate-pulse duration-10000" />
+      <div className="absolute bottom-10 right-1/4 w-[450px] h-[450px] bg-gradient-to-tr from-emerald-500/10 to-teal-500/5 rounded-full blur-[160px] pointer-events-none animate-pulse duration-8000" />
 
       {/* Dialogue Session Library Sidebar */}
       {sidebarOpen && (
@@ -795,17 +794,17 @@ export default function TutorChat() {
             
             <div className="flex items-center justify-between border-b border-white/5 pb-4">
               <div className="flex items-center gap-2 font-black text-sm text-zinc-300">
-                <BookOpen className="w-4 h-4 text-brand-400" />
+                <BookOpen className="w-4 h-4 text-teal-400" />
                 <span>Dialogue Sessions (관식 대화)</span>
               </div>
-              <span className="text-[10px] bg-brand-500/10 text-brand-400 font-extrabold px-2 py-0.5 rounded border border-brand-500/20 font-mono">
+              <span className="text-[10px] bg-teal-500/10 text-teal-400 font-extrabold px-2 py-0.5 rounded border border-teal-500/20 font-mono">
                 {conversations.length} Active
               </span>
             </div>
 
             <button
               onClick={handleNewConversation}
-              className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-700 text-white font-extrabold py-3 px-4 rounded-xl transition duration-200 shadow-md shadow-brand-500/10 active:scale-98 cursor-pointer"
+              className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-600 hover:to-emerald-700 text-white font-extrabold py-3 px-4 rounded-xl transition duration-200 shadow-md shadow-teal-500/10 active:scale-98 cursor-pointer"
             >
               <Sparkles className="w-4 h-4" />
               <span>New Dialogue Session</span>
@@ -813,10 +812,10 @@ export default function TutorChat() {
 
             <div className="space-y-2.5">
               {!convId && (
-                <div className="p-3.5 rounded-xl border bg-brand-500/10 border-brand-500/30 text-white font-bold animate-pulse flex flex-col gap-1.5">
+                <div className="p-3.5 rounded-xl border bg-teal-500/10 border-teal-500/30 text-white font-bold animate-pulse flex flex-col gap-1.5">
                   <div className="flex items-center justify-between">
                     <span className="text-xs tracking-wide">New Dialogue (새 대화)</span>
-                    <Sparkles className="w-3.5 h-3.5 text-brand-400" />
+                    <Sparkles className="w-3.5 h-3.5 text-teal-400" />
                   </div>
                   <span className="text-[10px] text-zinc-500 font-mono">Unsaved (Draft)</span>
                 </div>
@@ -827,7 +826,7 @@ export default function TutorChat() {
                   onClick={() => selectConversation(c.id)}
                   className={`p-3.5 rounded-xl border cursor-pointer transition flex flex-col gap-1.5 ${
                     c.id === convId
-                      ? "bg-brand-500/10 border-brand-500/30 text-white font-bold"
+                      ? "bg-teal-500/10 border-teal-500/30 text-white font-bold"
                       : "bg-zinc-900/40 border-white/5 text-zinc-400 hover:text-white hover:bg-white/5"
                   }`}
                 >
@@ -849,8 +848,8 @@ export default function TutorChat() {
                               if (!response.ok) throw new Error("Failed to delete conversation");
                               
                               if (c.id === convId) {
-                                setConvId(null);
-                                setMessages([]);
+                                  setConvId(null);
+                                  setMessages([]);
                               }
                               await loadConversations(true);
                             } catch (err) {
@@ -880,10 +879,10 @@ export default function TutorChat() {
 
       {/* Main Active Chat Area */}
       <div className="flex-grow flex flex-col w-full p-3 lg:p-5 bg-zinc-950/80 border-x border-white/5 backdrop-blur-3xl shadow-2xl h-screen overflow-hidden z-10 relative">
-        <header className="relative overflow-visible rounded-2xl border border-white/5 bg-gradient-to-br from-purple-950/20 via-zinc-900/60 to-zinc-950 p-4.5 shadow-2xl mb-3 flex flex-col gap-4 group">
+        <header className="relative overflow-visible rounded-2xl border border-white/5 bg-gradient-to-br from-teal-950/20 via-zinc-900/60 to-zinc-950 p-4.5 shadow-2xl mb-3 flex flex-col gap-4 group">
           {/* Glow orbs */}
-          <div className="absolute -right-10 -top-10 w-44 h-44 bg-purple-500/15 rounded-full blur-3xl group-hover:scale-125 transition duration-700" />
-          <div className="absolute -left-10 -bottom-10 w-44 h-44 bg-indigo-500/15 rounded-full blur-3xl group-hover:scale-125 transition duration-700" />
+          <div className="absolute -right-10 -top-10 w-44 h-44 bg-teal-500/15 rounded-full blur-3xl group-hover:scale-125 transition duration-700" />
+          <div className="absolute -left-10 -bottom-10 w-44 h-44 bg-emerald-500/15 rounded-full blur-3xl group-hover:scale-125 transition duration-700" />
 
           {/* Top Line: Back, Toggle, Gwan-Sik metadata */}
           <div className="relative z-10 flex justify-between items-center w-full">
@@ -896,22 +895,22 @@ export default function TutorChat() {
                 className="glass-panel p-2.5 rounded-xl hover:bg-white/5 transition text-zinc-400 hover:text-white flex items-center justify-center cursor-pointer"
                 title={sidebarOpen ? "Collapse Sessions Library" : "Expand Sessions Library"}
               >
-                <BookOpen className="w-5 h-5 text-brand-400" />
+                <BookOpen className="w-5 h-5 text-teal-400" />
               </button>
               {/* Circular Avatar */}
-              <div className="relative w-12 h-12 rounded-full overflow-hidden border border-brand-500/30 flex-shrink-0 shadow-lg">
+              <div className="relative w-12 h-12 rounded-full overflow-hidden border border-teal-500/30 flex-shrink-0 shadow-lg">
                 <img src="/parkbogum.jpg" alt="Gwan-Sik" className="w-full h-full object-cover" />
               </div>
               <div>
                 <h2 className="font-extrabold text-xl flex items-center gap-2">
                   <span className="text-white">Gwan-Sik (관식)</span>
-                  <Sparkles className="w-4 h-4 text-brand-400 animate-pulse-slow" />
+                  <Sparkles className="w-4 h-4 text-teal-400 animate-pulse-slow" />
                   {/* Audio active equalizer visualizer */}
                   {isSpeakingActive && (
-                    <div className="flex items-center gap-0.5 ml-2 px-2.5 py-1 rounded-full bg-brand-500/10 border border-brand-500/20 text-[9px] text-brand-400 font-extrabold uppercase animate-pulse">
-                      <div className="w-0.5 h-2.5 bg-brand-400 animate-bounce" style={{ animationDelay: "0.1s" }} />
-                      <div className="w-0.5 h-3.5 bg-brand-400 animate-bounce" style={{ animationDelay: "0.2s" }} />
-                      <div className="w-0.5 h-2 bg-brand-400 animate-bounce" style={{ animationDelay: "0.3s" }} />
+                    <div className="flex items-center gap-0.5 ml-2 px-2.5 py-1 rounded-full bg-teal-500/10 border border-teal-500/20 text-[9px] text-teal-400 font-extrabold uppercase animate-pulse">
+                      <div className="w-0.5 h-2.5 bg-teal-400 animate-bounce" style={{ animationDelay: "0.1s" }} />
+                      <div className="w-0.5 h-3.5 bg-teal-400 animate-bounce" style={{ animationDelay: "0.2s" }} />
+                      <div className="w-0.5 h-2 bg-teal-400 animate-bounce" style={{ animationDelay: "0.3s" }} />
                       <span className="ml-1.5 tracking-wider text-[8px]">Speaking</span>
                     </div>
                   )}
@@ -921,7 +920,7 @@ export default function TutorChat() {
                   <span className="text-zinc-700 text-xs">•</span>
                   <button 
                     onClick={() => setIntroOpen(!introOpen)}
-                    className="text-[10px] text-brand-400 hover:text-brand-300 font-bold underline transition cursor-pointer animate-pulse-slow"
+                    className="text-[10px] text-teal-400 hover:text-teal-300 font-bold underline transition cursor-pointer animate-pulse-slow"
                   >
                     {introOpen ? "Hide Bio" : "Show Bio"}
                   </button>
@@ -931,7 +930,7 @@ export default function TutorChat() {
             
             <div className="flex items-center space-x-3">
               <div className="flex items-center space-x-2 bg-zinc-950/60 px-3 py-1.5 rounded-lg border border-white/5">
-                <span className={`h-2.5 w-2.5 rounded-full bg-brand-500 animate-pulse`} />
+                <span className={`h-2.5 w-2.5 rounded-full bg-teal-500 animate-pulse`} />
                 <span className="text-xs text-zinc-400 font-bold font-mono tracking-wider">
                   Groq API
                 </span>
@@ -940,11 +939,11 @@ export default function TutorChat() {
               <button 
                 onClick={() => setRightSidebarOpen(!rightSidebarOpen)}
                 className={`glass-panel p-2.5 rounded-xl transition flex items-center justify-center cursor-pointer ${
-                  rightSidebarOpen ? 'bg-brand-500/15 border-brand-500/40 text-white' : 'text-zinc-400 hover:text-white'
+                  rightSidebarOpen ? 'bg-teal-500/15 border-teal-500/40 text-white' : 'text-zinc-400 hover:text-white'
                 }`}
                 title={rightSidebarOpen ? "Collapse Tutor Settings" : "Expand Tutor Settings"}
               >
-                <Sliders className="w-5 h-5 text-brand-400" />
+                <Sliders className="w-5 h-5 text-teal-400" />
               </button>
             </div>
           </div>
@@ -1229,7 +1228,7 @@ export default function TutorChat() {
 
           <button 
             onClick={() => handleSendMessage()}
-            className="bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-700 text-white p-3.5 rounded-full transition cursor-pointer shadow-lg shadow-brand-500/25 active:scale-95"
+            className="bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-600 hover:to-emerald-700 text-white p-3.5 rounded-full transition cursor-pointer shadow-lg shadow-teal-500/25 active:scale-95"
             disabled={sending}
           >
             <Send className="w-5 h-5" />
@@ -1242,7 +1241,7 @@ export default function TutorChat() {
         <aside className="w-80 border-l border-white/5 bg-zinc-950/90 p-5 flex flex-col gap-6 h-screen sticky top-0 transition-all duration-300 animate-fade-in z-20 overflow-y-auto max-xl:fixed max-xl:right-0 max-xl:top-0 max-xl:h-screen max-xl:z-50 max-xl:border-l max-xl:border-white/10 max-xl:backdrop-blur-xl">
           <div className="flex items-center justify-between border-b border-white/5 pb-4">
             <div className="flex items-center gap-2 font-black text-sm text-zinc-300">
-              <Settings className="w-4 h-4 text-brand-400 animate-pulse-slow" />
+              <Settings className="w-4 h-4 text-teal-400 animate-pulse-slow" />
               <span>Tutor Settings (설정)</span>
             </div>
             <button
@@ -1263,7 +1262,7 @@ export default function TutorChat() {
                 label="Brain Model"
                 value={selectedModel}
                 onChange={(val) => setSelectedModel(val)}
-                accentClass="text-brand-300"
+                accentClass="text-teal-300"
                 options={[
                   { value: "qwen/qwen3-32b", label: "Qwen 3 32B (Groq)" },
                   { value: "llama-3.3-70b-versatile", label: "Llama 3.3 70B (Groq)" },
@@ -1281,7 +1280,7 @@ export default function TutorChat() {
               <label className="text-[10px] text-zinc-500 uppercase tracking-wider font-extrabold block">Tutor Response Mode</label>
               <div className="flex items-center gap-2.5 bg-zinc-950/80 border border-white/10 px-3.5 py-2.5 rounded-xl">
                 <div className="flex items-center gap-1.5">
-                  <span className="text-[10px] font-black text-brand-400 uppercase tracking-wider">🇰🇷 Korean</span>
+                  <span className="text-[10px] font-black text-teal-400 uppercase tracking-wider">🇰🇷 Korean</span>
                   <span className="text-zinc-600 text-xs">+</span>
                   <span className="text-[10px] font-black text-accent-teal uppercase tracking-wider">🇬🇧 English</span>
                 </div>

@@ -355,23 +355,23 @@ export default function MaterialsWarehouse() {
   return (
     <div className="min-h-screen text-foreground relative p-1 md:p-4">
       {/* Background glowing decorations */}
-      <div className="absolute -top-10 left-1/4 w-[400px] h-[400px] bg-gradient-to-tr from-purple-500/10 to-indigo-500/5 rounded-full blur-[140px] pointer-events-none animate-pulse duration-10000" />
-      <div className="absolute bottom-10 right-1/4 w-[450px] h-[450px] bg-gradient-to-tr from-cyan-500/10 to-blue-500/5 rounded-full blur-[160px] pointer-events-none animate-pulse duration-8000" />
+      <div className="absolute -top-10 left-1/4 w-[400px] h-[400px] bg-gradient-to-tr from-pink-500/10 to-rose-500/5 rounded-full blur-[140px] pointer-events-none animate-pulse duration-10000" />
+      <div className="absolute bottom-10 right-1/4 w-[450px] h-[450px] bg-gradient-to-tr from-red-500/10 to-pink-500/5 rounded-full blur-[160px] pointer-events-none animate-pulse duration-8000" />
 
       {/* Hero Header */}
-      <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-purple-950/20 via-zinc-900/60 to-zinc-950 p-6 md:p-8 mb-10 shadow-2xl transition-all hover:border-purple-500/20 duration-500 group">
+      <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-pink-950/20 via-zinc-900/60 to-zinc-950 p-6 md:p-8 mb-10 shadow-2xl transition-all hover:border-pink-500/20 duration-500 group">
         {/* Glow orb */}
-        <div className="absolute -right-10 -top-10 w-44 h-44 bg-purple-500/15 rounded-full blur-3xl group-hover:scale-125 transition duration-700" />
-        <div className="absolute -left-10 -bottom-10 w-44 h-44 bg-cyan-500/15 rounded-full blur-3xl group-hover:scale-125 transition duration-700" />
+        <div className="absolute -right-10 -top-10 w-44 h-44 bg-pink-500/15 rounded-full blur-3xl group-hover:scale-125 transition duration-700" />
+        <div className="absolute -left-10 -bottom-10 w-44 h-44 bg-rose-500/15 rounded-full blur-3xl group-hover:scale-125 transition duration-700" />
         
         <div className="relative z-10 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
           <div className="space-y-3 max-w-xl">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/25 text-[10px] text-purple-300 font-extrabold uppercase tracking-widest">
-              <span className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-ping" />
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-pink-500/10 border border-pink-500/25 text-[10px] text-pink-300 font-extrabold uppercase tracking-widest">
+              <span className="w-1.5 h-1.5 rounded-full bg-pink-400 animate-ping" />
               <span>Vault Repository</span>
             </div>
             <h1 className="text-3xl md:text-5xl font-black text-white leading-tight tracking-tight">
-              Materials <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400">Warehouse</span>
+              Materials <span className="text-transparent bg-clip-text bg-gradient-to-r from-pink-400 via-rose-400 to-red-400">Warehouse</span>
             </h1>
             <p className="text-zinc-400 text-sm leading-relaxed">
               Explore your collection of textbooks, workbooks, and interactive grammar guides. Expand any file to read in scroll mode or realistic 3D book mode.
@@ -385,7 +385,7 @@ export default function MaterialsWarehouse() {
             </div>
             <div className="w-px bg-white/5" />
             <div className="text-center px-4">
-              <div className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-indigo-400 font-mono">3D</div>
+              <div className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-rose-400 font-mono">3D</div>
               <div className="text-[9px] text-zinc-500 font-extrabold uppercase tracking-widest mt-1">Reading Modality</div>
             </div>
           </div>
@@ -406,7 +406,7 @@ export default function MaterialsWarehouse() {
                 onClick={() => setActiveCategory(cat)}
                 className={`px-3.5 py-2 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-2 ${
                   isActive
-                    ? "bg-gradient-to-r from-purple-600 to-indigo-500 text-white shadow-lg shadow-purple-500/25 scale-105"
+                    ? "bg-gradient-to-r from-pink-600 via-rose-500 to-red-500 text-white shadow-lg shadow-pink-500/25 scale-105"
                     : "text-zinc-400 hover:text-white hover:bg-white/5"
                 }`}
               >
@@ -426,7 +426,7 @@ export default function MaterialsWarehouse() {
             placeholder="Search textbook or topic..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-zinc-950 border border-white/10 rounded-xl px-4 py-2.5 pl-10 text-xs text-zinc-200 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/25 transition placeholder-zinc-600"
+            className="w-full bg-zinc-950 border border-white/10 rounded-xl px-4 py-2.5 pl-10 text-xs text-zinc-200 focus:outline-none focus:border-pink-500/50 focus:ring-1 focus:ring-pink-500/25 transition placeholder-zinc-600"
           />
           <div className="absolute left-3 top-3 text-zinc-500 pointer-events-none">
             🔍
@@ -451,25 +451,25 @@ export default function MaterialsWarehouse() {
           <AnimatePresence>
             {filteredMaterials.map((material, idx) => {
               // Find accent styles based on category
-              let borderGlow = "hover:border-purple-500/30 hover:shadow-[0_0_30px_rgba(168,85,247,0.18)]";
-              let badgeColor = "bg-purple-500/10 text-purple-400 border-purple-500/20";
-              let accent = "border-t-4 border-t-purple-500";
+              let borderGlow = "hover:border-pink-500/60 hover:shadow-[0_0_35px_rgba(236,72,153,0.35)]";
+              let badgeColor = "bg-pink-500/10 text-pink-400 border-pink-500/20";
+              let accent = "border-t-4 border-t-pink-500";
               let folderEmoji = "📘";
 
               if (material.category === "TTMIK Textbooks") {
-                borderGlow = "hover:border-amber-500/30 hover:shadow-[0_0_30px_rgba(245,158,11,0.18)]";
-                badgeColor = "bg-amber-500/10 text-amber-400 border-amber-500/20";
-                accent = "border-t-4 border-t-amber-500";
+                borderGlow = "hover:border-rose-500/60 hover:shadow-[0_0_35px_rgba(244,63,94,0.35)]";
+                badgeColor = "bg-rose-500/10 text-rose-400 border-rose-500/20";
+                accent = "border-t-4 border-t-rose-500";
                 folderEmoji = "📙";
               } else if (material.category === "TTMIK Workbooks") {
-                borderGlow = "hover:border-pink-500/30 hover:shadow-[0_0_30px_rgba(236,72,153,0.18)]";
-                badgeColor = "bg-pink-500/10 text-pink-400 border-pink-500/20";
-                accent = "border-t-4 border-t-pink-500";
+                borderGlow = "hover:border-pink-600/60 hover:shadow-[0_0_35px_rgba(219,39,119,0.35)]";
+                badgeColor = "bg-pink-600/10 text-pink-400 border-pink-600/20";
+                accent = "border-t-4 border-t-pink-600";
                 folderEmoji = "📕";
               } else if (material.category === "Core Textbooks") {
-                borderGlow = "hover:border-cyan-500/30 hover:shadow-[0_0_30px_rgba(6,182,212,0.18)]";
-                badgeColor = "bg-cyan-500/10 text-cyan-400 border-cyan-500/20";
-                accent = "border-t-4 border-t-cyan-500";
+                borderGlow = "hover:border-red-500/60 hover:shadow-[0_0_35px_rgba(239,68,68,0.35)]";
+                badgeColor = "bg-red-500/10 text-rose-300 border-red-500/20";
+                accent = "border-t-4 border-t-red-500";
                 folderEmoji = "📗";
               }
 
@@ -483,8 +483,7 @@ export default function MaterialsWarehouse() {
                   exit={{ opacity: 0, scale: 0.95 }}
                   transition={{ duration: 0.25 }}
                   key={material.name}
-                  onClick={() => setSelectedPdf(material)}
-                  className={`glass-panel p-6 rounded-3xl border border-white/5 bg-zinc-900/10 flex flex-col justify-between transition-all duration-300 transform hover:-translate-y-1.5 cursor-pointer overflow-hidden ${accent} ${borderGlow} group/card`}
+                  className={`glass-panel p-6 rounded-3xl border border-white/5 bg-zinc-900/10 flex flex-col justify-between transition-all duration-300 transform hover:-translate-y-1.5 overflow-hidden ${accent} ${borderGlow} group/card`}
                   style={{ animationDelay: `${idx * 50}ms` }}
                 >
                   <div className="space-y-4">
@@ -511,7 +510,7 @@ export default function MaterialsWarehouse() {
                     <div className="space-y-3 pt-2">
                       <p className="text-zinc-400 text-xs leading-relaxed font-medium">{details.summary}</p>
                       <div className="space-y-1.5 pt-2 border-t border-white/[0.03]">
-                        <span className="text-[9px] uppercase tracking-widest text-purple-400 font-extrabold font-mono">Learning Outcomes:</span>
+                        <span className="text-[9px] uppercase tracking-widest text-pink-400 font-extrabold font-mono">Learning Outcomes:</span>
                         <ul className="text-[10px] text-zinc-500 pl-4 list-disc space-y-0.5 leading-relaxed font-semibold">
                           {details.learnings.map((l, i) => <li key={i}>{l}</li>)}
                         </ul>
@@ -519,13 +518,17 @@ export default function MaterialsWarehouse() {
                     </div>
                   </div>
 
-                  <div className="pt-4 mt-4 border-t border-white/[0.03] flex items-center justify-between text-[11px] font-black text-zinc-400 group-hover/card:text-white transition duration-300">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedPdf(material)}
+                    className="w-full pt-4 mt-4 border-t border-white/[0.03] flex items-center justify-between text-[11px] font-black text-zinc-400 hover:text-white transition duration-300 cursor-pointer"
+                  >
                     <span>Open Document</span>
                     <div className="flex items-center gap-1">
-                      <span className="text-[9px] font-mono text-zinc-600 group-hover/card:text-purple-400 group-hover/card:translate-x-[-2px] transition duration-300 font-black">READ</span>
+                      <span className="text-[9px] font-mono text-zinc-600 group-hover/card:text-pink-400 group-hover/card:translate-x-[-2px] transition duration-300 font-black">READ</span>
                       <ChevronRight className="w-3.5 h-3.5 group-hover/card:translate-x-1 transition duration-300" />
                     </div>
-                  </div>
+                  </button>
                 </motion.div>
               );
             })}
@@ -601,7 +604,7 @@ export default function MaterialsWarehouse() {
 
       {/* FULLSCREEN PDF VIEWER MODAL */}
       {selectedPdf && (
-        <div className="fixed inset-0 z-[100] flex flex-col bg-zinc-950/95 backdrop-blur-md animate-fade-in relative text-foreground">
+        <div className="fixed inset-0 z-[100] flex flex-col bg-zinc-950/95 backdrop-blur-md animate-fade-in text-foreground">
           
           {/* Modal Header */}
           <header className="flex justify-between items-center bg-zinc-900 border-b border-white/5 px-6 py-4 flex-shrink-0 z-10">
