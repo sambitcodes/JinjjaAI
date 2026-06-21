@@ -59,7 +59,142 @@
     "query": "Korean Englishman",
     "channel_name": "Korean Englishman (영국남자)",
     "cefr_range": "A2-B2",
-    "topics": ["Vocabulary Hacks", "Everyday Basics"],
+    "topics": ["Culture", "Vocabulary Hacks", "Everyday Basics"],
     "skills": ["Listening", "Vocabulary"]
+  },
+  {
+    "id": "yt_missvicky_grammar",
+    "type": "playlist",
+    "channel_name": "Korean with Miss Vicky 빅키쌤",
+    "resource_url": "https://youtube.com/playlist?list=PLECz2rpRD3Z1q8NmzAOG5cuLYq-rU0BQO",
+    "cefr_range": "A1-A2",
+    "topics": ["Grammar Focus", "Speaking Patterns"],
+    "skills": ["Speaking", "Listening"]
+  },
+  {
+    "id": "yt_missvicky_alphabet",
+    "type": "playlist",
+    "channel_name": "Korean with Miss Vicky 빅키쌤",
+    "resource_url": "https://www.youtube.com/playlist?list=PLECz2rpRD3Z0EeOU0z3aoafwgjHyth7MN",
+    "cefr_range": "A1",
+    "topics": ["Hangeul Alphabet", "Reading", "Pronunciation"],
+    "skills": ["Reading", "Listening"]
+  },
+  {
+    "id": "yt_missvicky_vocabulary",
+    "type": "playlist",
+    "channel_name": "Korean with Miss Vicky 빅키쌤",
+    "resource_url": "https://www.youtube.com/playlist?list=PLECz2rpRD3Z0BoUjRuwlTYM9oyKvV6D68",
+    "cefr_range": "A1-B1",
+    "topics": ["Vocabulary Hacks", "Essential Words"],
+    "skills": ["Vocabulary", "Listening"]
+  },
+  {
+    "id": "yt_gobilly_beginner_course",
+    "type": "playlist",
+    "channel_name": "Go! Billy Korean",
+    "resource_url": "https://www.youtube.com/playlist?list=PLbFrQnW0BNMUkAFj4MjYauXBPtO3I9O_k",
+    "cefr_range": "A1-A2",
+    "topics": ["Beginner Path", "Grammar Focus", "Conversational Phrases"],
+    "skills": ["Speaking", "Listening", "Vocabulary"]
+  },
+  {
+    "id": "yt_vicky_conversational_korean",
+    "type": "playlist",
+    "channel_name": "Korean with Miss Vicky 빅키쌤",
+    "resource_url": "https://www.youtube.com/playlist?list=PLECz2rpRD3Z2_n0vM_8b_pC6kG5rM3qfB",
+    "cefr_range": "A1-A2",
+    "topics": ["Conversational Phrases", "Everyday Basics"],
+    "skills": ["Listening", "Speaking"]
+  },
+  {
+    "id": "yt_tammy_beginner",
+    "type": "playlist",
+    "channel_name": "Tammy Korean",
+    "resource_url": "https://youtube.com/playlist?list=PLCvLAWAmdl3LWTVB9Qv_cYz3VDXVO_3WD",
+    "cefr_range": "A1",
+    "topics": ["Beginner", "Everyday Basics"],
+    "skills": ["Listening", "Vocabulary"]
+  },
+  {
+    "id": "yt_jadoo_bilingual",
+    "type": "playlist",
+    "channel_name": "Learn Korean with Jadoo",
+    "resource_url": "https://youtube.com/playlist?list=PLCXlmQp68EwnXhoL2oAuynSFsekEoW7pQ",
+    "cefr_range": "A1-A2",
+    "topics": ["Beginner", "Bilingual Lessons"],
+    "skills": ["Listening", "Speaking"]
+  },
+  {
+    "id": "yt_seemile_emma",
+    "type": "playlist",
+    "channel_name": "seemile Korean",
+    "resource_url": "https://www.youtube.com/playlist?list=PLAR6PIbgTNh17YQutUNgJ7MWZ9nb4evPI",
+    "cefr_range": "A1-A2",
+    "topics": ["Beginner", "Grammar Focus"],
+    "skills": ["Listening", "Grammar"]
+  },
+  {
+    "id": "yt_donggrammy_words",
+    "type": "playlist",
+    "channel_name": "Dong Grammy Korean",
+    "resource_url": "https://youtube.com/playlist?list=PLQNBfTQJRHzKWfiwceEAdRaZOhzgs6W6f",
+    "cefr_range": "A1",
+    "topics": ["Beginner", "Vocabulary Hacks"],
+    "skills": ["Listening", "Vocabulary"]
+  },
+  {
+    "id": "yt_kclass101_vocab",
+    "type": "playlist",
+    "channel_name": "Learn Korean with KoreanClass101.com",
+    "resource_url": "https://youtube.com/playlist?list=PLAKEOhhoOenPG4yJNgfTpW9DQE-unSSX4",
+    "cefr_range": "A1-A2",
+    "topics": ["Beginner", "Vocabulary Hacks"],
+    "skills": ["Listening", "Vocabulary"]
+  },
+  {
+    "id": "yt_stories_minjun",
+    "type": "playlist",
+    "channel_name": "Learn Korean with Min-jun and Seo-yeon",
+    "resource_url": "https://youtube.com/playlist?list=PLFLV-sFhxkfIkdtNkKF89Q0ebZpUSkmlh",
+    "cefr_range": "A1-A2",
+    "topics": ["Stories", "Reading"],
+    "skills": ["Listening", "Reading"]
+  },
+  {
+    "id": "yt_lki_from_scratch",
+    "type": "playlist",
+    "channel_name": "LKI School of Korean Language",
+    "resource_url": "https://youtube.com/playlist?list=PLkrV4TJwuUQuDvROrjUwjqEMuQMz5NAgO",
+    "cefr_range": "A1",
+    "topics": ["Beginner", "Everyday Basics"],
+    "skills": ["Listening", "Speaking"]
+  },
+  {
+    "id": "yt_kdrama_practicing",
+    "type": "playlist",
+    "channel_name": "Practicing Korean",
+    "resource_url": "https://youtube.com/playlist?list=PLX7rqIla5uHHyC9FRJLXFWCCbpgmEMCX8",
+    "cefr_range": "A1-A2",
+    "topics": ["Music & Media", "Conversational Phrases"],
+    "skills": ["Listening", "Speaking"]
+  },
+  {
+    "id": "yt_kdrama_juhee",
+    "type": "playlist",
+    "channel_name": "Speak Korean with Juhee",
+    "resource_url": "https://youtube.com/playlist?list=PLnZKJXHN_A1QrV00bS2LOsCq6_Ns8EHJu",
+    "cefr_range": "A1-A2",
+    "topics": ["Music & Media", "Conversational Phrases"],
+    "skills": ["Listening", "Speaking"]
+  },
+  {
+    "id": "yt_stories_practicing",
+    "type": "playlist",
+    "channel_name": "Practicing Korean",
+    "resource_url": "https://youtube.com/playlist?list=PLX7rqIla5uHF_Q9PooQf5H9N8AERKZm-k",
+    "cefr_range": "A1-A2",
+    "topics": ["Stories", "Conversational Phrases"],
+    "skills": ["Listening", "Speaking"]
   }
 ]

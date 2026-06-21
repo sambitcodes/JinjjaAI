@@ -19,7 +19,7 @@ interface OnlineResource {
   id: string;
   title: string;
   channel: string;
-  category: "Beginner Path" | "Grammar Focus" | "Listening & Speak" | "Vocabulary Hacks";
+  category: "Beginner" | "Intermediate" | "Stories" | "Culture" | "Music & Media";
   description: string;
   avatar: string;
   bannerImage: string;
@@ -35,7 +35,7 @@ interface TranscriptLine {
 export default function OnlineMaterials() {
   const [resources, setResources] = useState<OnlineResource[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<string>("Beginner Path");
+  const [activeTab, setActiveTab] = useState<string>("Beginner");
   const [searchQuery, setSearchQuery] = useState("");
   const [featuredIndex, setFeaturedIndex] = useState(0);
   const [featuredSummaries, setFeaturedSummaries] = useState<Record<string, string>>({});
@@ -53,13 +53,14 @@ export default function OnlineMaterials() {
   const playerRef = useRef<any>(null);
   const transcriptContainerRef = useRef<HTMLDivElement>(null);
   const timerIntervalRef = useRef<any>(null);
+  const lastAnalyzedTimeRef = useRef<number>(-999);
 
   // Groq AI Help States
   const [aiLoading, setAiLoading] = useState(false);
   const [aiResponse, setAiResponse] = useState<string>("");
   const [selectedAiTab, setSelectedAiTab] = useState<"summary" | "explain" | "quiz">("summary");
 
-  const categories = ["Beginner Path", "Grammar Focus", "Listening & Speak", "Vocabulary Hacks"];
+  const categories = ["Beginner", "Intermediate", "Stories", "Culture", "Music & Media"];
 
   const fetchOnlineMaterials = async () => {
     try {
@@ -82,14 +83,21 @@ export default function OnlineMaterials() {
             ];
             const bannerImage = banners[Object.keys(groups).length % banners.length];
             
-            let category: "Beginner Path" | "Grammar Focus" | "Listening & Speak" | "Vocabulary Hacks" = "Beginner Path";
+            let category: "Beginner" | "Intermediate" | "Stories" | "Culture" | "Music & Media" = "Beginner";
             const topicsStr = (video.topics || []).join(" ").toLowerCase();
-            if (topicsStr.includes("grammar")) {
-              category = "Grammar Focus";
-            } else if (topicsStr.includes("listen") || topicsStr.includes("speaking") || topicsStr.includes("pronunciation")) {
-              category = "Listening & Speak";
-            } else if (topicsStr.includes("vocab") || topicsStr.includes("words")) {
-              category = "Vocabulary Hacks";
+            const skillsStr = (video.skills || []).join(" ").toLowerCase();
+            const titleStr = (video.title || "").toLowerCase();
+            
+            if (seedId.includes("story") || titleStr.includes("story") || titleStr.includes("stories") || topicsStr.includes("stories")) {
+              category = "Stories";
+            } else if (seedId.includes("kdrama") || seedId.includes("drama") || titleStr.includes("drama") || titleStr.includes("movie") || topicsStr.includes("media") || topicsStr.includes("kdrama")) {
+              category = "Music & Media";
+            } else if (seedId.includes("englishman") || seedId.includes("culture") || titleStr.includes("culture") || topicsStr.includes("culture")) {
+              category = "Culture";
+            } else if (topicsStr.includes("grammar") || topicsStr.includes("intermediate") || skillsStr.includes("intermediate") || topicsStr.includes("grammar focus")) {
+              category = "Intermediate";
+            } else {
+              category = "Beginner";
             }
             
             let groupTitle = video.channel_title;
@@ -352,6 +360,46 @@ export default function OnlineMaterials() {
       setAiLoading(false);
     }
   };
+
+  // Request Groq AI Summary/Explanation/Quiz quietly in background as user studies
+  const handleRequestAiHelpAuto = async (type: "summary" | "explain" | "quiz", timeVal: number) => {
+    const studiedText = transcript
+      .filter(line => line.start <= timeVal)
+      .map(line => line.text)
+      .join("\n");
+
+    if (!studiedText) return;
+
+    const fullTranscript = transcript.map(line => line.text).join("\n");
+
+    try {
+      const response = await apiRequest("/lessons/online/ai-help", {
+        method: "POST",
+        body: JSON.stringify({
+          video_title: activeVideoTitle,
+          studied_text: studiedText,
+          full_transcript: fullTranscript,
+          query_type: type
+        })
+      });
+
+      if (response && response.result) {
+        setAiResponse(response.result);
+      }
+    } catch (err) {
+      console.warn("Auto study analysis update failed:", err);
+    }
+  };
+
+  // Watch currentTime and dynamically refresh AI analysis every 15 seconds of study progression
+  useEffect(() => {
+    if (!showWorkspace || !activeVideoId || currentTime === 0) return;
+
+    if (Math.abs(currentTime - lastAnalyzedTimeRef.current) >= 15) {
+      lastAnalyzedTimeRef.current = currentTime;
+      handleRequestAiHelpAuto(selectedAiTab, currentTime);
+    }
+  }, [currentTime, selectedAiTab, showWorkspace, activeVideoId]);
 
   const getAiResourceDetails = (title: string) => {
     const lowerTitle = title.toLowerCase();
