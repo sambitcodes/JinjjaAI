@@ -214,8 +214,8 @@ export default function Course7Phase1GrammarLabWizard({
         const saved = localStorage.getItem("hangeulai_c7p1_progress_state");
         if (saved) {
           const state = JSON.parse(saved);
-            if (state.step !== undefined) setStep(state.step);
-            if (state.maxStep !== undefined) setMaxStep(state.maxStep);
+            // Deleted state.step override to allow teleportation
+            // Deleted state.maxStep override to allow teleportation
             if (state.buildIdx !== undefined) setBuildIdx(state.buildIdx);
             if (state.buildCorrect !== undefined) setBuildCorrect(state.buildCorrect);
             if (state.buildChecked !== undefined) setBuildChecked(state.buildChecked);

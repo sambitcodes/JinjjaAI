@@ -171,8 +171,8 @@ export default function Course8Phase8ConversationWizard({
         const saved = localStorage.getItem("hangeulai_c8p8_progress_state");
         if (saved) {
           const state = JSON.parse(saved);
-            if (state.step !== undefined) setStep(state.step);
-            if (state.maxStep !== undefined) setMaxStep(state.maxStep);
+            // Deleted state.step override to allow teleportation
+            // Deleted state.maxStep override to allow teleportation
             if (state.detIdx !== undefined) setDetIdx(state.detIdx);
             if (state.detSelectedTokens !== undefined) setDetSelectedTokens(state.detSelectedTokens);
             if (state.detChecked !== undefined) setDetChecked(state.detChecked);

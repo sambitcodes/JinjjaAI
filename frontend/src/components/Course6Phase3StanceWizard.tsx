@@ -224,8 +224,8 @@ export default function Course6Phase3StanceWizard({
         const saved = localStorage.getItem("hangeulai_c6p3_progress_state");
         if (saved) {
           const state = JSON.parse(saved);
-            if (state.step !== undefined) setStep(state.step);
-            if (state.maxStep !== undefined) setMaxStep(state.maxStep);
+            // Deleted state.step override to allow teleportation
+            // Deleted state.maxStep override to allow teleportation
             if (state.conceptAnswer !== undefined) setConceptAnswer(state.conceptAnswer);
             if (state.conceptChecked !== undefined) setConceptChecked(state.conceptChecked);
             if (state.conceptCorrect !== undefined) setConceptCorrect(state.conceptCorrect);

@@ -172,8 +172,8 @@ export default function Course8Phase11StoryWizard({
         const saved = localStorage.getItem("hangeulai_c8p11_progress_state");
         if (saved) {
           const state = JSON.parse(saved);
-            if (state.step !== undefined) setStep(state.step);
-            if (state.maxStep !== undefined) setMaxStep(state.maxStep);
+            // Deleted state.step override to allow teleportation
+            // Deleted state.maxStep override to allow teleportation
             if (state.structureIdx !== undefined) setStructureIdx(state.structureIdx);
             if (state.structureChecked !== undefined) setStructureChecked(state.structureChecked);
             if (state.connectorIdx !== undefined) setConnectorIdx(state.connectorIdx);

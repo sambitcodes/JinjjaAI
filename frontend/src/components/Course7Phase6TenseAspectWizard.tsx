@@ -160,8 +160,8 @@ export default function Course7Phase6TenseAspectWizard({
         const saved = localStorage.getItem("hangeulai_c7p6_progress_state");
         if (saved) {
           const state = JSON.parse(saved);
-            if (state.step !== undefined) setStep(state.step);
-            if (state.maxStep !== undefined) setMaxStep(state.maxStep);
+            // Deleted state.step override to allow teleportation
+            // Deleted state.maxStep override to allow teleportation
             if (state.recIdx !== undefined) setRecIdx(state.recIdx);
             if (state.recSelected !== undefined) setRecSelected(state.recSelected);
             if (state.recChecked !== undefined) setRecChecked(state.recChecked);

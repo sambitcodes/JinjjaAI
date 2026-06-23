@@ -174,8 +174,8 @@ export default function Course8Phase5PoliteEndingsWizard({
         const saved = localStorage.getItem("hangeulai_c8p5_progress_state");
         if (saved) {
           const state = JSON.parse(saved);
-            if (state.step !== undefined) setStep(state.step);
-            if (state.maxStep !== undefined) setMaxStep(state.maxStep);
+            // Deleted state.step override to allow teleportation
+            // Deleted state.maxStep override to allow teleportation
             if (state.eiIdx !== undefined) setEiIdx(state.eiIdx);
             if (state.eiSelected !== undefined) setEiSelected(state.eiSelected);
             if (state.eiChecked !== undefined) setEiChecked(state.eiChecked);

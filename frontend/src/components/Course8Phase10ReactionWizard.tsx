@@ -183,8 +183,8 @@ export default function Course8Phase10ReactionWizard({
         const saved = localStorage.getItem("hangeulai_c8p10_progress_state");
         if (saved) {
           const state = JSON.parse(saved);
-            if (state.step !== undefined) setStep(state.step);
-            if (state.maxStep !== undefined) setMaxStep(state.maxStep);
+            // Deleted state.step override to allow teleportation
+            // Deleted state.maxStep override to allow teleportation
             if (state.ynIdx !== undefined) setYnIdx(state.ynIdx);
             if (state.ynCountdown !== undefined) setYnCountdown(state.ynCountdown);
             if (state.ynSelected !== undefined) setYnSelected(state.ynSelected);

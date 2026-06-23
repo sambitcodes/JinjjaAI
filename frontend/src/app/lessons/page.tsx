@@ -397,6 +397,8 @@ export default function LessonPlayer() {
       const { amount, type } = customEvent.detail || { amount: 0, type: 'theory' };
       if (amount === 0) return;
 
+      let netXP = amount;
+
       // Update step-specific earned XP
       const activeStep = activeStepRef.current;
       if (activeStep) {
@@ -411,6 +413,12 @@ export default function LessonPlayer() {
         
         const newEarned = Math.max(0, Math.min(maxXp, currentEarned + amount));
         localStorage.setItem(stepEarnedKey, String(newEarned));
+        netXP = newEarned - currentEarned;
+      }
+
+      if (netXP === 0) {
+        console.log("Net XP change is 0 (capped). Skipping profile update.");
+        return;
       }
 
       // For screen change theory XP, check if already rewarded
@@ -458,7 +466,7 @@ export default function LessonPlayer() {
       const id = Date.now() + Math.random();
       const x = typeof window !== "undefined" ? window.innerWidth / 2 + (Math.random() - 0.5) * 200 : 300;
       const y = typeof window !== "undefined" ? window.innerHeight * 0.4 + (Math.random() - 0.5) * 100 : 300;
-      setFloatingTexts(prev => [...prev, { id, text: amount > 0 ? `+${amount} XP` : `${amount} XP`, type, x, y }]);
+      setFloatingTexts(prev => [...prev, { id, text: netXP > 0 ? `+${netXP} XP` : `${netXP} XP`, type, x, y }]);
       setTimeout(() => {
         setFloatingTexts(prev => prev.filter(item => item.id !== id));
       }, 2000);
@@ -466,28 +474,26 @@ export default function LessonPlayer() {
       // Update local state
       setProfile((prev: any) => {
         if (!prev) return prev;
-        return { ...prev, total_xp: Math.max(0, (prev.total_xp || 0) + amount) };
+        return { ...prev, total_xp: Math.max(0, (prev.total_xp || 0) + netXP) };
       });
       
-      // Update local storage course states if it is positive XP
-      if (amount > 0) {
-        try {
-          const courseStateKey = "hangeulai_course_state";
-          const stored = localStorage.getItem(courseStateKey);
-          const states = stored ? JSON.parse(stored) : {};
-          const courseId = activeLesson?.level ?? 1;
-          const existing = states[courseId] || { lastPhase: 0, completedPhases: [], totalXP: 0, lastVisited: null };
-          existing.totalXP = Math.max(0, (existing.totalXP || 0) + amount);
-          existing.lastVisited = new Date().toISOString();
-          states[courseId] = existing;
-          localStorage.setItem(courseStateKey, JSON.stringify(states));
-          setCourseStates(states);
-        } catch {}
-      }
+      // Update local storage course states
+      try {
+        const courseStateKey = "hangeulai_course_state";
+        const stored = localStorage.getItem(courseStateKey);
+        const states = stored ? JSON.parse(stored) : {};
+        const courseId = activeCourseId;
+        const existing = states[courseId] || { lastPhase: 0, completedPhases: [], totalXP: 0, lastVisited: null };
+        existing.totalXP = Math.max(0, (existing.totalXP || 0) + netXP);
+        existing.lastVisited = new Date().toISOString();
+        states[courseId] = existing;
+        localStorage.setItem(courseStateKey, JSON.stringify(states));
+        setCourseStates(states);
+      } catch {}
       
       // Send to backend
       try {
-        await apiRequest(`/progress/xp/add?amount=${amount}`, { method: "POST" });
+        await apiRequest(`/progress/xp/add?amount=${netXP}`, { method: "POST" });
       } catch (err) {
         console.error("Failed to add XP on event:", err);
       }
@@ -732,8 +738,8 @@ export default function LessonPlayer() {
           const courseStateKey = "hangeulai_course_state";
           const stored = localStorage.getItem(courseStateKey);
           const states: Record<number, { lastPhase: number; completedPhases: number[]; totalXP: number; lastVisited: string | null }> = stored ? JSON.parse(stored) : {};
-          // Derive course id from lesson level
-          const courseId = activeLesson?.level ?? 1;
+          // Derive course id from activeCourseId
+          const courseId = activeCourseId;
           const existing = states[courseId] || { lastPhase: 0, completedPhases: [], totalXP: 0, lastVisited: null };
           // Derive phase number from lesson title (e.g. "Phase 2" → 2)
           const phaseMatch = activeLesson?.title?.match(/(Phase|phase)\s*(\d+)/) ||
@@ -1520,325 +1526,325 @@ export default function LessonPlayer() {
           <Phase1VowelBootcampWizard
             activeLesson={activeLesson}
             speakWord={speakWord}
-            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0}
+            onComplete={handleEarnXp} courseXP={courseStates[activeCourseId]?.totalXP || 0}
           />
         ) : activeLesson?.title?.includes("Phase 2") ? (
           <Phase2ConsonantWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeCourseId]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Phase 3") ? (
           <Phase3SyllableBlocksWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeCourseId]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Phase 4") ? (
           <Phase4RealWordsWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeCourseId]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Phase 5") ? (
           <Phase5SpeakingLabWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeCourseId]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Phase 6") ? (
           <Phase6ConversationWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeCourseId]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Korean 1.1") ? (
           <Course2Phase1GreetingsWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeCourseId]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Korean 1.2") ? (
           <Course2Phase2SelfIntroWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeCourseId]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Korean 1.3") ? (
           <Course2Phase3NumbersWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeCourseId]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Korean 1.4") ? (
           <Course2Phase4RoutineWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeCourseId]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Korean 1.5") ? (
           <Course2Phase5LocationWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeCourseId]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Korean 1.6") ? (
           <Course2Phase6ConversationWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeCourseId]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Korean 2.1") ? (
           <Course3Phase1LongerRoutinesWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeCourseId]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Korean 2.2") ? (
           <Course3Phase2PreferencesWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeCourseId]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Korean 2.3") ? (
           <Course3Phase3PastRoutinesWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeCourseId]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Korean 2.4") ? (
           <Course3Phase4PlansWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeCourseId]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Korean 2.5") ? (
           <Course3Phase5StoriesWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeCourseId]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Korean 2.6") ? (
           <Course3Phase6ConversationWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeCourseId]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Korean 3.1") ? (
           <Course4Phase1ConnectorsWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeCourseId]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Korean 3.2") ? (
           <Course4Phase2DescriptionsWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeCourseId]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Korean 3.3") ? (
           <Course4Phase3AnecdotesWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeCourseId]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Korean 3.4") ? (
           <Course4Phase4OpinionsWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeCourseId]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Korean 3.5") ? (
           <Course4Phase5ParagraphsWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeCourseId]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Korean 3.6") ? (
           <Course4Phase6CapstoneWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeCourseId]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Korean 4.1") ? (
           <Course5Phase1FluencyWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeCourseId]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Korean 4.2") ? (
           <Course5Phase2TravelWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeCourseId]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Korean 4.3") ? (
           <Course5Phase3SocialWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeCourseId]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Korean 4.4") ? (
           <Course5Phase4RegisterWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeCourseId]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Korean 4.5") ? (
           <Course5Phase5ListeningWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeCourseId]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Korean 4.6") ? (
           <Course5Phase6CapstoneWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeCourseId]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Korean 5.1") ? (
           <Course6Phase1FluencyWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeCourseId]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Korean 5.2") ? (
           <Course6Phase2IdiomsWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeCourseId]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Korean 5.3") ? (
           <Course6Phase3StanceWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeCourseId]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Korean 5.4") ? (
           <Course6Phase4RegisterWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeCourseId]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Korean 5.5") ? (
           <Course6Phase5ImplicitWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeCourseId]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Korean 5.6") ? (
           <Course6Phase6CapstoneWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeCourseId]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Grammar Lab 1") ? (
           <Course7Phase1GrammarLabWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeCourseId]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Grammar Lab 2") ? (
           <Course7Phase2ParticlesWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeCourseId]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Grammar Lab 3") ? (
           <Course7Phase3PolitenessWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeCourseId]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Grammar Lab 4") ? (
           <Course7Phase4AdjectivesWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeCourseId]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Grammar Lab 5") ? (
           <Course7Phase5ConnectorsWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeCourseId]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Grammar Lab 6") ? (
           <Course7Phase6TenseAspectWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeCourseId]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Pronunciation Lab 1") ? (
           <Course8Phase1PronunciationWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeCourseId]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Pronunciation Lab 2") ? (
           <Course8Phase2BatchimWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeCourseId]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Pronunciation Lab 3") ? (
           <Course8Phase3RhythmWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeCourseId]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Listening Lab 1") ? (
           <Course8Phase4ListeningWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeCourseId]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Pronunciation Lab 5") ? (
           <Course8Phase5PoliteEndingsWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeCourseId]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Fluency Lab 1") ? (
           <Course8Phase6ConnectedSpeechWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeCourseId]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Intonation Lab") ? (
           <Course8Phase7IntonationWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeCourseId]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Conversation Lab") ? (
           <Course8Phase8ConversationWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeCourseId]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Listening Lab – Gist") ? (
           <Course8Phase9ListeningGistDetailWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeCourseId]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Reaction Lab") ? (
           <Course8Phase10ReactionWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeCourseId]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Story Lab") ? (
           <Course8Phase11StoryWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeCourseId]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Media Lab") ? (
           <Course8Phase12MediaWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeCourseId]?.totalXP || 0} 
           />
         ) : (
           /* Standard 2-step Curated Lesson Player */

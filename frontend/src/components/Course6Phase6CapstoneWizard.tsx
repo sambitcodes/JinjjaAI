@@ -209,8 +209,8 @@ export default function Course6Phase6CapstoneWizard({
         const saved = localStorage.getItem("hangeulai_c6p6_progress_state");
         if (saved) {
           const state = JSON.parse(saved);
-            if (state.step !== undefined) setStep(state.step);
-            if (state.maxStep !== undefined) setMaxStep(state.maxStep);
+            // Deleted state.step override to allow teleportation
+            // Deleted state.maxStep override to allow teleportation
             if (state.conceptCheckAnswer !== undefined) setConceptCheckAnswer(state.conceptCheckAnswer);
             if (state.conceptCheckChecked !== undefined) setConceptCheckChecked(state.conceptCheckChecked);
             if (state.selectedPreviewType !== undefined) setSelectedPreviewType(state.selectedPreviewType);

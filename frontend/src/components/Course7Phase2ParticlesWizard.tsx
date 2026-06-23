@@ -174,8 +174,8 @@ export default function Course7Phase2ParticlesWizard({
         const saved = localStorage.getItem("hangeulai_c7p2_progress_state");
         if (saved) {
           const state = JSON.parse(saved);
-            if (state.step !== undefined) setStep(state.step);
-            if (state.maxStep !== undefined) setMaxStep(state.maxStep);
+            // Deleted state.step override to allow teleportation
+            // Deleted state.maxStep override to allow teleportation
             if (state.choiceItems !== undefined) setChoiceItems(state.choiceItems);
             if (state.choiceIdx !== undefined) setChoiceIdx(state.choiceIdx);
             if (state.choiceSelected !== undefined) setChoiceSelected(state.choiceSelected);

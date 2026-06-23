@@ -158,8 +158,8 @@ export default function Course7Phase3PolitenessWizard({
         const saved = localStorage.getItem("hangeulai_c7p3_progress_state");
         if (saved) {
           const state = JSON.parse(saved);
-            if (state.step !== undefined) setStep(state.step);
-            if (state.maxStep !== undefined) setMaxStep(state.maxStep);
+            // Deleted state.step override to allow teleportation
+            // Deleted state.maxStep override to allow teleportation
             if (state.conjIdx !== undefined) setConjIdx(state.conjIdx);
             if (state.conjInput !== undefined) setConjInput(state.conjInput);
             if (state.conjChecked !== undefined) setConjChecked(state.conjChecked);

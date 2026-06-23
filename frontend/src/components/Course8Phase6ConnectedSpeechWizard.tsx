@@ -174,8 +174,8 @@ export default function Course8Phase6ConnectedSpeechWizard({
         const saved = localStorage.getItem("hangeulai_c8p6_progress_state");
         if (saved) {
           const state = JSON.parse(saved);
-            if (state.step !== undefined) setStep(state.step);
-            if (state.maxStep !== undefined) setMaxStep(state.maxStep);
+            // Deleted state.step override to allow teleportation
+            // Deleted state.maxStep override to allow teleportation
             if (state.ccIdx !== undefined) setCcIdx(state.ccIdx);
             if (state.ccSelected !== undefined) setCcSelected(state.ccSelected);
             if (state.ccChecked !== undefined) setCcChecked(state.ccChecked);

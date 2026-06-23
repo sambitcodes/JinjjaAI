@@ -177,8 +177,8 @@ export default function Course8Phase2BatchimWizard({
         const saved = localStorage.getItem("hangeulai_c8p2_progress_state");
         if (saved) {
           const state = JSON.parse(saved);
-            if (state.step !== undefined) setStep(state.step);
-            if (state.maxStep !== undefined) setMaxStep(state.maxStep);
+            // Deleted state.step override to allow teleportation
+            // Deleted state.maxStep override to allow teleportation
             if (state.biIdx !== undefined) setBiIdx(state.biIdx);
             if (state.biSelected !== undefined) setBiSelected(state.biSelected);
             if (state.biChecked !== undefined) setBiChecked(state.biChecked);

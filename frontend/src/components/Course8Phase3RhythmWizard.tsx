@@ -179,8 +179,8 @@ export default function Course8Phase3RhythmWizard({
         const saved = localStorage.getItem("hangeulai_c8p3_progress_state");
         if (saved) {
           const state = JSON.parse(saved);
-            if (state.step !== undefined) setStep(state.step);
-            if (state.maxStep !== undefined) setMaxStep(state.maxStep);
+            // Deleted state.step override to allow teleportation
+            // Deleted state.maxStep override to allow teleportation
             if (state.rcIdx !== undefined) setRcIdx(state.rcIdx);
             if (state.rcSelected !== undefined) setRcSelected(state.rcSelected);
             if (state.rcChecked !== undefined) setRcChecked(state.rcChecked);

@@ -174,8 +174,8 @@ export default function Course7Phase5ConnectorsWizard({
         const saved = localStorage.getItem("hangeulai_c7p5_progress_state");
         if (saved) {
           const state = JSON.parse(saved);
-            if (state.step !== undefined) setStep(state.step);
-            if (state.maxStep !== undefined) setMaxStep(state.maxStep);
+            // Deleted state.step override to allow teleportation
+            // Deleted state.maxStep override to allow teleportation
             if (state.relationIdx !== undefined) setRelationIdx(state.relationIdx);
             if (state.relationSelected !== undefined) setRelationSelected(state.relationSelected);
             if (state.relationChecked !== undefined) setRelationChecked(state.relationChecked);

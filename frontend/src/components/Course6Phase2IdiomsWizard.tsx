@@ -221,8 +221,8 @@ export default function Course6Phase2IdiomsWizard({
         const saved = localStorage.getItem("hangeulai_c6p2_progress_state");
         if (saved) {
           const state = JSON.parse(saved);
-            if (state.step !== undefined) setStep(state.step);
-            if (state.maxStep !== undefined) setMaxStep(state.maxStep);
+            // Deleted state.step override to allow teleportation
+            // Deleted state.maxStep override to allow teleportation
             if (state.selectedThemeId !== undefined) setSelectedThemeId(state.selectedThemeId);
             if (state.activity1SubStep !== undefined) setActivity1SubStep(state.activity1SubStep);
             if (state.contextData !== undefined) setContextData(state.contextData);

@@ -174,8 +174,8 @@ export default function Course8Phase1PronunciationWizard({
         const saved = localStorage.getItem("hangeulai_c8p1_progress_state");
         if (saved) {
           const state = JSON.parse(saved);
-            if (state.step !== undefined) setStep(state.step);
-            if (state.maxStep !== undefined) setMaxStep(state.maxStep);
+            // Deleted state.step override to allow teleportation
+            // Deleted state.maxStep override to allow teleportation
             if (state.sdIdx !== undefined) setSdIdx(state.sdIdx);
             if (state.sdSelected !== undefined) setSdSelected(state.sdSelected);
             if (state.sdChecked !== undefined) setSdChecked(state.sdChecked);

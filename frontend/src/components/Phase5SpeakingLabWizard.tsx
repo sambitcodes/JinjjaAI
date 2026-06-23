@@ -437,8 +437,8 @@ export default function Phase5SpeakingLabWizard({ activeLesson, speakWord, onCom
         const saved = localStorage.getItem("hangeulai_c1p5_progress_state");
         if (saved) {
           const state = JSON.parse(saved);
-            if (state.step !== undefined) setStep(state.step);
-            if (state.maxStep !== undefined) setMaxStep(state.maxStep);
+            // Deleted state.step override to allow teleportation
+            // Deleted state.maxStep override to allow teleportation
             if (state.setupResult !== undefined) setSetupResult(state.setupResult);
             if (state.cSelected !== undefined) setCSelected(state.cSelected);
             if (state.cChecked !== undefined) setCChecked(state.cChecked);

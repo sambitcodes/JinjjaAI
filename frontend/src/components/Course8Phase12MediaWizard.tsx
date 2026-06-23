@@ -178,8 +178,8 @@ export default function Course8Phase12MediaWizard({
         const saved = localStorage.getItem("hangeulai_c8p12_progress_state");
         if (saved) {
           const state = JSON.parse(saved);
-            if (state.step !== undefined) setStep(state.step);
-            if (state.maxStep !== undefined) setMaxStep(state.maxStep);
+            // Deleted state.step override to allow teleportation
+            // Deleted state.maxStep override to allow teleportation
             if (state.gistIdx !== undefined) setGistIdx(state.gistIdx);
             if (state.gistSelected !== undefined) setGistSelected(state.gistSelected);
             if (state.gistChecked !== undefined) setGistChecked(state.gistChecked);

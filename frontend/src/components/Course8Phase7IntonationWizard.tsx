@@ -175,8 +175,8 @@ export default function Course8Phase7IntonationWizard({
         const saved = localStorage.getItem("hangeulai_c8p7_progress_state");
         if (saved) {
           const state = JSON.parse(saved);
-            if (state.step !== undefined) setStep(state.step);
-            if (state.maxStep !== undefined) setMaxStep(state.maxStep);
+            // Deleted state.step override to allow teleportation
+            // Deleted state.maxStep override to allow teleportation
             if (state.sYnIdx !== undefined) setSYnIdx(state.sYnIdx);
             if (state.sYnSelected !== undefined) setSYnSelected(state.sYnSelected);
             if (state.sYnChecked !== undefined) setSYnChecked(state.sYnChecked);

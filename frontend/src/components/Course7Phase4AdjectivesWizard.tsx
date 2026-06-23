@@ -172,8 +172,8 @@ export default function Course7Phase4AdjectivesWizard({
         const saved = localStorage.getItem("hangeulai_c7p4_progress_state");
         if (saved) {
           const state = JSON.parse(saved);
-            if (state.step !== undefined) setStep(state.step);
-            if (state.maxStep !== undefined) setMaxStep(state.maxStep);
+            // Deleted state.step override to allow teleportation
+            // Deleted state.maxStep override to allow teleportation
             if (state.matchAnswers !== undefined) setMatchAnswers(state.matchAnswers);
             if (state.matchChecked !== undefined) setMatchChecked(state.matchChecked);
             if (state.matchCorrect !== undefined) setMatchCorrect(state.matchCorrect);

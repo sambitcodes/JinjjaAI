@@ -373,8 +373,8 @@ export default function Course2Phase5LocationWizard({
         const saved = localStorage.getItem("hangeulai_c2p5_progress_state");
         if (saved) {
           const state = JSON.parse(saved);
-            if (state.step !== undefined) setStep(state.step);
-            if (state.maxStep !== undefined) setMaxStep(state.maxStep);
+            // Deleted state.step override to allow teleportation
+            // Deleted state.maxStep override to allow teleportation
             if (state.placeIdx !== undefined) setPlaceIdx(state.placeIdx);
             if (state.selectedPlaceOpt !== undefined) setSelectedPlaceOpt(state.selectedPlaceOpt);
             if (state.placeChecked !== undefined) setPlaceChecked(state.placeChecked);

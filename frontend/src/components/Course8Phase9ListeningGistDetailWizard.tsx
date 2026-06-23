@@ -179,8 +179,8 @@ export default function Course8Phase9ListeningGistDetailWizard({
         const saved = localStorage.getItem("hangeulai_c8p9_progress_state");
         if (saved) {
           const state = JSON.parse(saved);
-            if (state.step !== undefined) setStep(state.step);
-            if (state.maxStep !== undefined) setMaxStep(state.maxStep);
+            // Deleted state.step override to allow teleportation
+            // Deleted state.maxStep override to allow teleportation
             if (state.titleIdx !== undefined) setTitleIdx(state.titleIdx);
             if (state.titleSelected !== undefined) setTitleSelected(state.titleSelected);
             if (state.titleChecked !== undefined) setTitleChecked(state.titleChecked);

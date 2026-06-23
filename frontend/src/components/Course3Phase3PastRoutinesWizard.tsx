@@ -355,8 +355,8 @@ export default function Course3Phase3PastRoutinesWizard({
         const saved = localStorage.getItem("hangeulai_c3p3_progress_state");
         if (saved) {
           const state = JSON.parse(saved);
-            if (state.step !== undefined) setStep(state.step);
-            if (state.maxStep !== undefined) setMaxStep(state.maxStep);
+            // Deleted state.step override to allow teleportation
+            // Deleted state.maxStep override to allow teleportation
             if (state.cSelected !== undefined) setCSelected(state.cSelected);
             if (state.cChecked !== undefined) setCChecked(state.cChecked);
             if (state.cCorrect !== undefined) setCCorrect(state.cCorrect);
