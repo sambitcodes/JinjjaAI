@@ -2,8 +2,8 @@
 
 import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
-import { ChevronLeft, CheckCircle2, ChevronRight, Award, Loader2, BookOpen, Layers, Volume2, Sparkles, BookMarked, BrainCircuit, RefreshCw, Compass, Star } from "lucide-react";
-import { apiRequest, ensureAuthenticated } from "../../lib/api";
+import { ChevronLeft, CheckCircle2, ChevronRight, Award, Loader2, BookOpen, Layers, Volume2, Sparkles, BookMarked, BrainCircuit, RefreshCw, Compass, Star, Trash2, Settings, Plus, Notebook } from "lucide-react";
+import { apiRequest, ensureAuthenticated, API_BASE_URL } from "../../lib/api";
 import { motion, AnimatePresence } from "framer-motion";
 import Phase1VowelBootcampWizard from "../../components/Phase1VowelBootcampWizard";
 import Phase2ConsonantWizard from "../../components/Phase2ConsonantWizard";
@@ -138,6 +138,59 @@ export default function LessonPlayer() {
   const activeStepRef = useRef<{ courseId: number; phaseNum: number; step: number } | null>(null);
 
   const [starredIds, setStarredIds] = useState<number[]>([]);
+
+  // TTS Voice States
+  const [koVoices, setKoVoices] = useState<SpeechSynthesisVoice[]>([]);
+  const [selectedKoVoiceName, setSelectedKoVoiceName] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("hangeulai_selected_ko_voice") || "ko-KR-SunHiNeural";
+    }
+    return "ko-KR-SunHiNeural";
+  });
+
+  // Diary/Notes States
+  const [notes, setNotes] = useState<any[]>([]);
+  const [notesOpen, setNotesOpen] = useState(false);
+  const [newNoteText, setNewNoteText] = useState("");
+  const [savingNote, setSavingNote] = useState(false);
+  const [generatingAiNote, setGeneratingAiNote] = useState(false);
+  const [wizardKey, setWizardKey] = useState(0);
+
+  // Sync selected voice to localStorage
+  useEffect(() => {
+    if (typeof window !== "undefined" && selectedKoVoiceName) {
+      localStorage.setItem("hangeulai_selected_ko_voice", selectedKoVoiceName);
+    }
+  }, [selectedKoVoiceName]);
+
+  // Load local voices on mount
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const loadVoices = () => {
+      if (window.speechSynthesis) {
+        const allVoices = window.speechSynthesis.getVoices();
+        setKoVoices(allVoices.filter(v => v.lang.startsWith("ko")));
+      }
+    };
+    loadVoices();
+    if (window.speechSynthesis) {
+      window.speechSynthesis.onvoiceschanged = loadVoices;
+    }
+  }, []);
+
+  // Load Notes
+  const loadNotes = async () => {
+    try {
+      const data = await apiRequest("/notes");
+      setNotes(data || []);
+    } catch (err) {
+      console.error("Failed to load notes:", err);
+    }
+  };
+
+  useEffect(() => {
+    loadNotes();
+  }, []);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -659,12 +712,156 @@ export default function LessonPlayer() {
   };
 
   const speakWord = (text: string) => {
-    if (typeof window !== "undefined" && "speechSynthesis" in window) {
-      const utterance = new SpeechSynthesisUtterance(text);
+    if (typeof window === "undefined") return;
+    
+    // Stop any currently playing synthesized audio
+    if (window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+    }
+    if ((window as any).activeLessonsAudio) {
+      (window as any).activeLessonsAudio.pause();
+      (window as any).activeLessonsAudio = null;
+    }
+
+    const cleanText = text.replace(/[*#]/g, "").trim();
+
+    if (selectedKoVoiceName === "google-online" || !selectedKoVoiceName || selectedKoVoiceName.includes("Neural")) {
+      const audioUrl = `${API_BASE_URL}/speech/tts?text=${encodeURIComponent(cleanText)}&lang=ko&voice=${encodeURIComponent(selectedKoVoiceName || "")}`;
+      const audio = new Audio(audioUrl);
+      (window as any).activeLessonsAudio = audio;
+      audio.play().catch(e => {
+        console.error("Audio playback error:", e);
+        // Fallback to local browser speech synthesis
+        const utterance = new SpeechSynthesisUtterance(cleanText);
+        utterance.lang = "ko-KR";
+        window.speechSynthesis.speak(utterance);
+      });
+    } else {
+      const utterance = new SpeechSynthesisUtterance(cleanText);
       utterance.lang = "ko-KR";
+      if (window.speechSynthesis) {
+        const voices = window.speechSynthesis.getVoices();
+        const matchingVoice = voices.find(v => v.name === selectedKoVoiceName);
+        if (matchingVoice) utterance.voice = matchingVoice;
+      }
       window.speechSynthesis.speak(utterance);
     }
   };
+
+  const navigateToLocation = async (courseId: number, phaseNum: number, step: number) => {
+    const currentCourseId = activeLesson?.level ?? 1;
+    if (currentCourseId !== courseId) {
+      await handleSelectCourse(courseId, "");
+    }
+    
+    const targetIdx = lessons.findIndex(l => {
+      const match = l.title?.match(/(Phase|phase)\s*(\d+)/) || l.title?.match(/\.([1-6])(?:\s|$)/);
+      const pNum = match ? parseInt(match[2] || match[1], 10) : 1;
+      return pNum === phaseNum;
+    });
+
+    if (targetIdx !== -1) {
+      const stepKey = courseId === 1 
+        ? `hangeulai_phase${phaseNum}_step` 
+        : `hangeulai_c${courseId}p${phaseNum}_step`;
+      localStorage.setItem(stepKey, step.toString());
+
+      setActiveIdx(targetIdx);
+      setCurrentStep(1);
+      setWizardKey(prev => prev + 1); // Force remount key
+      setNotesOpen(false);
+    }
+  };
+
+  const handleSaveManualNote = async () => {
+    if (!newNoteText.trim() || savingNote) return;
+    setSavingNote(true);
+    try {
+      const currentCourseId = activeLesson?.level ?? 1;
+      const phaseMatch = activeLesson?.title?.match(/(Phase|phase)\s*(\d+)/) || activeLesson?.title?.match(/\.([1-6])(?:\s|$)/);
+      const phaseNum = phaseMatch ? parseInt(phaseMatch[2] || phaseMatch[1], 10) : 1;
+      const currentStepNum = activeStepRef.current?.step ?? 1;
+
+      const res = await apiRequest("/notes", {
+        method: "POST",
+        body: JSON.stringify({
+          course_id: currentCourseId,
+          phase_num: phaseNum,
+          step: currentStepNum,
+          content: newNoteText.trim(),
+          is_ai: false
+        })
+      });
+      setNotes(prev => [res, ...prev]);
+      setNewNoteText("");
+    } catch (err) {
+      console.error("Failed to save note:", err);
+    } finally {
+      setSavingNote(false);
+    }
+  };
+
+  const handleDeleteNote = async (noteId: string) => {
+    try {
+      await apiRequest(`/notes/${noteId}`, { method: "DELETE" });
+      setNotes(prev => prev.filter(n => n.id !== noteId));
+    } catch (err) {
+      console.error("Failed to delete note:", err);
+    }
+  };
+
+  useEffect(() => {
+    const handleAddNoteEvent = async (e: Event) => {
+      const customEvent = e as CustomEvent;
+      const { question, selected_answer, correct_answer, is_correct, explanation } = customEvent.detail || {};
+      if (!question) return;
+
+      setGeneratingAiNote(true);
+      try {
+        const currentCourseId = activeLesson?.level ?? 1;
+        const phaseMatch = activeLesson?.title?.match(/(Phase|phase)\s*(\d+)/) || activeLesson?.title?.match(/\.([1-6])(?:\s|$)/);
+        const phaseNum = phaseMatch ? parseInt(phaseMatch[2] || phaseMatch[1], 10) : 1;
+        const currentStepNum = activeStepRef.current?.step ?? 1;
+
+        const res = await apiRequest("/notes/generate-ai-summary", {
+          method: "POST",
+          body: JSON.stringify({
+            course_id: currentCourseId,
+            phase_num: phaseNum,
+            step: currentStepNum,
+            question,
+            selected_answer: selected_answer || "None",
+            correct_answer: correct_answer || "None",
+            is_correct,
+            explanation: explanation || ""
+          })
+        });
+        setNotes(prev => [res, ...prev]);
+        
+        // Show visual feedback chimes/floating text
+        const textId = Date.now();
+        setFloatingTexts(prev => [...prev, { 
+          id: textId, 
+          text: "✨ Added to Notes!", 
+          type: "correct", 
+          x: window.innerWidth / 2, 
+          y: window.innerHeight * 0.3 
+        }]);
+        setTimeout(() => {
+          setFloatingTexts(prev => prev.filter(item => item.id !== textId));
+        }, 2000);
+      } catch (err) {
+        console.error("Failed to generate AI note summary:", err);
+      } finally {
+        setGeneratingAiNote(false);
+      }
+    };
+
+    window.addEventListener("hangeulai-add-note", handleAddNoteEvent);
+    return () => {
+      window.removeEventListener("hangeulai-add-note", handleAddNoteEvent);
+    };
+  }, [activeLesson]);
 
   if (loading) {
     return (
@@ -1210,6 +1407,29 @@ export default function LessonPlayer() {
                 ))}
               </div>
             </div>
+            
+            <div className="bg-zinc-950/80 p-4.5 rounded-2xl border border-white/5 space-y-2.5 mt-4 text-left">
+              <span className="text-[10px] text-zinc-500 uppercase tracking-wider font-extrabold flex items-center gap-1.5">
+                <Settings className="w-3.5 h-3.5 text-brand-400" />
+                <span>Korean Voice (TTS)</span>
+              </span>
+              <div className="relative">
+                <select
+                  value={selectedKoVoiceName}
+                  onChange={(e) => setSelectedKoVoiceName(e.target.value)}
+                  className="w-full bg-zinc-900 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-zinc-200 outline-none focus:border-brand-500 transition cursor-pointer font-black"
+                >
+                  <option value="google-online">Google Online (Premium)</option>
+                  <option value="ko-KR-SunHiNeural">Microsoft SunHi (Premium)</option>
+                  <option value="ko-KR-InJoonNeural">Microsoft InJoon (Premium)</option>
+                  {koVoices.map(v => (
+                    <option key={v.name} value={v.name}>
+                      {v.name.replace("Microsoft", "").replace("Google", "").replace("Desktop", "").trim()}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
 
             <div className="space-y-2 mt-4">
               <button
@@ -1232,7 +1452,7 @@ export default function LessonPlayer() {
         )}
 
         {/* Main Learning Slide Area - Takes full remaining screen width */}
-        <main className="flex-grow w-full flex flex-col justify-between min-h-[70vh]">
+        <main key={`${activeLesson?.id}_${wizardKey}`} className="flex-grow w-full flex flex-col justify-between min-h-[70vh]">
 
         {activeLesson?.title?.includes("Phase 1") ? (
           <Phase1VowelBootcampWizard
@@ -1735,9 +1955,32 @@ export default function LessonPlayer() {
                       ? "bg-accent-teal/5 border-accent-teal/20 text-accent-teal" 
                       : "bg-accent-pink/5 border-accent-pink/20 text-accent-pink"
                   }`}>
-                    <div className="font-extrabold flex items-center gap-1.5">
-                      <CheckCircle2 className="w-4 h-4" />
-                      <span>{quizCorrect ? "Correct! Brilliant understanding." : "Incorrect. Let's study the context rules."}</span>
+                    <div className="flex justify-between items-center border-b border-white/5 pb-2">
+                      <div className="font-extrabold flex items-center gap-1.5">
+                        <CheckCircle2 className="w-4 h-4" />
+                        <span>{quizCorrect ? "Correct! Brilliant understanding." : "Incorrect. Let's study the context rules."}</span>
+                      </div>
+                      <button
+                        onClick={() => {
+                          const currentCourseId = activeLesson?.level ?? 1;
+                          const phaseMatch = activeLesson?.title?.match(/(Phase|phase)\s*(\d+)/) || activeLesson?.title?.match(/\.([1-6])(?:\s|$)/);
+                          const phaseNum = phaseMatch ? parseInt(phaseMatch[2] || phaseMatch[1], 10) : 1;
+                          window.dispatchEvent(new CustomEvent("hangeulai-add-note", {
+                            detail: {
+                              question: activeQuiz?.question,
+                              selected_answer: activeQuiz?.type === "choice" ? selectedAnswer : writingAnswer,
+                              correct_answer: activeQuiz?.correct_answer,
+                              is_correct: !!quizCorrect,
+                              explanation: activeQuiz?.explanation
+                            }
+                          }));
+                        }}
+                        className="flex items-center gap-1 bg-white/10 hover:bg-white/20 text-white text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded border border-white/5 transition"
+                        title="Add this attempt summary to your diary notes"
+                        disabled={generatingAiNote}
+                      >
+                        <Plus className="w-2.5 h-2.5" /> Add to Notes
+                      </button>
                     </div>
                     <div className="text-xs text-zinc-400 leading-relaxed font-sans mt-1">
                       <strong>Explanation:</strong> {activeQuiz?.explanation}
@@ -1848,6 +2091,106 @@ export default function LessonPlayer() {
           }
         }
       `}</style>
+      {/* Floating Diary Button */}
+      <button 
+        onClick={() => setNotesOpen(!notesOpen)}
+        className="fixed bottom-6 right-6 z-50 p-4 bg-gradient-to-r from-brand-500 to-indigo-600 hover:from-brand-600 hover:to-indigo-700 text-white rounded-full shadow-2xl shadow-brand-500/25 border border-white/10 hover:scale-110 active:scale-95 transition-all duration-200 cursor-pointer"
+        title="Open Course Diary"
+      >
+        <Notebook className="w-6 h-6 animate-pulse" />
+      </button>
+
+      {/* Floating Diary Drawer */}
+      {notesOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex justify-end animate-fade-in">
+          <div className="w-full max-w-md bg-zinc-950/95 border-l border-white/10 h-full p-6 flex flex-col justify-between shadow-2xl backdrop-blur-xl animate-slide-in">
+            <div className="space-y-6 flex-grow overflow-y-auto pr-1">
+              {/* Header */}
+              <div className="flex items-center justify-between border-b border-white/5 pb-4">
+                <div className="flex items-center gap-2 font-black text-sm text-zinc-300">
+                  <Notebook className="w-4 h-4 text-brand-400" />
+                  <span>Universal Course Diary</span>
+                </div>
+                <button 
+                  onClick={() => setNotesOpen(false)}
+                  className="text-zinc-500 hover:text-white text-xs font-bold cursor-pointer border border-white/5 bg-zinc-900/60 px-2 py-1 rounded"
+                >
+                  ✕ Close
+                </button>
+              </div>
+
+              {/* Current tag indicator */}
+              <div className="p-3 bg-brand-500/5 border border-brand-500/10 rounded-xl text-left text-xs">
+                <span className="text-[9px] text-zinc-500 uppercase tracking-widest font-bold block mb-1">Current Tagged Location</span>
+                <div className="font-extrabold text-white flex items-center justify-between">
+                  <span>
+                    Course {activeLesson?.level ?? 1} · Phase {activeLesson?.title?.match(/(Phase|phase)\s*(\d+)/)?.[2] || 1} · Step {activeStepRef.current?.step ?? 1}
+                  </span>
+                  <span className="text-[9px] bg-brand-500/20 text-brand-300 px-2 py-0.5 rounded border border-brand-500/20 font-mono">
+                    Auto-tagged
+                  </span>
+                </div>
+              </div>
+
+              {/* Write manual note */}
+              <div className="space-y-2 text-left">
+                <span className="text-[10px] text-zinc-500 uppercase tracking-wider font-extrabold">Write New Note</span>
+                <textarea
+                  value={newNoteText}
+                  onChange={(e) => setNewNoteText(e.target.value)}
+                  placeholder="Type your study notes, vocabulary references, or remarks here..."
+                  className="w-full bg-zinc-900 border border-white/10 rounded-xl p-3 text-xs text-white placeholder-zinc-500 outline-none focus:border-brand-500 transition h-24 resize-none"
+                />
+                <div className="flex justify-end">
+                  <button
+                    onClick={handleSaveManualNote}
+                    disabled={savingNote || !newNoteText.trim()}
+                    className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white font-bold px-4 py-2 rounded-xl text-xs transition cursor-pointer"
+                  >
+                    {savingNote ? "Saving..." : "Save Note"}
+                  </button>
+                </div>
+              </div>
+
+              {/* Notes List */}
+              <div className="space-y-3 text-left">
+                <span className="text-[10px] text-zinc-500 uppercase tracking-wider font-extrabold block">Saved Diary Entries ({notes.length})</span>
+                <div className="space-y-3 max-h-[45vh] overflow-y-auto pr-1">
+                  {notes.map((note) => (
+                    <div key={note.id} className="p-4 bg-zinc-900/60 rounded-2xl border border-white/5 space-y-2.5 relative group">
+                      <div className="flex justify-between items-start gap-2">
+                        <button
+                          onClick={() => navigateToLocation(note.course_id, note.phase_num, note.step)}
+                          className="text-[9px] bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 border border-indigo-500/25 px-2.5 py-0.5 rounded-full font-mono transition cursor-pointer font-bold"
+                          title="Click to Teleport back to this Screen"
+                        >
+                          📍 Course {note.course_id} · Phase {note.phase_num} · Step {note.step}
+                        </button>
+                        <button
+                          onClick={() => handleDeleteNote(note.id)}
+                          className="text-zinc-500 hover:text-red-400 p-1 rounded hover:bg-white/5 transition opacity-0 group-hover:opacity-100 cursor-pointer"
+                          title="Delete Note"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                      
+                      <p className="text-xs text-zinc-200 leading-relaxed whitespace-pre-wrap">
+                        {note.content}
+                      </p>
+                      
+                      <div className="flex justify-between items-center text-[8px] text-zinc-500 font-mono">
+                        <span>{note.is_ai ? "🤖 AI Generated Summary" : "✍️ Student Note"}</span>
+                        <span>{new Date(note.created_at).toLocaleDateString()}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

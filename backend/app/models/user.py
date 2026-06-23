@@ -21,6 +21,7 @@ class User(Base):
     pronunciation_attempts: Mapped[list["PronunciationAttempt"]] = relationship("PronunciationAttempt", back_populates="user", cascade="all, delete-orphan")
     curated_lessons: Mapped[list["CuratedLesson"]] = relationship("CuratedLesson", back_populates="user", cascade="all, delete-orphan")
     user_exercise_attempts: Mapped[list["UserExerciseAttempt"]] = relationship("UserExerciseAttempt", back_populates="user", cascade="all, delete-orphan")
+    user_notes: Mapped[list["UserNote"]] = relationship("UserNote", back_populates="user", cascade="all, delete-orphan")
 
 
 class Profile(Base):

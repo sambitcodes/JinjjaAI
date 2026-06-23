@@ -1209,7 +1209,26 @@ export default function Course6Phase6CapstoneWizard({
                 ? "bg-accent-teal/5 border-accent-teal/20 text-accent-teal" 
                 : "bg-accent-pink/5 border-accent-pink/20 text-accent-pink"
             }`}>
-              <p className="font-black">{quizCorrect ? "✓ Correct!" : "✗ Not quite."}</p>
+              <div className="flex justify-between items-center border-b border-white/5 pb-1">
+                <p className="font-black">{quizCorrect ? "✓ Correct!" : "✗ Not quite."}</p>
+                <button
+                  onClick={() => {
+                    window.dispatchEvent(new CustomEvent("hangeulai-add-note", {
+                      detail: {
+                        question: quizBlueprint[quizIdx].question,
+                        selected_answer: quizSelectedOpt,
+                        correct_answer: quizBlueprint[quizIdx].correct_answer,
+                        is_correct: !!quizCorrect,
+                        explanation: quizBlueprint[quizIdx].explanation
+                      }
+                    }));
+                  }}
+                  className="bg-white/10 hover:bg-white/20 text-white text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded border border-white/5 transition"
+                  title="Add to Notes"
+                >
+                  + Add to Notes
+                </button>
+              </div>
               <p className="text-zinc-350 leading-normal">{quizBlueprint[quizIdx].explanation}</p>
             </div>
           )}

@@ -39,8 +39,20 @@ export default function TutorChat() {
   const [rightSidebarOpen, setRightSidebarOpen] = useState(true);
   const [koVoices, setKoVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [enVoices, setEnVoices] = useState<SpeechSynthesisVoice[]>([]);
-  const [selectedKoVoiceName, setSelectedKoVoiceName] = useState<string>("ko-KR-SunHiNeural");
+  const [selectedKoVoiceName, setSelectedKoVoiceName] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("hangeulai_selected_ko_voice") || "ko-KR-SunHiNeural";
+    }
+    return "ko-KR-SunHiNeural";
+  });
   const [selectedEnVoiceName, setSelectedEnVoiceName] = useState<string>("en-US-AriaNeural");
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && selectedKoVoiceName) {
+      localStorage.setItem("hangeulai_selected_ko_voice", selectedKoVoiceName);
+    }
+  }, [selectedKoVoiceName]);
+
   const [speechSpeed, setSpeechSpeed] = useState<number>(1.0);
   const [currentSpeakingMsgIndex, setCurrentSpeakingMsgIndex] = useState<number | null>(null);
   const [currentSpeakingType, setCurrentSpeakingType] = useState<"reply" | "translation" | null>(null);

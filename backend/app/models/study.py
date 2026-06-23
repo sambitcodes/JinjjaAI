@@ -82,3 +82,20 @@ class UserExerciseAttempt(Base):
     # Relationships
     user: Mapped["User"] = relationship("User", back_populates="user_exercise_attempts")
 
+
+class UserNote(Base):
+    __tablename__ = "user_notes"
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    course_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    phase_num: Mapped[int] = mapped_column(Integer, nullable=False)
+    step: Mapped[int] = mapped_column(Integer, nullable=False)
+    content: Mapped[str] = mapped_column(Text, nullable=False)
+    is_ai: Mapped[bool] = mapped_column(nullable=False, default=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+
+    # Relationships
+    user: Mapped["User"] = relationship("User", back_populates="user_notes")
+
+
