@@ -201,3 +201,161 @@ async def get_live_benchmarks():
         with open(scores_file, "r", encoding="utf-8") as f:
             return json.load(f)
     return []
+
+
+class GwanSikChatRequest(BaseModel):
+    message: str
+    course_id: int
+    phase_num: int
+    step: int
+    screen_context: str | None = None
+    conversation_history: List[dict] = []  # [{"role": "user"|"assistant", "content": str}]
+
+class GwanSikChatResponse(BaseModel):
+    reply: str
+
+class GwanSikNoteRequest(BaseModel):
+    course_id: int
+    phase_num: int
+    step: int
+    screen_context: str | None = None
+    conversation_history: List[dict] = []
+
+class GwanSikNoteResponse(BaseModel):
+    title: str
+    keyConcepts: str
+    explanation: str
+    example: str
+    quickRevision: str
+
+
+@router.post("/gwan-sik/chat", response_model=GwanSikChatResponse)
+async def gwan_sik_chat(
+    payload: GwanSikChatRequest,
+    current_user: User = Depends(get_current_user)
+):
+    system_prompt = (
+        "You are Gwan-Sik, a warm, supportive, lightweight contextual study helper for a student learning Hangeul/Korean.\n"
+        "Your purpose is strictly restricted to helping the learner understand the CURRENT LESSON screen only.\n"
+        "Do NOT act as a general-purpose AI or tutor for anything outside this screen's scope.\n\n"
+        f"CURRENT SCREEN SCOPE:\n"
+        f"- Course ID: {payload.course_id}\n"
+        f"- Phase Number: {payload.phase_num}\n"
+        f"- Step: {payload.step}\n"
+        f"- Screen Context: {payload.screen_context or 'Not specified'}\n\n"
+        "CRITICAL INSTRUCTIONS:\n"
+        "1. You must ONLY answer questions directly related to the Korean grammar, letters, vocabulary, examples, or explanations visible on this screen.\n"
+        "2. If the user asks ANY question that is off-topic, unrelated to this specific lesson, or seeks general knowledge (e.g. 'Who won the 2022 FIFA World Cup?', 'Write a python script', 'How to bake a cake', or even unrelated general Korean grammar not visible/relevant to the current step), you MUST respond EXACTLY with:\n"
+        "   'I\\'m currently designed to help only with this lesson\\'s content. Please ask a question related to the current topic.'\n"
+        "3. Keep your answers brief, clear, and focused on helping the student understand this specific slide."
+    )
+
+    try:
+        import httpx
+        from backend.app.core.config import settings
+        
+        messages = [{"role": "system", "content": system_prompt}]
+        for msg in payload.conversation_history:
+            messages.append({
+                "role": "user" if msg["role"] == "user" else "assistant",
+                "content": msg["content"]
+            })
+        messages.append({"role": "user", "content": payload.message})
+
+        headers = {
+            "Authorization": f"Bearer {settings.GROQ_API_KEY}",
+            "Content-Type": "application/json"
+        }
+        payload_data = {
+            "model": "llama-3.3-70b-versatile",
+            "messages": messages,
+            "temperature": 0.2,
+            "max_tokens": 500
+        }
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                "https://api.groq.com/openai/v1/chat/completions",
+                headers=headers,
+                json=payload_data,
+                timeout=20.0
+            )
+            if response.status_code == 200:
+                res_data = response.json()
+                reply = res_data["choices"][0]["message"]["content"].strip()
+                return GwanSikChatResponse(reply=reply)
+            else:
+                return GwanSikChatResponse(reply="I'm currently designed to help only with this lesson's content. Please ask a question related to the current topic.")
+    except Exception as e:
+        print(f"Gwan-Sik API error: {e}", flush=True)
+        return GwanSikChatResponse(reply="I'm currently designed to help only with this lesson's content. Please ask a question related to the current topic.")
+
+
+@router.post("/gwan-sik/generate-note", response_model=GwanSikNoteResponse)
+async def gwan_sik_generate_note(
+    payload: GwanSikNoteRequest,
+    current_user: User = Depends(get_current_user)
+):
+    prompt = (
+        "You are Gwan-Sik, the learner's study companion.\n"
+        "Analyze the following conversation and the screen content to extract a concise, structured study note in JSON format.\n\n"
+        f"SCREEN CONTEXT:\n{payload.screen_context or 'Not specified'}\n\n"
+        f"CONVERSATION HISTORY:\n"
+    )
+    for msg in payload.conversation_history:
+        prompt += f"- {msg['role']}: {msg['content']}\n"
+    
+    prompt += (
+        "\nInstructions:\n"
+        "Extract a concise note. Output ONLY a valid JSON object matching this structure (do not output any other text or code blocks):\n"
+        "{\n"
+        "  \"title\": \"A concise title (e.g. Using 은 vs 는)\",\n"
+        "  \"keyConcepts\": \"Bullet points of key concepts\",\n"
+        "  \"explanation\": \"A clear, brief explanation of the grammar/rules discussed\",\n"
+        "  \"example\": \"A relevant Korean sentence example with translation if present in chat or context\",\n"
+        "  \"quickRevision\": \"A quick revision rule-of-thumb point\"\n"
+        "}"
+    )
+
+    try:
+        import httpx
+        from backend.app.core.config import settings
+        import json
+        
+        headers = {
+            "Authorization": f"Bearer {settings.GROQ_API_KEY}",
+            "Content-Type": "application/json"
+        }
+        payload_data = {
+            "model": "llama-3.3-70b-versatile",
+            "messages": [{"role": "user", "content": prompt}],
+            "temperature": 0.2,
+            "response_format": {"type": "json_object"}
+        }
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                "https://api.groq.com/openai/v1/chat/completions",
+                headers=headers,
+                json=payload_data,
+                timeout=20.0
+            )
+            if response.status_code == 200:
+                res_data = response.json()
+                note_json = json.loads(res_data["choices"][0]["message"]["content"].strip())
+                return GwanSikNoteResponse(
+                    title=note_json.get("title", "Study Note"),
+                    keyConcepts=note_json.get("keyConcepts", "Korean grammar concept"),
+                    explanation=note_json.get("explanation", "Contextual grammar note"),
+                    example=note_json.get("example", ""),
+                    quickRevision=note_json.get("quickRevision", "Practice regularly!")
+                )
+    except Exception as e:
+        print(f"Failed to generate note: {e}", flush=True)
+    
+    # Fallback response
+    return GwanSikNoteResponse(
+        title=f"Lesson C{payload.course_id} P{payload.phase_num} Step {payload.step} Study Notes",
+        keyConcepts="Main Hangeul spelling & patterns",
+        explanation="Study notes based on active screen and chat feedback",
+        example="",
+        quickRevision="Review the lesson player syllabus map regularly."
+    )

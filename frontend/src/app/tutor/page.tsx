@@ -45,13 +45,24 @@ export default function TutorChat() {
     }
     return "google-online";
   });
-  const [selectedEnVoiceName, setSelectedEnVoiceName] = useState<string>("en-US-AriaNeural");
+  const [selectedEnVoiceName, setSelectedEnVoiceName] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("hangeulai_selected_en_voice") || "en-US-AriaNeural";
+    }
+    return "en-US-AriaNeural";
+  });
 
   useEffect(() => {
     if (typeof window !== "undefined" && selectedKoVoiceName) {
       localStorage.setItem("hangeulai_selected_ko_voice", selectedKoVoiceName);
     }
   }, [selectedKoVoiceName]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && selectedEnVoiceName) {
+      localStorage.setItem("hangeulai_selected_en_voice", selectedEnVoiceName);
+    }
+  }, [selectedEnVoiceName]);
 
   const [speechSpeed, setSpeechSpeed] = useState<number>(1.0);
   const [currentSpeakingMsgIndex, setCurrentSpeakingMsgIndex] = useState<number | null>(null);
@@ -1322,22 +1333,18 @@ export default function TutorChat() {
 
             {/* EN Voice Dropdown */}
             <div className="space-y-1.5">
-              <label className="text-[10px] text-zinc-500 uppercase tracking-wider font-extrabold block">English Voice (TTS)</label>
+              <label className="text-[10px] text-zinc-500 uppercase tracking-wider font-extrabold block">🎤 Voice Settings</label>
               <CustomSelect
                 label="EN Voice"
-                value={selectedEnVoiceName || "google-online"}
+                value={selectedEnVoiceName || "en-US-AriaNeural"}
                 onChange={(val) => setSelectedEnVoiceName(val)}
                 accentClass="text-accent-teal"
                 options={[
-                  { value: "google-online", label: "Google Online (Premium)" },
-                  { value: "en-US-AriaNeural", label: "Microsoft Aria (Premium Neural)" },
-                  { value: "en-US-GuyNeural", label: "Microsoft Guy (Premium Neural)" },
-                  { value: "en-GB-SoniaNeural", label: "Microsoft Sonia (Premium Neural)" },
-                  { value: "en-GB-RyanNeural", label: "Microsoft Ryan (Premium Neural)" },
-                  ...enVoices.map(v => ({
-                    value: v.name,
-                    label: v.name.replace("Microsoft", "").replace("Google", "").replace("Desktop", "").trim()
-                  }))
+                  { value: "en-US-AriaNeural", label: "English (US)" },
+                  { value: "en-GB-SoniaNeural", label: "English (UK)" },
+                  { value: "en-IN-NeerjaNeural", label: "English (India - Female)" },
+                  { value: "en-IN-PrabhatNeural", label: "English (India - Male)" },
+                  { value: "en-IN-Neutral", label: "English (India - Neutral)" }
                 ]}
               />
             </div>

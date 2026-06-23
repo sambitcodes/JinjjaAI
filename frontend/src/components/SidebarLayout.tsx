@@ -30,7 +30,14 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
   const [phaseFilter, setPhaseFilter] = useState<string>("all");
   const [stepFilter, setStepFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
-  const [activeTab, setActiveTab] = useState<"ai" | "manual">("ai");
+
+  // Gwan-Sik Helper States
+  const [gwanSikOpen, setGwanSikOpen] = useState(false);
+  const [gwanSikMessages, setGwanSikMessages] = useState<Array<{role: "user" | "assistant", content: string}>>([]);
+  const [gwanSikInput, setGwanSikInput] = useState("");
+  const [gwanSikSending, setGwanSikSending] = useState(false);
+  const [currentLocationKey, setCurrentLocationKey] = useState("");
+  const [generatingGwanSikNote, setGeneratingGwanSikNote] = useState(false);
 
   const handleCourseChange = (val: string) => {
     setCourseFilter(val);
@@ -222,6 +229,7 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
       const customEvent = e as CustomEvent;
       if (customEvent.detail && typeof customEvent.detail.courseId === "number") {
         setActiveCourseId(customEvent.detail.courseId);
+        setGwanSikMessages([]); // Reset memory when changing step
       }
     };
 
@@ -244,10 +252,112 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
     window.location.href = "/";
   };
 
+  const getScreenContextText = (): string => {
+    if (typeof document === "undefined") return "";
+    const container = document.getElementById("main-learning-container") || 
+                      document.getElementById("lesson-content-area") ||
+                      document.querySelector("main") ||
+                      document.body;
+    if (!container) return "";
+    const text = container.innerText || container.textContent || "";
+    return text.replace(/\s+/g, " ").slice(0, 2000).trim();
+  };
+
+  const handleSendGwanSikMessage = async () => {
+    if (!gwanSikInput.trim() || gwanSikSending) return;
+    const userMsg = gwanSikInput.trim();
+    setGwanSikInput("");
+    setGwanSikSending(true);
+    
+    const nextMessages = [...gwanSikMessages, { role: "user" as const, content: userMsg }];
+    setGwanSikMessages(nextMessages);
+    
+    try {
+      const loc = getActiveLocation();
+      const screenContext = getScreenContextText();
+      
+      const res = await apiRequest("/tutor/gwan-sik/chat", {
+        method: "POST",
+        body: JSON.stringify({
+          message: userMsg,
+          course_id: loc.courseId,
+          phase_num: loc.phaseNum,
+          step: loc.step,
+          screen_context: screenContext,
+          conversation_history: gwanSikMessages
+        })
+      });
+      
+      setGwanSikMessages([...nextMessages, { role: "assistant" as const, content: res.reply }]);
+    } catch (err) {
+      console.error("Gwan-Sik chat error:", err);
+      setGwanSikMessages([...nextMessages, { role: "assistant" as const, content: "I'm currently designed to help only with this lesson's content. Please ask a question related to the current topic." }]);
+    } finally {
+      setGwanSikSending(false);
+    }
+  };
+
+  const handleGenerateNoteFromConvo = async () => {
+    if (gwanSikMessages.length === 0 || generatingGwanSikNote) return;
+    setGeneratingGwanSikNote(true);
+    
+    try {
+      const loc = getActiveLocation();
+      const screenContext = getScreenContextText();
+      
+      const summaryRes = await apiRequest("/tutor/gwan-sik/generate-note", {
+        method: "POST",
+        body: JSON.stringify({
+          course_id: loc.courseId,
+          phase_num: loc.phaseNum,
+          step: loc.step,
+          screen_context: screenContext,
+          conversation_history: gwanSikMessages
+        })
+      });
+      
+      const savePayload = {
+        course_id: loc.courseId,
+        phase_num: loc.phaseNum,
+        step: loc.step,
+        content: JSON.stringify({
+          source: "Gwan-Sik",
+          title: summaryRes.title,
+          keyConcepts: summaryRes.keyConcepts,
+          explanation: summaryRes.explanation,
+          example: summaryRes.example,
+          quickRevision: summaryRes.quickRevision
+        }),
+        is_ai: false
+      };
+      
+      const savedNote = await apiRequest("/notes", {
+        method: "POST",
+        body: JSON.stringify(savePayload)
+      });
+      
+      setNotes(prev => [savedNote, ...prev]);
+      setWarningPopup({ show: true, message: "✨ Structured study note generated and saved to your Diary!" });
+    } catch (err) {
+      console.error("Failed to generate note from Gwan-Sik:", err);
+      alert("Failed to generate note from conversation.");
+    } finally {
+      setGeneratingGwanSikNote(false);
+    }
+  };
+
+  useEffect(() => {
+    const loc = getActiveLocation();
+    const key = `c${loc.courseId}p${loc.phaseNum}s${loc.step}`;
+    if (currentLocationKey && currentLocationKey !== key) {
+      setGwanSikMessages([]);
+    }
+    setCurrentLocationKey(key);
+  }, [pathname, notesOpen, gwanSikOpen]);
+
   const filteredNotes = notes.filter(note => {
-    // 1. Tab filter
-    if (activeTab === "ai" && !note.is_ai) return false;
-    if (activeTab === "manual" && note.is_ai) return false;
+    // Filter out old screen summaries (is_ai = true)
+    if (note.is_ai) return false;
 
     // 2. Dropdown filters
     if (courseFilter !== "all" && String(note.course_id) !== courseFilter) return false;
@@ -261,16 +371,16 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
       let questionText = "";
       let explanationText = "";
       
-      if (!note.is_ai) {
-        try {
-          const parsed = JSON.parse(note.content);
+      try {
+        const parsed = JSON.parse(note.content);
+        if (parsed.source === "Gwan-Sik") {
+          noteText = `${parsed.title} ${parsed.keyConcepts} ${parsed.explanation} ${parsed.example} ${parsed.quickRevision}`.toLowerCase();
+        } else {
           noteText = (parsed.userNote || "").toLowerCase();
           questionText = (parsed.originalContent?.question || "").toLowerCase();
           explanationText = (parsed.originalContent?.explanation || "").toLowerCase();
-        } catch (e) {
-          noteText = note.content.toLowerCase();
         }
-      } else {
+      } catch (e) {
         noteText = note.content.toLowerCase();
       }
 
@@ -516,7 +626,7 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
           {/* Floating Diary Button */}
           <button 
             onClick={() => setNotesOpen(!notesOpen)}
-            className="fixed bottom-24 right-6 z-[9999] p-4 bg-gradient-to-r from-brand-500 to-indigo-600 hover:from-brand-600 hover:to-indigo-700 text-white rounded-full shadow-2xl shadow-brand-500/25 border border-white/10 hover:scale-110 active:scale-95 transition-all duration-200 cursor-pointer"
+            className="fixed bottom-20 right-6 z-[9999] p-4 bg-gradient-to-r from-brand-500 to-indigo-600 hover:from-brand-600 hover:to-indigo-700 text-white rounded-full shadow-2xl shadow-brand-500/25 border border-white/10 hover:scale-110 active:scale-95 transition-all duration-200 cursor-pointer"
             title="Open Course Diary"
           >
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6 animate-pulse">
@@ -524,6 +634,121 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
               <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
             </svg>
           </button>
+
+          {/* Floating Gwan-Sik Button */}
+          <button 
+            onClick={() => setGwanSikOpen(!gwanSikOpen)}
+            className="fixed bottom-34 right-6 z-[9999] p-4 bg-gradient-to-r from-teal-500 to-indigo-600 hover:from-teal-600 hover:to-indigo-700 text-white rounded-full shadow-2xl shadow-teal-500/25 border border-white/10 hover:scale-110 active:scale-95 transition-all duration-200 cursor-pointer"
+            title="Open Gwan-Sik Helper"
+          >
+            <span className="text-xl animate-pulse">🤖</span>
+          </button>
+
+          {/* Floating Gwan-Sik Chat Drawer */}
+          {gwanSikOpen && (
+            <div className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-sm flex justify-end animate-fade-in">
+              <div className="w-full max-w-md bg-zinc-950/95 border-l border-white/10 h-full p-6 flex flex-col justify-between shadow-2xl backdrop-blur-xl animate-slide-in">
+                <div className="flex flex-col flex-grow overflow-hidden">
+                  {/* Header */}
+                  <div className="flex items-center justify-between border-b border-white/5 pb-4 mb-4">
+                    <div className="flex flex-col text-left">
+                      <span className="font-black text-sm text-zinc-300 flex items-center gap-1.5">
+                        🤖 Gwan-Sik
+                      </span>
+                      <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider">Ask me about this lesson</span>
+                    </div>
+                    <button 
+                      onClick={() => setGwanSikOpen(false)}
+                      className="text-zinc-500 hover:text-white text-xs font-bold cursor-pointer border border-white/5 bg-zinc-900/60 px-2 py-1 rounded"
+                    >
+                      ✕ Close
+                    </button>
+                  </div>
+
+                  {/* Chat Area */}
+                  <div className="flex-grow overflow-y-auto space-y-3 pr-1 mb-4">
+                    {gwanSikMessages.length === 0 ? (
+                      <div className="text-center py-12 space-y-3">
+                        <span className="text-4xl">👋</span>
+                        <p className="text-xs text-zinc-400 font-medium max-w-xs mx-auto">
+                          Hi! I'm Gwan-Sik, your lesson companion. Ask me anything about the concepts, examples, or questions on this screen!
+                        </p>
+                      </div>
+                    ) : (
+                      gwanSikMessages.map((msg, index) => (
+                        <div key={index} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+                          <div className={`max-w-[85%] rounded-2xl p-3.5 text-xs text-left ${
+                            msg.role === "user" 
+                              ? "bg-indigo-600 text-white rounded-tr-none font-semibold" 
+                              : "bg-zinc-900 border border-white/5 text-zinc-100 rounded-tl-none leading-relaxed"
+                          }`}>
+                            {msg.content}
+                          </div>
+                        </div>
+                      ))
+                    )}
+                    {gwanSikSending && (
+                      <div className="flex justify-start">
+                        <div className="bg-zinc-900/60 border border-white/5 p-3 rounded-2xl rounded-tl-none text-xs text-zinc-500 animate-pulse text-left">
+                          Gwan-Sik is thinking...
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Bottom Action Area (Notes and Inputs) */}
+                <div className="space-y-3 pt-3 border-t border-white/5">
+                  {/* Action Buttons */}
+                  <div className="flex gap-2">
+                    {gwanSikMessages.length > 0 && (
+                      <button
+                        onClick={handleGenerateNoteFromConvo}
+                        disabled={generatingGwanSikNote}
+                        className="flex-1 bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white font-bold py-2 rounded-xl text-[10px] transition cursor-pointer flex items-center justify-center gap-1.5 shadow"
+                      >
+                        📝 {generatingGwanSikNote ? "Generating Note..." : "Add Summary To Notes"}
+                      </button>
+                    )}
+                    
+                    {/* Auto Generate Note option if 5+ exchanges (>= 8 messages) */}
+                    {gwanSikMessages.length >= 8 && (
+                      <button
+                        onClick={handleGenerateNoteFromConvo}
+                        disabled={generatingGwanSikNote}
+                        className="flex-1 bg-gradient-to-r from-teal-500 to-indigo-600 hover:from-teal-600 hover:to-indigo-700 disabled:opacity-50 text-white font-bold py-2 rounded-xl text-[10px] transition cursor-pointer flex items-center justify-center gap-1.5 shadow"
+                      >
+                        ✨ Auto Generate Note
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Input area */}
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      placeholder="Ask about this lesson..."
+                      value={gwanSikInput}
+                      onChange={(e) => setGwanSikInput(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && handleSendGwanSikMessage()}
+                      className="flex-grow bg-zinc-900 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white placeholder-zinc-500 outline-none focus:border-indigo-500 transition"
+                      disabled={gwanSikSending}
+                    />
+                    <button
+                      onClick={handleSendGwanSikMessage}
+                      disabled={gwanSikSending || !gwanSikInput.trim()}
+                      className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white p-2.5 rounded-xl transition cursor-pointer shadow active:scale-95 flex items-center justify-center"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-4 h-4">
+                        <line x1="22" y1="2" x2="11" y2="13" />
+                        <polygon points="22 2 15 22 11 13 2 9 22 2" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Floating Diary Drawer */}
           {notesOpen && (
@@ -547,21 +772,7 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
                     </button>
                   </div>
 
-                  {/* Tabs: Summaries (Type A) vs Saved Notes (Type B) */}
-                  <div className="flex border-b border-white/5">
-                    <button
-                      onClick={() => setActiveTab("ai")}
-                      className={`flex-1 pb-2.5 text-xs font-bold transition-all ${activeTab === "ai" ? "text-brand-400 border-b-2 border-brand-500 font-black" : "text-zinc-500 hover:text-zinc-300"}`}
-                    >
-                      🤖 Screen Summaries
-                    </button>
-                    <button
-                      onClick={() => setActiveTab("manual")}
-                      className={`flex-1 pb-2.5 text-xs font-bold transition-all ${activeTab === "manual" ? "text-indigo-400 border-b-2 border-indigo-500 font-black" : "text-zinc-500 hover:text-zinc-300"}`}
-                    >
-                      ✍️ Saved Notes
-                    </button>
-                  </div>
+                  {/* Unified Saved Notes Search */}
 
                   {/* Search Bar */}
                   <div className="relative">
@@ -640,7 +851,7 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
                   {(() => {
                     const loc = getActiveLocation();
                     return (
-                      <div className="p-3 bg-brand-500/5 border border-brand-500/10 rounded-xl text-left text-xs space-y-3">
+                      <div className="p-3 bg-brand-500/5 border border-brand-500/10 rounded-xl text-left text-xs">
                         <div>
                           <span className="text-[9px] text-zinc-500 uppercase tracking-widest font-bold block mb-1">Current Tagged Location</span>
                           <div className="font-extrabold text-white flex items-center justify-between">
@@ -652,40 +863,6 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
                             </span>
                           </div>
                         </div>
-                        <button
-                          onClick={async () => {
-                            if (generatingAiNote) return;
-                            setGeneratingAiNote(true);
-                            try {
-                              const res = await apiRequest("/notes/generate-ai-summary", {
-                                method: "POST",
-                                body: JSON.stringify({
-                                  course_id: loc.courseId,
-                                  phase_num: loc.phaseNum,
-                                  step: loc.step,
-                                  question: "Active Study Slide",
-                                  selected_answer: "Interactive Study Materials",
-                                  correct_answer: "Verified Korean Curriculum",
-                                  is_correct: true,
-                                  explanation: `The student requested an AI summary of this Korean lesson slide. Focus on key grammar particles, vowels, consonants, vocabulary examples, and conversational nuances covered in this phase.`
-                                })
-                              });
-                              setNotes(prev => [res, ...prev]);
-                              setWarningPopup({ show: true, message: "✨ Note generated and saved to your Diary successfully!" });
-                            } catch (err) {
-                              console.error("Failed to generate AI note summary:", err);
-                            } finally {
-                              setGeneratingAiNote(false);
-                            }
-                          }}
-                          disabled={generatingAiNote}
-                          className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold py-2.5 rounded-xl text-xs transition cursor-pointer flex items-center justify-center gap-1.5 shadow-lg shadow-indigo-500/20"
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5 animate-pulse">
-                            <path d="m12 3-1.912 5.886L4.202 9.075 9.07 13.56 7.158 19.44 12 15.83l4.842 3.61-1.911-5.88 4.867-4.485-5.886-.189z" />
-                          </svg>
-                          <span>{generatingAiNote ? "Summarizing..." : "AI Summarize Current Screen"}</span>
-                        </button>
                       </div>
                     );
                   })()}
@@ -754,33 +931,61 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
                               </div>
                               
                               {parsedJson ? (
-                                <div className="space-y-2 text-xs">
-                                  {parsedJson.userNote && (
-                                    <p className="text-zinc-100 font-bold italic leading-relaxed whitespace-pre-wrap bg-zinc-950/40 p-2.5 rounded-xl border border-white/[0.02]">
-                                      "{parsedJson.userNote}"
-                                    </p>
-                                  )}
-                                  <details className="text-[11px] text-zinc-400 bg-zinc-955/80 p-3 rounded-xl border border-white/5 cursor-pointer select-none">
-                                    <summary className="font-extrabold text-[9px] uppercase tracking-wider text-zinc-500 hover:text-zinc-300">
-                                      {parsedJson.contentType === "theory" ? "📖 Reference Concept details" : "❓ Reference Question details"}
-                                    </summary>
-                                    <div className="mt-3.5 space-y-2 text-zinc-400 select-text cursor-auto border-t border-white/5 pt-3">
-                                      <p><strong>Content:</strong> {parsedJson.originalContent.question}</p>
-                                      {parsedJson.contentType === "question" && (
-                                        <>
-                                          <p className={parsedJson.originalContent.is_correct ? "text-emerald-400 font-bold" : "text-red-400 font-bold"}>
-                                            <strong>Status:</strong> {parsedJson.originalContent.is_correct ? "Correct Answer" : "Incorrect Answer"}
-                                          </p>
-                                          <p><strong>Your Answer:</strong> {parsedJson.originalContent.selected_answer}</p>
-                                          <p><strong>Expected:</strong> {parsedJson.originalContent.correct_answer}</p>
-                                        </>
-                                      )}
-                                      {parsedJson.originalContent.explanation && (
-                                        <p><strong>Explanation:</strong> {parsedJson.originalContent.explanation}</p>
-                                      )}
+                                parsedJson.source === "Gwan-Sik" ? (
+                                  <div className="space-y-3 text-xs bg-zinc-950/60 p-4.5 rounded-2xl border border-indigo-500/25 shadow-md text-left">
+                                    <div className="flex items-center gap-1.5 border-b border-white/5 pb-2 mb-2">
+                                      <span className="text-indigo-400 font-black text-sm">{parsedJson.title}</span>
                                     </div>
-                                  </details>
-                                </div>
+                                    <div className="space-y-2">
+                                      <div>
+                                        <span className="text-[9px] text-indigo-400 uppercase tracking-wider font-extrabold block">Key Concepts</span>
+                                        <p className="text-zinc-200 pl-1 leading-relaxed whitespace-pre-wrap">{parsedJson.keyConcepts}</p>
+                                      </div>
+                                      <div>
+                                        <span className="text-[9px] text-cyan-400 uppercase tracking-wider font-extrabold block">Explanation</span>
+                                        <p className="text-zinc-300 pl-1 leading-relaxed whitespace-pre-wrap">{parsedJson.explanation}</p>
+                                      </div>
+                                      {parsedJson.example && (
+                                        <div>
+                                          <span className="text-[9px] text-amber-400 uppercase tracking-wider font-extrabold block">Example</span>
+                                          <p className="text-amber-100/90 font-mono pl-1 leading-relaxed whitespace-pre-wrap bg-amber-500/5 p-2 rounded-lg border border-amber-500/10 mt-1">{parsedJson.example}</p>
+                                        </div>
+                                      )}
+                                      <div>
+                                        <span className="text-[9px] text-emerald-400 uppercase tracking-wider font-extrabold block">Quick Revision Point</span>
+                                        <p className="text-zinc-300 pl-1 leading-relaxed whitespace-pre-wrap">{parsedJson.quickRevision}</p>
+                                      </div>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="space-y-2 text-xs">
+                                    {parsedJson.userNote && (
+                                      <p className="text-zinc-100 font-bold italic leading-relaxed whitespace-pre-wrap bg-zinc-950/40 p-2.5 rounded-xl border border-white/[0.02]">
+                                        "{parsedJson.userNote}"
+                                      </p>
+                                    )}
+                                    <details className="text-[11px] text-zinc-400 bg-zinc-955/80 p-3 rounded-xl border border-white/5 cursor-pointer select-none">
+                                      <summary className="font-extrabold text-[9px] uppercase tracking-wider text-zinc-500 hover:text-zinc-300">
+                                        {parsedJson.contentType === "theory" ? "📖 Reference Concept details" : "❓ Reference Question details"}
+                                      </summary>
+                                      <div className="mt-3.5 space-y-2 text-zinc-400 select-text cursor-auto border-t border-white/5 pt-3">
+                                        <p><strong>Content:</strong> {parsedJson.originalContent.question}</p>
+                                        {parsedJson.contentType === "question" && (
+                                          <>
+                                            <p className={parsedJson.originalContent.is_correct ? "text-emerald-400 font-bold" : "text-red-400 font-bold"}>
+                                              <strong>Status:</strong> {parsedJson.originalContent.is_correct ? "Correct Answer" : "Incorrect Answer"}
+                                            </p>
+                                            <p><strong>Your Answer:</strong> {parsedJson.originalContent.selected_answer}</p>
+                                            <p><strong>Expected:</strong> {parsedJson.originalContent.correct_answer}</p>
+                                          </>
+                                        )}
+                                        {parsedJson.originalContent.explanation && (
+                                          <p><strong>Explanation:</strong> {parsedJson.originalContent.explanation}</p>
+                                        )}
+                                      </div>
+                                    </details>
+                                  </div>
+                                )
                               ) : (
                                 <p className="text-xs text-zinc-200 leading-relaxed whitespace-pre-wrap">
                                   {displayContent}
@@ -788,7 +993,7 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
                               )}
                               
                               <div className="flex justify-between items-center text-[8px] text-zinc-500 font-mono">
-                                <span>{note.is_ai ? "🤖 AI Generated Summary" : "✍️ Student Note"}</span>
+                                <span>{parsedJson && parsedJson.source === "Gwan-Sik" ? "🤖 Gwan-Sik Summary" : note.is_ai ? "🤖 AI Generated Summary" : "✍️ Student Note"}</span>
                                 <span>{new Date(note.created_at).toLocaleDateString()}</span>
                               </div>
                             </div>

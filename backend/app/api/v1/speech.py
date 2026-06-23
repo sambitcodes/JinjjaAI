@@ -85,23 +85,38 @@ async def speech_to_text(
     transcription = await speech_ai_service.transcribe_audio(audio_bytes)
     return STTResponse(transcription=transcription, language="ko")
 
+def resolve_voice(voice: str | None, lang: str) -> str:
+    if not voice or voice == "google-online" or voice == "null" or voice == "undefined":
+        return "ko-KR-SunHiNeural" if lang == "ko" else "en-US-AriaNeural"
+
+    voice_lower = voice.lower()
+    # Explicit mappings for Indian English
+    if "en-in" in voice_lower or "india" in voice_lower or "neerja" in voice_lower or "prabhat" in voice_lower:
+        if "male" in voice_lower or "prabhat" in voice_lower:
+            return "en-IN-PrabhatNeural"
+        return "en-IN-NeerjaNeural"
+
+    # Explicit mappings for UK English
+    if "en-gb" in voice_lower or "uk" in voice_lower or "sonia" in voice_lower or "ryan" in voice_lower:
+        if "male" in voice_lower or "ryan" in voice_lower:
+            return "en-GB-RyanNeural"
+        return "en-GB-SoniaNeural"
+
+    # General fallback for Google/Microsoft browser voices
+    if voice.startswith("Google ") or voice.startswith("Microsoft ") or "Desktop" in voice:
+        if "korean" in voice_lower or "ko-kr" in voice_lower:
+            return "ko-KR-InJoonNeural" if "male" in voice_lower or "jinho" in voice_lower else "ko-KR-SunHiNeural"
+        else:
+            return "en-US-GuyNeural" if "male" in voice_lower or "david" in voice_lower else "en-US-AriaNeural"
+
+    return voice
+
 @router.get("/tts-boundaries")
 async def text_to_speech_boundaries(text: str, lang: str = "ko", voice: str = None):
     """
     Get word boundary timing information for the given text and voice from edge-tts.
     """
-    if not voice or voice == "google-online" or voice == "null" or voice == "undefined":
-        if lang == "ko":
-            voice = "ko-KR-SunHiNeural"
-        else:
-            voice = "en-US-AriaNeural"
-
-    if voice.startswith("Google ") or voice.startswith("Microsoft ") or "Desktop" in voice:
-        lower_v = voice.lower()
-        if "korean" in lower_v or "ko-kr" in lower_v:
-            voice = "ko-KR-InJoonNeural" if "male" in lower_v or "jinho" in lower_v else "ko-KR-SunHiNeural"
-        else:
-            voice = "en-US-GuyNeural" if "male" in lower_v or "david" in lower_v else "en-US-AriaNeural"
+    voice = resolve_voice(voice, lang)
 
     boundaries = []
     try:
@@ -127,20 +142,7 @@ async def text_to_speech(text: str, lang: str = "ko", voice: str = None):
     Generate highly natural Korean/English neural speech using Microsoft Edge TTS or Google TTS fallback.
     Streams high-fidelity MP3 audio back to the client instantly.
     """
-    # Map default or 'google-online' values to Edge TTS voices for best premium experience
-    if not voice or voice == "google-online" or voice == "null" or voice == "undefined":
-        if lang == "ko":
-            voice = "ko-KR-SunHiNeural"
-        else:
-            voice = "en-US-AriaNeural"
-
-    # Supported neural voice fallback mappings just in case a browser-specific voice was passed to backend
-    if voice.startswith("Google ") or voice.startswith("Microsoft ") or "Desktop" in voice:
-        lower_v = voice.lower()
-        if "korean" in lower_v or "ko-kr" in lower_v:
-            voice = "ko-KR-InJoonNeural" if "male" in lower_v or "jinho" in lower_v else "ko-KR-SunHiNeural"
-        else:
-            voice = "en-US-GuyNeural" if "male" in lower_v or "david" in lower_v else "en-US-AriaNeural"
+    voice = resolve_voice(voice, lang)
 
     try:
         import edge_tts
