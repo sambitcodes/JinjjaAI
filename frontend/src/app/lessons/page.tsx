@@ -531,6 +531,8 @@ export default function LessonPlayer() {
       const courseStateKey = "hangeulai_course_state";
       const stored = localStorage.getItem(courseStateKey);
       const states = stored ? JSON.parse(stored) : {};
+      const oldCourseXP = states[courseId]?.totalXP || 0;
+      
       states[courseId] = {
         lastPhase: 1,
         completedPhases: [],
@@ -549,6 +551,14 @@ export default function LessonPlayer() {
           course_states: states
         })
       });
+
+      if (oldCourseXP > 0) {
+        await apiRequest(`/progress/xp/add?amount=-${oldCourseXP}`, { method: "POST" });
+        setProfile((prev: any) => {
+          if (!prev) return prev;
+          return { ...prev, total_xp: Math.max(0, (prev.total_xp || 0) - oldCourseXP) };
+        });
+      }
 
       // Clear wizard step keys for this course
       if (courseId === 1) {
@@ -1133,9 +1143,19 @@ export default function LessonPlayer() {
     return matchesCategory && matchesSearch;
   });
 
-  if (lessons.length === 0 || showCourseSelector) {
-    return (
-      <div className="min-h-screen text-foreground w-full max-w-[98%] mx-auto p-4 md:p-8 flex flex-col justify-center items-center relative overflow-hidden font-sans">
+  
+
+  console.log("LessonPlayer Render: activeIdx =", activeIdx, "lessons length =", lessons.length, "active title =", activeLesson?.title);
+
+  return (
+    <div className="min-h-screen text-foreground p-6 flex flex-col relative overflow-hidden transition-all duration-300 w-full max-w-[98%] mx-auto">
+      
+      {/* Background glowing decorations */}
+      <div className="absolute -top-10 left-1/4 w-[400px] h-[400px] bg-gradient-to-tr from-purple-500/10 to-indigo-500/5 rounded-full blur-[140px] pointer-events-none animate-pulse duration-10000" />
+      <div className="absolute bottom-10 right-1/4 w-[450px] h-[450px] bg-gradient-to-tr from-cyan-500/10 to-blue-500/5 rounded-full blur-[160px] pointer-events-none animate-pulse duration-8000" />
+      {lessons.length === 0 || showCourseSelector ? (
+        <div className="w-full flex flex-col justify-center items-center relative z-10">
+          
         
         {/* Background glowing decorations */}
         <div className="absolute -top-10 left-1/4 w-[400px] h-[400px] bg-gradient-to-tr from-purple-500/10 to-indigo-500/5 rounded-full blur-[140px] pointer-events-none animate-pulse duration-10000" />
@@ -1329,20 +1349,11 @@ export default function LessonPlayer() {
             })}
           </AnimatePresence>
         </motion.div>
-      </div>
-    );
-  }
-
-  console.log("LessonPlayer Render: activeIdx =", activeIdx, "lessons length =", lessons.length, "active title =", activeLesson?.title);
-
-  return (
-    <div className="min-h-screen text-foreground p-6 flex flex-col relative overflow-hidden transition-all duration-300 w-full max-w-[98%] mx-auto">
       
-      {/* Background glowing decorations */}
-      <div className="absolute -top-10 left-1/4 w-[400px] h-[400px] bg-gradient-to-tr from-purple-500/10 to-indigo-500/5 rounded-full blur-[140px] pointer-events-none animate-pulse duration-10000" />
-      <div className="absolute bottom-10 right-1/4 w-[450px] h-[450px] bg-gradient-to-tr from-cyan-500/10 to-blue-500/5 rounded-full blur-[160px] pointer-events-none animate-pulse duration-8000" />
-
-      {/* Top Controls Bar containing the Curriculum Toggle and Back selection */}
+        </div>
+      ) : (
+        <>
+          {/* Top Controls Bar containing the Curriculum Toggle and Back selection */}
       <div className="flex items-center justify-between pb-4 mb-4 border-b border-white/5 flex-shrink-0 z-40">
         <div className="flex items-center gap-3">
           <button 
@@ -1458,325 +1469,325 @@ export default function LessonPlayer() {
           <Phase1VowelBootcampWizard
             activeLesson={activeLesson}
             speakWord={speakWord}
-            onComplete={handleEarnXp}
+            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0}
           />
         ) : activeLesson?.title?.includes("Phase 2") ? (
           <Phase2ConsonantWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Phase 3") ? (
           <Phase3SyllableBlocksWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Phase 4") ? (
           <Phase4RealWordsWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Phase 5") ? (
           <Phase5SpeakingLabWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Phase 6") ? (
           <Phase6ConversationWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Korean 1.1") ? (
           <Course2Phase1GreetingsWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Korean 1.2") ? (
           <Course2Phase2SelfIntroWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Korean 1.3") ? (
           <Course2Phase3NumbersWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Korean 1.4") ? (
           <Course2Phase4RoutineWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Korean 1.5") ? (
           <Course2Phase5LocationWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Korean 1.6") ? (
           <Course2Phase6ConversationWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Korean 2.1") ? (
           <Course3Phase1LongerRoutinesWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Korean 2.2") ? (
           <Course3Phase2PreferencesWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Korean 2.3") ? (
           <Course3Phase3PastRoutinesWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Korean 2.4") ? (
           <Course3Phase4PlansWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Korean 2.5") ? (
           <Course3Phase5StoriesWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Korean 2.6") ? (
           <Course3Phase6ConversationWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Korean 3.1") ? (
           <Course4Phase1ConnectorsWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Korean 3.2") ? (
           <Course4Phase2DescriptionsWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Korean 3.3") ? (
           <Course4Phase3AnecdotesWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Korean 3.4") ? (
           <Course4Phase4OpinionsWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Korean 3.5") ? (
           <Course4Phase5ParagraphsWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Korean 3.6") ? (
           <Course4Phase6CapstoneWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Korean 4.1") ? (
           <Course5Phase1FluencyWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Korean 4.2") ? (
           <Course5Phase2TravelWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Korean 4.3") ? (
           <Course5Phase3SocialWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Korean 4.4") ? (
           <Course5Phase4RegisterWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Korean 4.5") ? (
           <Course5Phase5ListeningWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Korean 4.6") ? (
           <Course5Phase6CapstoneWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Korean 5.1") ? (
           <Course6Phase1FluencyWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Korean 5.2") ? (
           <Course6Phase2IdiomsWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Korean 5.3") ? (
           <Course6Phase3StanceWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Korean 5.4") ? (
           <Course6Phase4RegisterWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Korean 5.5") ? (
           <Course6Phase5ImplicitWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Korean 5.6") ? (
           <Course6Phase6CapstoneWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Grammar Lab 1") ? (
           <Course7Phase1GrammarLabWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Grammar Lab 2") ? (
           <Course7Phase2ParticlesWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Grammar Lab 3") ? (
           <Course7Phase3PolitenessWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Grammar Lab 4") ? (
           <Course7Phase4AdjectivesWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Grammar Lab 5") ? (
           <Course7Phase5ConnectorsWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Grammar Lab 6") ? (
           <Course7Phase6TenseAspectWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Pronunciation Lab 1") ? (
           <Course8Phase1PronunciationWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Pronunciation Lab 2") ? (
           <Course8Phase2BatchimWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Pronunciation Lab 3") ? (
           <Course8Phase3RhythmWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Listening Lab 1") ? (
           <Course8Phase4ListeningWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Pronunciation Lab 5") ? (
           <Course8Phase5PoliteEndingsWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Fluency Lab 1") ? (
           <Course8Phase6ConnectedSpeechWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Intonation Lab") ? (
           <Course8Phase7IntonationWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Conversation Lab") ? (
           <Course8Phase8ConversationWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Listening Lab – Gist") ? (
           <Course8Phase9ListeningGistDetailWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Reaction Lab") ? (
           <Course8Phase10ReactionWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Story Lab") ? (
           <Course8Phase11StoryWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
           />
         ) : activeLesson?.title?.includes("Media Lab") ? (
           <Course8Phase12MediaWizard 
             activeLesson={activeLesson} 
             speakWord={speakWord} 
-            onComplete={handleEarnXp} 
+            onComplete={handleEarnXp} courseXP={courseStates[activeLesson?.level ?? 1]?.totalXP || 0} 
           />
         ) : (
           /* Standard 2-step Curated Lesson Player */
@@ -2053,7 +2064,9 @@ export default function LessonPlayer() {
         )}
       </main>
       </div>
-      {/* Floating XP animations */}
+        </>
+      )}
+{/* Floating XP animations */}
       <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
         {floatingTexts.map(t => (
           <div
@@ -2120,16 +2133,36 @@ export default function LessonPlayer() {
               </div>
 
               {/* Current tag indicator */}
-              <div className="p-3 bg-brand-500/5 border border-brand-500/10 rounded-xl text-left text-xs">
-                <span className="text-[9px] text-zinc-500 uppercase tracking-widest font-bold block mb-1">Current Tagged Location</span>
-                <div className="font-extrabold text-white flex items-center justify-between">
-                  <span>
-                    Course {activeLesson?.level ?? 1} · Phase {activeLesson?.title?.match(/(Phase|phase)\s*(\d+)/)?.[2] || 1} · Step {activeStepRef.current?.step ?? 1}
-                  </span>
-                  <span className="text-[9px] bg-brand-500/20 text-brand-300 px-2 py-0.5 rounded border border-brand-500/20 font-mono">
-                    Auto-tagged
-                  </span>
+              <div className="p-3 bg-brand-500/5 border border-brand-500/10 rounded-xl text-left text-xs space-y-3">
+                <div>
+                  <span className="text-[9px] text-zinc-500 uppercase tracking-widest font-bold block mb-1">Current Tagged Location</span>
+                  <div className="font-extrabold text-white flex items-center justify-between">
+                    <span>
+                      Course {activeLesson?.level ?? 1} · Phase {activeLesson?.title?.match(/(Phase|phase)\s*(\d+)/)?.[2] || 1} · Step {activeStepRef.current?.step ?? 1}
+                    </span>
+                    <span className="text-[9px] bg-brand-500/20 text-brand-300 px-2 py-0.5 rounded border border-brand-500/20 font-mono">
+                      Auto-tagged
+                    </span>
+                  </div>
                 </div>
+                <button
+                  onClick={() => {
+                    window.dispatchEvent(new CustomEvent("hangeulai-add-note", {
+                      detail: {
+                        question: activeLesson?.title || "Active Study Slide",
+                        selected_answer: "Interactive Study Materials",
+                        correct_answer: "Verified Korean Curriculum",
+                        is_correct: true,
+                        explanation: `The student requested an AI summary of this Korean lesson slide: ${activeLesson?.title || "Korean Course Section"}. Focus on key grammar particles, vowels, consonants, vocabulary examples, and conversational nuances covered in this phase.`
+                      }
+                    }));
+                  }}
+                  disabled={generatingAiNote}
+                  className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold py-2.5 rounded-xl text-xs transition cursor-pointer flex items-center justify-center gap-1.5 shadow-lg shadow-indigo-500/20"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>{generatingAiNote ? "Summarizing..." : "AI Summarize Current Screen"}</span>
+                </button>
               </div>
 
               {/* Write manual note */}

@@ -87,14 +87,38 @@ interface Course6Phase1FluencyWizardProps {
   activeLesson: any;
   speakWord: (text: string) => void;
   onComplete: () => void;
+  courseXP: number;
 }
 
 export default function Course6Phase1FluencyWizard({
   activeLesson,
   speakWord,
   onComplete,
+  courseXP
 }: Course6Phase1FluencyWizardProps) {
   const [step, setStep] = useState(1);
+  const [maxStep, setMaxStep] = useState(1);
+  useEffect(() => {
+    const savedStep = localStorage.getItem("hangeulai_c6p1_step");
+    const savedMax = localStorage.getItem("hangeulai_c6p1_max_step");
+    let currentParsed = 1;
+    if (savedStep) {
+      currentParsed = parseInt(savedStep, 10);
+    }
+    if (savedMax) {
+      const parsedMax = parseInt(savedMax, 10);
+      setMaxStep(Math.max(parsedMax, currentParsed));
+    } else {
+      setMaxStep(currentParsed);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (step > maxStep) {
+      setMaxStep(step);
+      localStorage.setItem("hangeulai_c6p1_max_step", String(step));
+    }
+  }, [step, maxStep]);
   const [showOutline, setShowOutline] = useState(false);
   const [mode, setMode] = useState<"text" | "voice">("text");
   const totalSteps = 8;
@@ -494,25 +518,37 @@ export default function Course6Phase1FluencyWizard({
       </header>
 
       {showOutline && (
-        <div className="mb-6 p-5 bg-zinc-950/80 rounded-3xl border border-white/10 shadow-2xl animate-in fade-in slide-in-from-top-4 duration-300">
+        <div className="mb-6 p-5 bg-zinc-955/80 rounded-3xl border border-white/5 shadow-2xl animate-in fade-in slide-in-from-top-4 duration-300 relative z-30">
           <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest block mb-3 font-mono">Curriculum Syllabus Map</span>
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-2">
-            {outlineSteps.map(s => (
-              <button
-                key={s.num}
-                onClick={() => {
-                  setStep(s.num);
-                  setShowOutline(false);
-                }}
-                className={`p-2.5 rounded-xl border text-left transition ${step === s.num
-                    ? "border-brand-500 bg-brand-500/10 text-white"
-                    : "border-white/5 bg-zinc-900/40 text-zinc-400 hover:border-white/10 hover:text-white"
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
+            {outlineSteps.map(s => {
+              const isCurrent = step === s.num;
+              const isCompleted = s.num < step || s.num <= maxStep;
+              return (
+                <button
+                  key={s.num}
+                  disabled={!isCompleted && !isCurrent}
+                  onClick={() => {
+    if (courseXP < 180) {
+      alert("To graduate from this course, you need at least 180 XP. You currently have " + courseXP + " XP. Please review earlier steps or re-answer incorrect questions to earn more XP!");
+      return;
+    }
+    setStep(s.num);
+                    setShowOutline(false);
+                  }}
+                  className={`p-2.5 rounded-xl border text-left transition ${
+                    isCurrent
+                      ? "border-brand-500 bg-brand-500/10 text-white"
+                      : isCompleted
+                      ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400 hover:border-emerald-500/50"
+                      : "border-red-500/20 bg-red-950/20 text-red-400/40 cursor-not-allowed opacity-50"
                   }`}
-              >
-                <div className="text-[9px] font-black font-mono text-zinc-500">STEP {s.num}</div>
-                <div className="text-xs font-bold truncate">{s.label}</div>
-              </button>
-            ))}
+                >
+                  <div className="text-[9px] font-black font-mono text-zinc-500">STEP {s.num}</div>
+                  <div className="text-xs font-bold truncate">{s.label}</div>
+                </button>
+              );
+            })}
           </div>
         </div>
       )}
@@ -582,7 +618,13 @@ export default function Course6Phase1FluencyWizard({
 
           <div className="flex flex-col gap-3 max-w-xs mx-auto pt-4">
             <button 
-              onClick={() => setStep(2)}
+              onClick={() => {
+    if (courseXP < 0) {
+      alert("To start Phase 1, you need at least 0 XP in this course. You currently have " + courseXP + " XP. Please complete earlier steps/phases to earn more XP!");
+      return;
+    }
+    setStep(2);
+  }}
               className="bg-brand-600 hover:bg-brand-500 text-white font-black py-4 px-10 rounded-2xl transition text-base flex items-center justify-center gap-2.5 cursor-pointer shadow-lg shadow-brand-600/20"
             >
               <span>Start Phase 1</span>
@@ -765,7 +807,13 @@ export default function Course6Phase1FluencyWizard({
           )}
 
           <div className="flex justify-between items-center pt-4 border-t border-white/5 font-sans">
-            <button onClick={() => setStep(2)} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-sm font-bold transition flex items-center gap-2 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
+            <button onClick={() => {
+    if (courseXP < 0) {
+      alert("To start Phase 1, you need at least 0 XP in this course. You currently have " + courseXP + " XP. Please complete earlier steps/phases to earn more XP!");
+      return;
+    }
+    setStep(2);
+  }} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-sm font-bold transition flex items-center gap-2 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
             <button onClick={() => setStep(4)} className="bg-brand-500 hover:bg-brand-600 text-white px-8 py-3 rounded-xl text-sm font-bold transition flex items-center gap-2 cursor-pointer font-bold">Move to Builder <ChevronRight className="w-4 h-4" /></button>
           </div>
         </div>
@@ -1154,8 +1202,7 @@ export default function Course6Phase1FluencyWizard({
             onClick={() => {
               if (typeof window !== "undefined") {
                 window.dispatchEvent(new CustomEvent("hangeulai-xp", { detail: { amount: 150, type: "correct" } }));
-              }
-              onComplete();
+              }onComplete();
             }}
             className="bg-gradient-to-r from-brand-500 to-emerald-500 hover:from-brand-600 text-white font-black py-4 px-10 rounded-2xl transition text-sm flex items-center justify-center gap-2 mx-auto shadow-lg shadow-brand-500/20 cursor-pointer"
           >
@@ -1164,6 +1211,36 @@ export default function Course6Phase1FluencyWizard({
           </button>
         </div>
       )}
+    
+  {/* Re-Answer panel for mistakes */}
+  {step === outlineSteps.length && (  quizMistakes.length > 0) && (
+    <div className="bg-zinc-900/60 p-6 rounded-2xl border border-red-500/20 text-left space-y-4 max-w-4xl mx-auto w-full mt-6 relative z-10">
+      <span className="text-[10px] font-black uppercase tracking-widest text-red-400 block font-sans">
+        ⚠️ Review & Re-Answer Incorrect Questions to Gain XP
+      </span>
+      <div className="space-y-3">
+        
+        {(quizMistakes || []).map((m: any, idx: number) => (
+          <div key={idx} className="p-4 bg-zinc-955/80 rounded-xl border border-white/5 flex justify-between items-center text-left">
+            <div className="text-xs text-zinc-300 pr-4">
+              <strong>Question:</strong> {String(m)}
+            </div>
+            <button
+              onClick={() => {
+                const targetQStep = outlineSteps.length - 1;
+                setStep(targetQStep);
+                if (typeof setQuizChecked === "function") setQuizChecked(false);
+                if (typeof setQuizMistakes === "function") setQuizMistakes((prev: any) => prev.filter((item: any) => item !== m));
+              }}
+              className="bg-brand-500/10 hover:bg-brand-500/20 text-brand-400 border border-brand-500/20 px-3 py-1.5 rounded-lg text-xs font-bold transition shrink-0 cursor-pointer"
+            >
+              Re-Answer
+            </button>
+          </div>
+        ))}
+      </div>
     </div>
+  )}
+      </div>
   );
 }

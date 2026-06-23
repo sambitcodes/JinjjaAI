@@ -234,6 +234,7 @@ interface Phase5SpeakingLabWizardProps {
   activeLesson: any;
   speakWord: (text: string) => void;
   onComplete: () => void;
+  courseXP: number;
 }
 
 interface MicroQuestion {
@@ -243,8 +244,31 @@ interface MicroQuestion {
   explanation: string;
 }
 
-export default function Phase5SpeakingLabWizard({ activeLesson, speakWord, onComplete }: Phase5SpeakingLabWizardProps) {
+export default function Phase5SpeakingLabWizard({ activeLesson, speakWord, onComplete,
+  courseXP }: Phase5SpeakingLabWizardProps) {
   const [step, setStep] = useState(1);
+  const [maxStep, setMaxStep] = useState(1);
+  useEffect(() => {
+    const savedStep = localStorage.getItem("hangeulai_phase5_step");
+    const savedMax = localStorage.getItem("hangeulai_phase5_max_step");
+    let currentParsed = 1;
+    if (savedStep) {
+      currentParsed = parseInt(savedStep, 10);
+    }
+    if (savedMax) {
+      const parsedMax = parseInt(savedMax, 10);
+      setMaxStep(Math.max(parsedMax, currentParsed));
+    } else {
+      setMaxStep(currentParsed);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (step > maxStep) {
+      setMaxStep(step);
+      localStorage.setItem("hangeulai_phase5_max_step", String(step));
+    }
+  }, [step, maxStep]);
   const [showOutline, setShowOutline] = useState(false);
   const totalSteps = 12;
 
@@ -738,26 +762,37 @@ return (
 
       {/* Expanded Quick Outline Map Panel */}
       {showOutline && (
-        <div className="mb-6 p-5 bg-zinc-950/80 rounded-3xl border border-white/5 shadow-2xl animate-in fade-in slide-in-from-top-4 duration-300">
+        <div className="mb-6 p-5 bg-zinc-955/80 rounded-3xl border border-white/5 shadow-2xl animate-in fade-in slide-in-from-top-4 duration-300 relative z-30">
           <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest block mb-3 font-mono">Curriculum Syllabus Map</span>
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
-            {outlineSteps.map(s => (
-              <button
-                key={s.num}
-                onClick={() => {
-                  setStep(s.num);
-                  setShowOutline(false);
-                }}
-                className={`p-2.5 rounded-xl border text-left transition ${
-                  step === s.num
-                    ? "border-brand-500 bg-brand-500/10 text-white"
-                    : "border-white/5 bg-zinc-900/40 text-zinc-400 hover:border-white/10 hover:text-white"
-                }`}
-              >
-                <div className="text-[9px] font-black font-mono text-zinc-500">STEP {s.num}</div>
-                <div className="text-xs font-bold truncate">{s.label}</div>
-              </button>
-            ))}
+            {outlineSteps.map(s => {
+              const isCurrent = step === s.num;
+              const isCompleted = s.num < step || s.num <= maxStep;
+              return (
+                <button
+                  key={s.num}
+                  disabled={!isCompleted && !isCurrent}
+                  onClick={() => {
+    if (courseXP < 500) {
+      alert("To graduate from this course, you need at least 500 XP. You currently have " + courseXP + " XP. Please review earlier steps or re-answer incorrect questions to earn more XP!");
+      return;
+    }
+    setStep(s.num);
+                    setShowOutline(false);
+                  }}
+                  className={`p-2.5 rounded-xl border text-left transition ${
+                    isCurrent
+                      ? "border-brand-500 bg-brand-500/10 text-white"
+                      : isCompleted
+                      ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400 hover:border-emerald-500/50"
+                      : "border-red-500/20 bg-red-950/20 text-red-400/40 cursor-not-allowed opacity-50"
+                  }`}
+                >
+                  <div className="text-[9px] font-black font-mono text-zinc-500">STEP {s.num}</div>
+                  <div className="text-xs font-bold truncate">{s.label}</div>
+                </button>
+              );
+            })}
           </div>
         </div>
       )}
@@ -821,7 +856,11 @@ return (
 
           <button 
             onClick={() => {
-              setStep(2);
+    if (courseXP < 320) {
+      alert("To start Phase 5, you need at least 320 XP in this course. You currently have " + courseXP + " XP. Please complete earlier steps/phases to earn more XP!");
+      return;
+    }
+    setStep(2);
               window.dispatchEvent(new CustomEvent("hangeulai-xp", { detail: { amount: 15, type: 'theory' } }));
             }}
             className="bg-brand-500 hover:bg-brand-600 text-zinc-950 font-black py-4 px-10 rounded-2xl transition duration-200 text-sm flex items-center justify-center gap-2 mx-auto cursor-pointer shadow-lg shadow-brand-500/20 active:scale-95 animate-pulse"
@@ -1700,7 +1739,12 @@ return (
 
               <div className="pt-4">
                 <button
-                  onClick={onComplete}
+                  onClick={() => {
+    if (courseXP < 500) {
+      alert("To graduate from this course, you need at least 500 XP. You currently have " + courseXP + " XP. Please review earlier steps or re-answer incorrect questions to earn more XP!");
+      return;
+    }onComplete();
+  }}
                   className="bg-gradient-to-r from-brand-500 to-amber-500 hover:from-brand-600 text-zinc-950 font-black py-4.5 px-10 rounded-2xl transition duration-200 text-sm flex items-center justify-center gap-2 mx-auto shadow-lg shadow-brand-500/20 cursor-pointer active:scale-95"
                 >
                   <Award className="w-5 h-5 text-zinc-950" />
