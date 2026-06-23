@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef, useCallback } from "react";
+import xpAudit from "../lib/xp-audit.json";
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -105,16 +106,17 @@ export default function Course7Phase1GrammarLabWizard({
   onComplete,
   courseXP
 }: Course7Phase1GrammarLabWizardProps) {
+  const phaseNum = 1;
   const getStepMaxXP = (sNum: number) => {
-    if (sNum === 1) return 0;
-    if (sNum === 12) return 200;
-    const sObj = outlineSteps.find(os => os.num === sNum);
-    const label = sObj ? sObj.label.toLowerCase() : "";
-    if (label.includes("activity") || label.includes("game") || label.includes("drill") || label.includes("practice")) return 60;
-    return 35;
+    try {
+      return (xpAudit as any)["7"]?.[phaseNum.toString()]?.steps?.[sNum.toString()]?.max_xp ?? 35;
+    } catch (e) {
+      return 35;
+    }
   };
   const getStepXP = (sNum: number) => {
-    return (sNum < step || sNum <= maxStep) ? getStepMaxXP(sNum) : 0;
+    if (typeof window === "undefined") return 0;
+    return parseInt(localStorage.getItem(`hangeulai_c7p${phaseNum}_s${sNum}_earned_xp`) || "0", 10);
   };
 
   const [step, setStep] = useState(1);
@@ -202,6 +204,82 @@ export default function Course7Phase1GrammarLabWizard({
   const [hwFeedback, setHwFeedback] = useState<any[]>([]);
   const [submittingHw, setSubmittingHw] = useState(false);
   const [completingLab, setCompletingLab] = useState(false);
+
+  // --- Start Progress State Preservation ---
+  const isLoadedRef = useRef(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem("hangeulai_c7p1_progress_state");
+        if (saved) {
+          const state = JSON.parse(saved);
+            if (state.step !== undefined) setStep(state.step);
+            if (state.maxStep !== undefined) setMaxStep(state.maxStep);
+            if (state.buildIdx !== undefined) setBuildIdx(state.buildIdx);
+            if (state.buildCorrect !== undefined) setBuildCorrect(state.buildCorrect);
+            if (state.buildChecked !== undefined) setBuildChecked(state.buildChecked);
+            if (state.repairIdx !== undefined) setRepairIdx(state.repairIdx);
+            if (state.repairCorrect !== undefined) setRepairCorrect(state.repairCorrect);
+            if (state.repairChecked !== undefined) setRepairChecked(state.repairChecked);
+            if (state.ptsIdx !== undefined) setPtsIdx(state.ptsIdx);
+            if (state.ptsInput !== undefined) setPtsInput(state.ptsInput);
+            if (state.ptsChecked !== undefined) setPtsChecked(state.ptsChecked);
+            if (state.ptsCorrect !== undefined) setPtsCorrect(state.ptsCorrect);
+            if (state.transformIdx !== undefined) setTransformIdx(state.transformIdx);
+            if (state.transformInput !== undefined) setTransformInput(state.transformInput);
+            if (state.transformChecked !== undefined) setTransformChecked(state.transformChecked);
+            if (state.transformCorrect !== undefined) setTransformCorrect(state.transformCorrect);
+            if (state.quizIdx !== undefined) setQuizIdx(state.quizIdx);
+            if (state.quizSelected !== undefined) setQuizSelected(state.quizSelected);
+            if (state.quizChecked !== undefined) setQuizChecked(state.quizChecked);
+            if (state.quizCorrect !== undefined) setQuizCorrect(state.quizCorrect);
+            if (state.quizMistakes !== undefined) setQuizMistakes(state.quizMistakes);
+            if (state.quizScore !== undefined) setQuizScore(state.quizScore);
+        }
+      } catch (e) {
+        console.error("Failed to restore progress state:", e);
+      }
+      isLoadedRef.current = true;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!isLoadedRef.current) return;
+    if (typeof window !== "undefined") {
+      try {
+        const state = {
+            step,
+            maxStep,
+            buildIdx,
+            buildCorrect,
+            buildChecked,
+            repairIdx,
+            repairCorrect,
+            repairChecked,
+            ptsIdx,
+            ptsInput,
+            ptsChecked,
+            ptsCorrect,
+            transformIdx,
+            transformInput,
+            transformChecked,
+            transformCorrect,
+            quizIdx,
+            quizSelected,
+            quizChecked,
+            quizCorrect,
+            quizMistakes,
+            quizScore
+        };
+        localStorage.setItem("hangeulai_c7p1_progress_state", JSON.stringify(state));
+      } catch (e) {
+        console.error("Failed to save progress state:", e);
+      }
+    }
+  }, [step, maxStep, buildIdx, buildCorrect, buildChecked, repairIdx, repairCorrect, repairChecked, ptsIdx, ptsInput, ptsChecked, ptsCorrect, transformIdx, transformInput, transformChecked, transformCorrect, quizIdx, quizSelected, quizChecked, quizCorrect, quizMistakes, quizScore]);
+  // --- End Progress State Preservation ---
+
   const [completionData, setCompletionData] = useState<any>(null);
 
   useEffect(() => {
@@ -568,7 +646,7 @@ return (
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
               {outlineSteps.map(s => {
                 const isCurrent = step === s.num;
-                const isCompleted = s.num < step || s.num <= maxStep;
+                const isCompleted = s.num < step;
                 return (
                   <button
                     key={s.num}
@@ -605,8 +683,8 @@ return (
                       </div>
                       <div className="w-full h-1 bg-zinc-950 rounded-full overflow-hidden mt-0.5">
                         <div 
-                          className={`h-full rounded-full ${isCompleted ? "bg-emerald-400" : "bg-zinc-800"}`}
-                          style={{ width: isCompleted ? "100%" : "0%" }}
+                          className="h-full rounded-full bg-emerald-400"
+                          style={{ width: `${(getStepXP(s.num) / (getStepMaxXP(s.num) || 1)) * 100}%` }}
                         />
                       </div>
                     </div>

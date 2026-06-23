@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
+import xpAudit from "../lib/xp-audit.json";
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -96,16 +97,17 @@ export default function Course6Phase1FluencyWizard({
   onComplete,
   courseXP
 }: Course6Phase1FluencyWizardProps) {
+  const phaseNum = 1;
   const getStepMaxXP = (sNum: number) => {
-    if (sNum === 1) return 0;
-    if (sNum === 8) return 200;
-    const sObj = outlineSteps.find(os => os.num === sNum);
-    const label = sObj ? sObj.label.toLowerCase() : "";
-    if (label.includes("activity") || label.includes("game") || label.includes("drill") || label.includes("practice")) return 60;
-    return 35;
+    try {
+      return (xpAudit as any)["6"]?.[phaseNum.toString()]?.steps?.[sNum.toString()]?.max_xp ?? 35;
+    } catch (e) {
+      return 35;
+    }
   };
   const getStepXP = (sNum: number) => {
-    return (sNum < step || sNum <= maxStep) ? getStepMaxXP(sNum) : 0;
+    if (typeof window === "undefined") return 0;
+    return parseInt(localStorage.getItem(`hangeulai_c6p${phaseNum}_s${sNum}_earned_xp`) || "0", 10);
   };
 
   const [step, setStep] = useState(1);
@@ -186,11 +188,81 @@ export default function Course6Phase1FluencyWizard({
   const [practiceText, setPracticeText] = useState("");
   const [practiceSending, setPracticeSending] = useState(false);
   const [practiceFinished, setPracticeFinished] = useState(false);
+
+  
+  const [completedHomework, setCompletedHomework] = useState<Record<string, boolean>>({});
+// --- Start Progress State Preservation ---
+  const isLoadedRef = useRef(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem("hangeulai_c6p1_progress_state");
+        if (saved) {
+          const state = JSON.parse(saved);
+            if (state.step !== undefined) setStep(state.step);
+            if (state.maxStep !== undefined) setMaxStep(state.maxStep);
+            if (state.c1Selected !== undefined) setC1Selected(state.c1Selected);
+            if (state.c1Checked !== undefined) setC1Checked(state.c1Checked);
+            if (state.selectedEvaluationAns !== undefined) setSelectedEvaluationAns(state.selectedEvaluationAns);
+            if (state.act1Checked !== undefined) setAct1Checked(state.act1Checked);
+            if (state.act1Correct !== undefined) setAct1Correct(state.act1Correct);
+            if (state.aiText !== undefined) setAiText(state.aiText);
+            if (state.aiFinished !== undefined) setAiFinished(state.aiFinished);
+            if (state.quizIdx !== undefined) setQuizIdx(state.quizIdx);
+            if (state.quizChecked !== undefined) setQuizChecked(state.quizChecked);
+            if (state.quizCorrect !== undefined) setQuizCorrect(state.quizCorrect);
+            if (state.quizSelectedOpt !== undefined) setQuizSelectedOpt(state.quizSelectedOpt);
+            if (state.quizMistakes !== undefined) setQuizMistakes(state.quizMistakes);
+            if (state.quizScore !== undefined) setQuizScore(state.quizScore);
+            if (state.practiceText !== undefined) setPracticeText(state.practiceText);
+            if (state.practiceFinished !== undefined) setPracticeFinished(state.practiceFinished);
+            if (state.completedHomework !== undefined) setCompletedHomework(state.completedHomework);
+        }
+      } catch (e) {
+        console.error("Failed to restore progress state:", e);
+      }
+      isLoadedRef.current = true;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!isLoadedRef.current) return;
+    if (typeof window !== "undefined") {
+      try {
+        const state = {
+            step,
+            maxStep,
+            c1Selected,
+            c1Checked,
+            selectedEvaluationAns,
+            act1Checked,
+            act1Correct,
+            aiText,
+            aiFinished,
+            quizIdx,
+            quizChecked,
+            quizCorrect,
+            quizSelectedOpt,
+            quizMistakes,
+            quizScore,
+            practiceText,
+            practiceFinished,
+            completedHomework
+        };
+        localStorage.setItem("hangeulai_c6p1_progress_state", JSON.stringify(state));
+      } catch (e) {
+        console.error("Failed to save progress state:", e);
+      }
+    }
+  }, [step, maxStep, c1Selected, c1Checked, selectedEvaluationAns, act1Checked, act1Correct, aiText, aiFinished, quizIdx, quizChecked, quizCorrect, quizSelectedOpt, quizMistakes, quizScore, practiceText, practiceFinished, completedHomework]);
+  // --- End Progress State Preservation ---
+
   const [practiceFeedback, setPracticeFeedback] = useState<string | null>(null);
 
   // Graduation Checklist (Step 8)
   const [homeworkItems, setHomeworkItems] = useState<any[]>([]);
-  const [completedHomework, setCompletedHomework] = useState<Record<string, boolean>>({});
+  
 
   // Restore step from localStorage
   useEffect(() => {
@@ -556,7 +628,7 @@ export default function Course6Phase1FluencyWizard({
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
               {outlineSteps.map(s => {
                 const isCurrent = step === s.num;
-                const isCompleted = s.num < step || s.num <= maxStep;
+                const isCompleted = s.num < step;
                 return (
                   <button
                     key={s.num}
@@ -593,8 +665,8 @@ export default function Course6Phase1FluencyWizard({
                       </div>
                       <div className="w-full h-1 bg-zinc-950 rounded-full overflow-hidden mt-0.5">
                         <div 
-                          className={`h-full rounded-full ${isCompleted ? "bg-emerald-400" : "bg-zinc-800"}`}
-                          style={{ width: isCompleted ? "100%" : "0%" }}
+                          className="h-full rounded-full bg-emerald-400"
+                          style={{ width: `${(getStepXP(s.num) / (getStepMaxXP(s.num) || 1)) * 100}%` }}
                         />
                       </div>
                     </div>
@@ -778,6 +850,26 @@ export default function Course6Phase1FluencyWizard({
           </div>
 
           <div className="flex justify-between items-center pt-4 border-t border-white/5 font-sans">
+
+            <button
+              type="button"
+              onClick={() => {
+                window.dispatchEvent(new CustomEvent("hangeulai-add-note", {
+                  detail: {
+                    question: `Course 6 Phase 1 Step ${step} - Study Concept`,
+                    selected_answer: "Interactive Study Materials",
+                    correct_answer: "Verified Korean Curriculum",
+                    is_correct: true,
+                    explanation: `Study notes for Course 6 Phase 1 Step ${step}.`
+                  }
+                }));
+              }}
+              className="bg-white/10 hover:bg-white/20 text-white text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-lg border border-white/5 transition cursor-pointer"
+              title="Add this theory summary to your diary notes"
+            >
+              + Add to Notes
+            </button>
+  
             <button onClick={() => setStep(1)} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-sm font-bold transition flex items-center gap-2 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
             <button onClick={() => setStep(3)} className="bg-brand-650 hover:bg-brand-600 text-white px-8 py-3 rounded-xl text-sm font-bold transition flex items-center gap-2 cursor-pointer">Start Activities <ChevronRight className="w-4 h-4 text-white" /></button>
           </div>
@@ -860,6 +952,26 @@ export default function Course6Phase1FluencyWizard({
           )}
 
           <div className="flex justify-between items-center pt-4 border-t border-white/5 font-sans">
+
+            <button
+              type="button"
+              onClick={() => {
+                window.dispatchEvent(new CustomEvent("hangeulai-add-note", {
+                  detail: {
+                    question: `Course 6 Phase 1 Step ${step} - Study Concept`,
+                    selected_answer: "Interactive Study Materials",
+                    correct_answer: "Verified Korean Curriculum",
+                    is_correct: true,
+                    explanation: `Study notes for Course 6 Phase 1 Step ${step}.`
+                  }
+                }));
+              }}
+              className="bg-white/10 hover:bg-white/20 text-white text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-lg border border-white/5 transition cursor-pointer"
+              title="Add this theory summary to your diary notes"
+            >
+              + Add to Notes
+            </button>
+  
             <button onClick={() => {
     if (courseXP < 0) {
       window.dispatchEvent(new CustomEvent("hangeulai-warning", { detail: { message: String("To start Phase 1, you need at least 0 XP in this course. You currently have " + courseXP + " XP. Please complete earlier steps/phases to earn more XP!") } }));
@@ -949,6 +1061,26 @@ export default function Course6Phase1FluencyWizard({
           </div>
 
           <div className="flex justify-between items-center pt-4 border-t border-white/5 font-sans">
+
+            <button
+              type="button"
+              onClick={() => {
+                window.dispatchEvent(new CustomEvent("hangeulai-add-note", {
+                  detail: {
+                    question: `Course 6 Phase 1 Step ${step} - Study Concept`,
+                    selected_answer: "Interactive Study Materials",
+                    correct_answer: "Verified Korean Curriculum",
+                    is_correct: true,
+                    explanation: `Study notes for Course 6 Phase 1 Step ${step}.`
+                  }
+                }));
+              }}
+              className="bg-white/10 hover:bg-white/20 text-white text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-lg border border-white/5 transition cursor-pointer"
+              title="Add this theory summary to your diary notes"
+            >
+              + Add to Notes
+            </button>
+  
             <button onClick={() => setStep(3)} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-sm font-bold transition flex items-center gap-2 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
             <button onClick={() => setStep(5)} className="bg-brand-500 hover:bg-brand-600 text-white px-8 py-3 rounded-xl text-sm font-bold transition flex items-center gap-2 cursor-pointer font-bold">Move to Speaking <ChevronRight className="w-4 h-4" /></button>
           </div>
@@ -1020,6 +1152,26 @@ export default function Course6Phase1FluencyWizard({
           </div>
 
           <div className="flex justify-between items-center pt-4 border-t border-white/5 font-sans">
+
+            <button
+              type="button"
+              onClick={() => {
+                window.dispatchEvent(new CustomEvent("hangeulai-add-note", {
+                  detail: {
+                    question: `Course 6 Phase 1 Step ${step} - Study Concept`,
+                    selected_answer: "Interactive Study Materials",
+                    correct_answer: "Verified Korean Curriculum",
+                    is_correct: true,
+                    explanation: `Study notes for Course 6 Phase 1 Step ${step}.`
+                  }
+                }));
+              }}
+              className="bg-white/10 hover:bg-white/20 text-white text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-lg border border-white/5 transition cursor-pointer"
+              title="Add this theory summary to your diary notes"
+            >
+              + Add to Notes
+            </button>
+  
             <button onClick={() => setStep(4)} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-sm font-bold transition flex items-center gap-2 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
             <button onClick={() => setStep(6)} className="bg-brand-500 hover:bg-brand-600 text-white px-8 py-3 rounded-xl text-sm font-bold transition flex items-center gap-2 cursor-pointer font-bold">Move to Quiz <ChevronRight className="w-4 h-4" /></button>
           </div>
@@ -1078,12 +1230,54 @@ export default function Course6Phase1FluencyWizard({
                 <div className={`p-4 rounded-xl border text-xs text-left space-y-1.5 animate-fade-in ${
                   quizCorrect ? "bg-green-500/5 border-green-500/20 text-green-300" : "bg-red-500/5 border-red-500/20 text-red-400"
                 }`}>
-                  <p className="font-extrabold text-sm">{quizCorrect ? "✓ Correct!" : "✗ Incorrect."}</p>
+                  
+                  <div className="flex justify-between items-center border-b border-white/5 pb-2 mb-2 w-full">
+                    <p className="font-extrabold text-sm">{quizCorrect ? "✓ Correct!" : "✗ Incorrect."}</p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const q = quizBlueprint[quizIdx];
+                        window.dispatchEvent(new CustomEvent("hangeulai-add-note", {
+                          detail: {
+                            question: q?.question || "Quiz Question",
+                            selected_answer: String(quizSelectedOpt || ""),
+                            correct_answer: String(q?.correct_answer || q?.correctId || ""),
+                            is_correct: !!quizCorrect,
+                            explanation: q?.explanation || ""
+                          }
+                        }));
+                      }}
+                      className="bg-white/10 hover:bg-white/20 text-white text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded border border-white/5 transition"
+                      title="Add to Notes"
+                    >
+                      + Add to Notes
+                    </button>
+                  </div>
                   <p className="text-zinc-300">{quizBlueprint[quizIdx].explanation}</p>
                 </div>
               )}
 
               <div className="flex justify-between items-center pt-4 border-t border-white/5 font-sans">
+
+            <button
+              type="button"
+              onClick={() => {
+                window.dispatchEvent(new CustomEvent("hangeulai-add-note", {
+                  detail: {
+                    question: `Course 6 Phase 1 Step ${step} - Study Concept`,
+                    selected_answer: "Interactive Study Materials",
+                    correct_answer: "Verified Korean Curriculum",
+                    is_correct: true,
+                    explanation: `Study notes for Course 6 Phase 1 Step ${step}.`
+                  }
+                }));
+              }}
+              className="bg-white/10 hover:bg-white/20 text-white text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-lg border border-white/5 transition cursor-pointer"
+              title="Add this theory summary to your diary notes"
+            >
+              + Add to Notes
+            </button>
+  
                 <button onClick={() => setStep(5)} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-sm font-bold transition flex items-center gap-2 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
                 {!quizChecked ? (
                   <button
@@ -1193,6 +1387,26 @@ export default function Course6Phase1FluencyWizard({
           </div>
 
           <div className="flex justify-between items-center pt-4 border-t border-white/5 font-sans">
+
+            <button
+              type="button"
+              onClick={() => {
+                window.dispatchEvent(new CustomEvent("hangeulai-add-note", {
+                  detail: {
+                    question: `Course 6 Phase 1 Step ${step} - Study Concept`,
+                    selected_answer: "Interactive Study Materials",
+                    correct_answer: "Verified Korean Curriculum",
+                    is_correct: true,
+                    explanation: `Study notes for Course 6 Phase 1 Step ${step}.`
+                  }
+                }));
+              }}
+              className="bg-white/10 hover:bg-white/20 text-white text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-lg border border-white/5 transition cursor-pointer"
+              title="Add this theory summary to your diary notes"
+            >
+              + Add to Notes
+            </button>
+  
             <button onClick={() => setStep(6)} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-sm font-bold transition flex items-center gap-2 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
             <button onClick={() => setStep(8)} className="bg-brand-500 hover:bg-brand-655 text-white px-8 py-3 rounded-xl text-sm font-bold transition flex items-center gap-2 cursor-pointer font-bold">Proceed to Graduation <ChevronRight className="w-4 h-4" /></button>
           </div>

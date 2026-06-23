@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
+import xpAudit from "../lib/xp-audit.json";
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -51,16 +52,17 @@ export default function Course7Phase5ConnectorsWizard({
   onComplete,
   courseXP
 }: Course7Phase5ConnectorsWizardProps) {
+  const phaseNum = 5;
   const getStepMaxXP = (sNum: number) => {
-    if (sNum === 1) return 0;
-    if (sNum === 12) return 200;
-    const sObj = outlineSteps.find(os => os.num === sNum);
-    const label = sObj ? sObj.label.toLowerCase() : "";
-    if (label.includes("activity") || label.includes("game") || label.includes("drill") || label.includes("practice")) return 60;
-    return 35;
+    try {
+      return (xpAudit as any)["7"]?.[phaseNum.toString()]?.steps?.[sNum.toString()]?.max_xp ?? 35;
+    } catch (e) {
+      return 35;
+    }
   };
   const getStepXP = (sNum: number) => {
-    return (sNum < step || sNum <= maxStep) ? getStepMaxXP(sNum) : 0;
+    if (typeof window === "undefined") return 0;
+    return parseInt(localStorage.getItem(`hangeulai_c7p${phaseNum}_s${sNum}_earned_xp`) || "0", 10);
   };
 
   const [step, setStep] = useState(1);
@@ -162,6 +164,106 @@ export default function Course7Phase5ConnectorsWizard({
   const [hwFeedback, setHwFeedback] = useState<any[]>([]);
   const [submittingHw, setSubmittingHw] = useState(false);
   const [completingLab, setCompletingLab] = useState(false);
+
+  // --- Start Progress State Preservation ---
+  const isLoadedRef = useRef(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem("hangeulai_c7p5_progress_state");
+        if (saved) {
+          const state = JSON.parse(saved);
+            if (state.step !== undefined) setStep(state.step);
+            if (state.maxStep !== undefined) setMaxStep(state.maxStep);
+            if (state.relationIdx !== undefined) setRelationIdx(state.relationIdx);
+            if (state.relationSelected !== undefined) setRelationSelected(state.relationSelected);
+            if (state.relationChecked !== undefined) setRelationChecked(state.relationChecked);
+            if (state.relationCorrect !== undefined) setRelationCorrect(state.relationCorrect);
+            if (state.choiceItems !== undefined) setChoiceItems(state.choiceItems);
+            if (state.choiceIdx !== undefined) setChoiceIdx(state.choiceIdx);
+            if (state.choiceSelected !== undefined) setChoiceSelected(state.choiceSelected);
+            if (state.choiceChecked !== undefined) setChoiceChecked(state.choiceChecked);
+            if (state.choiceCorrect !== undefined) setChoiceCorrect(state.choiceCorrect);
+            if (state.choiceExplanation !== undefined) setChoiceExplanation(state.choiceExplanation);
+            if (state.hlSelectedWord !== undefined) setHlSelectedWord(state.hlSelectedWord);
+            if (state.hlSelectedRelation !== undefined) setHlSelectedRelation(state.hlSelectedRelation);
+            if (state.hlChecked !== undefined) setHlChecked(state.hlChecked);
+            if (state.hlCorrect !== undefined) setHlCorrect(state.hlCorrect);
+            if (state.joinIdx !== undefined) setJoinIdx(state.joinIdx);
+            if (state.joinInput !== undefined) setJoinInput(state.joinInput);
+            if (state.joinChecked !== undefined) setJoinChecked(state.joinChecked);
+            if (state.joinCorrect !== undefined) setJoinCorrect(state.joinCorrect);
+            if (state.rrIdx !== undefined) setRrIdx(state.rrIdx);
+            if (state.rrInput !== undefined) setRrInput(state.rrInput);
+            if (state.rrChecked !== undefined) setRrChecked(state.rrChecked);
+            if (state.rrCorrect !== undefined) setRrCorrect(state.rrCorrect);
+            if (state.wiIdx !== undefined) setWiIdx(state.wiIdx);
+            if (state.wiInput !== undefined) setWiInput(state.wiInput);
+            if (state.wiChecked !== undefined) setWiChecked(state.wiChecked);
+            if (state.wiCorrect !== undefined) setWiCorrect(state.wiCorrect);
+            if (state.quizIdx !== undefined) setQuizIdx(state.quizIdx);
+            if (state.quizSelected !== undefined) setQuizSelected(state.quizSelected);
+            if (state.quizChecked !== undefined) setQuizChecked(state.quizChecked);
+            if (state.quizCorrect !== undefined) setQuizCorrect(state.quizCorrect);
+            if (state.quizMistakes !== undefined) setQuizMistakes(state.quizMistakes);
+            if (state.quizScore !== undefined) setQuizScore(state.quizScore);
+        }
+      } catch (e) {
+        console.error("Failed to restore progress state:", e);
+      }
+      isLoadedRef.current = true;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!isLoadedRef.current) return;
+    if (typeof window !== "undefined") {
+      try {
+        const state = {
+            step,
+            maxStep,
+            relationIdx,
+            relationSelected,
+            relationChecked,
+            relationCorrect,
+            choiceItems,
+            choiceIdx,
+            choiceSelected,
+            choiceChecked,
+            choiceCorrect,
+            choiceExplanation,
+            hlSelectedWord,
+            hlSelectedRelation,
+            hlChecked,
+            hlCorrect,
+            joinIdx,
+            joinInput,
+            joinChecked,
+            joinCorrect,
+            rrIdx,
+            rrInput,
+            rrChecked,
+            rrCorrect,
+            wiIdx,
+            wiInput,
+            wiChecked,
+            wiCorrect,
+            quizIdx,
+            quizSelected,
+            quizChecked,
+            quizCorrect,
+            quizMistakes,
+            quizScore
+        };
+        localStorage.setItem("hangeulai_c7p5_progress_state", JSON.stringify(state));
+      } catch (e) {
+        console.error("Failed to save progress state:", e);
+      }
+    }
+  }, [step, maxStep, relationIdx, relationSelected, relationChecked, relationCorrect, choiceItems, choiceIdx, choiceSelected, choiceChecked, choiceCorrect, choiceExplanation, hlSelectedWord, hlSelectedRelation, hlChecked, hlCorrect, joinIdx, joinInput, joinChecked, joinCorrect, rrIdx, rrInput, rrChecked, rrCorrect, wiIdx, wiInput, wiChecked, wiCorrect, quizIdx, quizSelected, quizChecked, quizCorrect, quizMistakes, quizScore]);
+  // --- End Progress State Preservation ---
+
   const [completionData, setCompletionData] = useState<any>(null);
 
   useEffect(() => {
@@ -593,7 +695,7 @@ return (
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
               {outlineSteps.map(s => {
                 const isCurrent = step === s.num;
-                const isCompleted = s.num < step || s.num <= maxStep;
+                const isCompleted = s.num < step;
                 return (
                   <button
                     key={s.num}
@@ -630,8 +732,8 @@ return (
                       </div>
                       <div className="w-full h-1 bg-zinc-950 rounded-full overflow-hidden mt-0.5">
                         <div 
-                          className={`h-full rounded-full ${isCompleted ? "bg-emerald-400" : "bg-zinc-800"}`}
-                          style={{ width: isCompleted ? "100%" : "0%" }}
+                          className="h-full rounded-full bg-emerald-400"
+                          style={{ width: `${(getStepXP(s.num) / (getStepMaxXP(s.num) || 1)) * 100}%` }}
                         />
                       </div>
                     </div>

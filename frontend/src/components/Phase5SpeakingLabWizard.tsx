@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import xpAudit from "../lib/xp-audit.json";
 import {
   Mic,
   MicOff,
@@ -246,16 +247,17 @@ interface MicroQuestion {
 
 export default function Phase5SpeakingLabWizard({ activeLesson, speakWord, onComplete,
   courseXP }: Phase5SpeakingLabWizardProps) {
+  const phaseNum = 5;
   const getStepMaxXP = (sNum: number) => {
-    if (sNum === 1) return 0;
-    if (sNum === 12) return 200;
-    const sObj = outlineSteps.find(os => os.num === sNum);
-    const label = sObj ? sObj.label.toLowerCase() : "";
-    if (label.includes("activity") || label.includes("game") || label.includes("drill") || label.includes("practice")) return 60;
-    return 35;
+    try {
+      return (xpAudit as any)["1"]?.[phaseNum.toString()]?.steps?.[sNum.toString()]?.max_xp ?? 35;
+    } catch (e) {
+      return 35;
+    }
   };
   const getStepXP = (sNum: number) => {
-    return (sNum < step || sNum <= maxStep) ? getStepMaxXP(sNum) : 0;
+    if (typeof window === "undefined") return 0;
+    return parseInt(localStorage.getItem(`hangeulai_c1p${phaseNum}_s${sNum}_earned_xp`) || "0", 10);
   };
 
   const [step, setStep] = useState(1);
@@ -425,6 +427,80 @@ export default function Phase5SpeakingLabWizard({ activeLesson, speakWord, onCom
   const [assessAttempts, setAssessAttempts] = useState<any[]>([]);
   const [finalAssessment, setFinalAssessment] = useState<any>(null);
   const [submittingFinal, setSubmittingFinal] = useState(false);
+
+  // --- Start Progress State Preservation ---
+  const isLoadedRef = useRef(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem("hangeulai_c1p5_progress_state");
+        if (saved) {
+          const state = JSON.parse(saved);
+            if (state.step !== undefined) setStep(state.step);
+            if (state.maxStep !== undefined) setMaxStep(state.maxStep);
+            if (state.setupResult !== undefined) setSetupResult(state.setupResult);
+            if (state.cSelected !== undefined) setCSelected(state.cSelected);
+            if (state.cChecked !== undefined) setCChecked(state.cChecked);
+            if (state.cCorrect !== undefined) setCCorrect(state.cCorrect);
+            if (state.answeredConcepts !== undefined) setAnsweredConcepts(state.answeredConcepts);
+            if (state.shadowIdx !== undefined) setShadowIdx(state.shadowIdx);
+            if (state.shadowResult !== undefined) setShadowResult(state.shadowResult);
+            if (state.shadowScores !== undefined) setShadowScores(state.shadowScores);
+            if (state.phonemeIdx !== undefined) setPhonemeIdx(state.phonemeIdx);
+            if (state.phonemeExIdx !== undefined) setPhonemeExIdx(state.phonemeExIdx);
+            if (state.phonemeResult !== undefined) setPhonemeResult(state.phonemeResult);
+            if (state.patIdx !== undefined) setPatIdx(state.patIdx);
+            if (state.patResult !== undefined) setPatResult(state.patResult);
+            if (state.freeIdx !== undefined) setFreeIdx(state.freeIdx);
+            if (state.freeResult !== undefined) setFreeResult(state.freeResult);
+            if (state.freeScores !== undefined) setFreeScores(state.freeScores);
+            if (state.assessIdx !== undefined) setAssessIdx(state.assessIdx);
+            if (state.assessResult !== undefined) setAssessResult(state.assessResult);
+            if (state.assessAttempts !== undefined) setAssessAttempts(state.assessAttempts);
+        }
+      } catch (e) {
+        console.error("Failed to restore progress state:", e);
+      }
+      isLoadedRef.current = true;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!isLoadedRef.current) return;
+    if (typeof window !== "undefined") {
+      try {
+        const state = {
+            step,
+            maxStep,
+            setupResult,
+            cSelected,
+            cChecked,
+            cCorrect,
+            answeredConcepts,
+            shadowIdx,
+            shadowResult,
+            shadowScores,
+            phonemeIdx,
+            phonemeExIdx,
+            phonemeResult,
+            patIdx,
+            patResult,
+            freeIdx,
+            freeResult,
+            freeScores,
+            assessIdx,
+            assessResult,
+            assessAttempts
+        };
+        localStorage.setItem("hangeulai_c1p5_progress_state", JSON.stringify(state));
+      } catch (e) {
+        console.error("Failed to save progress state:", e);
+      }
+    }
+  }, [step, maxStep, setupResult, cSelected, cChecked, cCorrect, answeredConcepts, shadowIdx, shadowResult, shadowScores, phonemeIdx, phonemeExIdx, phonemeResult, patIdx, patResult, freeIdx, freeResult, freeScores, assessIdx, assessResult, assessAttempts]);
+  // --- End Progress State Preservation ---
+
   const rec6 = useRecorder();
 
   // Screen 12 — Summary
@@ -792,7 +868,7 @@ return (
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
               {outlineSteps.map(s => {
                 const isCurrent = step === s.num;
-                const isCompleted = s.num < step || s.num <= maxStep;
+                const isCompleted = s.num < step;
                 return (
                   <button
                     key={s.num}
@@ -829,8 +905,8 @@ return (
                       </div>
                       <div className="w-full h-1 bg-zinc-950 rounded-full overflow-hidden mt-0.5">
                         <div 
-                          className={`h-full rounded-full ${isCompleted ? "bg-emerald-400" : "bg-zinc-800"}`}
-                          style={{ width: isCompleted ? "100%" : "0%" }}
+                          className="h-full rounded-full bg-emerald-400"
+                          style={{ width: `${(getStepXP(s.num) / (getStepMaxXP(s.num) || 1)) * 100}%` }}
                         />
                       </div>
                     </div>
@@ -1069,6 +1145,26 @@ return (
 
           {/* Navigation Controls */}
           <div className="flex justify-between items-center pt-6 border-t border-white/5">
+
+            <button
+              type="button"
+              onClick={() => {
+                window.dispatchEvent(new CustomEvent("hangeulai-add-note", {
+                  detail: {
+                    question: `Course 1 Phase 5 Step ${step} - Study Concept`,
+                    selected_answer: "Interactive Study Materials",
+                    correct_answer: "Verified Korean Curriculum",
+                    is_correct: true,
+                    explanation: `Study notes for Course 1 Phase 5 Step ${step}.`
+                  }
+                }));
+              }}
+              className="bg-white/10 hover:bg-white/20 text-white text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-lg border border-white/5 transition cursor-pointer"
+              title="Add this theory summary to your diary notes"
+            >
+              + Add to Notes
+            </button>
+  
             <button 
               onClick={() => setStep(step - 1)} 
               className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
@@ -1180,6 +1276,26 @@ return (
               )}
 
               <div className="flex justify-between items-center pt-6 border-t border-white/5">
+
+            <button
+              type="button"
+              onClick={() => {
+                window.dispatchEvent(new CustomEvent("hangeulai-add-note", {
+                  detail: {
+                    question: `Course 1 Phase 5 Step ${step} - Study Concept`,
+                    selected_answer: "Interactive Study Materials",
+                    correct_answer: "Verified Korean Curriculum",
+                    is_correct: true,
+                    explanation: `Study notes for Course 1 Phase 5 Step ${step}.`
+                  }
+                }));
+              }}
+              className="bg-white/10 hover:bg-white/20 text-white text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-lg border border-white/5 transition cursor-pointer"
+              title="Add this theory summary to your diary notes"
+            >
+              + Add to Notes
+            </button>
+  
                 <button onClick={() => setStep(6)} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
                 
                 {shadowResult ? (
@@ -1299,6 +1415,26 @@ return (
                 )}
 
                 <div className="flex justify-between items-center pt-6 border-t border-white/5">
+
+            <button
+              type="button"
+              onClick={() => {
+                window.dispatchEvent(new CustomEvent("hangeulai-add-note", {
+                  detail: {
+                    question: `Course 1 Phase 5 Step ${step} - Study Concept`,
+                    selected_answer: "Interactive Study Materials",
+                    correct_answer: "Verified Korean Curriculum",
+                    is_correct: true,
+                    explanation: `Study notes for Course 1 Phase 5 Step ${step}.`
+                  }
+                }));
+              }}
+              className="bg-white/10 hover:bg-white/20 text-white text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-lg border border-white/5 transition cursor-pointer"
+              title="Add this theory summary to your diary notes"
+            >
+              + Add to Notes
+            </button>
+  
                   <button onClick={() => setStep(7)} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
                   <div className="flex gap-2">
                     <button
@@ -1449,6 +1585,26 @@ return (
                 )}
 
                 <div className="flex justify-between items-center pt-6 border-t border-white/5">
+
+            <button
+              type="button"
+              onClick={() => {
+                window.dispatchEvent(new CustomEvent("hangeulai-add-note", {
+                  detail: {
+                    question: `Course 1 Phase 5 Step ${step} - Study Concept`,
+                    selected_answer: "Interactive Study Materials",
+                    correct_answer: "Verified Korean Curriculum",
+                    is_correct: true,
+                    explanation: `Study notes for Course 1 Phase 5 Step ${step}.`
+                  }
+                }));
+              }}
+              className="bg-white/10 hover:bg-white/20 text-white text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-lg border border-white/5 transition cursor-pointer"
+              title="Add this theory summary to your diary notes"
+            >
+              + Add to Notes
+            </button>
+  
                   <button onClick={() => setStep(8)} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
                   <button
                     onClick={() => {
@@ -1552,6 +1708,26 @@ return (
                 )}
 
                 <div className="flex justify-between items-center pt-6 border-t border-white/5">
+
+            <button
+              type="button"
+              onClick={() => {
+                window.dispatchEvent(new CustomEvent("hangeulai-add-note", {
+                  detail: {
+                    question: `Course 1 Phase 5 Step ${step} - Study Concept`,
+                    selected_answer: "Interactive Study Materials",
+                    correct_answer: "Verified Korean Curriculum",
+                    is_correct: true,
+                    explanation: `Study notes for Course 1 Phase 5 Step ${step}.`
+                  }
+                }));
+              }}
+              className="bg-white/10 hover:bg-white/20 text-white text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-lg border border-white/5 transition cursor-pointer"
+              title="Add this theory summary to your diary notes"
+            >
+              + Add to Notes
+            </button>
+  
                   <button onClick={() => setStep(9)} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
                   <button
                     onClick={() => {
@@ -1693,6 +1869,26 @@ return (
                 )}
 
                 <div className="flex justify-between items-center pt-6 border-t border-white/5">
+
+            <button
+              type="button"
+              onClick={() => {
+                window.dispatchEvent(new CustomEvent("hangeulai-add-note", {
+                  detail: {
+                    question: `Course 1 Phase 5 Step ${step} - Study Concept`,
+                    selected_answer: "Interactive Study Materials",
+                    correct_answer: "Verified Korean Curriculum",
+                    is_correct: true,
+                    explanation: `Study notes for Course 1 Phase 5 Step ${step}.`
+                  }
+                }));
+              }}
+              className="bg-white/10 hover:bg-white/20 text-white text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-lg border border-white/5 transition cursor-pointer"
+              title="Add this theory summary to your diary notes"
+            >
+              + Add to Notes
+            </button>
+  
                   <button onClick={() => setStep(10)} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
                   <span className="text-xs text-zinc-500 font-mono font-bold">{assessAttempts.length} of {assessmentBlueprint.length} slots calibrated</span>
                 </div>

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ChevronLeft, CheckCircle2, ChevronRight, Award, Loader2, BookOpen, Layers, Volume2, Sparkles, BookMarked, BrainCircuit, RefreshCw, Compass, Star, Trash2, Settings, Plus, Notebook } from "lucide-react";
 import { apiRequest, ensureAuthenticated, API_BASE_URL } from "../../lib/api";
 import { motion, AnimatePresence } from "framer-motion";
+import xpAudit from "../../lib/xp-audit.json";
 import Phase1VowelBootcampWizard from "../../components/Phase1VowelBootcampWizard";
 import Phase2ConsonantWizard from "../../components/Phase2ConsonantWizard";
 import Phase3SyllableBlocksWizard from "../../components/Phase3SyllableBlocksWizard";
@@ -396,14 +397,30 @@ export default function LessonPlayer() {
       const { amount, type } = customEvent.detail || { amount: 0, type: 'theory' };
       if (amount === 0) return;
 
+      // Update step-specific earned XP
+      const activeStep = activeStepRef.current;
+      if (activeStep) {
+        const { courseId, phaseNum, step } = activeStep;
+        const stepEarnedKey = `hangeulai_c${courseId}p${phaseNum}_s${step}_earned_xp`;
+        const currentEarned = parseInt(localStorage.getItem(stepEarnedKey) || "0", 10);
+        
+        let maxXp = 35;
+        try {
+          maxXp = (xpAudit as any)[courseId.toString()]?.[phaseNum.toString()]?.steps?.[step.toString()]?.max_xp ?? 35;
+        } catch (err) {}
+        
+        const newEarned = Math.max(0, Math.min(maxXp, currentEarned + amount));
+        localStorage.setItem(stepEarnedKey, String(newEarned));
+      }
+
       // For screen change theory XP, check if already rewarded
       if (type === 'theory') {
         // Wait briefly for step changes to commit to ref
         await new Promise(resolve => setTimeout(resolve, 50));
         
-        const activeStep = activeStepRef.current;
-        if (activeStep) {
-          const { courseId, phaseNum, step } = activeStep;
+        const activeStepObj = activeStepRef.current;
+        if (activeStepObj) {
+          const { courseId, phaseNum, step } = activeStepObj;
           const courseStateKey = "hangeulai_course_state";
           const stored = localStorage.getItem(courseStateKey);
           const states = stored ? JSON.parse(stored) : {};
@@ -488,6 +505,14 @@ export default function LessonPlayer() {
       if (!courseId || !phaseNum || !step) return;
 
       activeStepRef.current = { courseId, phaseNum, step };
+
+      // Award 15 XP on first entry of step
+      const visitKey = `hangeulai_c${courseId}p${phaseNum}_s${step}_visited`;
+      const visited = localStorage.getItem(visitKey);
+      if (!visited) {
+        localStorage.setItem(visitKey, "true");
+        window.dispatchEvent(new CustomEvent("hangeulai-xp", { detail: { amount: 15, type: 'theory' } }));
+      }
 
       try {
         const courseStateKey = "hangeulai_course_state";
@@ -582,18 +607,27 @@ export default function LessonPlayer() {
         });
       }
 
-      // Clear wizard step keys for this course
+      // Clear wizard step keys, progress state, earned_xp, and visited keys for this course
       if (courseId === 1) {
         for (let p = 1; p <= 6; p++) {
           localStorage.removeItem(`hangeulai_phase${p}_step`);
           localStorage.removeItem(`hangeulai_phase${p}_max_step`);
+          localStorage.removeItem(`hangeulai_c1p${p}_progress_state`);
+          localStorage.removeItem(`hangeulai_phase${p}_progress_state`);
+          for (let s = 1; s <= 15; s++) {
+            localStorage.removeItem(`hangeulai_c1p${p}_s${s}_earned_xp`);
+            localStorage.removeItem(`hangeulai_c1p${p}_s${s}_visited`);
+          }
         }
       } else {
         for (let p = 1; p <= 12; p++) {
           localStorage.removeItem(`hangeulai_c${courseId}p${p}_step`);
           localStorage.removeItem(`hangeulai_c${courseId}p${p}_max_step`);
-          localStorage.removeItem(`hangeulai_c${courseId - 1}p${p}_step`);
-          localStorage.removeItem(`hangeulai_c${courseId - 1}p${p}_max_step`);
+          localStorage.removeItem(`hangeulai_c${courseId}p${p}_progress_state`);
+          for (let s = 1; s <= 15; s++) {
+            localStorage.removeItem(`hangeulai_c${courseId}p${p}_s${s}_earned_xp`);
+            localStorage.removeItem(`hangeulai_c${courseId}p${p}_s${s}_visited`);
+          }
         }
       }
 

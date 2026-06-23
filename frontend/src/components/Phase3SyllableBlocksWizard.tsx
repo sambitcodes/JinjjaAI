@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   ChevronLeft,
   ChevronRight,
@@ -19,6 +19,7 @@ import {
   Headphones
 } from "lucide-react";
 import { apiRequest } from "../lib/api";
+import xpAudit from "../lib/xp-audit.json";
 
 const playCorrectSound = () => {
   if (typeof window !== "undefined") {
@@ -48,16 +49,17 @@ interface MicroQuestion {
 
 export default function Phase3SyllableBlocksWizard({ activeLesson, speakWord, onComplete,
   courseXP }: Phase3SyllableBlocksWizardProps) {
+  const phaseNum = 3;
   const getStepMaxXP = (sNum: number) => {
-    if (sNum === 1) return 0;
-    if (sNum === 11) return 200;
-    const sObj = outlineSteps.find(os => os.num === sNum);
-    const label = sObj ? sObj.label.toLowerCase() : "";
-    if (label.includes("activity") || label.includes("game") || label.includes("drill") || label.includes("practice")) return 60;
-    return 35;
+    try {
+      return (xpAudit as any)["1"]?.[phaseNum.toString()]?.steps?.[sNum.toString()]?.max_xp ?? 35;
+    } catch (e) {
+      return 35;
+    }
   };
   const getStepXP = (sNum: number) => {
-    return (sNum < step || sNum <= maxStep) ? getStepMaxXP(sNum) : 0;
+    if (typeof window === "undefined") return 0;
+    return parseInt(localStorage.getItem(`hangeulai_c1p${phaseNum}_s${sNum}_earned_xp`) || "0", 10);
   };
 
   const [step, setStep] = useState(1);
@@ -232,6 +234,96 @@ export default function Phase3SyllableBlocksWizard({ activeLesson, speakWord, on
   const [tutorSummary, setTutorSummary] = useState<string | null>(null);
   const [loadingTutor, setLoadingTutor] = useState(false);
   const [loadingQuiz, setLoadingQuiz] = useState(false);
+
+  // --- Start Progress State Preservation ---
+  const isLoadedRef = useRef(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem("hangeulai_c1p3_progress_state");
+        if (saved) {
+          const state = JSON.parse(saved);
+            if (state.step !== undefined) setStep(state.step);
+            if (state.maxStep !== undefined) setMaxStep(state.maxStep);
+            if (state.cSelected !== undefined) setCSelected(state.cSelected);
+            if (state.cChecked !== undefined) setCChecked(state.cChecked);
+            if (state.cCorrect !== undefined) setCCorrect(state.cCorrect);
+            if (state.answeredConcepts !== undefined) setAnsweredConcepts(state.answeredConcepts);
+            if (state.composeIdx !== undefined) setComposeIdx(state.composeIdx);
+            if (state.composeChecked !== undefined) setComposeChecked(state.composeChecked);
+            if (state.composeCorrect !== undefined) setComposeCorrect(state.composeCorrect);
+            if (state.decomposeIdx !== undefined) setDecomposeIdx(state.decomposeIdx);
+            if (state.decSelected !== undefined) setDecSelected(state.decSelected);
+            if (state.decomposeChecked !== undefined) setDecomposeChecked(state.decomposeChecked);
+            if (state.decomposeCorrect !== undefined) setDecomposeCorrect(state.decomposeCorrect);
+            if (state.readIdx !== undefined) setReadIdx(state.readIdx);
+            if (state.listenIdx !== undefined) setListenIdx(state.listenIdx);
+            if (state.listenSelected !== undefined) setListenSelected(state.listenSelected);
+            if (state.listenChecked !== undefined) setListenChecked(state.listenChecked);
+            if (state.listenCorrect !== undefined) setListenCorrect(state.listenCorrect);
+            if (state.wordIdx !== undefined) setWordIdx(state.wordIdx);
+            if (state.dictationWriting !== undefined) setDictationWriting(state.dictationWriting);
+            if (state.dictationChecked !== undefined) setDictationChecked(state.dictationChecked);
+            if (state.dictationCorrect !== undefined) setDictationCorrect(state.dictationCorrect);
+            if (state.quizIdx !== undefined) setQuizIdx(state.quizIdx);
+            if (state.quizSelected !== undefined) setQuizSelected(state.quizSelected);
+            if (state.quizWriting !== undefined) setQuizWriting(state.quizWriting);
+            if (state.quizChecked !== undefined) setQuizChecked(state.quizChecked);
+            if (state.quizCorrect !== undefined) setQuizCorrect(state.quizCorrect);
+            if (state.quizScore !== undefined) setQuizScore(state.quizScore);
+            if (state.quizMistakes !== undefined) setQuizMistakes(state.quizMistakes);
+        }
+      } catch (e) {
+        console.error("Failed to restore progress state:", e);
+      }
+      isLoadedRef.current = true;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!isLoadedRef.current) return;
+    if (typeof window !== "undefined") {
+      try {
+        const state = {
+            step,
+            maxStep,
+            cSelected,
+            cChecked,
+            cCorrect,
+            answeredConcepts,
+            composeIdx,
+            composeChecked,
+            composeCorrect,
+            decomposeIdx,
+            decSelected,
+            decomposeChecked,
+            decomposeCorrect,
+            readIdx,
+            listenIdx,
+            listenSelected,
+            listenChecked,
+            listenCorrect,
+            wordIdx,
+            dictationWriting,
+            dictationChecked,
+            dictationCorrect,
+            quizIdx,
+            quizSelected,
+            quizWriting,
+            quizChecked,
+            quizCorrect,
+            quizScore,
+            quizMistakes
+        };
+        localStorage.setItem("hangeulai_c1p3_progress_state", JSON.stringify(state));
+      } catch (e) {
+        console.error("Failed to save progress state:", e);
+      }
+    }
+  }, [step, maxStep, cSelected, cChecked, cCorrect, answeredConcepts, composeIdx, composeChecked, composeCorrect, decomposeIdx, decSelected, decomposeChecked, decomposeCorrect, readIdx, listenIdx, listenSelected, listenChecked, listenCorrect, wordIdx, dictationWriting, dictationChecked, dictationCorrect, quizIdx, quizSelected, quizWriting, quizChecked, quizCorrect, quizScore, quizMistakes]);
+  // --- End Progress State Preservation ---
+
 
   // Step 11: Recommendations
   const [recommendations, setRecommendations] = useState<any>(null);
@@ -490,7 +582,7 @@ return (
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
               {outlineSteps.map(s => {
                 const isCurrent = step === s.num;
-                const isCompleted = s.num < step || s.num <= maxStep;
+                const isCompleted = s.num < step;
                 return (
                   <button
                     key={s.num}
@@ -527,8 +619,8 @@ return (
                       </div>
                       <div className="w-full h-1 bg-zinc-950 rounded-full overflow-hidden mt-0.5">
                         <div 
-                          className={`h-full rounded-full ${isCompleted ? "bg-emerald-400" : "bg-zinc-800"}`}
-                          style={{ width: isCompleted ? "100%" : "0%" }}
+                          className="h-full rounded-full bg-emerald-400"
+                          style={{ width: `${(getStepXP(s.num) / (getStepMaxXP(s.num) || 1)) * 100}%` }}
                         />
                       </div>
                     </div>
@@ -755,6 +847,26 @@ return (
 
           {/* Navigation Controls */}
           <div className="flex justify-between items-center pt-6 border-t border-white/5">
+
+            <button
+              type="button"
+              onClick={() => {
+                window.dispatchEvent(new CustomEvent("hangeulai-add-note", {
+                  detail: {
+                    question: `Course 1 Phase 3 Step ${step} - Study Concept`,
+                    selected_answer: "Interactive Study Materials",
+                    correct_answer: "Verified Korean Curriculum",
+                    is_correct: true,
+                    explanation: `Study notes for Course 1 Phase 3 Step ${step}.`
+                  }
+                }));
+              }}
+              className="bg-white/10 hover:bg-white/20 text-white text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-lg border border-white/5 transition cursor-pointer"
+              title="Add this theory summary to your diary notes"
+            >
+              + Add to Notes
+            </button>
+  
             <button
               onClick={() => setStep(step - 1)}
               className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
@@ -896,6 +1008,26 @@ return (
 
           {/* Nav buttons */}
           <div className="flex justify-between items-center pt-6 border-t border-white/5">
+
+            <button
+              type="button"
+              onClick={() => {
+                window.dispatchEvent(new CustomEvent("hangeulai-add-note", {
+                  detail: {
+                    question: `Course 1 Phase 3 Step ${step} - Study Concept`,
+                    selected_answer: "Interactive Study Materials",
+                    correct_answer: "Verified Korean Curriculum",
+                    is_correct: true,
+                    explanation: `Study notes for Course 1 Phase 3 Step ${step}.`
+                  }
+                }));
+              }}
+              className="bg-white/10 hover:bg-white/20 text-white text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-lg border border-white/5 transition cursor-pointer"
+              title="Add this theory summary to your diary notes"
+            >
+              + Add to Notes
+            </button>
+  
             <button onClick={() => setStep(6)} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
 
             {!composeChecked ? (
@@ -1011,6 +1143,26 @@ return (
               )}
 
               <div className="flex justify-between items-center pt-6 border-t border-white/5">
+
+            <button
+              type="button"
+              onClick={() => {
+                window.dispatchEvent(new CustomEvent("hangeulai-add-note", {
+                  detail: {
+                    question: `Course 1 Phase 3 Step ${step} - Study Concept`,
+                    selected_answer: "Interactive Study Materials",
+                    correct_answer: "Verified Korean Curriculum",
+                    is_correct: true,
+                    explanation: `Study notes for Course 1 Phase 3 Step ${step}.`
+                  }
+                }));
+              }}
+              className="bg-white/10 hover:bg-white/20 text-white text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-lg border border-white/5 transition cursor-pointer"
+              title="Add this theory summary to your diary notes"
+            >
+              + Add to Notes
+            </button>
+  
                 <button onClick={() => setStep(7)} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
 
                 {!decomposeChecked ? (
@@ -1099,6 +1251,26 @@ return (
               </div>
 
               <div className="flex justify-between items-center pt-6 border-t border-white/5">
+
+            <button
+              type="button"
+              onClick={() => {
+                window.dispatchEvent(new CustomEvent("hangeulai-add-note", {
+                  detail: {
+                    question: `Course 1 Phase 3 Step ${step} - Study Concept`,
+                    selected_answer: "Interactive Study Materials",
+                    correct_answer: "Verified Korean Curriculum",
+                    is_correct: true,
+                    explanation: `Study notes for Course 1 Phase 3 Step ${step}.`
+                  }
+                }));
+              }}
+              className="bg-white/10 hover:bg-white/20 text-white text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-lg border border-white/5 transition cursor-pointer"
+              title="Add this theory summary to your diary notes"
+            >
+              + Add to Notes
+            </button>
+  
                 <button onClick={() => setStep(8)} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
 
                 <button
@@ -1161,6 +1333,26 @@ return (
               )}
 
               <div className="flex justify-between items-center pt-6 border-t border-white/5">
+
+            <button
+              type="button"
+              onClick={() => {
+                window.dispatchEvent(new CustomEvent("hangeulai-add-note", {
+                  detail: {
+                    question: `Course 1 Phase 3 Step ${step} - Study Concept`,
+                    selected_answer: "Interactive Study Materials",
+                    correct_answer: "Verified Korean Curriculum",
+                    is_correct: true,
+                    explanation: `Study notes for Course 1 Phase 3 Step ${step}.`
+                  }
+                }));
+              }}
+              className="bg-white/10 hover:bg-white/20 text-white text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-lg border border-white/5 transition cursor-pointer"
+              title="Add this theory summary to your diary notes"
+            >
+              + Add to Notes
+            </button>
+  
                 <button onClick={() => setSyllableSubMode("read")} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
 
                 {!listenChecked ? (
@@ -1325,13 +1517,55 @@ return (
               {quizChecked && (
                 <div className={`p-5 rounded-2xl border text-xs text-left space-y-2 animate-in slide-in-from-bottom-2 duration-200 ${quizCorrect ? "bg-accent-teal/5 border-accent-teal/20 text-accent-teal" : "bg-red-500/5 border-red-500/10 text-red-400"
                   }`}>
-                  <p className="font-black text-sm">{quizCorrect ? "Correct! Excellent." : "Incorrect."}</p>
+                  
+                  <div className="flex justify-between items-center border-b border-white/5 pb-2 mb-2 w-full">
+                    <p className="font-extrabold text-sm">{quizCorrect ? "✓ Correct!" : "✗ Incorrect."}</p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const q = quizQuestions[quizIdx];
+                        window.dispatchEvent(new CustomEvent("hangeulai-add-note", {
+                          detail: {
+                            question: q?.question || "Quiz Question",
+                            selected_answer: String(quizSelected || quizWriting || ""),
+                            correct_answer: String(q?.correct_answer || q?.correctId || ""),
+                            is_correct: !!quizCorrect,
+                            explanation: q?.explanation || ""
+                          }
+                        }));
+                      }}
+                      className="bg-white/10 hover:bg-white/20 text-white text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded border border-white/5 transition"
+                      title="Add to Notes"
+                    >
+                      + Add to Notes
+                    </button>
+                  </div>
                   <p className="text-zinc-300">{quizQuestions[quizIdx]?.explanation}</p>
                   {!quizCorrect && <p className="font-mono text-zinc-400 mt-1">Correct Answer: {quizQuestions[quizIdx]?.correct_answer}</p>}
                 </div>
               )}
 
               <div className="flex justify-between items-center pt-6 border-t border-white/5">
+
+            <button
+              type="button"
+              onClick={() => {
+                window.dispatchEvent(new CustomEvent("hangeulai-add-note", {
+                  detail: {
+                    question: `Course 1 Phase 3 Step ${step} - Study Concept`,
+                    selected_answer: "Interactive Study Materials",
+                    correct_answer: "Verified Korean Curriculum",
+                    is_correct: true,
+                    explanation: `Study notes for Course 1 Phase 3 Step ${step}.`
+                  }
+                }));
+              }}
+              className="bg-white/10 hover:bg-white/20 text-white text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-lg border border-white/5 transition cursor-pointer"
+              title="Add this theory summary to your diary notes"
+            >
+              + Add to Notes
+            </button>
+  
                 <div />
                 {!quizChecked ? (
                   <button
@@ -1406,6 +1640,26 @@ return (
               </div>
 
               <div className="flex justify-between items-center pt-6 border-t border-white/5">
+
+            <button
+              type="button"
+              onClick={() => {
+                window.dispatchEvent(new CustomEvent("hangeulai-add-note", {
+                  detail: {
+                    question: `Course 1 Phase 3 Step ${step} - Study Concept`,
+                    selected_answer: "Interactive Study Materials",
+                    correct_answer: "Verified Korean Curriculum",
+                    is_correct: true,
+                    explanation: `Study notes for Course 1 Phase 3 Step ${step}.`
+                  }
+                }));
+              }}
+              className="bg-white/10 hover:bg-white/20 text-white text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-lg border border-white/5 transition cursor-pointer"
+              title="Add this theory summary to your diary notes"
+            >
+              + Add to Notes
+            </button>
+  
                 <button
                   onClick={() => {
                     setQuizQuestions([]);

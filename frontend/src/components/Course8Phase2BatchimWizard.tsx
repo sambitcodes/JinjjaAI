@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
+import xpAudit from "../lib/xp-audit.json";
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -56,16 +57,17 @@ export default function Course8Phase2BatchimWizard({
   onComplete,
   courseXP
 }: Course8Phase2BatchimWizardProps) {
+  const phaseNum = 2;
   const getStepMaxXP = (sNum: number) => {
-    if (sNum === 1) return 0;
-    if (sNum === 12) return 200;
-    const sObj = outlineSteps.find(os => os.num === sNum);
-    const label = sObj ? sObj.label.toLowerCase() : "";
-    if (label.includes("activity") || label.includes("game") || label.includes("drill") || label.includes("practice")) return 60;
-    return 35;
+    try {
+      return (xpAudit as any)["8"]?.[phaseNum.toString()]?.steps?.[sNum.toString()]?.max_xp ?? 35;
+    } catch (e) {
+      return 35;
+    }
   };
   const getStepXP = (sNum: number) => {
-    return (sNum < step || sNum <= maxStep) ? getStepMaxXP(sNum) : 0;
+    if (typeof window === "undefined") return 0;
+    return parseInt(localStorage.getItem(`hangeulai_c8p${phaseNum}_s${sNum}_earned_xp`) || "0", 10);
   };
 
   const [step, setStep] = useState(1);
@@ -165,6 +167,94 @@ export default function Course8Phase2BatchimWizard({
   const [hwFeedback, setHwFeedback] = useState<any>(null);
   const [submittingHw, setSubmittingHw] = useState(false);
   const [completingLab, setCompletingLab] = useState(false);
+
+  // --- Start Progress State Preservation ---
+  const isLoadedRef = useRef(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem("hangeulai_c8p2_progress_state");
+        if (saved) {
+          const state = JSON.parse(saved);
+            if (state.step !== undefined) setStep(state.step);
+            if (state.maxStep !== undefined) setMaxStep(state.maxStep);
+            if (state.biIdx !== undefined) setBiIdx(state.biIdx);
+            if (state.biSelected !== undefined) setBiSelected(state.biSelected);
+            if (state.biChecked !== undefined) setBiChecked(state.biChecked);
+            if (state.biCorrect !== undefined) setBiCorrect(state.biCorrect);
+            if (state.slIdx !== undefined) setSlIdx(state.slIdx);
+            if (state.slSelected !== undefined) setSlSelected(state.slSelected);
+            if (state.slChecked !== undefined) setSlChecked(state.slChecked);
+            if (state.slCorrect !== undefined) setSlCorrect(state.slCorrect);
+            if (state.csIdx !== undefined) setCsIdx(state.csIdx);
+            if (state.csSelected !== undefined) setCsSelected(state.csSelected);
+            if (state.csChecked !== undefined) setCsChecked(state.csChecked);
+            if (state.csCorrect !== undefined) setCsCorrect(state.csCorrect);
+            if (state.bpIdx !== undefined) setBpIdx(state.bpIdx);
+            if (state.bpScore !== undefined) setBpScore(state.bpScore);
+            if (state.bpStatus !== undefined) setBpStatus(state.bpStatus);
+            if (state.lpIdx !== undefined) setLpIdx(state.lpIdx);
+            if (state.lpScore !== undefined) setLpScore(state.lpScore);
+            if (state.lpStatus !== undefined) setLpStatus(state.lpStatus);
+            if (state.sfIdx !== undefined) setSfIdx(state.sfIdx);
+            if (state.sfScore !== undefined) setSfScore(state.sfScore);
+            if (state.quizIdx !== undefined) setQuizIdx(state.quizIdx);
+            if (state.quizSelected !== undefined) setQuizSelected(state.quizSelected);
+            if (state.quizChecked !== undefined) setQuizChecked(state.quizChecked);
+            if (state.quizCorrect !== undefined) setQuizCorrect(state.quizCorrect);
+            if (state.quizMistakes !== undefined) setQuizMistakes(state.quizMistakes);
+            if (state.quizScore !== undefined) setQuizScore(state.quizScore);
+        }
+      } catch (e) {
+        console.error("Failed to restore progress state:", e);
+      }
+      isLoadedRef.current = true;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!isLoadedRef.current) return;
+    if (typeof window !== "undefined") {
+      try {
+        const state = {
+            step,
+            maxStep,
+            biIdx,
+            biSelected,
+            biChecked,
+            biCorrect,
+            slIdx,
+            slSelected,
+            slChecked,
+            slCorrect,
+            csIdx,
+            csSelected,
+            csChecked,
+            csCorrect,
+            bpIdx,
+            bpScore,
+            bpStatus,
+            lpIdx,
+            lpScore,
+            lpStatus,
+            sfIdx,
+            sfScore,
+            quizIdx,
+            quizSelected,
+            quizChecked,
+            quizCorrect,
+            quizMistakes,
+            quizScore
+        };
+        localStorage.setItem("hangeulai_c8p2_progress_state", JSON.stringify(state));
+      } catch (e) {
+        console.error("Failed to save progress state:", e);
+      }
+    }
+  }, [step, maxStep, biIdx, biSelected, biChecked, biCorrect, slIdx, slSelected, slChecked, slCorrect, csIdx, csSelected, csChecked, csCorrect, bpIdx, bpScore, bpStatus, lpIdx, lpScore, lpStatus, sfIdx, sfScore, quizIdx, quizSelected, quizChecked, quizCorrect, quizMistakes, quizScore]);
+  // --- End Progress State Preservation ---
+
   const [completionData, setCompletionData] = useState<any>(null);
 
   useEffect(() => {
@@ -571,7 +661,7 @@ return (
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
               {outlineSteps.map(s => {
                 const isCurrent = step === s.num;
-                const isCompleted = s.num < step || s.num <= maxStep;
+                const isCompleted = s.num < step;
                 return (
                   <button
                     key={s.num}
@@ -608,8 +698,8 @@ return (
                       </div>
                       <div className="w-full h-1 bg-zinc-950 rounded-full overflow-hidden mt-0.5">
                         <div 
-                          className={`h-full rounded-full ${isCompleted ? "bg-emerald-400" : "bg-zinc-800"}`}
-                          style={{ width: isCompleted ? "100%" : "0%" }}
+                          className="h-full rounded-full bg-emerald-400"
+                          style={{ width: `${(getStepXP(s.num) / (getStepMaxXP(s.num) || 1)) * 100}%` }}
                         />
                       </div>
                     </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef, useCallback } from "react";
+import xpAudit from "../lib/xp-audit.json";
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -125,16 +126,17 @@ export default function Course2Phase5LocationWizard({
   onComplete,
   courseXP
 }: Course2Phase5LocationWizardProps) {
+  const phaseNum = 5;
   const getStepMaxXP = (sNum: number) => {
-    if (sNum === 1) return 0;
-    if (sNum === 12) return 200;
-    const sObj = outlineSteps.find(os => os.num === sNum);
-    const label = sObj ? sObj.label.toLowerCase() : "";
-    if (label.includes("activity") || label.includes("game") || label.includes("drill") || label.includes("practice")) return 60;
-    return 35;
+    try {
+      return (xpAudit as any)["2"]?.[phaseNum.toString()]?.steps?.[sNum.toString()]?.max_xp ?? 35;
+    } catch (e) {
+      return 35;
+    }
   };
   const getStepXP = (sNum: number) => {
-    return (sNum < step || sNum <= maxStep) ? getStepMaxXP(sNum) : 0;
+    if (typeof window === "undefined") return 0;
+    return parseInt(localStorage.getItem(`hangeulai_c2p${phaseNum}_s${sNum}_earned_xp`) || "0", 10);
   };
 
   const [step, setStep] = useState(1);
@@ -361,6 +363,108 @@ export default function Course2Phase5LocationWizard({
   // Tutor session launch states
   const [tutorSession, setTutorSession] = useState<any>(null);
   const [loadingTutor, setLoadingTutor] = useState(false);
+
+  // --- Start Progress State Preservation ---
+  const isLoadedRef = useRef(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem("hangeulai_c2p5_progress_state");
+        if (saved) {
+          const state = JSON.parse(saved);
+            if (state.step !== undefined) setStep(state.step);
+            if (state.maxStep !== undefined) setMaxStep(state.maxStep);
+            if (state.placeIdx !== undefined) setPlaceIdx(state.placeIdx);
+            if (state.selectedPlaceOpt !== undefined) setSelectedPlaceOpt(state.selectedPlaceOpt);
+            if (state.placeChecked !== undefined) setPlaceChecked(state.placeChecked);
+            if (state.placeCorrect !== undefined) setPlaceCorrect(state.placeCorrect);
+            if (state.sentIdx !== undefined) setSentIdx(state.sentIdx);
+            if (state.selectedSentOpt !== undefined) setSelectedSentOpt(state.selectedSentOpt);
+            if (state.sentChecked !== undefined) setSentChecked(state.sentChecked);
+            if (state.sentCorrect !== undefined) setSentCorrect(state.sentCorrect);
+            if (state.dialogueIdx !== undefined) setDialogueIdx(state.dialogueIdx);
+            if (state.selectedDialogueOptId !== undefined) setSelectedDialogueOptId(state.selectedDialogueOptId);
+            if (state.dialogueChecked !== undefined) setDialogueChecked(state.dialogueChecked);
+            if (state.dialogueCorrect !== undefined) setDialogueCorrect(state.dialogueCorrect);
+            if (state.selectedBuilderPlace !== undefined) setSelectedBuilderPlace(state.selectedBuilderPlace);
+            if (state.selectedBuilderPattern !== undefined) setSelectedBuilderPattern(state.selectedBuilderPattern);
+            if (state.builderReflectChecked !== undefined) setBuilderReflectChecked(state.builderReflectChecked);
+            if (state.builderReflectSelected !== undefined) setBuilderReflectSelected(state.builderReflectSelected);
+            if (state.quizIdx !== undefined) setQuizIdx(state.quizIdx);
+            if (state.quizChecked !== undefined) setQuizChecked(state.quizChecked);
+            if (state.quizCorrect !== undefined) setQuizCorrect(state.quizCorrect);
+            if (state.quizSelectedOpt !== undefined) setQuizSelectedOpt(state.quizSelectedOpt);
+            if (state.quizWritingAns !== undefined) setQuizWritingAns(state.quizWritingAns);
+            if (state.quizScore !== undefined) setQuizScore(state.quizScore);
+            if (state.quizMistakes !== undefined) setQuizMistakes(state.quizMistakes);
+            if (state.cSelected !== undefined) setCSelected(state.cSelected);
+            if (state.cChecked !== undefined) setCChecked(state.cChecked);
+            if (state.cCorrect !== undefined) setCCorrect(state.cCorrect);
+            if (state.cIdx !== undefined) setCIdx(state.cIdx);
+            if (state.answeredConcepts !== undefined) setAnsweredConcepts(state.answeredConcepts);
+            if (state.activePlaceCardIdx !== undefined) setActivePlaceCardIdx(state.activePlaceCardIdx);
+            if (state.placeCardSelectedOpt !== undefined) setPlaceCardSelectedOpt(state.placeCardSelectedOpt);
+            if (state.placeCardChecked !== undefined) setPlaceCardChecked(state.placeCardChecked);
+            if (state.placeCardCorrect !== undefined) setPlaceCardCorrect(state.placeCardCorrect);
+            if (state.completedHomework !== undefined) setCompletedHomework(state.completedHomework);
+        }
+      } catch (e) {
+        console.error("Failed to restore progress state:", e);
+      }
+      isLoadedRef.current = true;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!isLoadedRef.current) return;
+    if (typeof window !== "undefined") {
+      try {
+        const state = {
+            step,
+            maxStep,
+            placeIdx,
+            selectedPlaceOpt,
+            placeChecked,
+            placeCorrect,
+            sentIdx,
+            selectedSentOpt,
+            sentChecked,
+            sentCorrect,
+            dialogueIdx,
+            selectedDialogueOptId,
+            dialogueChecked,
+            dialogueCorrect,
+            selectedBuilderPlace,
+            selectedBuilderPattern,
+            builderReflectChecked,
+            builderReflectSelected,
+            quizIdx,
+            quizChecked,
+            quizCorrect,
+            quizSelectedOpt,
+            quizWritingAns,
+            quizScore,
+            quizMistakes,
+            cSelected,
+            cChecked,
+            cCorrect,
+            cIdx,
+            answeredConcepts,
+            activePlaceCardIdx,
+            placeCardSelectedOpt,
+            placeCardChecked,
+            placeCardCorrect,
+            completedHomework
+        };
+        localStorage.setItem("hangeulai_c2p5_progress_state", JSON.stringify(state));
+      } catch (e) {
+        console.error("Failed to save progress state:", e);
+      }
+    }
+  }, [step, maxStep, placeIdx, selectedPlaceOpt, placeChecked, placeCorrect, sentIdx, selectedSentOpt, sentChecked, sentCorrect, dialogueIdx, selectedDialogueOptId, dialogueChecked, dialogueCorrect, selectedBuilderPlace, selectedBuilderPattern, builderReflectChecked, builderReflectSelected, quizIdx, quizChecked, quizCorrect, quizSelectedOpt, quizWritingAns, quizScore, quizMistakes, cSelected, cChecked, cCorrect, cIdx, answeredConcepts, activePlaceCardIdx, placeCardSelectedOpt, placeCardChecked, placeCardCorrect, completedHomework]);
+  // --- End Progress State Preservation ---
+
 
   // Sound and XP helpers
   const playCorrectSound = () => {
@@ -764,7 +868,7 @@ return (
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
               {outlineSteps.map(s => {
                 const isCurrent = step === s.num;
-                const isCompleted = s.num < step || s.num <= maxStep;
+                const isCompleted = s.num < step;
                 return (
                   <button
                     key={s.num}
@@ -801,8 +905,8 @@ return (
                       </div>
                       <div className="w-full h-1 bg-zinc-950 rounded-full overflow-hidden mt-0.5">
                         <div 
-                          className={`h-full rounded-full ${isCompleted ? "bg-emerald-400" : "bg-zinc-800"}`}
-                          style={{ width: isCompleted ? "100%" : "0%" }}
+                          className="h-full rounded-full bg-emerald-400"
+                          style={{ width: `${(getStepXP(s.num) / (getStepMaxXP(s.num) || 1)) * 100}%` }}
                         />
                       </div>
                     </div>

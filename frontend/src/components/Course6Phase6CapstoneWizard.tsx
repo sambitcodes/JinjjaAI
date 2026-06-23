@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
+import xpAudit from "../lib/xp-audit.json";
 import {
   ChevronLeft, ChevronRight, Volume2, Sparkles, BookOpen, Award,
   Loader2, CheckCircle2, Mic, MessageCircle, Eye, ArrowRight,
@@ -87,16 +88,17 @@ export default function Course6Phase6CapstoneWizard({
   activeLesson, speakWord, onComplete,
   courseXP
 }: Course6Phase6CapstoneWizardProps) {
+  const phaseNum = 6;
   const getStepMaxXP = (sNum: number) => {
-    if (sNum === 1) return 0;
-    if (sNum === 8) return 200;
-    const sObj = outlineSteps.find(os => os.num === sNum);
-    const label = sObj ? sObj.label.toLowerCase() : "";
-    if (label.includes("activity") || label.includes("game") || label.includes("drill") || label.includes("practice")) return 60;
-    return 35;
+    try {
+      return (xpAudit as any)["6"]?.[phaseNum.toString()]?.steps?.[sNum.toString()]?.max_xp ?? 35;
+    } catch (e) {
+      return 35;
+    }
   };
   const getStepXP = (sNum: number) => {
-    return (sNum < step || sNum <= maxStep) ? getStepMaxXP(sNum) : 0;
+    if (typeof window === "undefined") return 0;
+    return parseInt(localStorage.getItem(`hangeulai_c6p${phaseNum}_s${sNum}_earned_xp`) || "0", 10);
   };
 
   const [step, setStep] = useState(1);
@@ -197,6 +199,92 @@ export default function Course6Phase6CapstoneWizard({
   const [exitText, setExitText] = useState("");
   const [exitSending, setExitSending] = useState(false);
   const [exitFinished, setExitFinished] = useState(false);
+
+  // --- Start Progress State Preservation ---
+  const isLoadedRef = useRef(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem("hangeulai_c6p6_progress_state");
+        if (saved) {
+          const state = JSON.parse(saved);
+            if (state.step !== undefined) setStep(state.step);
+            if (state.maxStep !== undefined) setMaxStep(state.maxStep);
+            if (state.conceptCheckAnswer !== undefined) setConceptCheckAnswer(state.conceptCheckAnswer);
+            if (state.conceptCheckChecked !== undefined) setConceptCheckChecked(state.conceptCheckChecked);
+            if (state.selectedPreviewType !== undefined) setSelectedPreviewType(state.selectedPreviewType);
+            if (state.previewSnapshotIdx !== undefined) setPreviewSnapshotIdx(state.previewSnapshotIdx);
+            if (state.challengeSelected !== undefined) setChallengeSelected(state.challengeSelected);
+            if (state.challengeChecked !== undefined) setChallengeChecked(state.challengeChecked);
+            if (state.challengeCorrect !== undefined) setChallengeCorrect(state.challengeCorrect);
+            if (state.selectedIdioms !== undefined) setSelectedIdioms(state.selectedIdioms);
+            if (state.selectedCapstoneId !== undefined) setSelectedCapstoneId(state.selectedCapstoneId);
+            if (state.comprehensionAnswer !== undefined) setComprehensionAnswer(state.comprehensionAnswer);
+            if (state.comprehensionChecked !== undefined) setComprehensionChecked(state.comprehensionChecked);
+            if (state.comprehensionCorrect !== undefined) setComprehensionCorrect(state.comprehensionCorrect);
+            if (state.capstoneInput !== undefined) setCapstoneInput(state.capstoneInput);
+            if (state.capstoneWriting !== undefined) setCapstoneWriting(state.capstoneWriting);
+            if (state.capstoneWritingFeedback !== undefined) setCapstoneWritingFeedback(state.capstoneWritingFeedback);
+            if (state.submittingWriting !== undefined) setSubmittingWriting(state.submittingWriting);
+            if (state.quizIdx !== undefined) setQuizIdx(state.quizIdx);
+            if (state.quizChecked !== undefined) setQuizChecked(state.quizChecked);
+            if (state.quizCorrect !== undefined) setQuizCorrect(state.quizCorrect);
+            if (state.quizSelectedOpt !== undefined) setQuizSelectedOpt(state.quizSelectedOpt);
+            if (state.quizMistakes !== undefined) setQuizMistakes(state.quizMistakes);
+            if (state.quizScore !== undefined) setQuizScore(state.quizScore);
+            if (state.completedHomework !== undefined) setCompletedHomework(state.completedHomework);
+            if (state.exitText !== undefined) setExitText(state.exitText);
+            if (state.exitFinished !== undefined) setExitFinished(state.exitFinished);
+        }
+      } catch (e) {
+        console.error("Failed to restore progress state:", e);
+      }
+      isLoadedRef.current = true;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!isLoadedRef.current) return;
+    if (typeof window !== "undefined") {
+      try {
+        const state = {
+            step,
+            maxStep,
+            conceptCheckAnswer,
+            conceptCheckChecked,
+            selectedPreviewType,
+            previewSnapshotIdx,
+            challengeSelected,
+            challengeChecked,
+            challengeCorrect,
+            selectedIdioms,
+            selectedCapstoneId,
+            comprehensionAnswer,
+            comprehensionChecked,
+            comprehensionCorrect,
+            capstoneInput,
+            capstoneWriting,
+            capstoneWritingFeedback,
+            submittingWriting,
+            quizIdx,
+            quizChecked,
+            quizCorrect,
+            quizSelectedOpt,
+            quizMistakes,
+            quizScore,
+            completedHomework,
+            exitText,
+            exitFinished
+        };
+        localStorage.setItem("hangeulai_c6p6_progress_state", JSON.stringify(state));
+      } catch (e) {
+        console.error("Failed to save progress state:", e);
+      }
+    }
+  }, [step, maxStep, conceptCheckAnswer, conceptCheckChecked, selectedPreviewType, previewSnapshotIdx, challengeSelected, challengeChecked, challengeCorrect, selectedIdioms, selectedCapstoneId, comprehensionAnswer, comprehensionChecked, comprehensionCorrect, capstoneInput, capstoneWriting, capstoneWritingFeedback, submittingWriting, quizIdx, quizChecked, quizCorrect, quizSelectedOpt, quizMistakes, quizScore, completedHomework, exitText, exitFinished]);
+  // --- End Progress State Preservation ---
+
   const [exitProfile, setExitProfile] = useState<any>(null);
   const [exitFarewell, setExitFarewell] = useState<string | null>(null);
 
@@ -592,7 +680,7 @@ export default function Course6Phase6CapstoneWizard({
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
               {outlineSteps.map(s => {
                 const isCurrent = step === s.num;
-                const isCompleted = s.num < step || s.num <= maxStep;
+                const isCompleted = s.num < step;
                 return (
                   <button
                     key={s.num}
@@ -629,8 +717,8 @@ export default function Course6Phase6CapstoneWizard({
                       </div>
                       <div className="w-full h-1 bg-zinc-950 rounded-full overflow-hidden mt-0.5">
                         <div 
-                          className={`h-full rounded-full ${isCompleted ? "bg-emerald-400" : "bg-zinc-800"}`}
-                          style={{ width: isCompleted ? "100%" : "0%" }}
+                          className="h-full rounded-full bg-emerald-400"
+                          style={{ width: `${(getStepXP(s.num) / (getStepMaxXP(s.num) || 1)) * 100}%` }}
                         />
                       </div>
                     </div>

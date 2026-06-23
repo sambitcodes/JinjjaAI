@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef, useCallback } from "react";
+import xpAudit from "../lib/xp-audit.json";
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -126,16 +127,17 @@ export default function Course2Phase1GreetingsWizard({
   onComplete,
   courseXP
 }: Course2Phase1GreetingsWizardProps) {
+  const phaseNum = 1;
   const getStepMaxXP = (sNum: number) => {
-    if (sNum === 1) return 0;
-    if (sNum === 11) return 200;
-    const sObj = outlineSteps.find(os => os.num === sNum);
-    const label = sObj ? sObj.label.toLowerCase() : "";
-    if (label.includes("activity") || label.includes("game") || label.includes("drill") || label.includes("practice")) return 60;
-    return 35;
+    try {
+      return (xpAudit as any)["2"]?.[phaseNum.toString()]?.steps?.[sNum.toString()]?.max_xp ?? 35;
+    } catch (e) {
+      return 35;
+    }
   };
   const getStepXP = (sNum: number) => {
-    return (sNum < step || sNum <= maxStep) ? getStepMaxXP(sNum) : 0;
+    if (typeof window === "undefined") return 0;
+    return parseInt(localStorage.getItem(`hangeulai_c2p${phaseNum}_s${sNum}_earned_xp`) || "0", 10);
   };
 
   const [step, setStep] = useState(1);
@@ -311,6 +313,94 @@ export default function Course2Phase1GreetingsWizard({
   // Tutor session mode launch state
   const [tutorSession, setTutorSession] = useState<any>(null);
   const [loadingTutor, setLoadingTutor] = useState(false);
+
+  // --- Start Progress State Preservation ---
+  const isLoadedRef = useRef(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem("hangeulai_c2p1_progress_state");
+        if (saved) {
+          const state = JSON.parse(saved);
+            if (state.step !== undefined) setStep(state.step);
+            if (state.maxStep !== undefined) setMaxStep(state.maxStep);
+            if (state.contextItems !== undefined) setContextItems(state.contextItems);
+            if (state.cSelected !== undefined) setCSelected(state.cSelected);
+            if (state.cChecked !== undefined) setCChecked(state.cChecked);
+            if (state.cCorrect !== undefined) setCCorrect(state.cCorrect);
+            if (state.answeredConcepts !== undefined) setAnsweredConcepts(state.answeredConcepts);
+            if (state.listeningIdx !== undefined) setListeningIdx(state.listeningIdx);
+            if (state.selectedListeningOpt !== undefined) setSelectedListeningOpt(state.selectedListeningOpt);
+            if (state.listeningChecked !== undefined) setListeningChecked(state.listeningChecked);
+            if (state.listeningCorrect !== undefined) setListeningCorrect(state.listeningCorrect);
+            if (state.selectedMatchKo !== undefined) setSelectedMatchKo(state.selectedMatchKo);
+            if (state.gapfillIdx !== undefined) setGapfillIdx(state.gapfillIdx);
+            if (state.selectedGapfillOpt !== undefined) setSelectedGapfillOpt(state.selectedGapfillOpt);
+            if (state.gapfillChecked !== undefined) setGapfillChecked(state.gapfillChecked);
+            if (state.gapfillCorrect !== undefined) setGapfillCorrect(state.gapfillCorrect);
+            if (state.contextIdx !== undefined) setContextIdx(state.contextIdx);
+            if (state.selectedContextOpt !== undefined) setSelectedContextOpt(state.selectedContextOpt);
+            if (state.contextChecked !== undefined) setContextChecked(state.contextChecked);
+            if (state.contextCorrect !== undefined) setContextCorrect(state.contextCorrect);
+            if (state.quizIdx !== undefined) setQuizIdx(state.quizIdx);
+            if (state.quizAnswer !== undefined) setQuizAnswer(state.quizAnswer);
+            if (state.quizAnswerSelected !== undefined) setQuizAnswerSelected(state.quizAnswerSelected);
+            if (state.quizChecked !== undefined) setQuizChecked(state.quizChecked);
+            if (state.quizCorrect !== undefined) setQuizCorrect(state.quizCorrect);
+            if (state.quizMistakes !== undefined) setQuizMistakes(state.quizMistakes);
+            if (state.quizScore !== undefined) setQuizScore(state.quizScore);
+            if (state.completedHomework !== undefined) setCompletedHomework(state.completedHomework);
+        }
+      } catch (e) {
+        console.error("Failed to restore progress state:", e);
+      }
+      isLoadedRef.current = true;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!isLoadedRef.current) return;
+    if (typeof window !== "undefined") {
+      try {
+        const state = {
+            step,
+            maxStep,
+            contextItems,
+            cSelected,
+            cChecked,
+            cCorrect,
+            answeredConcepts,
+            listeningIdx,
+            selectedListeningOpt,
+            listeningChecked,
+            listeningCorrect,
+            selectedMatchKo,
+            gapfillIdx,
+            selectedGapfillOpt,
+            gapfillChecked,
+            gapfillCorrect,
+            contextIdx,
+            selectedContextOpt,
+            contextChecked,
+            contextCorrect,
+            quizIdx,
+            quizAnswer,
+            quizAnswerSelected,
+            quizChecked,
+            quizCorrect,
+            quizMistakes,
+            quizScore,
+            completedHomework
+        };
+        localStorage.setItem("hangeulai_c2p1_progress_state", JSON.stringify(state));
+      } catch (e) {
+        console.error("Failed to save progress state:", e);
+      }
+    }
+  }, [step, maxStep, contextItems, cSelected, cChecked, cCorrect, answeredConcepts, listeningIdx, selectedListeningOpt, listeningChecked, listeningCorrect, selectedMatchKo, gapfillIdx, selectedGapfillOpt, gapfillChecked, gapfillCorrect, contextIdx, selectedContextOpt, contextChecked, contextCorrect, quizIdx, quizAnswer, quizAnswerSelected, quizChecked, quizCorrect, quizMistakes, quizScore, completedHomework]);
+  // --- End Progress State Preservation ---
+
 
   // Sound triggers
   const playCorrectSound = () => {
@@ -676,7 +766,7 @@ return (
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
               {outlineSteps.map(s => {
                 const isCurrent = step === s.num;
-                const isCompleted = s.num < step || s.num <= maxStep;
+                const isCompleted = s.num < step;
                 return (
                   <button
                     key={s.num}
@@ -713,8 +803,8 @@ return (
                       </div>
                       <div className="w-full h-1 bg-zinc-950 rounded-full overflow-hidden mt-0.5">
                         <div 
-                          className={`h-full rounded-full ${isCompleted ? "bg-emerald-400" : "bg-zinc-800"}`}
-                          style={{ width: isCompleted ? "100%" : "0%" }}
+                          className="h-full rounded-full bg-emerald-400"
+                          style={{ width: `${(getStepXP(s.num) / (getStepMaxXP(s.num) || 1)) * 100}%` }}
                         />
                       </div>
                     </div>

@@ -1,0 +1,3030 @@
+{
+  "1": {
+    "1": {
+      "steps": {
+        "1": {
+          "label": "Welcome & Goals",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "2": {
+          "label": "C1: What are Vowels?",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "3": {
+          "label": "C2: 6 Basic Vowel Shapes",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "4": {
+          "label": "C3: Mouth & Tongue",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "5": {
+          "label": "C4: Y-Glide Vowels",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "6": {
+          "label": "C5: Syllables with ㅇ",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "7": {
+          "label": "Act 1: Visual Recognition",
+          "screens": 1,
+          "questions": 6,
+          "max_xp": 135
+        },
+        "8": {
+          "label": "Act 2: Ear Training",
+          "screens": 1,
+          "questions": 6,
+          "max_xp": 135
+        },
+        "9": {
+          "label": "Act 3: Simple Syllables",
+          "screens": 1,
+          "questions": 10,
+          "max_xp": 215
+        },
+        "10": {
+          "label": "Checkpoint Quiz",
+          "screens": 1,
+          "questions": 6,
+          "max_xp": 135
+        },
+        "11": {
+          "label": "Completion & Homework",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        }
+      },
+      "max_xp": 825
+    },
+    "2": {
+      "steps": {
+        "1": {
+          "label": "Welcome & Goals",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "2": {
+          "label": "C1: What Consonants Show",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "3": {
+          "label": "C2: Core Consonants",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "4": {
+          "label": "C3: Plain/Aspirated/Tense",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "5": {
+          "label": "C4: Special ㅇ Letter",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "6": {
+          "label": "C5: Consonants in Blocks",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "7": {
+          "label": "Act 1: Visual Recognition",
+          "screens": 1,
+          "questions": 6,
+          "max_xp": 135
+        },
+        "8": {
+          "label": "Act 2: Ear Training",
+          "screens": 1,
+          "questions": 6,
+          "max_xp": 135
+        },
+        "9": {
+          "label": "Act 3: Syllable Reading",
+          "screens": 1,
+          "questions": 5,
+          "max_xp": 115
+        },
+        "10": {
+          "label": "Checkpoint Quiz",
+          "screens": 1,
+          "questions": 6,
+          "max_xp": 135
+        },
+        "11": {
+          "label": "Completion & Homework",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        }
+      },
+      "max_xp": 725
+    },
+    "3": {
+      "steps": {
+        "1": {
+          "label": "Welcome & Goals",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "2": {
+          "label": "C1: One Syllable = One Block",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "3": {
+          "label": "C2: CV vs CVC Patterns",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "4": {
+          "label": "C3: Layout Rules & Vowels",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "5": {
+          "label": "C4: 받침 (Final Consonants)",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "6": {
+          "label": "C5: Special ㅇ Inside Blocks",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "7": {
+          "label": "Act 1: Compose Syllables",
+          "screens": 1,
+          "questions": 6,
+          "max_xp": 135
+        },
+        "8": {
+          "label": "Act 2: Decompose Syllables",
+          "screens": 1,
+          "questions": 6,
+          "max_xp": 135
+        },
+        "9": {
+          "label": "Act 3: Listening & Dictation",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "10": {
+          "label": "Checkpoint Quiz",
+          "screens": 1,
+          "questions": 6,
+          "max_xp": 135
+        },
+        "11": {
+          "label": "Completion & Homework",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        }
+      },
+      "max_xp": 625
+    },
+    "4": {
+      "steps": {
+        "1": {
+          "label": "Welcome & Overview",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "2": {
+          "label": "C1: Word Types",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "3": {
+          "label": "C2: Writing Loanwords",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "4": {
+          "label": "C3: Geography & Places",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "5": {
+          "label": "C4: Personal Names",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "6": {
+          "label": "C5: Transliterating Names",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "7": {
+          "label": "C6: Greeting Units",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "8": {
+          "label": "Act 1: Loanword Reading",
+          "screens": 1,
+          "questions": 5,
+          "max_xp": 115
+        },
+        "9": {
+          "label": "Act 2: Places Match",
+          "screens": 1,
+          "questions": 5,
+          "max_xp": 115
+        },
+        "10": {
+          "label": "Act 3: Names Match",
+          "screens": 1,
+          "questions": 5,
+          "max_xp": 115
+        },
+        "11": {
+          "label": "Act 4: Phrases Cloze",
+          "screens": 1,
+          "questions": 4,
+          "max_xp": 95
+        },
+        "12": {
+          "label": "Checkpoint Quiz",
+          "screens": 1,
+          "questions": 6,
+          "max_xp": 135
+        },
+        "13": {
+          "label": "Badge Claim & Homework",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        }
+      },
+      "max_xp": 815
+    },
+    "5": {
+      "steps": {
+        "1": {
+          "label": "Overview & Mic Check",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "2": {
+          "label": "C1: From Reading to Speaking",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "3": {
+          "label": "C2: What is Shadowing?",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "4": {
+          "label": "C3: Evaluation & ASR",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "5": {
+          "label": "C4: Controlled Patterns",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "6": {
+          "label": "C5: Competency Levels",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "7": {
+          "label": "Act 1: Guided Shadowing",
+          "screens": 1,
+          "questions": 5,
+          "max_xp": 115
+        },
+        "8": {
+          "label": "Act 2: Phoneme drills",
+          "screens": 1,
+          "questions": 5,
+          "max_xp": 115
+        },
+        "9": {
+          "label": "Act 3: Pattern Slots",
+          "screens": 1,
+          "questions": 5,
+          "max_xp": 115
+        },
+        "10": {
+          "label": "Act 4: Free Speaking",
+          "screens": 1,
+          "questions": 3,
+          "max_xp": 75
+        },
+        "11": {
+          "label": "Syllable Speech Check",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "12": {
+          "label": "Completion & Summary",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        }
+      },
+      "max_xp": 640
+    },
+    "6": {
+      "steps": {
+        "1": {
+          "label": "Welcome & Mode Select",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "2": {
+          "label": "C1: From Blocks to Speaking",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "3": {
+          "label": "C2: Shadowing Works",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "4": {
+          "label": "C3: ASR & Gwan-Sik Listens",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "5": {
+          "label": "C4: Sentence Frames",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "6": {
+          "label": "C5: Good Enough Pronunciation",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "7": {
+          "label": "Scenario Selection",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "8": {
+          "label": "Conversation Chat",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "9": {
+          "label": "Post-Convo Feedback",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "10": {
+          "label": "Transcript & Review",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        }
+      },
+      "max_xp": 250
+    }
+  },
+  "2": {
+    "1": {
+      "steps": {
+        "1": {
+          "label": "Welcome & Overview",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "2": {
+          "label": "Screen C1 – Why greetings matter in Korean",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "3": {
+          "label": "Screen C2 – Politeness basics: polite vs casual",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "4": {
+          "label": "Screen C3 – Core greeting set (forms and meanings)",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "5": {
+          "label": "Screen C4 – Goodbye: who is moving where?",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "6": {
+          "label": "Screen C5 – “Thank you” vs “Sorry”",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "7": {
+          "label": "Activity 1 – Listening & sound comprehension drills",
+          "screens": 1,
+          "questions": 20,
+          "max_xp": 415
+        },
+        "8": {
+          "label": "Activity 2 – Polite expression matching game",
+          "screens": 1,
+          "questions": 9,
+          "max_xp": 195
+        },
+        "9": {
+          "label": "Activity 3 – Gap-fill spelling production drills",
+          "screens": 1,
+          "questions": 9,
+          "max_xp": 195
+        },
+        "10": {
+          "label": "Activity 4 – Context-appropriate phrase challenges",
+          "screens": 1,
+          "questions": 12,
+          "max_xp": 255
+        },
+        "11": {
+          "label": "Activity 5 – Graduating checkpoint mini-quiz",
+          "screens": 1,
+          "questions": 6,
+          "max_xp": 135
+        }
+      },
+      "max_xp": 1285
+    },
+    "2": {
+      "steps": {
+        "1": {
+          "label": "Welcome & Overview",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "2": {
+          "label": "C1 – What goes into a basic Korean self-intro?",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "3": {
+          "label": "C2 – Pattern 1: saying your name politely",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "4": {
+          "label": "C3 – Pattern 2: saying your nationality / origin",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "5": {
+          "label": "C4 – Pattern 3: job / student status",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "6": {
+          "label": "C5 – Stitching lines into a mini-intro",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "7": {
+          "label": "Activity 1 – Identity pattern charts & card flips",
+          "screens": 1,
+          "questions": 9,
+          "max_xp": 195
+        },
+        "8": {
+          "label": "Activity 2 – Listening: self-intro comprehension MCQ",
+          "screens": 1,
+          "questions": 8,
+          "max_xp": 175
+        },
+        "9": {
+          "label": "Activity 3 – Personal detail pattern fill forms",
+          "screens": 1,
+          "questions": 5,
+          "max_xp": 115
+        },
+        "10": {
+          "label": "Activity 4 – Guided multi-line intro builder",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "11": {
+          "label": "Activity 5 – Graduating checkpoint mini-quiz",
+          "screens": 1,
+          "questions": 5,
+          "max_xp": 115
+        },
+        "12": {
+          "label": "Short self-intro chat with Gwan-Sik",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        }
+      },
+      "max_xp": 820
+    },
+    "3": {
+      "steps": {
+        "1": {
+          "label": "Welcome & Overview",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "2": {
+          "label": "C1 – Two number systems: Sino vs Native",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "3": {
+          "label": "C2 – Sino numbers 1–10 and building 11–19",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "4": {
+          "label": "C3 – Tens: 20, 30, 40, 50, 60",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "5": {
+          "label": "C4 – Time: Native hours and Sino minutes",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "6": {
+          "label": "C5 – Everyday uses: age, price, phone digits",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "7": {
+          "label": "Activity 1 – Sino-Korean Numbers catalog and audio drills",
+          "screens": 1,
+          "questions": 3,
+          "max_xp": 75
+        },
+        "8": {
+          "label": "Activity 2 – Listening & recognition plain and sentence numbers",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "9": {
+          "label": "Activity 3 – Simple time clock-mapping matches",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "10": {
+          "label": "Activity 4 – Everyday facts (age, price, phone digits) checks",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "11": {
+          "label": "Activity 5 – Graduating checkpoint mini-quiz checks",
+          "screens": 1,
+          "questions": 5,
+          "max_xp": 115
+        }
+      },
+      "max_xp": 425
+    },
+    "4": {
+      "steps": {
+        "1": {
+          "label": "Welcome & Overview",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "2": {
+          "label": "C1 – What is a routine in Korean?",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "3": {
+          "label": "C2 – Dictionary vs polite present (‑다 → ‑요)",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "4": {
+          "label": "C3 – Basic present tense pattern (‑아요/‑어요)",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "5": {
+          "label": "C4 – Core daily verbs subset catalog",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "6": {
+          "label": "C5 – Assembling routine sentences into paragraphs",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "7": {
+          "label": "Activity 1 – Daily activities verb grids & card flips",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "8": {
+          "label": "Activity 2 – Present tense verb conjugation matches",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "9": {
+          "label": "Activity 3 – Multi-line routine builder assembler",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "10": {
+          "label": "Activity 4 – Spoken routine read-aloud assessment",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "11": {
+          "label": "Activity 5 – Graduating checkpoint mini-quiz checks",
+          "screens": 1,
+          "questions": 5,
+          "max_xp": 115
+        }
+      },
+      "max_xp": 365
+    },
+    "5": {
+      "steps": {
+        "1": {
+          "label": "Welcome & Overview",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "2": {
+          "label": "C1 – Talking about places in Korean",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "3": {
+          "label": "C2 – Core place vocabulary (집, 학교, 회사...)",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "4": {
+          "label": "C3 – Particle 에: at/in vs to",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "5": {
+          "label": "C4 – Where-questions with 어디",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "6": {
+          "label": "C5 – Dialogue structures",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "7": {
+          "label": "Activity 1 – Places vocabulary grid & card flips",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "8": {
+          "label": "Activity 2 – Location/Destination particles comparison",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "9": {
+          "label": "Activity 3 – Places listening MCQ & sentence translation",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "10": {
+          "label": "Activity 4 – Dialogue Q&A matching & custom sentence builder",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "11": {
+          "label": "Activity 5 – Graduating checkpoint mini-quiz checks",
+          "screens": 1,
+          "questions": 5,
+          "max_xp": 115
+        },
+        "12": {
+          "label": "Activity 6 – Location tutor dialogue practice room",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        }
+      },
+      "max_xp": 380
+    },
+    "6": {
+      "steps": {
+        "1": {
+          "label": "Welcome & Overview",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "2": {
+          "label": "C1 – What \\",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "3": {
+          "label": "C2 – Conversations as \\",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "4": {
+          "label": "C3 – Using patterns you already know",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "5": {
+          "label": "C4 – How Gwan-Sik helps you in chats",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "6": {
+          "label": "Activity 1A – Choose the next line",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "7": {
+          "label": "Activity 2A – Scrambled dialogue solver",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "8": {
+          "label": "Activity 2B – Scramble review check",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "9": {
+          "label": "Activity 3A – AI Scenario selection",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "10": {
+          "label": "Activity 3B – ASR Chat Room Practice",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "11": {
+          "label": "Activity 4 – Graduating capstone quiz checks",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "12": {
+          "label": "Activity 5 – Course 1 Everyday Basics graduation",
+          "screens": 1,
+          "questions": 4,
+          "max_xp": 95
+        }
+      },
+      "max_xp": 340
+    }
+  },
+  "3": {
+    "1": {
+      "steps": {
+        "1": {
+          "label": "Welcome & Overview",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "2": {
+          "label": "C1 – From single sentences to longer routines",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "3": {
+          "label": "C2 – Frequency adverbs (how often)",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "4": {
+          "label": "C3 – Timeline & sequence words",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "5": {
+          "label": "C4 – Example longer routines analysis",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "6": {
+          "label": "Activity 1 – Frequency words grids & card flips",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "7": {
+          "label": "Activity 2 – Sequence tags ordering solver",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "8": {
+          "label": "Activity 3 – Routine paragraphs listening summaries",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "9": {
+          "label": "Activity 4 – Extended routines timeline builder & speaking practice",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "10": {
+          "label": "Activity 5 – Graduating checkpoint mini-quiz checks",
+          "screens": 1,
+          "questions": 4,
+          "max_xp": 95
+        }
+      },
+      "max_xp": 310
+    },
+    "2": {
+      "steps": {
+        "1": {
+          "label": "Welcome & Overview",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "2": {
+          "label": "C1 – Preferences at A2 level",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "3": {
+          "label": "C2 – Core sentiment frames (좋아해요/싫어해요)",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "4": {
+          "label": "C3 – Combining frequency + preferences",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "5": {
+          "label": "C4 – Giving short reasons with 서 / 그래서",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "6": {
+          "label": "C5 – Example preference monologues analysis",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "7": {
+          "label": "Activity 1 – Sentiment pattern flips & grids",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "8": {
+          "label": "Activity 2 – Hobby lists & reason builders",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "9": {
+          "label": "Activity 3 – Hobbies listening MCQs (likes vs dislikes)",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "10": {
+          "label": "Activity 4 – Sentiment sentence builders & speaking checks",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "11": {
+          "label": "Activity 5 – Graduating checkpoint mini-quiz checks",
+          "screens": 1,
+          "questions": 4,
+          "max_xp": 95
+        }
+      },
+      "max_xp": 345
+    },
+    "3": {
+      "steps": {
+        "1": {
+          "label": "Welcome & Overview",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "2": {
+          "label": "C1 – Past Routines introduction",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "3": {
+          "label": "C2 – Past tense conjugation rules",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "4": {
+          "label": "C3 – Past time expressions",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "5": {
+          "label": "C4 – Example story narrative analysis",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "6": {
+          "label": "Activity 1 – Past tense verb grids & flips",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "7": {
+          "label": "Activity 2 – Past time expressions cards & matching",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "8": {
+          "label": "Activity 3 – Yesterday routine listening summaries & details",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "9": {
+          "label": "Activity 4 – Present-to-past transform drills",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "10": {
+          "label": "Activity 5 – Timeline paragraph builder & speaking practice",
+          "screens": 1,
+          "questions": 5,
+          "max_xp": 115
+        }
+      },
+      "max_xp": 330
+    },
+    "4": {
+      "steps": {
+        "1": {
+          "label": "Welcome & Overview",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "2": {
+          "label": "C1 – Future plans introduction",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "3": {
+          "label": "C2 – Pattern 1 (~ㄹ 거예요)",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "4": {
+          "label": "C3 – Pattern 2 (~려고 해요)",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "5": {
+          "label": "C4 – Near-future time expressions",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "6": {
+          "label": "C5 – Example plan paragraph breakdown",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "7": {
+          "label": "Activity 1 – Future tense conjugation guides",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "8": {
+          "label": "Activity 2 – Near future time expressions & MCQs",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "9": {
+          "label": "Activity 3 – Plans listening summaries & details",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "10": {
+          "label": "Activity 4 – Horizon plan builder & speaking practice",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        }
+      },
+      "max_xp": 250
+    },
+    "5": {
+      "steps": {
+        "1": {
+          "label": "Welcome & Overview",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "2": {
+          "label": "C1 – Daily life stories structure",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "3": {
+          "label": "C2 – Past, present, and future time anchors",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "4": {
+          "label": "C3 – Tense selection rules per time anchors",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "5": {
+          "label": "C4 – Narrative paragraph example breakdown",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "6": {
+          "label": "Activity 1 – Past, present, future time anchors cards & MCQs",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "7": {
+          "label": "Activity 2 – 3-part timeline story frames template",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "8": {
+          "label": "Activity 3 – Daily life stories listening summaries & timeline checks",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "9": {
+          "label": "Activity 4 – Multi-tense story paragraph builder",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "10": {
+          "label": "Activity 5 – Story read-aloud voice check",
+          "screens": 1,
+          "questions": 5,
+          "max_xp": 115
+        }
+      },
+      "max_xp": 330
+    },
+    "6": {
+      "steps": {
+        "1": {
+          "label": "Welcome & Overview",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "2": {
+          "label": "Concept 1 – What you can do at A2",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "3": {
+          "label": "Concept 2 – Asking follow-up questions",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "4": {
+          "label": "Concept 3 – Using all Course 3 skills together",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "5": {
+          "label": "Activity 1A – Guided line completion",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "6": {
+          "label": "Activity 1B – Guided replies",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "7": {
+          "label": "Activity 2 – Semi-free A2 conversation scenarios",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "8": {
+          "label": "Activity 3 – Strategy Checkpoint Quiz",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "9": {
+          "label": "Activity 4 – Homework & Stateful Capstone Practice",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        }
+      },
+      "max_xp": 195
+    }
+  },
+  "4": {
+    "1": {
+      "steps": {
+        "1": {
+          "label": "Welcome & Overview",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "2": {
+          "label": "Concept 1 – Connecting Ideas Goal",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "3": {
+          "label": "Concept 2 – Clause Merger Pattern",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "4": {
+          "label": "Concept 3 – Core Relationships",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "5": {
+          "label": "Concept 4 – Example Merger Case",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "6": {
+          "label": "Activity 1 – Core Connectors & Mergers",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "7": {
+          "label": "Activity 2A – Connector Selection",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "8": {
+          "label": "Activity 2B – Relationship Classifiers",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "9": {
+          "label": "Activity 3 – Expansions & Speaking",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "10": {
+          "label": "Activity 4 – Strategy Check Quiz",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "11": {
+          "label": "Tutor Chat & Practice Session",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        }
+      },
+      "max_xp": 245
+    },
+    "2": {
+      "steps": {
+        "1": {
+          "label": "Welcome & Overview",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "2": {
+          "label": "Concept 1 – B1 Description Goal",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "3": {
+          "label": "Concept 2 – Example Description",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "4": {
+          "label": "Concept 3 – Description Dimensions",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "5": {
+          "label": "Activity A – Understanding Checks",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "6": {
+          "label": "Activity B – Builder & Speaking",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "7": {
+          "label": "Quiz – Description Strategies",
+          "screens": 1,
+          "questions": 3,
+          "max_xp": 75
+        },
+        "8": {
+          "label": "Tutor Chat Capstone Practice",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        }
+      },
+      "max_xp": 240
+    },
+    "3": {
+      "steps": {
+        "1": {
+          "label": "Welcome & Overview",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "2": {
+          "label": "Concept 1 – B1 Storytelling Goal",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "3": {
+          "label": "Concept 2 – Story Framing Structure",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "4": {
+          "label": "Concept 3 – Example Anecdote Analysis",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "5": {
+          "label": "Activity A – Understanding Checks",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "6": {
+          "label": "Activity B – Chronicle Story Builder",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "7": {
+          "label": "Quiz – Story Organisation Checks",
+          "screens": 1,
+          "questions": 3,
+          "max_xp": 75
+        },
+        "8": {
+          "label": "Tutor Live Story Session",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        }
+      },
+      "max_xp": 240
+    },
+    "4": {
+      "steps": {
+        "1": {
+          "label": "Welcome & Overview",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "2": {
+          "label": "Concept 1 – B1 Opinion Goal",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "3": {
+          "label": "Concept 2 – Fact vs Opinion",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "4": {
+          "label": "Concept 3 – Opinion Reason Suffixes",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "5": {
+          "label": "Activity A – Facts & Clause Roles",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "6": {
+          "label": "Activity B – Opinion Builder",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "7": {
+          "label": "Quiz – Opinion Strategies",
+          "screens": 1,
+          "questions": 4,
+          "max_xp": 95
+        },
+        "8": {
+          "label": "Tutor Live Opinion Session",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        }
+      },
+      "max_xp": 260
+    },
+    "5": {
+      "steps": {
+        "1": {
+          "label": "Welcome",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "2": {
+          "label": "Concept 1: B1 Goal & Structure",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "3": {
+          "label": "Concept 2: Highlighted Example",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "4": {
+          "label": "Activity A: Paragraph Analysis",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "5": {
+          "label": "Activity B1: Paragraph Composer",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "6": {
+          "label": "Activity B2: Draft Improvement",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "7": {
+          "label": "Activity C: Strategy Quiz",
+          "screens": 1,
+          "questions": 3,
+          "max_xp": 75
+        },
+        "8": {
+          "label": "Activity D: Tutor Chat Capstone",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        }
+      },
+      "max_xp": 220
+    },
+    "6": {
+      "steps": {
+        "1": {
+          "label": "Welcome & Overview",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "2": {
+          "label": "Activity 1 – Guided Conversational Analysis & missing lines",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "3": {
+          "label": "Activity 2 – Live AI Conversation Tutor (Text/Voice) Simulation",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "4": {
+          "label": "Activity 3 – Conversational coherence checkpoint quiz",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "5": {
+          "label": "Activity 4 – Homework & course graduation checklist",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        }
+      },
+      "max_xp": 75
+    }
+  },
+  "5": {
+    "1": {
+      "steps": {
+        "1": {
+          "label": "Welcome & Goals",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "2": {
+          "label": "Concept 1: Fluency Goals",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "3": {
+          "label": "Concept 2: Short vs Flowing",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "4": {
+          "label": "Concept 3: Move Phrases",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "5": {
+          "label": "Activity 1A: Flowing Recognition",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "6": {
+          "label": "Activity 1B: Move Classifier",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "7": {
+          "label": "Activity 2: Templates Builder",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "8": {
+          "label": "Activity 3: Quick-Fire response",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "9": {
+          "label": "Activity 4: 3-Minute Mini-Chat",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "10": {
+          "label": "Activity 5: Best-Practice Quiz",
+          "screens": 1,
+          "questions": 3,
+          "max_xp": 75
+        },
+        "11": {
+          "label": "Activity 6: Extra Free Practice",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "12": {
+          "label": "Phase Completion",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        }
+      },
+      "max_xp": 280
+    },
+    "2": {
+      "steps": {
+        "1": {
+          "label": "Welcome & Overview",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "2": {
+          "label": "Concept 1: Goals & Tasks",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "3": {
+          "label": "Concept 2: Phrase Walkthrough",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "4": {
+          "label": "Activity 1: Dialogue Extraction",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "5": {
+          "label": "Activity 2: Single Transaction",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "6": {
+          "label": "Activity 3: Travel Strategy Quiz",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "7": {
+          "label": "Activity 4: Travel Day Chain",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "8": {
+          "label": "Phase Graduation",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        }
+      },
+      "max_xp": 140
+    },
+    "3": {
+      "steps": {
+        "1": {
+          "label": "Welcome & Goals",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "2": {
+          "label": "Concept 1: Social Contexts",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "3": {
+          "label": "Concept 2: Suggest & Reply",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "4": {
+          "label": "Activity 1: Dialog MCQs",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "5": {
+          "label": "Activity 2: Builder Lab",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "6": {
+          "label": "Activity 3: AI Peer Role-Play",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "7": {
+          "label": "Activity 4: Strategy Quiz",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "8": {
+          "label": "Activity 5: Open Practice Chat",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "9": {
+          "label": "Phase Graduation",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        }
+      },
+      "max_xp": 175
+    },
+    "4": {
+      "steps": {
+        "1": {
+          "label": "Welcome & Goals",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "2": {
+          "label": "Concept 1: Definition",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "3": {
+          "label": "Activity 1: Recognition",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "4": {
+          "label": "Activity 2: Transforms",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "5": {
+          "label": "Activity 3: Softenings",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "6": {
+          "label": "Activity 4: Peer/Teacher Chat",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "7": {
+          "label": "Activity 5: Strategy Quiz",
+          "screens": 1,
+          "questions": 3,
+          "max_xp": 75
+        },
+        "8": {
+          "label": "Activity 6: Practice Lab",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "9": {
+          "label": "Phase Graduation",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        }
+      },
+      "max_xp": 215
+    },
+    "5": {
+      "steps": {
+        "1": {
+          "label": "Welcome & Goals",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "2": {
+          "label": "Concept: B1 Listener Model",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "3": {
+          "label": "Activity A: Comprehension",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "4": {
+          "label": "Activity B: Note-Taking",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "5": {
+          "label": "Activity C: Written Summary",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "6": {
+          "label": "Activity D: Spoken Coaching",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "7": {
+          "label": "Activity E: Strategy Quiz",
+          "screens": 1,
+          "questions": 5,
+          "max_xp": 115
+        },
+        "8": {
+          "label": "Activity F: Practice Lab",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "9": {
+          "label": "Phase Graduation",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        }
+      },
+      "max_xp": 255
+    },
+    "6": {
+      "steps": {
+        "1": {
+          "label": "Welcome & Overview",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "2": {
+          "label": "Concept: B1 Independent Criteria",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "3": {
+          "label": "Activity 1: Guided Snapshots",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "4": {
+          "label": "Activity 2: Scenario Day Route",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "5": {
+          "label": "Activity 3: Strategy Quiz",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "6": {
+          "label": "Activity 4: Exit Interview",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "7": {
+          "label": "Course Graduation",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        }
+      },
+      "max_xp": 125
+    }
+  },
+  "6": {
+    "1": {
+      "steps": {
+        "1": {
+          "label": "Welcome & Goals",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "2": {
+          "label": "Concept: Annotated Monologue",
+          "screens": 1,
+          "questions": 1,
+          "max_xp": 35
+        },
+        "3": {
+          "label": "Activity A: Structural Parsing",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "4": {
+          "label": "Activity B: Story Outline Compiler",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "5": {
+          "label": "Activity C: Spoken Monologue Coach",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "6": {
+          "label": "Activity D: Strategy Quiz",
+          "screens": 1,
+          "questions": 5,
+          "max_xp": 115
+        },
+        "7": {
+          "label": "Activity E: Story Practice Chat",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "8": {
+          "label": "Phase Graduation",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        }
+      },
+      "max_xp": 240
+    },
+    "2": {
+      "steps": {
+        "1": {
+          "label": "Screen 1 – Welcome / Phase Overview",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "2": {
+          "label": "Screen 2 – C1 Idioms & Chunk categories",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "3": {
+          "label": "Screen 3 – Activity 1: Understand Idioms in Context (Dialogues, Collocations)",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "4": {
+          "label": "Screen 4 – Activity 2: Production (Gap-fill, Rewrites, AI chat)",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "5": {
+          "label": "Screen 5 – Mini-Quiz: Scenarios & Register checkpoints",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "6": {
+          "label": "Screen 6 – Homework & Review logs",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        }
+      },
+      "max_xp": 90
+    },
+    "3": {
+      "steps": {
+        "1": {
+          "label": "Welcome & Goals",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "2": {
+          "label": "Stance & Softening Toolbox",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "3": {
+          "label": "Act 1: Label Certainty",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "4": {
+          "label": "Act 2: Hedged vs Blunt",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "5": {
+          "label": "Act 3: Dialogue Softeners",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "6": {
+          "label": "Act 4: Rewrite Opinion Segment",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "7": {
+          "label": "Act 5: Partial Agreement Builder",
+          "screens": 1,
+          "questions": 4,
+          "max_xp": 95
+        },
+        "8": {
+          "label": "Act 6: Live Debate Discussion",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "9": {
+          "label": "Act 7: Strategy Mini-Quiz",
+          "screens": 1,
+          "questions": 4,
+          "max_xp": 95
+        },
+        "10": {
+          "label": "Graduation & Completion",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        }
+      },
+      "max_xp": 310
+    },
+    "4": {
+      "steps": {
+        "1": {
+          "label": "Welcome & Goals",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "2": {
+          "label": "Register & Style Concept",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "3": {
+          "label": "Act 1: Label Register",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "4": {
+          "label": "Act 2: Context Match",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "5": {
+          "label": "Act 3: Guided Rewrite",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "6": {
+          "label": "Act 4: Style Coach",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "7": {
+          "label": "Act 5: Register Quiz",
+          "screens": 1,
+          "questions": 4,
+          "max_xp": 95
+        },
+        "8": {
+          "label": "Graduation & Wrap-up",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        }
+      },
+      "max_xp": 200
+    },
+    "5": {
+      "steps": {
+        "1": {
+          "label": "Welcome & Goals",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "2": {
+          "label": "Patterns of Subtext",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "3": {
+          "label": "Act 1: Spot Meaning",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "4": {
+          "label": "Act 2: Yes/No/Maybe",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "5": {
+          "label": "Act 3: Emotion inference",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "6": {
+          "label": "Act 4: Controlled response",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "7": {
+          "label": "Act 5: Indirect choice",
+          "screens": 1,
+          "questions": 5,
+          "max_xp": 115
+        },
+        "8": {
+          "label": "Act 6: Live Coaching",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "9": {
+          "label": "Act 7: Subtext Quiz",
+          "screens": 1,
+          "questions": 5,
+          "max_xp": 115
+        },
+        "10": {
+          "label": "Graduation & Wrap-up",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        }
+      },
+      "max_xp": 350
+    },
+    "6": {
+      "steps": {
+        "1": {
+          "label": "Welcome & Goals",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "2": {
+          "label": "Scenario Core Concepts",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "3": {
+          "label": "Act 1: Snapshots Challenge",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "4": {
+          "label": "Act 2: Pre-Capstone Planner",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "5": {
+          "label": "Act 3: Live Capstone Session",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "6": {
+          "label": "Act 4: Capstone C1 Report",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "7": {
+          "label": "Act 5: Capstone Strategy Quiz",
+          "screens": 1,
+          "questions": 5,
+          "max_xp": 115
+        },
+        "8": {
+          "label": "Graduation & Exit Profile",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        }
+      },
+      "max_xp": 220
+    }
+  },
+  "7": {
+    "1": {
+      "steps": {
+        "1": {
+          "label": "Screen 1 – Welcome / Phase Overview",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "2": {
+          "label": "Screen 2 – SOV & \\",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "3": {
+          "label": "Screen 3 – Activity 1: Build & Repair Sentences (Drag/Drop)",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "4": {
+          "label": "Screen 4 – Activity 2: Typing & Transformations",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "5": {
+          "label": "Screen 5 – Mini-Quiz: Core Sentence Foundations",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "6": {
+          "label": "Screen 6 – Homework & Main Course Integration",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        }
+      },
+      "max_xp": 90
+    },
+    "2": {
+      "steps": {
+        "1": {
+          "label": "Welcome & Goals",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "2": {
+          "label": "Concept Explanation",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "3": {
+          "label": "Activity 1: Practice Drills",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "4": {
+          "label": "Activity 2: Production Tasks",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "5": {
+          "label": "Checkpoint Quiz",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "6": {
+          "label": "Homework & Completion",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        }
+      },
+      "max_xp": 90
+    },
+    "3": {
+      "steps": {
+        "1": {
+          "label": "Welcome & Goals",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "2": {
+          "label": "Concept Explanation",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "3": {
+          "label": "Activity 1: Practice Drills",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "4": {
+          "label": "Activity 2: Production Tasks",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "5": {
+          "label": "Checkpoint Quiz",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "6": {
+          "label": "Homework & Completion",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        }
+      },
+      "max_xp": 90
+    },
+    "4": {
+      "steps": {
+        "1": {
+          "label": "Welcome & Goals",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "2": {
+          "label": "Concept Explanation",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "3": {
+          "label": "Activity 1: Practice Drills",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "4": {
+          "label": "Activity 2: Production Tasks",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "5": {
+          "label": "Checkpoint Quiz",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "6": {
+          "label": "Homework & Completion",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        }
+      },
+      "max_xp": 90
+    },
+    "5": {
+      "steps": {
+        "1": {
+          "label": "Screen 1 – Welcome / Phase Overview",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "2": {
+          "label": "Screen 2 – Clause Connectors Explanations & Sandbox",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "3": {
+          "label": "Screen 3 – Activity 1: Connector Recognition",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "4": {
+          "label": "Screen 4 – Activity 2: Sentence Production",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "5": {
+          "label": "Screen 5 – Mini-Quiz: Sentence Linking Mastery",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "6": {
+          "label": "Screen 6 – Homework & AI Verification",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        }
+      },
+      "max_xp": 90
+    },
+    "6": {
+      "steps": {
+        "1": {
+          "label": "= 1 ? \\",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "2": {
+          "label": "= 2 ? \\",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "3": {
+          "label": "= 3 ? \\",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "4": {
+          "label": "= 4 ? \\",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "5": {
+          "label": "= 5 ? \\",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "6": {
+          "label": "= 6 ? \\",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        }
+      },
+      "max_xp": 90
+    }
+  },
+  "8": {
+    "1": {
+      "steps": {
+        "1": {
+          "label": "= 1 ? \\",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "2": {
+          "label": "= 2 ? \\",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "3": {
+          "label": "= 3 ? \\",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "4": {
+          "label": "= 4 ? \\",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "5": {
+          "label": "= 5 ? \\",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "6": {
+          "label": "= 6 ? \\",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        }
+      },
+      "max_xp": 90
+    },
+    "2": {
+      "steps": {
+        "1": {
+          "label": "= 1 ? \\",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "2": {
+          "label": "= 2 ? \\",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "3": {
+          "label": "= 3 ? \\",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "4": {
+          "label": "= 4 ? \\",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "5": {
+          "label": "= 5 ? \\",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "6": {
+          "label": "= 6 ? \\",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        }
+      },
+      "max_xp": 90
+    },
+    "3": {
+      "steps": {
+        "1": {
+          "label": "= 1 ? \\",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "2": {
+          "label": "= 2 ? \\",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "3": {
+          "label": "= 3 ? \\",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "4": {
+          "label": "= 4 ? \\",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "5": {
+          "label": "= 5 ? \\",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "6": {
+          "label": "= 6 ? \\",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        }
+      },
+      "max_xp": 90
+    },
+    "4": {
+      "steps": {
+        "1": {
+          "label": "= 1 ? \\",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "2": {
+          "label": "= 2 ? \\",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "3": {
+          "label": "= 3 ? \\",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "4": {
+          "label": "= 4 ? \\",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "5": {
+          "label": "= 5 ? \\",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "6": {
+          "label": "= 6 ? \\",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        }
+      },
+      "max_xp": 90
+    },
+    "5": {
+      "steps": {
+        "1": {
+          "label": "= 1 ? \\",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "2": {
+          "label": "= 2 ? \\",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "3": {
+          "label": "= 3 ? \\",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "4": {
+          "label": "= 4 ? \\",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "5": {
+          "label": "= 5 ? \\",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "6": {
+          "label": "= 6 ? \\",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        }
+      },
+      "max_xp": 90
+    },
+    "6": {
+      "steps": {
+        "1": {
+          "label": "= 1 ? \\",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "2": {
+          "label": "= 2 ? \\",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "3": {
+          "label": "= 3 ? \\",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "4": {
+          "label": "= 4 ? \\",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "5": {
+          "label": "= 5 ? \\",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "6": {
+          "label": "= 6 ? \\",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        }
+      },
+      "max_xp": 90
+    },
+    "7": {
+      "steps": {
+        "1": {
+          "label": "= 1 ? \\",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "2": {
+          "label": "= 2 ? \\",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "3": {
+          "label": "= 3 ? \\",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "4": {
+          "label": "= 4 ? \\",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "5": {
+          "label": "= 5 ? \\",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "6": {
+          "label": "= 6 ? \\",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        }
+      },
+      "max_xp": 90
+    },
+    "8": {
+      "steps": {
+        "1": {
+          "label": "= 1 ? \\",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "2": {
+          "label": "= 2 ? \\",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "3": {
+          "label": "= 3 ? \\",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "4": {
+          "label": "= 4 ? \\",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "5": {
+          "label": "= 5 ? \\",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "6": {
+          "label": "= 6 ? \\",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        }
+      },
+      "max_xp": 90
+    },
+    "9": {
+      "steps": {
+        "1": {
+          "label": "= 1 ? \\",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "2": {
+          "label": "= 2 ? \\",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "3": {
+          "label": "= 3 ? \\",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "4": {
+          "label": "= 4 ? \\",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "5": {
+          "label": "= 5 ? \\",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "6": {
+          "label": "= 6 ? \\",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        }
+      },
+      "max_xp": 90
+    },
+    "10": {
+      "steps": {
+        "1": {
+          "label": "= 1 ? \\",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "2": {
+          "label": "= 2 ? \\",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "3": {
+          "label": "= 3 ? \\",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "4": {
+          "label": "= 4 ? \\",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "5": {
+          "label": "= 5 ? \\",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "6": {
+          "label": "= 6 ? \\",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        }
+      },
+      "max_xp": 90
+    },
+    "11": {
+      "steps": {
+        "1": {
+          "label": "= 1 ? \\",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "2": {
+          "label": "= 2 ? \\",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "3": {
+          "label": "= 3 ? \\",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "4": {
+          "label": "= 4 ? \\",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "5": {
+          "label": "= 5 ? \\",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "6": {
+          "label": "= 6 ? \\",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        }
+      },
+      "max_xp": 90
+    },
+    "12": {
+      "steps": {
+        "1": {
+          "label": "= 1 ? \\",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "2": {
+          "label": "= 2 ? \\",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "3": {
+          "label": "= 3 ? \\",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "4": {
+          "label": "= 4 ? \\",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "5": {
+          "label": "= 5 ? \\",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        },
+        "6": {
+          "label": "= 6 ? \\",
+          "screens": 1,
+          "questions": 0,
+          "max_xp": 15
+        }
+      },
+      "max_xp": 90
+    }
+  }
+}

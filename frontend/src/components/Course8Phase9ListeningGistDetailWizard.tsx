@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
+import xpAudit from "../lib/xp-audit.json";
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -63,16 +64,17 @@ export default function Course8Phase9ListeningGistDetailWizard({
   onComplete,
   courseXP
 }: Course8Phase9ListeningGistDetailWizardProps) {
+  const phaseNum = 9;
   const getStepMaxXP = (sNum: number) => {
-    if (sNum === 1) return 0;
-    if (sNum === 12) return 200;
-    const sObj = outlineSteps.find(os => os.num === sNum);
-    const label = sObj ? sObj.label.toLowerCase() : "";
-    if (label.includes("activity") || label.includes("game") || label.includes("drill") || label.includes("practice")) return 60;
-    return 35;
+    try {
+      return (xpAudit as any)["8"]?.[phaseNum.toString()]?.steps?.[sNum.toString()]?.max_xp ?? 35;
+    } catch (e) {
+      return 35;
+    }
   };
   const getStepXP = (sNum: number) => {
-    return (sNum < step || sNum <= maxStep) ? getStepMaxXP(sNum) : 0;
+    if (typeof window === "undefined") return 0;
+    return parseInt(localStorage.getItem(`hangeulai_c8p${phaseNum}_s${sNum}_earned_xp`) || "0", 10);
   };
 
   const [step, setStep] = useState(1);
@@ -167,6 +169,98 @@ export default function Course8Phase9ListeningGistDetailWizard({
   const [hwFeedback, setHwFeedback] = useState<any>(null);
   const [submittingHw, setSubmittingHw] = useState(false);
   const [completingLab, setCompletingLab] = useState(false);
+
+  // --- Start Progress State Preservation ---
+  const isLoadedRef = useRef(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem("hangeulai_c8p9_progress_state");
+        if (saved) {
+          const state = JSON.parse(saved);
+            if (state.step !== undefined) setStep(state.step);
+            if (state.maxStep !== undefined) setMaxStep(state.maxStep);
+            if (state.titleIdx !== undefined) setTitleIdx(state.titleIdx);
+            if (state.titleSelected !== undefined) setTitleSelected(state.titleSelected);
+            if (state.titleChecked !== undefined) setTitleChecked(state.titleChecked);
+            if (state.titleCorrect !== undefined) setTitleCorrect(state.titleCorrect);
+            if (state.mainIdeaIdx !== undefined) setMainIdeaIdx(state.mainIdeaIdx);
+            if (state.mainIdeaSelected !== undefined) setMainIdeaSelected(state.mainIdeaSelected);
+            if (state.mainIdeaChecked !== undefined) setMainIdeaChecked(state.mainIdeaChecked);
+            if (state.mainIdeaCorrect !== undefined) setMainIdeaCorrect(state.mainIdeaCorrect);
+            if (state.imageIdx !== undefined) setImageIdx(state.imageIdx);
+            if (state.imageSelected !== undefined) setImageSelected(state.imageSelected);
+            if (state.imageChecked !== undefined) setImageChecked(state.imageChecked);
+            if (state.imageCorrect !== undefined) setImageCorrect(state.imageCorrect);
+            if (state.detailIdx !== undefined) setDetailIdx(state.detailIdx);
+            if (state.detailAnswers !== undefined) setDetailAnswers(state.detailAnswers);
+            if (state.detailChecked !== undefined) setDetailChecked(state.detailChecked);
+            if (state.numberIdx !== undefined) setNumberIdx(state.numberIdx);
+            if (state.numberAnswers !== undefined) setNumberAnswers(state.numberAnswers);
+            if (state.numberChecked !== undefined) setNumberChecked(state.numberChecked);
+            if (state.dictIdx !== undefined) setDictIdx(state.dictIdx);
+            if (state.dictInput !== undefined) setDictInput(state.dictInput);
+            if (state.dictChecked !== undefined) setDictChecked(state.dictChecked);
+            if (state.dictCorrect !== undefined) setDictCorrect(state.dictCorrect);
+            if (state.quizIdx !== undefined) setQuizIdx(state.quizIdx);
+            if (state.quizSelected !== undefined) setQuizSelected(state.quizSelected);
+            if (state.quizChecked !== undefined) setQuizChecked(state.quizChecked);
+            if (state.quizCorrect !== undefined) setQuizCorrect(state.quizCorrect);
+            if (state.quizMistakes !== undefined) setQuizMistakes(state.quizMistakes);
+            if (state.quizScore !== undefined) setQuizScore(state.quizScore);
+        }
+      } catch (e) {
+        console.error("Failed to restore progress state:", e);
+      }
+      isLoadedRef.current = true;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!isLoadedRef.current) return;
+    if (typeof window !== "undefined") {
+      try {
+        const state = {
+            step,
+            maxStep,
+            titleIdx,
+            titleSelected,
+            titleChecked,
+            titleCorrect,
+            mainIdeaIdx,
+            mainIdeaSelected,
+            mainIdeaChecked,
+            mainIdeaCorrect,
+            imageIdx,
+            imageSelected,
+            imageChecked,
+            imageCorrect,
+            detailIdx,
+            detailAnswers,
+            detailChecked,
+            numberIdx,
+            numberAnswers,
+            numberChecked,
+            dictIdx,
+            dictInput,
+            dictChecked,
+            dictCorrect,
+            quizIdx,
+            quizSelected,
+            quizChecked,
+            quizCorrect,
+            quizMistakes,
+            quizScore
+        };
+        localStorage.setItem("hangeulai_c8p9_progress_state", JSON.stringify(state));
+      } catch (e) {
+        console.error("Failed to save progress state:", e);
+      }
+    }
+  }, [step, maxStep, titleIdx, titleSelected, titleChecked, titleCorrect, mainIdeaIdx, mainIdeaSelected, mainIdeaChecked, mainIdeaCorrect, imageIdx, imageSelected, imageChecked, imageCorrect, detailIdx, detailAnswers, detailChecked, numberIdx, numberAnswers, numberChecked, dictIdx, dictInput, dictChecked, dictCorrect, quizIdx, quizSelected, quizChecked, quizCorrect, quizMistakes, quizScore]);
+  // --- End Progress State Preservation ---
+
 
   useEffect(() => {
     const load = async () => {
@@ -568,7 +662,7 @@ return (
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
               {outlineSteps.map(s => {
                 const isCurrent = step === s.num;
-                const isCompleted = s.num < step || s.num <= maxStep;
+                const isCompleted = s.num < step;
                 return (
                   <button
                     key={s.num}
@@ -605,8 +699,8 @@ return (
                       </div>
                       <div className="w-full h-1 bg-zinc-950 rounded-full overflow-hidden mt-0.5">
                         <div 
-                          className={`h-full rounded-full ${isCompleted ? "bg-emerald-400" : "bg-zinc-800"}`}
-                          style={{ width: isCompleted ? "100%" : "0%" }}
+                          className="h-full rounded-full bg-emerald-400"
+                          style={{ width: `${(getStepXP(s.num) / (getStepMaxXP(s.num) || 1)) * 100}%` }}
                         />
                       </div>
                     </div>

@@ -7,8 +7,10 @@ import { useEffect, useState, useRef } from "react";
 import { apiRequest } from "../lib/api";
 
 import FloatingKeyboard from "./FloatingKeyboard";
+import xpAudit from "../lib/xp-audit.json";
 
 export default function SidebarLayout({ children }: { children: React.ReactNode }) {
+  const auditData = xpAudit as any;
   const pathname = usePathname();
   const [xp, setXp] = useState(0);
   const [streak, setStreak] = useState(0);
@@ -21,6 +23,24 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
   const [savingNote, setSavingNote] = useState(false);
   const [generatingAiNote, setGeneratingAiNote] = useState(false);
   const [warningPopup, setWarningPopup] = useState<{ show: boolean; message: string } | null>(null);
+
+  // Filters & Tabs for Advanced Diary
+  const [courseFilter, setCourseFilter] = useState<string>("all");
+  const [phaseFilter, setPhaseFilter] = useState<string>("all");
+  const [stepFilter, setStepFilter] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [activeTab, setActiveTab] = useState<"ai" | "manual">("ai");
+
+  const handleCourseChange = (val: string) => {
+    setCourseFilter(val);
+    setPhaseFilter("all");
+    setStepFilter("all");
+  };
+
+  const handlePhaseChange = (val: string) => {
+    setPhaseFilter(val);
+    setStepFilter("all");
+  };
 
   const getActiveLocation = () => {
     if (typeof window === "undefined") return { courseId: 1, phaseNum: 1, step: 1 };
@@ -147,27 +167,39 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
       const { question, selected_answer, correct_answer, is_correct, explanation } = customEvent.detail || {};
       if (!question) return;
 
+      const userNote = window.prompt("Add your personal note/reflection to save with this content (optional):");
+      if (userNote === null) return; // User cancelled
+
       setGeneratingAiNote(true);
       try {
         const { courseId, phaseNum, step } = getActiveLocation();
+        const contentType = question.includes("Study Concept") ? "theory" : "question";
+        const contentStr = JSON.stringify({
+          contentType,
+          originalContent: {
+            question,
+            selected_answer: selected_answer || "None",
+            correct_answer: correct_answer || "None",
+            is_correct: is_correct !== undefined ? is_correct : true,
+            explanation: explanation || ""
+          },
+          userNote
+        });
 
-        const res = await apiRequest("/notes/generate-ai-summary", {
+        const res = await apiRequest("/notes", {
           method: "POST",
           body: JSON.stringify({
             course_id: courseId,
             phase_num: phaseNum,
             step: step,
-            question,
-            selected_answer: selected_answer || "None",
-            correct_answer: correct_answer || "None",
-            is_correct,
-            explanation: explanation || ""
+            content: contentStr,
+            is_ai: false
           })
         });
         setNotes(prev => [res, ...prev]);
-        setWarningPopup({ show: true, message: "✨ Note generated and saved to your Diary successfully!" });
+        setWarningPopup({ show: true, message: "✨ Note saved to your Diary successfully!" });
       } catch (err) {
-        console.error("Failed to generate AI note summary:", err);
+        console.error("Failed to save note:", err);
       } finally {
         setGeneratingAiNote(false);
       }
@@ -197,6 +229,47 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
     localStorage.removeItem("token");
     window.location.href = "/";
   };
+
+  const filteredNotes = notes.filter(note => {
+    // 1. Tab filter
+    if (activeTab === "ai" && !note.is_ai) return false;
+    if (activeTab === "manual" && note.is_ai) return false;
+
+    // 2. Dropdown filters
+    if (courseFilter !== "all" && String(note.course_id) !== courseFilter) return false;
+    if (phaseFilter !== "all" && String(note.phase_num) !== phaseFilter) return false;
+    if (stepFilter !== "all" && String(note.step) !== stepFilter) return false;
+
+    // 3. Search query filter
+    if (searchQuery.trim() !== "") {
+      const q = searchQuery.toLowerCase();
+      let noteText = "";
+      let questionText = "";
+      let explanationText = "";
+      
+      if (!note.is_ai) {
+        try {
+          const parsed = JSON.parse(note.content);
+          noteText = (parsed.userNote || "").toLowerCase();
+          questionText = (parsed.originalContent?.question || "").toLowerCase();
+          explanationText = (parsed.originalContent?.explanation || "").toLowerCase();
+        } catch (e) {
+          noteText = note.content.toLowerCase();
+        }
+      } else {
+        noteText = note.content.toLowerCase();
+      }
+
+      const matchesSearch = 
+        noteText.includes(q) || 
+        questionText.includes(q) || 
+        explanationText.includes(q);
+      
+      if (!matchesSearch) return false;
+    }
+
+    return true;
+  });
 
   // Hide sidebar on landing page, login/signup page, and onboarding questionnaire
   if (pathname === "/" || pathname === "/login" || pathname === "/onboarding") {
@@ -369,7 +442,7 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
           {/* Floating Diary Button */}
           <button 
             onClick={() => setNotesOpen(!notesOpen)}
-            className="fixed bottom-6 right-6 z-[9999] p-4 bg-gradient-to-r from-brand-500 to-indigo-600 hover:from-brand-600 hover:to-indigo-700 text-white rounded-full shadow-2xl shadow-brand-500/25 border border-white/10 hover:scale-110 active:scale-95 transition-all duration-200 cursor-pointer"
+            className="fixed bottom-24 right-6 z-[9999] p-4 bg-gradient-to-r from-brand-500 to-indigo-600 hover:from-brand-600 hover:to-indigo-700 text-white rounded-full shadow-2xl shadow-brand-500/25 border border-white/10 hover:scale-110 active:scale-95 transition-all duration-200 cursor-pointer"
             title="Open Course Diary"
           >
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6 animate-pulse">
@@ -381,7 +454,7 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
           {/* Floating Diary Drawer */}
           {notesOpen && (
             <div className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-sm flex justify-end animate-fade-in">
-              <div className="w-full max-w-md bg-zinc-950/95 border-l border-white/10 h-full p-6 flex flex-col justify-between shadow-2xl backdrop-blur-xl animate-slide-in">
+              <div className="w-full max-w-xl bg-zinc-950/95 border-l border-white/10 h-full p-6 flex flex-col justify-between shadow-2xl backdrop-blur-xl animate-slide-in">
                 <div className="space-y-6 flex-grow overflow-y-auto pr-1">
                   {/* Header */}
                   <div className="flex items-center justify-between border-b border-white/5 pb-4">
@@ -398,6 +471,95 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
                     >
                       ✕ Close
                     </button>
+                  </div>
+
+                  {/* Tabs: Summaries (Type A) vs Saved Notes (Type B) */}
+                  <div className="flex border-b border-white/5">
+                    <button
+                      onClick={() => setActiveTab("ai")}
+                      className={`flex-1 pb-2.5 text-xs font-bold transition-all ${activeTab === "ai" ? "text-brand-400 border-b-2 border-brand-500 font-black" : "text-zinc-500 hover:text-zinc-300"}`}
+                    >
+                      🤖 Screen Summaries
+                    </button>
+                    <button
+                      onClick={() => setActiveTab("manual")}
+                      className={`flex-1 pb-2.5 text-xs font-bold transition-all ${activeTab === "manual" ? "text-indigo-400 border-b-2 border-indigo-500 font-black" : "text-zinc-500 hover:text-zinc-300"}`}
+                    >
+                      ✍️ Saved Notes
+                    </button>
+                  </div>
+
+                  {/* Search Bar */}
+                  <div className="relative">
+                    <input
+                      type="text"
+                      placeholder="Search note details or questions..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full bg-zinc-900 border border-white/10 rounded-xl py-2.5 pl-3 pr-10 text-xs text-white placeholder-zinc-500 outline-none focus:border-brand-500 transition"
+                    />
+                    {searchQuery && (
+                      <button
+                        onClick={() => setSearchQuery("")}
+                        className="absolute right-3 top-2.5 text-zinc-500 hover:text-white text-xs"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Dropdown Filters (Course, Phase, Step) */}
+                  <div className="grid grid-cols-3 gap-2">
+                    {/* Course Filter */}
+                    <div className="space-y-1">
+                      <label className="text-[9px] text-zinc-500 font-bold uppercase tracking-wider block">Course</label>
+                      <select
+                        value={courseFilter}
+                        onChange={(e) => handleCourseChange(e.target.value)}
+                        className="w-full bg-zinc-900 border border-white/10 rounded-lg p-2 text-[10px] text-white outline-none"
+                      >
+                        <option value="all">All</option>
+                        {Object.keys(auditData).sort((a,b) => parseInt(a) - parseInt(b)).map(c => (
+                          <option key={c} value={c}>C{c}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Phase Filter */}
+                    <div className="space-y-1">
+                      <label className="text-[9px] text-zinc-500 font-bold uppercase tracking-wider block">Phase</label>
+                      <select
+                        value={phaseFilter}
+                        onChange={(e) => handlePhaseChange(e.target.value)}
+                        className="w-full bg-zinc-900 border border-white/10 rounded-lg p-2 text-[10px] text-white outline-none"
+                        disabled={courseFilter === "all"}
+                      >
+                        <option value="all">All</option>
+                        {courseFilter !== "all" && auditData[courseFilter] &&
+                          Object.keys(auditData[courseFilter]).sort((a,b) => parseInt(a) - parseInt(b)).map(p => (
+                            <option key={p} value={p}>P{p}</option>
+                          ))
+                        }
+                      </select>
+                    </div>
+
+                    {/* Step Filter */}
+                    <div className="space-y-1">
+                      <label className="text-[9px] text-zinc-500 font-bold uppercase tracking-wider block">Step</label>
+                      <select
+                        value={stepFilter}
+                        onChange={(e) => setStepFilter(e.target.value)}
+                        className="w-full bg-zinc-900 border border-white/10 rounded-lg p-2 text-[10px] text-white outline-none"
+                        disabled={courseFilter === "all" || phaseFilter === "all"}
+                      >
+                        <option value="all">All</option>
+                        {courseFilter !== "all" && phaseFilter !== "all" && auditData[courseFilter]?.[phaseFilter]?.steps &&
+                          Object.keys(auditData[courseFilter][phaseFilter].steps).sort((a,b) => parseInt(a) - parseInt(b)).map(s => (
+                            <option key={s} value={s}>S{s}</option>
+                          ))
+                        }
+                      </select>
+                    </div>
                   </div>
 
                   {/* Current tag indicator */}
@@ -476,41 +638,89 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
 
                   {/* Notes List */}
                   <div className="space-y-3 text-left">
-                    <span className="text-[10px] text-zinc-500 uppercase tracking-wider font-extrabold block">Saved Diary Entries ({notes.length})</span>
+                    <span className="text-[10px] text-zinc-500 uppercase tracking-wider font-extrabold block">Diary Entries ({filteredNotes.length})</span>
                     <div className="space-y-3 max-h-[45vh] overflow-y-auto pr-1">
-                      {notes.map((note) => (
-                        <div key={note.id} className="p-4 bg-zinc-900/60 rounded-2xl border border-white/5 space-y-2.5 relative group">
-                          <div className="flex justify-between items-start gap-2">
-                            <button
-                              onClick={() => navigateToLocation(note.course_id, note.phase_num, note.step)}
-                              className="text-[9px] bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 border border-indigo-500/25 px-2.5 py-0.5 rounded-full font-mono transition cursor-pointer font-bold"
-                              title="Click to Teleport back to this Screen"
-                            >
-                              📍 Course {note.course_id} · Phase {note.phase_num} · Step {note.step}
-                            </button>
-                            <button
-                              onClick={() => handleDeleteNote(note.id)}
-                              className="text-zinc-500 hover:text-red-400 p-1 rounded hover:bg-white/5 transition opacity-0 group-hover:opacity-100 cursor-pointer"
-                              title="Delete Note"
-                            >
-                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5">
-                                <path d="M3 6h18" />
-                                <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
-                                <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
-                              </svg>
-                            </button>
-                          </div>
-                          
-                          <p className="text-xs text-zinc-200 leading-relaxed whitespace-pre-wrap">
-                            {note.content}
-                          </p>
-                          
-                          <div className="flex justify-between items-center text-[8px] text-zinc-500 font-mono">
-                            <span>{note.is_ai ? "🤖 AI Generated Summary" : "✍️ Student Note"}</span>
-                            <span>{new Date(note.created_at).toLocaleDateString()}</span>
-                          </div>
+                      {filteredNotes.length === 0 ? (
+                        <div className="text-center py-8 text-zinc-500 text-xs font-medium">
+                          No diary entries match the filters.
                         </div>
-                      ))}
+                      ) : (
+                        filteredNotes.map((note) => {
+                          let displayContent = note.content;
+                          let parsedJson: any = null;
+                          if (!note.is_ai) {
+                            try {
+                              parsedJson = JSON.parse(note.content);
+                            } catch (e) {
+                              // Legacy manual note
+                            }
+                          }
+
+                          return (
+                            <div key={note.id} className="p-4 bg-zinc-900/60 rounded-2xl border border-white/5 space-y-2.5 relative group">
+                              <div className="flex justify-between items-start gap-2">
+                                <button
+                                  onClick={() => navigateToLocation(note.course_id, note.phase_num, note.step)}
+                                  className="text-[9px] bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 border border-indigo-500/25 px-2.5 py-0.5 rounded-full font-mono transition cursor-pointer font-bold"
+                                  title="Click to Teleport back to this Screen"
+                                >
+                                  📍 Course {note.course_id} · Phase {note.phase_num} · Step {note.step}
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteNote(note.id)}
+                                  className="text-zinc-500 hover:text-red-400 p-1 rounded hover:bg-white/5 transition opacity-0 group-hover:opacity-100 cursor-pointer"
+                                  title="Delete Note"
+                                >
+                                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5">
+                                    <path d="M3 6h18" />
+                                    <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                                    <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                                  </svg>
+                                </button>
+                              </div>
+                              
+                              {parsedJson ? (
+                                <div className="space-y-2 text-xs">
+                                  {parsedJson.userNote && (
+                                    <p className="text-zinc-100 font-bold italic leading-relaxed whitespace-pre-wrap bg-zinc-950/40 p-2.5 rounded-xl border border-white/[0.02]">
+                                      "{parsedJson.userNote}"
+                                    </p>
+                                  )}
+                                  <details className="text-[11px] text-zinc-400 bg-zinc-955/80 p-3 rounded-xl border border-white/5 cursor-pointer select-none">
+                                    <summary className="font-extrabold text-[9px] uppercase tracking-wider text-zinc-500 hover:text-zinc-300">
+                                      {parsedJson.contentType === "theory" ? "📖 Reference Concept details" : "❓ Reference Question details"}
+                                    </summary>
+                                    <div className="mt-3.5 space-y-2 text-zinc-400 select-text cursor-auto border-t border-white/5 pt-3">
+                                      <p><strong>Content:</strong> {parsedJson.originalContent.question}</p>
+                                      {parsedJson.contentType === "question" && (
+                                        <>
+                                          <p className={parsedJson.originalContent.is_correct ? "text-emerald-400 font-bold" : "text-red-400 font-bold"}>
+                                            <strong>Status:</strong> {parsedJson.originalContent.is_correct ? "Correct Answer" : "Incorrect Answer"}
+                                          </p>
+                                          <p><strong>Your Answer:</strong> {parsedJson.originalContent.selected_answer}</p>
+                                          <p><strong>Expected:</strong> {parsedJson.originalContent.correct_answer}</p>
+                                        </>
+                                      )}
+                                      {parsedJson.originalContent.explanation && (
+                                        <p><strong>Explanation:</strong> {parsedJson.originalContent.explanation}</p>
+                                      )}
+                                    </div>
+                                  </details>
+                                </div>
+                              ) : (
+                                <p className="text-xs text-zinc-200 leading-relaxed whitespace-pre-wrap">
+                                  {displayContent}
+                                </p>
+                              )}
+                              
+                              <div className="flex justify-between items-center text-[8px] text-zinc-500 font-mono">
+                                <span>{note.is_ai ? "🤖 AI Generated Summary" : "✍️ Student Note"}</span>
+                                <span>{new Date(note.created_at).toLocaleDateString()}</span>
+                              </div>
+                            </div>
+                          );
+                        })
+                      )}
                     </div>
                   </div>
                 </div>
