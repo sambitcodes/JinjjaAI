@@ -19,7 +19,8 @@ import {
   Bookmark,
   Layers,
   ArrowRight,
-  Sliders
+  Sliders,
+  HelpCircle
 } from "lucide-react";
 
 let API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
@@ -47,6 +48,39 @@ async function apiJson(path: string, opts: RequestInit = {}) {
   return res.json();
 }
 
+const playSFX = (type: "correct" | "wrong") => {
+  if (typeof window === "undefined") return;
+  try {
+    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    if (type === "correct") {
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(659.25, ctx.currentTime);
+      gain.gain.setValueAtTime(0.1, ctx.currentTime);
+      osc.start();
+      osc.frequency.setValueAtTime(783.99, ctx.currentTime + 0.1);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+      osc.stop(ctx.currentTime + 0.4);
+      window.dispatchEvent(new CustomEvent("hangeulai-xp", { detail: { amount: 20, type: "correct" } }));
+    } else {
+      osc.type = "triangle";
+      osc.frequency.setValueAtTime(150.0, ctx.currentTime);
+      gain.gain.setValueAtTime(0.15, ctx.currentTime);
+      osc.start();
+      osc.frequency.exponentialRampToValueAtTime(80.0, ctx.currentTime + 0.35);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+      osc.stop(ctx.currentTime + 0.4);
+      window.dispatchEvent(new CustomEvent("hangeulai-xp", { detail: { amount: -10, type: "wrong" } }));
+    }
+  } catch (e) {
+    console.error("AudioContext not supported or blocked", e);
+  }
+};
+
 interface Course6Phase3StanceWizardProps {
   activeLesson: any;
   speakWord: (text: string) => void;
@@ -58,54 +92,55 @@ export default function Course6Phase3StanceWizard({
   speakWord,
   onComplete,
 }: Course6Phase3StanceWizardProps) {
-  const [step, setStep] = useState(1);
+  const [step, setStep] = useState<number>(1);
   const [showOutline, setShowOutline] = useState(false);
   const [mode, setMode] = useState<"text" | "voice">("text");
-  const totalSteps = 6;
+  const totalSteps = 10;
 
   // Loaded curriculum data
   const [metadata, setMetadata] = useState<any>(null);
   const [coreData, setCoreData] = useState<any>(null);
   const [sliderVal, setSliderVal] = useState<number>(50); // 0 = strong, 50 = balanced, 100 = tentative
 
-  // Activity 1 states
-  const [activity1SubStep, setActivity1SubStep] = useState<"1A" | "1B" | "1C">("1A");
+  // Concept check (Step 2 check)
+  const [conceptAnswer, setConceptAnswer] = useState<string | null>(null);
+  const [conceptChecked, setConceptChecked] = useState(false);
+  const [conceptCorrect, setConceptCorrect] = useState<boolean | null>(null);
+
+  // Activity 1: Stance certainty level (Step 3)
   const [recognitionData, setRecognitionData] = useState<any>(null);
   const [activeRecIdx, setActiveRecIdx] = useState<number>(0);
   const [selectedStanceStrength, setSelectedStanceStrength] = useState<string | null>(null);
   const [recChecked, setRecChecked] = useState(false);
   const [recCorrect, setRecCorrect] = useState<boolean | null>(null);
 
-  // Hedged vs Unhedged
+  // Activity 2: Hedged vs Unhedged (Step 4)
   const [activeHvuIdx, setActiveHvuIdx] = useState<number>(0);
   const [selectedHvuOption, setSelectedHvuOption] = useState<string | null>(null);
   const [hvuChecked, setHvuChecked] = useState(false);
   const [hvuCorrect, setHvuCorrect] = useState<boolean | null>(null);
 
-  // Softening Highlight
+  // Activity 3: Softening dialogue highlight (Step 5)
   const [activeDsIdx, setActiveDsIdx] = useState<number>(0);
   const [highlightedPhrase, setHighlightedPhrase] = useState<string | null>(null);
   const [dsChecked, setDsChecked] = useState(false);
   const [dsCorrect, setDsCorrect] = useState<boolean | null>(null);
 
-  // Activity 2 states
-  const [activity2SubStep, setActivity2SubStep] = useState<"2A" | "2B" | "2C">("2A");
+  // Activity 4: Rewrite Opinion Segment (Step 6)
   const [rewriteTemplates, setRewriteTemplates] = useState<any>(null);
-  
-  // Rewrite Opinion
   const [activeRewriteIdx, setActiveRewriteIdx] = useState<number>(0);
   const [targetStanceLevel, setTargetStanceLevel] = useState<string>("balanced");
   const [selectedRewriteChip, setSelectedRewriteChip] = useState<string | null>(null);
   const [rewriteFeedback, setRewriteFeedback] = useState<any>(null);
   const [submittingRewrite, setSubmittingRewrite] = useState(false);
 
-  // Partial Agreement Builder
+  // Activity 5: Partial Agreement Response Pattern (Step 7)
   const [activePaIdx, setActivePaIdx] = useState<number>(0);
   const [selectedPaOption, setSelectedPaOption] = useState<string | null>(null);
   const [paFeedback, setPaFeedback] = useState<any>(null);
   const [submittingPa, setSubmittingPa] = useState(false);
 
-  // Nuanced discussion chat
+  // Activity 6: Live debate dialogue (Step 8)
   const [chatTopic, setChatTopic] = useState("Study and work balance");
   const [chatStarted, setChatStarted] = useState(false);
   const [aiSessionId, setAiSessionId] = useState<string | null>(null);
@@ -116,11 +151,11 @@ export default function Course6Phase3StanceWizard({
   const [aiEvaluation, setAiEvaluation] = useState<any>(null);
   const [finishingDiscussion, setFinishingDiscussion] = useState(false);
 
-  // Goals checkpoints
+  // Live debate goals
   const [goalSofteningUsed, setGoalSofteningUsed] = useState(false);
   const [goalConcessionUsed, setGoalConcessionUsed] = useState(false);
 
-  // Quiz states
+  // Activity 7: Stance Strategy Quiz (Step 9)
   const [quizBlueprint, setQuizBlueprint] = useState<any[]>([]);
   const [quizIdx, setQuizIdx] = useState(0);
   const [quizChecked, setQuizChecked] = useState(false);
@@ -131,11 +166,11 @@ export default function Course6Phase3StanceWizard({
   const [finishingQuiz, setFinishingQuiz] = useState(false);
   const [quizBadge, setQuizBadge] = useState<string | null>(null);
 
-  // Homework states
+  // Step 10: Graduation & Homework
   const [homeworkItems, setHomeworkItems] = useState<any[]>([]);
   const [completedHomework, setCompletedHomework] = useState<Record<string, boolean>>({});
 
-  // Homework AI practice session
+  // Homework Stance Practice Room
   const [practiceSessionId, setPracticeSessionId] = useState<string | null>(null);
   const [practiceMessages, setPracticeMessages] = useState<any[]>([]);
   const [practiceText, setPracticeText] = useState("");
@@ -143,47 +178,87 @@ export default function Course6Phase3StanceWizard({
   const [practiceFinished, setPracticeFinished] = useState(false);
   const [practiceFeedback, setPracticeFeedback] = useState<string | null>(null);
 
+  // Restore step from localStorage on mount
   useEffect(() => {
-    const load = async () => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("hangeulai_c6p3_step");
+      if (saved) {
+        setStep(parseInt(saved, 10));
+      }
+    }
+  }, []);
+
+  // Save step to localStorage when it changes
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("hangeulai_c6p3_step", step.toString());
+      window.dispatchEvent(new CustomEvent("hangeulai-step-change", {
+        detail: {
+          courseId: 6,
+          phaseNum: 3,
+          step: step
+        }
+      }));
+    }
+  }, [step]);
+
+  // Load backend details per step
+  useEffect(() => {
+    const loadData = async () => {
       try {
-        if (step === 1 && !metadata) {
+        if ((step === 1 || step === 10) && !metadata) {
           const res = await apiJson("/phases/korean5/3/metadata");
           setMetadata(res);
-        } else if (step === 2 && !coreData) {
+        }
+        if (step === 2 && !coreData) {
           const res = await apiJson("/phases/korean5/3/core-data");
           setCoreData(res);
-        } else if (step === 3 && !recognitionData) {
+        }
+        if ((step === 3 || step === 4 || step === 5) && !recognitionData) {
           const res = await apiJson("/practice/stance/recognition");
           setRecognitionData(res);
-        } else if (step === 4 && !rewriteTemplates) {
+        }
+        if ((step === 6 || step === 7) && !rewriteTemplates) {
           const res = await apiJson("/practice/stance/rewrite-templates");
           setRewriteTemplates(res);
-        } else if (step === 5 && quizBlueprint.length === 0) {
+        }
+        if (step === 9 && quizBlueprint.length === 0) {
           const res = await apiJson("/quiz/korean5/phase-3/start", { method: "POST" });
           setQuizBlueprint(res.blueprint || []);
-        } else if (step === 6 && homeworkItems.length === 0) {
+        }
+        if (step === 10 && homeworkItems.length === 0) {
           const res = await apiJson("/phases/korean5/3/homework");
           setHomeworkItems(res || []);
         }
       } catch (err) {
-        console.error("Error loading C1 stance data:", err);
+        console.error("Error loading C6 Phase 3 data:", err);
       }
     };
-    load();
+    loadData();
   }, [step]);
 
   const playAudio = (text: string) => {
     speakWord(text);
   };
 
-  // Activity 1A checks
-  const handleCheckActivity1A = async () => {
-    if (!recognitionData) return;
+  // Step 2 concept verification
+  const handleCheckConcept = () => {
+    if (conceptChecked) return;
+    const isCorrect = conceptAnswer === "B";
+    setConceptChecked(true);
+    setConceptCorrect(isCorrect);
+    playSFX(isCorrect ? "correct" : "wrong");
+  };
+
+  // Step 3 (Activity 1) Verify certainty
+  const handleCheckActivity1 = async () => {
+    if (!recognitionData || recChecked) return;
     const currentItem = recognitionData.recognition_items[activeRecIdx];
     const isCorrect = selectedStanceStrength === currentItem.stance;
 
     setRecChecked(true);
     setRecCorrect(isCorrect);
+    playSFX(isCorrect ? "correct" : "wrong");
 
     try {
       await apiJson("/practice/stance/recognition/answer", {
@@ -199,29 +274,30 @@ export default function Course6Phase3StanceWizard({
     }
   };
 
-  // Activity 1B checks
-  const handleCheckActivity1B = () => {
-    if (!recognitionData) return;
-    const currentHvu = recognitionData.hedged_vs_unhedged[activeHvuIdx];
+  // Step 4 (Activity 2) Verify Hedged vs Blunt
+  const handleCheckActivity2 = () => {
+    if (!recognitionData || hvuChecked) return;
     const isCorrect = selectedHvuOption === "hedged";
 
     setHvuChecked(true);
     setHvuCorrect(isCorrect);
+    playSFX(isCorrect ? "correct" : "wrong");
   };
 
-  // Activity 1C checks
-  const handleCheckActivity1C = () => {
-    if (!recognitionData) return;
+  // Step 5 (Activity 3) Verify softening highlight in dialogues
+  const handleCheckActivity3 = () => {
+    if (!recognitionData || dsChecked) return;
     const currentDs = recognitionData.dialogues_softening[activeDsIdx];
     const isCorrect = highlightedPhrase === currentDs.softening_marker;
 
     setDsChecked(true);
     setDsCorrect(isCorrect);
+    playSFX(isCorrect ? "correct" : "wrong");
   };
 
-  // Activity 2A Rewrite checks
-  const handleCheckActivity2A = async () => {
-    if (!rewriteTemplates) return;
+  // Step 6 (Activity 4) Verify rewrite chip
+  const handleCheckActivity4 = async () => {
+    if (!rewriteTemplates || submittingRewrite || rewriteFeedback) return;
     const currentTemp = rewriteTemplates.rewrite_templates[activeRewriteIdx];
     const targetRev = currentTemp.plain_text.replace(currentTemp.underlined, selectedRewriteChip || "");
 
@@ -236,6 +312,7 @@ export default function Course6Phase3StanceWizard({
         })
       });
       setRewriteFeedback(res);
+      playSFX(res.is_correct ? "correct" : "wrong");
     } catch (e) {
       console.error(e);
     } finally {
@@ -243,9 +320,9 @@ export default function Course6Phase3StanceWizard({
     }
   };
 
-  // Activity 2B Partial Agreement checks
-  const handleCheckActivity2B = async () => {
-    if (!rewriteTemplates) return;
+  // Step 7 (Activity 5) Verify partial agreement
+  const handleCheckActivity5 = async () => {
+    if (!rewriteTemplates || submittingPa || paFeedback) return;
     const currentPa = rewriteTemplates.partial_agreement_templates[activePaIdx];
 
     setSubmittingPa(true);
@@ -258,6 +335,7 @@ export default function Course6Phase3StanceWizard({
         })
       });
       setPaFeedback(res);
+      playSFX(true ? "correct" : "wrong"); // Always count as registered/correct pattern
     } catch (e) {
       console.error(e);
     } finally {
@@ -265,7 +343,7 @@ export default function Course6Phase3StanceWizard({
     }
   };
 
-  // Activity 2C Live Nuanced Discussion (AI chat)
+  // Step 8 (Activity 6) Live debate discussion chat
   const handleStartDiscussion = async () => {
     setAiMessages([]);
     setAiEvaluation(null);
@@ -287,13 +365,12 @@ export default function Course6Phase3StanceWizard({
   };
 
   const handleSendAiTurn = async () => {
-    if (!aiText.trim() || !aiSessionId) return;
+    if (!aiText.trim() || !aiSessionId || aiSending) return;
     const textToSend = aiText;
     setAiText("");
     setAiMessages(prev => [...prev, { sender: "user", text: textToSend }]);
     setAiSending(true);
 
-    // Simple heuristic goals checker
     if (textToSend.includes("것 같") || textToSend.includes("대체로")) {
       setGoalSofteningUsed(true);
     }
@@ -318,7 +395,7 @@ export default function Course6Phase3StanceWizard({
   };
 
   const handleFinishDiscussion = async () => {
-    if (!aiSessionId) return;
+    if (!aiSessionId || finishingDiscussion) return;
     setFinishingDiscussion(true);
     try {
       const res = await apiJson("/conversation/c1/stance-discussion/finish", { method: "POST" });
@@ -331,14 +408,16 @@ export default function Course6Phase3StanceWizard({
     }
   };
 
-  // Quiz Checks
+  // Step 9 (Activity 7) Verify quiz answer
   const handleCheckQuiz = async () => {
     const current = quizBlueprint[quizIdx];
-    if (!current || !quizSelectedOpt) return;
+    if (!current || !quizSelectedOpt || quizChecked) return;
 
     const isCorrect = quizSelectedOpt === current.correct_answer;
     setQuizChecked(true);
     setQuizCorrect(isCorrect);
+    playSFX(isCorrect ? "correct" : "wrong");
+
     if (!isCorrect) {
       setQuizMistakes(prev => [...prev, current.id]);
     }
@@ -377,7 +456,7 @@ export default function Course6Phase3StanceWizard({
         });
         setQuizScore(score);
         setQuizBadge(res.badge || "Nuanced Communicator C1");
-        setStep(6);
+        setStep(10);
       } catch (err) {
         console.error(err);
       } finally {
@@ -386,7 +465,7 @@ export default function Course6Phase3StanceWizard({
     }
   };
 
-  // Homework check logging
+  // Step 10: Toggle homework logs
   const handleToggleHomework = async (id: string, currentStatus: boolean) => {
     setCompletedHomework(prev => ({ ...prev, [id]: !currentStatus }));
     try {
@@ -399,7 +478,7 @@ export default function Course6Phase3StanceWizard({
     }
   };
 
-  // Homework AI practice session
+  // Step 10: Homework stance practice room
   const handleStartStancePractice = async () => {
     setPracticeMessages([]);
     setPracticeFeedback(null);
@@ -420,7 +499,7 @@ export default function Course6Phase3StanceWizard({
   };
 
   const handleSendPracticeTurn = async () => {
-    if (!practiceText.trim() || !practiceSessionId) return;
+    if (!practiceText.trim() || !practiceSessionId || practiceSending) return;
     const textToSend = practiceText;
     setPracticeText("");
     setPracticeMessages(prev => [...prev, { sender: "user", text: textToSend }]);
@@ -453,7 +532,6 @@ export default function Course6Phase3StanceWizard({
     }
   };
 
-  // Stance levels slider text helper
   const getSliderLevelInfo = () => {
     if (sliderVal < 33) {
       return {
@@ -476,29 +554,20 @@ export default function Course6Phase3StanceWizard({
     }
   };
 
-    const outlineSteps = [
-    { num: 1, label: "Screen 1 – Welcome / Phase Overview" },
-    { num: 2, label: "Screen 2 – C1 Stance & Softening slider" },
-    { num: 3, label: "Screen 3 – Activity 1: Recognize Nuanced Stance (Strength, Hedging, Dialogues)" },
-    { num: 4, label: "Screen 4 – Activity 2: Production (Hedged rewrites, Agreement builders, Debate chat)" },
-    { num: 5, label: "Screen 5 – Mini-Quiz: Stance level checkpoints" },
-    { num: 6, label: "Screen 6 – Homework & Review logs" }
+  const outlineSteps = [
+    { num: 1, label: "Welcome & Goals" },
+    { num: 2, label: "Stance & Softening Toolbox" },
+    { num: 3, label: "Act 1: Label Certainty" },
+    { num: 4, label: "Act 2: Hedged vs Blunt" },
+    { num: 5, label: "Act 3: Dialogue Softeners" },
+    { num: 6, label: "Act 4: Rewrite Opinion Segment" },
+    { num: 7, label: "Act 5: Partial Agreement Builder" },
+    { num: 8, label: "Act 6: Live Debate Discussion" },
+    { num: 9, label: "Act 7: Strategy Mini-Quiz" },
+    { num: 10, label: "Graduation & Completion" }
   ];
 
-  
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      window.dispatchEvent(new CustomEvent("hangeulai-step-change", {
-        detail: {
-          courseId: 6,
-          phaseNum: 3,
-          step: step
-        }
-      }));
-    }
-  }, [step]);
-
-return (
+  return (
     <div className="flex-grow flex flex-col justify-between">
       
       {/* Top Header tracking */}
@@ -509,7 +578,7 @@ return (
           </div>
           <div>
             <h2 className="font-black text-xl text-white tracking-tight flex items-center gap-2">
-              <span>{activeLesson?.title || "Korean 5.3 – Nuanced Opinions & Soft Power"}</span>
+              <span>{activeLesson?.title || "Korean 6.3 – Nuance in Opinions & Soft Power"}</span>
             </h2>
             <p className="text-xs text-zinc-500 font-medium">Topic: Stance, Hedging & Politeness</p>
           </div>
@@ -526,16 +595,17 @@ return (
           <span className="text-xs text-zinc-400 font-bold">{Math.round((step / totalSteps) * 100)}%</span>
           <button 
             onClick={() => setShowOutline(!showOutline)}
-            className="text-[10px] bg-zinc-900 border border-white/10 hover:bg-zinc-900 text-zinc-300 px-3 py-1.5 rounded-lg transition duration-200 cursor-pointer uppercase tracking-wider font-bold"
+            className="text-[10px] bg-zinc-900 border border-white/10 hover:bg-zinc-800 text-zinc-300 px-3 py-1.5 rounded-lg transition duration-200 cursor-pointer uppercase tracking-wider font-bold"
           >
             {showOutline ? "Hide Outline" : "View Outline"}
           </button>
         </div>
       </header>
+
       {showOutline && (
-        <div className="mb-6 p-5 bg-zinc-950/80 rounded-3xl border border-white/5 shadow-2xl animate-in fade-in slide-in-from-top-4 duration-300">
+        <div className="mb-6 p-5 bg-zinc-950/85 rounded-3xl border border-white/5 shadow-2xl animate-in fade-in slide-in-from-top-4 duration-300">
           <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest block mb-3 font-mono">Curriculum Syllabus Map</span>
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
             {outlineSteps.map(s => (
               <button
                 key={s.num}
@@ -556,15 +626,16 @@ return (
         </div>
       )}
 
-      {/* Screen 1: Welcome/Overview */}
+      {/* Step 1: Welcome & Overview */}
       {step === 1 && (
         <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center text-center animate-fade-in">
           <div className="p-3 bg-brand-500/10 rounded-full border border-brand-500/25 w-fit mx-auto text-brand-400 shrink-0">
             <Sparkles className="w-8 h-8 animate-pulse shrink-0" />
           </div>
           
-          <h2 className="text-5xl font-black text-white tracking-tight font-sans">Korean 5.3</h2>
-          <h3 className="text-2xl font-extrabold text-brand-400 mt-2">Nuanced Opinions & Soft Power</h3>
+          <h2 className="text-5xl font-black text-white tracking-tight font-sans">Korean 6.3</h2>
+          <h3 className="text-2xl font-extrabold text-brand-400 mt-2">Stance & Soft Power</h3>
+          <p className="text-zinc-400 text-sm italic">“Strong Ideas, Soft Delivery”</p>
           
           <p className="text-zinc-300 text-base leading-relaxed max-w-2xl mx-auto">
             {metadata?.description || "Express complex opinions gently and precisely in Korean."}
@@ -574,9 +645,10 @@ return (
             <p className="text-[10px] text-zinc-500 font-mono uppercase tracking-wider font-black">🎯 Objectives:</p>
             <ul className="list-disc list-inside space-y-1.5 text-zinc-300 pl-1">
               {(metadata?.goals || [
-                "Show different levels of certainty: strong, cautious, and unsure",
-                "Use hedging and softening phrases to sound balanced and polite",
-                "Express partial agreement and subtle disagreement in real discussions"
+                "Understand stance (attitude + certainty), hedging, and softening",
+                "Identify stance certainty levels and markers in Korean sentences",
+                "Select and build hedged, softened arguments for sensitive situations",
+                "Utilize concessions and partial agreement response structures"
               ]).map((g: string, idx: number) => (
                 <li key={idx}>{g}</li>
               ))}
@@ -620,35 +692,52 @@ return (
               <span>Start Phase 3</span>
               <ChevronRight className="w-4 h-4" />
             </button>
-            
           </div>
-
-          
         </div>
       )}
 
-      {/* Screen 2: Concept Explanation */}
+      {/* Step 2: Concept Screen */}
       {step === 2 && coreData && (
-        <div className="glass-panel neon-border p-8 rounded-3xl shadow-2xl w-full space-y-5 flex-grow flex flex-col justify-center">
+        <div className="glass-panel neon-border p-8 rounded-3xl shadow-2xl w-full space-y-5 flex-grow flex flex-col justify-center animate-fade-in">
           <div className="flex justify-between items-center border-b border-white/5 pb-4">
             <h2 className="text-2xl font-black text-white flex items-center gap-2">
               <BookOpen className="w-6 h-6 text-brand-400" />
-              <span>Stance, Hedging & Softening</span>
+              <span>Stance, Hedging & Softening Toolbox</span>
             </h2>
             <span className="text-xs text-zinc-500 font-bold">Step 2 of {totalSteps}</span>
           </div>
 
           <div className="bg-brand-500/5 p-4 rounded-xl border border-brand-500/10 text-xs leading-relaxed text-zinc-300">
-            <p className="font-bold text-white mb-1">C1 Stance and Hedging</p>
+            <p className="font-bold text-white mb-1">C1 Stance and Hedging Definition</p>
             <p className="italic font-serif">
               “Stance is how you show your attitude and certainty. Hedging is using cautious qualifying language to present balanced arguments, while softening reduces emotional friction when disagreeing.”
             </p>
           </div>
 
-          {/* Stance Level Slider */}
+          {/* Info cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 text-left">
+            <div className="bg-zinc-900/60 p-3.5 rounded-xl border border-white/5">
+              <h4 className="text-xs font-black text-brand-400">Strong Stance</h4>
+              <p className="text-[10px] text-zinc-400 mt-1">Expresses 100% certainty without concession markers.</p>
+            </div>
+            <div className="bg-zinc-900/60 p-3.5 rounded-xl border border-white/5">
+              <h4 className="text-xs font-black text-brand-400">Cautious Stance</h4>
+              <p className="text-[10px] text-zinc-400 mt-1">Qualifies claims using probability or opinion particles.</p>
+            </div>
+            <div className="bg-zinc-900/60 p-3.5 rounded-xl border border-white/5">
+              <h4 className="text-xs font-black text-brand-400">Hedging</h4>
+              <p className="text-[10px] text-zinc-400 mt-1">Presents suggestions and claims moderately to avoid rigidity.</p>
+            </div>
+            <div className="bg-zinc-900/60 p-3.5 rounded-xl border border-white/5">
+              <h4 className="text-xs font-black text-brand-400">Softening & Concession</h4>
+              <p className="text-[10px] text-zinc-400 mt-1">Acknowledges the other side first before expressing disagreement.</p>
+            </div>
+          </div>
+
+          {/* Stance Slider */}
           <div className="bg-zinc-950 p-4 rounded-2xl border border-white/5 space-y-3 text-left">
             <div className="flex justify-between items-center text-[10px] text-zinc-500 font-mono font-bold uppercase">
-              <span>Stance Slider</span>
+              <span>Interactive Stance Slider</span>
               <Sliders className="w-3.5 h-3.5 text-brand-400" />
             </div>
 
@@ -667,7 +756,6 @@ return (
               <span className={sliderVal >= 66 ? "text-white" : ""}>TENTATIVE</span>
             </div>
 
-            {/* Selected slider details */}
             {(() => {
               const info = getSliderLevelInfo();
               return (
@@ -680,11 +768,11 @@ return (
             })()}
           </div>
 
-          {/* Softening Phrase sets */}
+          {/* Softening phrase list */}
           <div className="space-y-2 text-left">
-            <span className="text-[9px] text-zinc-500 font-bold uppercase tracking-wider block">Common Hedging/Softening Markers</span>
-            <div className="grid grid-cols-2 gap-2">
-              {coreData.softening_phrases.map((phrase: any) => (
+            <span className="text-[9px] text-zinc-500 font-bold uppercase tracking-wider block">High-Value Stance Markers (phrase toolbox)</span>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+              {(coreData.softening_phrases || []).map((phrase: any) => (
                 <div 
                   key={phrase.ko}
                   className="p-3 bg-zinc-900 rounded-xl border border-white/5 flex justify-between items-center"
@@ -695,7 +783,7 @@ return (
                   </div>
                   <button 
                     onClick={() => playAudio(phrase.ko)}
-                    className="p-1.5 bg-zinc-950 hover:bg-zinc-850 rounded-lg text-zinc-400 hover:text-white border border-white/5 transition cursor-pointer"
+                    className="p-1.5 bg-zinc-950 hover:bg-zinc-800 rounded-lg text-zinc-400 hover:text-white border border-white/5 transition cursor-pointer"
                   >
                     <Volume2 className="w-3 h-3" />
                   </button>
@@ -704,70 +792,402 @@ return (
             </div>
           </div>
 
+          {/* Micro-reflection concept check */}
+          <div className="p-4 bg-zinc-900/60 rounded-xl border border-white/5 text-left space-y-3">
+            <p className="text-xs font-bold text-white flex items-center gap-1.5">
+              <HelpCircle className="w-4 h-4 text-brand-400" />
+              <span>Concept Check: Which of the following sentences uses softening to respectfully disagree?</span>
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+              <button
+                onClick={() => !conceptChecked && setConceptAnswer("A")}
+                disabled={conceptChecked}
+                className={`p-3 rounded-xl border text-xs font-bold text-left transition ${
+                  conceptAnswer === "A" 
+                    ? "border-brand-500 bg-brand-500/10 text-white" 
+                    : "border-white/5 bg-zinc-950 text-zinc-400 hover:border-white/10"
+                } ${conceptChecked && conceptAnswer === "A" && !conceptCorrect ? "border-accent-pink bg-accent-pink/5" : ""}`}
+              >
+                <span className="block text-[9px] text-zinc-500 mb-1">Option A:</span>
+                <span className="font-korean">그 의견은 틀렸습니다.</span>
+              </button>
+              <button
+                onClick={() => !conceptChecked && setConceptAnswer("B")}
+                disabled={conceptChecked}
+                className={`p-3 rounded-xl border text-xs font-bold text-left transition ${
+                  conceptAnswer === "B" 
+                    ? "border-brand-500 bg-brand-500/10 text-white" 
+                    : "border-white/5 bg-zinc-950 text-zinc-400 hover:border-white/10"
+                } ${conceptChecked && conceptAnswer === "B" && conceptCorrect ? "border-accent-teal bg-accent-teal/5" : ""}`}
+              >
+                <span className="block text-[9px] text-brand-400 mb-1">Option B (Softened):</span>
+                <span className="font-korean">그 의견도 이해하지만, 다르게 볼 수도 있습니다.</span>
+              </button>
+              <button
+                onClick={() => !conceptChecked && setConceptAnswer("C")}
+                disabled={conceptChecked}
+                className={`p-3 rounded-xl border text-xs font-bold text-left transition ${
+                  conceptAnswer === "C" 
+                    ? "border-brand-500 bg-brand-500/10 text-white" 
+                    : "border-white/5 bg-zinc-950 text-zinc-400 hover:border-white/10"
+                } ${conceptChecked && conceptAnswer === "C" && !conceptCorrect ? "border-accent-pink bg-accent-pink/5" : ""}`}
+              >
+                <span className="block text-[9px] text-zinc-500 mb-1">Option C:</span>
+                <span className="font-korean">저는 전혀 동의하지 않습니다.</span>
+              </button>
+            </div>
+
+            {conceptChecked && (
+              <div className={`p-3 rounded-lg border text-[11px] ${conceptCorrect ? "bg-accent-teal/5 border-accent-teal/20 text-accent-teal" : "bg-accent-pink/5 border-accent-pink/20 text-accent-pink"}`}>
+                {conceptCorrect 
+                  ? "✓ Correct! Option B concedes/acknowledges the opinion ('그 의견도 이해하지만...') before introducing a soft counterargument." 
+                  : "✗ Incorrect. Option B is correct because it uses softening and concession. Direct rejection sounds blunt in professional or sensitive Korean contexts."}
+              </div>
+            )}
+
+            {!conceptChecked && conceptAnswer && (
+              <div className="flex justify-end">
+                <button
+                  onClick={handleCheckConcept}
+                  className="bg-brand-500 hover:bg-brand-600 text-white px-4 py-2 rounded-xl text-xs font-bold cursor-pointer"
+                >
+                  Verify Concept
+                </button>
+              </div>
+            )}
+          </div>
+
           <div className="flex justify-between items-center pt-4 border-t border-white/5">
             <button onClick={() => setStep(1)} className="glass-panel px-4 py-2 rounded-xl hover:bg-white/5 text-zinc-400 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
-            <button onClick={() => setStep(3)} className="bg-brand-500 hover:bg-brand-600 text-white px-5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer">Start Activities <ChevronRight className="w-4 h-4" /></button>
+            <button 
+              onClick={() => setStep(3)} 
+              disabled={!conceptChecked}
+              className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white px-5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
+            >
+              Start Activity 1 <ChevronRight className="w-4 h-4" />
+            </button>
           </div>
         </div>
       )}
 
-      {/* Screen 3: Activity 1: Recognize Nuanced Stance */}
+      {/* Step 3: Activity 1 – Label the certainty */}
       {step === 3 && recognitionData && (
         <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
           <div className="flex justify-between items-center border-b border-white/5 pb-4">
-            <h2 className="text-lg font-black text-white flex items-center gap-2">
+            <h2 className="text-2xl font-black text-white flex items-center gap-2">
               <Sparkles className="w-6 h-6 text-brand-400" />
-              <span>
-                {activity1SubStep === "1A" && "1A: Stance Strength"}
-                {activity1SubStep === "1B" && "1B: Hedging Suitability"}
-                {activity1SubStep === "1C" && "1C: Dialogue Softeners"}
-              </span>
+              <span>Activity A: Label the certainty</span>
             </h2>
-            <div className="flex gap-1">
-              {["1A", "1B", "1C"].map((sub) => (
-                <button 
-                  key={sub}
-                  onClick={() => setActivity1SubStep(sub as any)}
-                  className={`px-2 py-0.5 rounded text-[10px] font-bold ${activity1SubStep === sub ? "bg-brand-500 text-white" : "bg-zinc-900 text-zinc-400"}`}
-                >
-                  {sub}
-                </button>
-              ))}
-            </div>
+            <span className="text-xs text-zinc-500 font-bold">Item {activeRecIdx + 1}/{recognitionData.recognition_items.length}</span>
           </div>
 
-          {/* Activity 1A: Stance Strength */}
-          {activity1SubStep === "1A" && (
-            <div className="space-y-4 text-left animate-fade-in">
-              <span className="text-[10px] text-zinc-500 font-black uppercase tracking-wider block">Classify opinion certainty strength:</span>
-              
-              <div className="p-4 bg-zinc-950 rounded-2xl border border-white/5 space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-[9px] text-zinc-500 font-mono font-bold uppercase">Korean Opinion:</span>
-                  <button 
-                    onClick={() => playAudio(recognitionData.recognition_items[activeRecIdx].sentence)}
-                    className="p-1 bg-zinc-900 border border-white/5 rounded text-[9px] text-zinc-300 hover:text-white px-2 flex items-center gap-1 cursor-pointer"
-                  >
-                    <Volume2 className="w-3.5 h-3.5" /> Listen
-                  </button>
-                </div>
-                <p className="font-korean text-zinc-200 text-sm leading-relaxed">{recognitionData.recognition_items[activeRecIdx].sentence}</p>
-                <p className="text-[11px] text-zinc-500 italic">"{recognitionData.recognition_items[activeRecIdx].translation}"</p>
+          <div className="space-y-4 text-left animate-fade-in">
+            <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider block">Analyze the stance in the following sentence:</p>
+            
+            <div className="p-5 bg-zinc-950 rounded-2xl border border-white/5 space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-[9px] text-zinc-500 font-mono font-bold uppercase">Korean Sentence:</span>
+                <button 
+                  onClick={() => playAudio(recognitionData.recognition_items[activeRecIdx].sentence)}
+                  className="p-1 bg-zinc-900 border border-white/5 rounded text-[9px] text-zinc-300 hover:text-white px-2 flex items-center gap-1 cursor-pointer"
+                >
+                  <Volume2 className="w-3.5 h-3.5" /> Listen
+                </button>
               </div>
+              <p className="font-korean text-zinc-100 text-lg leading-relaxed font-black">{recognitionData.recognition_items[activeRecIdx].sentence}</p>
+              <p className="text-xs text-zinc-400 italic">Translation: "{recognitionData.recognition_items[activeRecIdx].translation}"</p>
+            </div>
 
-              <div className="space-y-2">
-                <p className="text-xs font-bold text-white">Select the stance certainty level:</p>
-                <div className="grid grid-cols-3 gap-2">
-                  {["strong", "balanced", "tentative"].map((lvl) => (
+            <div className="space-y-2">
+              <p className="text-xs font-bold text-white">Select the stance certainty level:</p>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                {["strong", "balanced", "tentative"].map((lvl) => (
+                  <button
+                    key={lvl}
+                    onClick={() => !recChecked && setSelectedStanceStrength(lvl)}
+                    className={`p-4 rounded-xl border text-xs font-bold transition capitalize ${
+                      selectedStanceStrength === lvl 
+                        ? "border-brand-500 bg-brand-500/10 text-white" 
+                        : "border-white/5 bg-zinc-900 text-zinc-400 hover:border-white/10"
+                    } ${recChecked && lvl === recognitionData.recognition_items[activeRecIdx].stance ? "border-accent-teal bg-accent-teal/5 text-white" : ""}`}
+                    disabled={recChecked}
+                  >
+                    {lvl === "strong" ? "Strong / Certain" : lvl === "balanced" ? "Balanced / Cautious" : "Tentative / Hedged"}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {recChecked && (
+              <div className={`p-4 rounded-xl border text-xs space-y-1.5 animate-fade-in ${recCorrect ? "bg-accent-teal/5 border-accent-teal/20 text-accent-teal" : "bg-accent-pink/5 border-accent-pink/20 text-accent-pink"}`}>
+                <p className="font-black">{recCorrect ? "✓ Correct Level Identification!" : "✗ Mismatch. Review markers:"}</p>
+                <p className="text-zinc-300 leading-normal">
+                  {recognitionData.recognition_items[activeRecIdx].explanation}
+                </p>
+                <p className="text-[10px] text-zinc-500 font-mono">
+                  Stance markers: {recognitionData.recognition_items[activeRecIdx].markers.join(", ")}
+                </p>
+              </div>
+            )}
+
+            <div className="flex justify-between items-center pt-4 border-t border-white/5">
+              <button onClick={() => setStep(2)} className="glass-panel px-4 py-2 rounded-xl text-zinc-400 text-xs font-bold flex items-center gap-1.5"><ChevronLeft className="w-4 h-4" /> Back</button>
+              {!recChecked ? (
+                <button
+                  onClick={handleCheckActivity1}
+                  disabled={!selectedStanceStrength}
+                  className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white px-5 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer"
+                >
+                  Verify Stance
+                </button>
+              ) : (
+                <button
+                  onClick={() => {
+                    if (activeRecIdx < recognitionData.recognition_items.length - 1) {
+                      setActiveRecIdx(prev => prev + 1);
+                      setSelectedStanceStrength(null);
+                      setRecChecked(false);
+                      setRecCorrect(null);
+                    } else {
+                      setStep(4);
+                    }
+                  }}
+                  className="bg-accent-teal text-zinc-950 hover:bg-accent-teal/90 px-5 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer"
+                >
+                  {activeRecIdx < recognitionData.recognition_items.length - 1 ? "Next Sentence" : "Proceed to Activity 2"}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Step 4: Activity 2 – Hedged vs unhedged rejections */}
+      {step === 4 && recognitionData && (
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
+          <div className="flex justify-between items-center border-b border-white/5 pb-4">
+            <h2 className="text-2xl font-black text-white flex items-center gap-2">
+              <Sparkles className="w-6 h-6 text-brand-400" />
+              <span>Activity B: Which version is appropriate?</span>
+            </h2>
+            <span className="text-xs text-zinc-500 font-bold">Scenario {activeHvuIdx + 1}/{recognitionData.hedged_vs_unhedged.length}</span>
+          </div>
+
+          <div className="space-y-4 text-left animate-fade-in">
+            <p className="text-xs text-zinc-400 font-black uppercase tracking-wider block">Context Description:</p>
+            <div className="p-4 bg-zinc-950/60 rounded-xl border border-white/5">
+              <p className="text-xs text-zinc-300 font-bold">{recognitionData.hedged_vs_unhedged[activeHvuIdx].context}</p>
+            </div>
+
+            <div className="space-y-3">
+              <p className="text-xs font-bold text-white">Select the most appropriate rejection/claim version:</p>
+              
+              <button
+                onClick={() => !hvuChecked && setSelectedHvuOption("unhedged")}
+                className={`w-full p-4 rounded-2xl border text-left flex flex-col justify-between transition ${
+                  selectedHvuOption === "unhedged" 
+                    ? "border-brand-500 bg-brand-500/10 text-white" 
+                    : "border-white/5 bg-zinc-900 text-zinc-400 hover:border-white/10"
+                } ${hvuChecked && selectedHvuOption === "unhedged" && !hvuCorrect ? "border-accent-pink bg-accent-pink/5" : ""}`}
+                disabled={hvuChecked}
+              >
+                <div>
+                  <span className="text-[8px] uppercase tracking-widest font-mono text-zinc-500 font-black">Plain / Blunt Claim</span>
+                  <p className="font-korean text-zinc-200 text-sm mt-1.5 leading-relaxed font-black">{recognitionData.hedged_vs_unhedged[activeHvuIdx].unhedged}</p>
+                </div>
+              </button>
+
+              <button
+                onClick={() => !hvuChecked && setSelectedHvuOption("hedged")}
+                className={`w-full p-4 rounded-2xl border text-left flex flex-col justify-between transition ${
+                  selectedHvuOption === "hedged" 
+                    ? "border-brand-500 bg-brand-500/10 text-white" 
+                    : "border-white/5 bg-zinc-900 text-zinc-400 hover:border-white/10"
+                } ${hvuChecked && hvuCorrect ? "border-accent-teal bg-accent-teal/5 text-white" : ""}`}
+                disabled={hvuChecked}
+              >
+                <div>
+                  <span className="text-[8px] uppercase tracking-widest font-mono text-brand-450 font-black">Hedged / Softened Version</span>
+                  <p className="font-korean text-zinc-200 text-sm mt-1.5 leading-relaxed font-black">{recognitionData.hedged_vs_unhedged[activeHvuIdx].hedged}</p>
+                </div>
+              </button>
+            </div>
+
+            {hvuChecked && (
+              <div className={`p-4 rounded-xl border text-xs space-y-1.5 animate-fade-in ${hvuCorrect ? "bg-accent-teal/5 border-accent-teal/20 text-accent-teal" : "bg-accent-pink/5 border-accent-pink/20 text-accent-pink"}`}>
+                <p className="font-black">{hvuCorrect ? "✓ Correct! Softening makes rejection respectful." : "✗ Mismatch. Plain, blunt claims can sound demanding or aggressive to senior speakers."}</p>
+                <p className="text-zinc-300 leading-normal">
+                  {recognitionData.hedged_vs_unhedged[activeHvuIdx].explanation}
+                </p>
+              </div>
+            )}
+
+            <div className="flex justify-between items-center pt-4 border-t border-white/5">
+              <button onClick={() => setStep(3)} className="glass-panel px-4 py-2 rounded-xl text-zinc-400 text-xs font-bold flex items-center gap-1.5"><ChevronLeft className="w-4 h-4" /> Back</button>
+              {!hvuChecked ? (
+                <button
+                  onClick={handleCheckActivity2}
+                  disabled={!selectedHvuOption}
+                  className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white px-5 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer"
+                >
+                  Verify Selection
+                </button>
+              ) : (
+                <button
+                  onClick={() => {
+                    if (activeHvuIdx < recognitionData.hedged_vs_unhedged.length - 1) {
+                      setActiveHvuIdx(prev => prev + 1);
+                      setSelectedHvuOption(null);
+                      setHvuChecked(false);
+                      setHvuCorrect(null);
+                    } else {
+                      setStep(5);
+                    }
+                  }}
+                  className="bg-accent-teal text-zinc-950 hover:bg-accent-teal/90 px-5 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer"
+                >
+                  {activeHvuIdx < recognitionData.hedged_vs_unhedged.length - 1 ? "Next Scenario" : "Proceed to Activity 3"}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Step 5: Activity 3 – Highlight the softening marker in dialogues */}
+      {step === 5 && recognitionData && (
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
+          <div className="flex justify-between items-center border-b border-white/5 pb-4">
+            <h2 className="text-2xl font-black text-white flex items-center gap-2">
+              <Sparkles className="w-6 h-6 text-brand-400" />
+              <span>Activity C: Find the concession phrase</span>
+            </h2>
+            <span className="text-xs text-zinc-500 font-bold">Dialogue {activeDsIdx + 1}/{recognitionData.dialogues_softening.length}</span>
+          </div>
+
+          <div className="space-y-4 text-left animate-fade-in">
+            <p className="text-xs text-zinc-400 font-black uppercase tracking-wider block">Dialogue Context:</p>
+            
+            <div className="p-5 bg-zinc-950 rounded-2xl border border-white/5 space-y-4">
+              <p className="font-korean text-zinc-200 text-sm whitespace-pre-line leading-relaxed font-black">
+                {recognitionData.dialogues_softening[activeDsIdx].dialogue_ko.split("\n").map((line: string, lIdx: number) => {
+                  if (line.startsWith("B:")) {
+                    const responsePart = line.slice(2).trim();
+                    const targetPhrase = recognitionData.dialogues_softening[activeDsIdx].softening_marker;
+                    
+                    return (
+                      <span key={lIdx} className="block mt-1">
+                        <strong className="text-brand-400 font-mono">B:</strong>{" "}
+                        {responsePart.split(targetPhrase).map((chunk: string, cIdx: number) => (
+                          <span key={cIdx}>
+                            {chunk}
+                            {cIdx === 0 && (
+                              <button
+                                onClick={() => !dsChecked && setHighlightedPhrase(targetPhrase)}
+                                className={`px-2 py-1 rounded border transition font-bold font-korean ${
+                                  highlightedPhrase === targetPhrase 
+                                    ? "border-brand-500 bg-brand-500/20 text-white shadow-lg" 
+                                    : "border-white/10 bg-zinc-900 text-zinc-300 hover:border-white/20"
+                                }`}
+                                disabled={dsChecked}
+                              >
+                                {targetPhrase}
+                              </button>
+                            )}
+                          </span>
+                        ))}
+                      </span>
+                    );
+                  }
+                  return <span key={lIdx} className="block text-zinc-400"><strong className="text-zinc-500 font-mono">A:</strong> {line.slice(2).trim()}</span>;
+                })}
+              </p>
+            </div>
+
+            {dsChecked && (
+              <div className={`p-4 rounded-xl border text-xs space-y-1.5 animate-fade-in ${dsCorrect ? "bg-accent-teal/5 border-accent-teal/20 text-accent-teal" : "bg-accent-pink/5 border-accent-pink/20 text-accent-pink"}`}>
+                <p className="font-black">{dsCorrect ? "✓ Correct Softening Highlight!" : "✗ Mismatch. Look for the phrase that admits a point."}</p>
+                <p className="text-zinc-300 leading-normal">
+                  The phrase <strong className="font-korean">"{recognitionData.dialogues_softening[activeDsIdx].softening_marker}"</strong> is used to acknowledge the other speaker's point (concession) before offering a counterargument.
+                </p>
+              </div>
+            )}
+
+            <div className="flex justify-between items-center pt-4 border-t border-white/5">
+              <button onClick={() => setStep(4)} className="glass-panel px-4 py-2 rounded-xl text-zinc-400 text-xs font-bold flex items-center gap-1.5"><ChevronLeft className="w-4 h-4" /> Back</button>
+              {!dsChecked ? (
+                <button
+                  onClick={handleCheckActivity3}
+                  disabled={!highlightedPhrase}
+                  className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white px-5 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer"
+                >
+                  Verify Softener Highlight
+                </button>
+              ) : (
+                <button
+                  onClick={() => {
+                    if (activeDsIdx < recognitionData.dialogues_softening.length - 1) {
+                      setActiveDsIdx(prev => prev + 1);
+                      setHighlightedPhrase(null);
+                      setDsChecked(false);
+                      setDsCorrect(null);
+                    } else {
+                      setStep(6);
+                    }
+                  }}
+                  className="bg-accent-teal text-zinc-950 hover:bg-accent-teal/90 px-5 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer"
+                >
+                  {activeDsIdx < recognitionData.dialogues_softening.length - 1 ? "Next Dialogue" : "Proceed to Activity 4"}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Step 6: Activity 4 – Rewrite stance with chips */}
+      {step === 6 && rewriteTemplates && (
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
+          <div className="flex justify-between items-center border-b border-white/5 pb-4">
+            <h2 className="text-2xl font-black text-white flex items-center gap-2">
+              <Sparkles className="w-6 h-6 text-brand-400" />
+              <span>Activity D: Change the stance without changing content</span>
+            </h2>
+            <span className="text-xs text-zinc-500 font-bold">Template {activeRewriteIdx + 1}/{rewriteTemplates.rewrite_templates.length}</span>
+          </div>
+
+          <div className="space-y-4 text-left animate-fade-in">
+            <span className="text-[10px] text-zinc-500 font-black uppercase tracking-wider block">Base Opinion with Target Segment:</span>
+            
+            <div className="p-5 bg-zinc-950 rounded-2xl border border-white/5 space-y-2">
+              <span className="text-[8px] text-zinc-500 font-mono uppercase">Strong Sentence:</span>
+              <p className="font-korean text-zinc-100 text-base leading-relaxed">
+                {rewriteTemplates.rewrite_templates[activeRewriteIdx].plain_text.split(rewriteTemplates.rewrite_templates[activeRewriteIdx].underlined).map((chunk: string, idx: number) => (
+                  <span key={idx}>
+                    {chunk}
+                    {idx === 0 && <span className="underline decoration-brand-450 decoration-2 font-black text-brand-400 bg-brand-500/5 px-1 rounded">{rewriteTemplates.rewrite_templates[activeRewriteIdx].underlined}</span>}
+                  </span>
+                ))}
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              <div className="flex justify-between items-center text-[10px] gap-2">
+                <span className="text-zinc-400 font-bold uppercase font-mono">Target Stance Level:</span>
+                <div className="flex gap-1.5">
+                  {["balanced", "tentative"].map((lvl) => (
                     <button
                       key={lvl}
-                      onClick={() => !recChecked && setSelectedStanceStrength(lvl)}
-                      className={`p-3 rounded-xl border text-xs font-bold transition capitalize ${
-                        selectedStanceStrength === lvl 
+                      onClick={() => {
+                        setTargetStanceLevel(lvl);
+                        setSelectedRewriteChip(null);
+                        setRewriteFeedback(null);
+                      }}
+                      className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition capitalize border ${
+                        targetStanceLevel === lvl 
                           ? "border-brand-500 bg-brand-500/10 text-white" 
-                          : "border-white/5 bg-zinc-900 text-zinc-400 hover:border-white/10"
+                          : "border-white/5 bg-zinc-900 text-zinc-400"
                       }`}
-                      disabled={recChecked}
                     >
                       {lvl}
                     </button>
@@ -775,533 +1195,278 @@ return (
                 </div>
               </div>
 
-              {recChecked && (
-                <div className={`p-4 rounded-xl border text-xs space-y-1.5 ${recCorrect ? "bg-accent-teal/5 border-accent-teal/20 text-accent-teal" : "bg-accent-pink/5 border-accent-pink/20 text-accent-pink"}`}>
-                  <p className="font-black">{recCorrect ? "✓ Correct Level Identification!" : "✗ Mismatch. Review markers:"}</p>
-                  <p className="text-zinc-400 leading-normal">
-                    {recognitionData.recognition_items[activeRecIdx].explanation}
-                  </p>
-                  <p className="text-[10px] text-zinc-500 font-mono">
-                    Stance markers: {recognitionData.recognition_items[activeRecIdx].markers.join(", ")}
-                  </p>
+              <div className="space-y-2">
+                <p className="text-xs font-bold text-zinc-300">Choose alternative stance marker chip:</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {rewriteTemplates.rewrite_templates[activeRewriteIdx].options.map((opt: any) => (
+                    <button
+                      key={opt.text}
+                      onClick={() => !rewriteFeedback && setSelectedRewriteChip(opt.text)}
+                      className={`p-3.5 rounded-xl border text-xs font-bold font-korean text-left transition flex justify-between items-center ${
+                        selectedRewriteChip === opt.text
+                          ? "border-brand-500 bg-brand-500/10 text-white"
+                          : "border-white/5 bg-zinc-900 text-zinc-400 hover:border-white/10"
+                      } ${rewriteFeedback && opt.stance === targetStanceLevel ? "border-accent-teal bg-accent-teal/5 text-white" : ""}`}
+                      disabled={!!rewriteFeedback}
+                    >
+                      <span>{opt.text}</span>
+                      <span className="text-[8px] uppercase tracking-widest px-2 py-0.5 rounded bg-zinc-950 text-zinc-500 font-mono">
+                        {opt.stance}
+                      </span>
+                    </button>
+                  ))}
                 </div>
-              )}
-
-              <div className="flex justify-end">
-                {!recChecked ? (
-                  <button
-                    onClick={handleCheckActivity1A}
-                    disabled={!selectedStanceStrength}
-                    className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer"
-                  >
-                    Verify Stance
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => {
-                      if (activeRecIdx < recognitionData.recognition_items.length - 1) {
-                        setActiveRecIdx(prev => prev + 1);
-                        setSelectedStanceStrength(null);
-                        setRecChecked(false);
-                        setRecCorrect(null);
-                      } else {
-                        setActivity1SubStep("1B");
-                      }
-                    }}
-                    className="bg-accent-teal text-zinc-950 hover:bg-accent-teal/90 px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer"
-                  >
-                    {activeRecIdx < recognitionData.recognition_items.length - 1 ? "Next Sentence" : "Proceed to Hedging Suitability"}
-                  </button>
-                )}
               </div>
             </div>
-          )}
 
-          {/* Activity 1B: Hedging Suitability */}
-          {activity1SubStep === "1B" && (
-            <div className="space-y-4 text-left animate-fade-in">
-              <span className="text-[10px] text-zinc-500 font-black uppercase tracking-wider block">Choose the most polite, balanced option:</span>
-              <p className="text-xs text-zinc-400 font-semibold">{recognitionData.hedged_vs_unhedged[activeHvuIdx].context}</p>
-
-              <div className="space-y-3">
-                <button
-                  onClick={() => !hvuChecked && setSelectedHvuOption("unhedged")}
-                  className={`w-full p-4 rounded-2xl border text-left flex flex-col justify-between transition ${
-                    selectedHvuOption === "unhedged" 
-                      ? "border-brand-500 bg-brand-500/10 text-white" 
-                      : "border-white/5 bg-zinc-900 text-zinc-400 hover:border-white/10"
-                  }`}
-                  disabled={hvuChecked}
-                >
-                  <div>
-                    <span className="text-[8px] uppercase tracking-widest font-mono text-zinc-500">Unhedged / Blunt</span>
-                    <p className="font-korean text-zinc-200 text-xs mt-1.5 leading-relaxed">{recognitionData.hedged_vs_unhedged[activeHvuIdx].unhedged}</p>
-                  </div>
-                </button>
-
-                <button
-                  onClick={() => !hvuChecked && setSelectedHvuOption("hedged")}
-                  className={`w-full p-4 rounded-2xl border text-left flex flex-col justify-between transition ${
-                    selectedHvuOption === "hedged" 
-                      ? "border-brand-500 bg-brand-500/10 text-white" 
-                      : "border-white/5 bg-zinc-900 text-zinc-400 hover:border-white/10"
-                  }`}
-                  disabled={hvuChecked}
-                >
-                  <div>
-                    <span className="text-[8px] uppercase tracking-widest font-mono text-brand-400">Hedged / Softened</span>
-                    <p className="font-korean text-zinc-200 text-xs mt-1.5 leading-relaxed">{recognitionData.hedged_vs_unhedged[activeHvuIdx].hedged}</p>
-                  </div>
-                </button>
+            {rewriteFeedback && (
+              <div className={`p-4 rounded-xl border text-xs space-y-1.5 animate-fade-in ${rewriteFeedback.is_correct ? "bg-accent-teal/5 border-accent-teal/20 text-accent-teal" : "bg-accent-pink/5 border-accent-pink/20 text-accent-pink"}`}>
+                <p className="font-black">{rewriteFeedback.is_correct ? "✓ Correct Stance Shift!" : "✗ Mismatch. Selected chip does not match target stance level."}</p>
+                <p className="text-zinc-350 leading-normal">{rewriteFeedback.feedback}</p>
               </div>
+            )}
 
-              {hvuChecked && (
-                <div className={`p-4 rounded-xl border text-xs space-y-1.5 ${hvuCorrect ? "bg-accent-teal/5 border-accent-teal/20 text-accent-teal" : "bg-accent-pink/5 border-accent-pink/20 text-accent-pink"}`}>
-                  <p className="font-black">{hvuCorrect ? "✓ Correct! Softening makes rejection respectful." : "✗ Mismatch. Plain, blunt claims can sound demanding or aggressive to senior speakers."}</p>
-                  <p className="text-zinc-400 leading-normal">
-                    {recognitionData.hedged_vs_unhedged[activeHvuIdx].explanation}
-                  </p>
-                </div>
-              )}
-
-              <div className="flex justify-end">
-                {!hvuChecked ? (
-                  <button
-                    onClick={handleCheckActivity1B}
-                    disabled={!selectedHvuOption}
-                    className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer"
-                  >
-                    Verify Selection
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => {
-                      if (activeHvuIdx < recognitionData.hedged_vs_unhedged.length - 1) {
-                        setActiveHvuIdx(prev => prev + 1);
-                        setSelectedHvuOption(null);
-                        setHvuChecked(false);
-                        setHvuCorrect(null);
-                      } else {
-                        setActivity1SubStep("1C");
-                      }
-                    }}
-                    className="bg-accent-teal text-zinc-950 hover:bg-accent-teal/90 px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer"
-                  >
-                    {activeHvuIdx < recognitionData.hedged_vs_unhedged.length - 1 ? "Next Pair" : "Proceed to Dialogue Softening"}
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Activity 1C: Dialogue Softeners */}
-          {activity1SubStep === "1C" && (
-            <div className="space-y-4 text-left animate-fade-in">
-              <span className="text-[10px] text-zinc-500 font-black uppercase tracking-wider block">Tap the softening phrase in the dialogue response:</span>
-              
-              <div className="p-4 bg-zinc-950 rounded-2xl border border-white/5 space-y-3">
-                <span className="text-[8px] text-zinc-500 font-mono block">Korean Dialogue:</span>
-                <p className="font-korean text-zinc-200 text-sm whitespace-pre-line leading-relaxed">
-                  {recognitionData.dialogues_softening[activeDsIdx].dialogue_ko.split("\n").map((line: string, lIdx: number) => {
-                    if (line.startsWith("B:")) {
-                      const responsePart = line.slice(2).trim();
-                      const targetPhrase = recognitionData.dialogues_softening[activeDsIdx].softening_marker;
-                      
-                      return (
-                        <span key={lIdx} className="block mt-1">
-                          <strong>B:</strong>{" "}
-                          {responsePart.split(targetPhrase).map((chunk: string, cIdx: number) => (
-                            <span key={cIdx}>
-                              {chunk}
-                              {cIdx === 0 && (
-                                <button
-                                  onClick={() => !dsChecked && setHighlightedPhrase(targetPhrase)}
-                                  className={`px-1.5 py-0.5 rounded border transition font-bold font-korean ${
-                                    highlightedPhrase === targetPhrase 
-                                      ? "border-brand-500 bg-brand-500/10 text-white" 
-                                      : "border-white/10 bg-zinc-900 text-zinc-300 hover:border-white/20"
-                                  }`}
-                                  disabled={dsChecked}
-                                >
-                                  {targetPhrase}
-                                </button>
-                              )}
-                            </span>
-                          ))}
-                        </span>
-                      );
+            <div className="flex justify-between items-center pt-4 border-t border-white/5">
+              <button onClick={() => setStep(5)} className="glass-panel px-4 py-2 rounded-xl text-zinc-400 text-xs font-bold flex items-center gap-1.5"><ChevronLeft className="w-4 h-4" /> Back</button>
+              {!rewriteFeedback ? (
+                <button
+                  onClick={handleCheckActivity4}
+                  disabled={!selectedRewriteChip || submittingRewrite}
+                  className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white px-5 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
+                >
+                  {submittingRewrite && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  <span>Submit Rewrite</span>
+                </button>
+              ) : (
+                <button
+                  onClick={() => {
+                    if (activeRewriteIdx < rewriteTemplates.rewrite_templates.length - 1) {
+                      setActiveRewriteIdx(prev => prev + 1);
+                      setSelectedRewriteChip(null);
+                      setRewriteFeedback(null);
+                    } else {
+                      setStep(7);
                     }
-                    return <span key={lIdx} className="block">{line}</span>;
-                  })}
-                </p>
-              </div>
-
-              {dsChecked && (
-                <div className={`p-4 rounded-xl border text-xs space-y-1.5 ${dsCorrect ? "bg-accent-teal/5 border-accent-teal/20 text-accent-teal" : "bg-accent-pink/5 border-accent-pink/20 text-accent-pink"}`}>
-                  <p className="font-black">{dsCorrect ? "✓ Correct Softening Highlight!" : "✗ Mismatch. Look for the phrase that admits a point."}</p>
-                  <p className="text-zinc-400">
-                    The phrase <strong>"{recognitionData.dialogues_softening[activeDsIdx].softening_marker}"</strong> is used to acknowledge the other speaker's point (concession) before offering a counterargument.
-                  </p>
-                </div>
+                  }}
+                  className="bg-accent-teal text-zinc-950 hover:bg-accent-teal/90 px-5 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer"
+                >
+                  {activeRewriteIdx < rewriteTemplates.rewrite_templates.length - 1 ? "Next Sentence" : "Proceed to Activity 5"}
+                </button>
               )}
-
-              <div className="flex justify-end">
-                {!dsChecked ? (
-                  <button
-                    onClick={handleCheckActivity1C}
-                    disabled={!highlightedPhrase}
-                    className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer"
-                  >
-                    Verify Highlight
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => {
-                      if (activeDsIdx < recognitionData.dialogues_softening.length - 1) {
-                        setActiveDsIdx(prev => prev + 1);
-                        setHighlightedPhrase(null);
-                        setDsChecked(false);
-                        setDsCorrect(null);
-                      } else {
-                        setStep(4);
-                      }
-                    }}
-                    className="bg-accent-teal text-zinc-950 hover:bg-accent-teal/90 px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer"
-                  >
-                    {activeDsIdx < recognitionData.dialogues_softening.length - 1 ? "Next Dialogue" : "Proceed to Production"}
-                  </button>
-                )}
-              </div>
             </div>
-          )}
-
-          <div className="flex justify-between items-center pt-4 border-t border-white/5">
-            <button 
-              onClick={() => {
-                if (activity1SubStep === "1C") {
-                  setActivity1SubStep("1B");
-                } else if (activity1SubStep === "1B") {
-                  setActivity1SubStep("1A");
-                } else {
-                  setStep(2);
-                }
-              }} 
-              className="glass-panel px-4 py-2 rounded-xl hover:bg-white/5 text-zinc-400 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
-            >
-              <ChevronLeft className="w-4 h-4" /> Back
-            </button>
-            <div />
           </div>
         </div>
       )}
 
-      {/* Screen 4: Activity 2: Use Nuanced Stance */}
-      {step === 4 && rewriteTemplates && (
+      {/* Step 7: Activity 5 – Partial agreement patterns */}
+      {step === 7 && rewriteTemplates && (
         <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
-          
           <div className="flex justify-between items-center border-b border-white/5 pb-4">
-            <h2 className="text-lg font-black text-white flex items-center gap-2">
+            <h2 className="text-2xl font-black text-white flex items-center gap-2">
               <Sparkles className="w-6 h-6 text-brand-400" />
-              <span>
-                {activity2SubStep === "2A" && "2A: Stance Rewrite"}
-                {activity2SubStep === "2B" && "2B: Partial Agreement"}
-                {activity2SubStep === "2C" && "2C: Debate Discussion"}
-              </span>
+              <span>Activity E: Agree, disagree, or partially agree</span>
             </h2>
-            <div className="flex gap-1">
-              {["2A", "2B", "2C"].map((sub) => (
-                <button 
-                  key={sub}
-                  onClick={() => setActivity2SubStep(sub as any)}
-                  className={`px-2 py-0.5 rounded text-[10px] font-bold ${activity2SubStep === sub ? "bg-brand-500 text-white" : "bg-zinc-900 text-zinc-400"}`}
-                >
-                  {sub}
-                </button>
-              ))}
-            </div>
+            <span className="text-xs text-zinc-500 font-bold">Template {activePaIdx + 1}/{rewriteTemplates.partial_agreement_templates.length}</span>
           </div>
 
-          {/* Activity 2A: Stance Rewrite */}
-          {activity2SubStep === "2A" && (
-            <div className="space-y-4 text-left animate-fade-in">
-              <span className="text-[10px] text-zinc-500 font-black uppercase tracking-wider block">Rewrite strong opinions using target stance level:</span>
-              
-              <div className="p-4 bg-zinc-950 rounded-2xl border border-white/5 space-y-2">
-                <span className="text-[8px] text-zinc-500 font-mono uppercase">Strong Blunt Opinion:</span>
-                <p className="font-korean text-zinc-200 text-sm">
-                  {rewriteTemplates.rewrite_templates[activeRewriteIdx].plain_text.split(rewriteTemplates.rewrite_templates[activeRewriteIdx].underlined).map((chunk: string, idx: number) => (
-                    <span key={idx}>
-                      {chunk}
-                      {idx === 0 && <span className="underline decoration-brand-400 font-black text-brand-400">{rewriteTemplates.rewrite_templates[activeRewriteIdx].underlined}</span>}
-                    </span>
-                  ))}
-                </p>
-              </div>
-
-              <div className="space-y-3">
-                <div className="flex justify-between items-center text-[10px] gap-2">
-                  <span className="text-zinc-400 font-bold uppercase font-mono">Target Stance Level:</span>
-                  <div className="flex gap-1.5">
-                    {["balanced", "tentative"].map((lvl) => (
-                      <button
-                        key={lvl}
-                        onClick={() => {
-                          setTargetStanceLevel(lvl);
-                          setSelectedRewriteChip(null);
-                          setRewriteFeedback(null);
-                        }}
-                        className={`px-2.5 py-1 rounded text-[10px] font-bold transition capitalize border ${
-                          targetStanceLevel === lvl 
-                            ? "border-brand-500 bg-brand-500/10 text-white" 
-                            : "border-white/5 bg-zinc-900 text-zinc-400"
-                        }`}
-                      >
-                        {lvl}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <p className="text-xs font-bold text-zinc-300">Choose a softening chip replacement:</p>
-                  <div className="grid grid-cols-2 gap-2">
-                    {rewriteTemplates.rewrite_templates[activeRewriteIdx].options.map((opt: any) => (
-                      <button
-                        key={opt.text}
-                        onClick={() => !rewriteFeedback && setSelectedRewriteChip(opt.text)}
-                        className={`p-3 rounded-xl border text-xs font-bold font-korean text-left transition flex justify-between items-center ${
-                          selectedRewriteChip === opt.text
-                            ? "border-brand-500 bg-brand-500/10 text-white"
-                            : "border-white/5 bg-zinc-900 text-zinc-400 hover:border-white/10"
-                        }`}
-                        disabled={!!rewriteFeedback}
-                      >
-                        <span>{opt.text}</span>
-                        <span className="text-[8px] uppercase tracking-widest px-1.5 py-0.5 rounded bg-zinc-950 text-zinc-500 font-mono">
-                          {opt.stance}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {rewriteFeedback && (
-                <div className={`p-4 rounded-xl border text-xs space-y-1.5 ${rewriteFeedback.is_correct ? "bg-accent-teal/5 border-accent-teal/20 text-accent-teal" : "bg-accent-pink/5 border-accent-pink/20 text-accent-pink"}`}>
-                  <p className="font-black">{rewriteFeedback.is_correct ? "✓ Correct Stance Shift!" : "✗ Mismatch. Selected chip does not match target stance level."}</p>
-                  <p className="text-zinc-400 leading-normal">{rewriteFeedback.feedback}</p>
-                </div>
-              )}
-
-              <div className="flex justify-end">
-                {!rewriteFeedback ? (
-                  <button
-                    onClick={handleCheckActivity2A}
-                    disabled={!selectedRewriteChip || submittingRewrite}
-                    className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
-                  >
-                    {submittingRewrite && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                    <span>Submit Rewrite</span>
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => {
-                      if (activeRewriteIdx < rewriteTemplates.rewrite_templates.length - 1) {
-                        setActiveRewriteIdx(prev => prev + 1);
-                        setSelectedRewriteChip(null);
-                        setRewriteFeedback(null);
-                      } else {
-                        setActivity2SubStep("2B");
-                      }
-                    }}
-                    className="bg-accent-teal text-zinc-950 hover:bg-accent-teal/90 px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer"
-                  >
-                    {activeRewriteIdx < rewriteTemplates.rewrite_templates.length - 1 ? "Next Sentence" : "Proceed to Agreement"}
-                  </button>
-                )}
-              </div>
+          <div className="space-y-4 text-left animate-fade-in">
+            <span className="text-[10px] text-zinc-500 font-black uppercase tracking-wider block">Prompt Claim Statement:</span>
+            
+            <div className="p-5 bg-zinc-950 rounded-2xl border border-white/5 space-y-2">
+              <span className="text-[8px] text-zinc-500 font-mono uppercase">Original Argument:</span>
+              <p className="font-korean text-zinc-100 text-base font-black">"{rewriteTemplates.partial_agreement_templates[activePaIdx].statement}"</p>
             </div>
-          )}
 
-          {/* Activity 2B: Partial Agreement */}
-          {activity2SubStep === "2B" && (
-            <div className="space-y-4 text-left animate-fade-in">
-              <span className="text-[10px] text-zinc-500 font-black uppercase tracking-wider block">Respond to statement with partial agreement/soft disagreement:</span>
-              
-              <div className="p-4 bg-zinc-950 rounded-2xl border border-white/5 space-y-2">
-                <span className="text-[8px] text-zinc-500 font-mono uppercase">Prompt Statement:</span>
-                <p className="font-korean text-zinc-200 text-sm font-black">"{rewriteTemplates.partial_agreement_templates[activePaIdx].statement}"</p>
-              </div>
-
+            <div className="space-y-2">
+              <p className="text-xs font-bold text-zinc-300">Select response pattern tile option:</p>
               <div className="space-y-2">
-                <p className="text-xs font-bold text-zinc-300">Choose your response pattern tile:</p>
-                <div className="space-y-2">
-                  {rewriteTemplates.partial_agreement_templates[activePaIdx].options.map((opt: any) => (
-                    <button
-                      key={opt.ko_phrase}
-                      onClick={() => !paFeedback && setSelectedPaOption(opt.ko_phrase)}
-                      className={`w-full p-3.5 rounded-xl border text-left text-xs transition flex flex-col justify-between ${
-                        selectedPaOption === opt.ko_phrase
-                          ? "border-brand-500 bg-brand-500/10 text-white"
-                          : "border-white/5 bg-zinc-900 text-zinc-400 hover:border-white/10"
-                      }`}
-                      disabled={!!paFeedback}
-                    >
-                      <span className="text-[8px] uppercase tracking-widest font-mono text-brand-400 block mb-1">{opt.label}</span>
-                      <span className="font-korean text-zinc-200">{opt.ko_phrase}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {paFeedback && (
-                <div className="p-4 bg-zinc-950 rounded-xl border border-accent-teal/20 text-accent-teal text-xs space-y-1.5 animate-fade-in">
-                  <p className="font-black">✓ Response Registered!</p>
-                  <p className="text-zinc-400 leading-normal">{paFeedback.feedback}</p>
-                </div>
-              )}
-
-              <div className="flex justify-end">
-                {!paFeedback ? (
+                {rewriteTemplates.partial_agreement_templates[activePaIdx].options.map((opt: any) => (
                   <button
-                    onClick={handleCheckActivity2B}
-                    disabled={!selectedPaOption || submittingPa}
-                    className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
+                    key={opt.ko_phrase}
+                    onClick={() => !paFeedback && setSelectedPaOption(opt.ko_phrase)}
+                    className={`w-full p-4 rounded-xl border text-left text-xs transition flex flex-col justify-between ${
+                      selectedPaOption === opt.ko_phrase
+                        ? "border-brand-500 bg-brand-500/10 text-white"
+                        : "border-white/5 bg-zinc-900 text-zinc-400 hover:border-white/10"
+                    }`}
+                    disabled={!!paFeedback}
                   >
-                    {submittingPa && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                    <span>Submit Response</span>
+                    <span className="text-[8px] uppercase tracking-widest font-mono text-brand-400 block mb-1 font-black">{opt.label}</span>
+                    <span className="font-korean text-zinc-200 font-black">{opt.ko_phrase}</span>
                   </button>
-                ) : (
-                  <button
-                    onClick={() => {
-                      if (activePaIdx < rewriteTemplates.partial_agreement_templates.length - 1) {
-                        setActivePaIdx(prev => prev + 1);
-                        setSelectedPaOption(null);
-                        setPaFeedback(null);
-                      } else {
-                        setActivity2SubStep("2C");
-                      }
-                    }}
-                    className="bg-accent-teal text-zinc-950 hover:bg-accent-teal/90 px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer"
-                  >
-                    {activePaIdx < rewriteTemplates.partial_agreement_templates.length - 1 ? "Next Sentence" : "Proceed to Debate Chat"}
-                  </button>
-                )}
+                ))}
               </div>
             </div>
-          )}
 
-          {/* Activity 2C: Debate Discussion */}
-          {activity2SubStep === "2C" && (
-            <div className="space-y-4 text-left animate-fade-in">
-              {!chatStarted ? (
-                <div className="space-y-4">
-                  <span className="text-[10px] text-zinc-500 font-black uppercase tracking-wider block">Start a C1 debate discussion:</span>
-                  
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-zinc-300">Choose debate topic:</label>
-                    <select
-                      value={chatTopic}
-                      onChange={(e) => setChatTopic(e.target.value)}
-                      className="w-full bg-zinc-900 border border-white/10 p-3 rounded-xl outline-none text-xs text-white"
-                    >
-                      <option value="Study and work balance">Study and work balance</option>
-                      <option value="Social media and daily life">Social media and daily life</option>
-                      <option value="Working in teams vs alone">Working in teams vs alone</option>
-                    </select>
+            {paFeedback && (
+              <div className="p-4 bg-zinc-950 rounded-xl border border-accent-teal/20 text-accent-teal text-xs space-y-1.5 animate-fade-in">
+                <p className="font-black">✓ Response Registered!</p>
+                <p className="text-zinc-350 leading-normal">{paFeedback.feedback}</p>
+              </div>
+            )}
+
+            <div className="flex justify-between items-center pt-4 border-t border-white/5">
+              <button onClick={() => setStep(6)} className="glass-panel px-4 py-2 rounded-xl text-zinc-400 text-xs font-bold flex items-center gap-1.5"><ChevronLeft className="w-4 h-4" /> Back</button>
+              {!paFeedback ? (
+                <button
+                  onClick={handleCheckActivity5}
+                  disabled={!selectedPaOption || submittingPa}
+                  className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white px-5 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
+                >
+                  {submittingPa && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  <span>Register Response Pattern</span>
+                </button>
+              ) : (
+                <button
+                  onClick={() => {
+                    if (activePaIdx < rewriteTemplates.partial_agreement_templates.length - 1) {
+                      setActivePaIdx(prev => prev + 1);
+                      setSelectedPaOption(null);
+                      setPaFeedback(null);
+                    } else {
+                      setStep(8);
+                    }
+                  }}
+                  className="bg-accent-teal text-zinc-950 hover:bg-accent-teal/90 px-5 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer"
+                >
+                  {activePaIdx < rewriteTemplates.partial_agreement_templates.length - 1 ? "Next Statement" : "Proceed to Activity 6"}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Step 8: Activity 6 – Live dialogue with stance variety */}
+      {step === 8 && (
+        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
+          <div className="flex justify-between items-center border-b border-white/5 pb-4">
+            <h2 className="text-2xl font-black text-white flex items-center gap-2">
+              <Sparkles className="w-6 h-6 text-brand-400" />
+              <span>Activity F: Apply stance in conversation</span>
+            </h2>
+            <span className="text-xs text-zinc-500 font-bold">Step 8 of {totalSteps}</span>
+          </div>
+
+          <div className="space-y-4 text-left animate-fade-in">
+            {!chatStarted ? (
+              <div className="space-y-4 max-w-md mx-auto w-full">
+                <span className="text-[10px] text-zinc-500 font-black uppercase tracking-wider block">Select a debatable topic to discuss with Gwan-Sik:</span>
+                
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-zinc-300">Debatable Topic:</label>
+                  <select
+                    value={chatTopic}
+                    onChange={(e) => setChatTopic(e.target.value)}
+                    className="w-full bg-zinc-900 border border-white/10 p-3.5 rounded-xl outline-none text-xs text-white"
+                  >
+                    <option value="Study and work balance">Study and work balance (학업과 일의 균형)</option>
+                    <option value="Social media and daily life">Social media and daily life (소셜 미디어와 일상)</option>
+                    <option value="Working in teams vs alone">Working in teams vs alone (협동 업무와 개인 업무)</option>
+                  </select>
+                </div>
+
+                <div className="flex justify-end pt-2">
+                  <button
+                    onClick={handleStartDiscussion}
+                    className="bg-brand-500 hover:bg-brand-600 text-white px-8 py-3 rounded-xl text-sm font-bold transition flex items-center gap-2 cursor-pointer"
+                  >
+                    <MessageCircle className="w-4 h-4" /> Start Debate Room
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4 animate-fade-in">
+                {/* Live debate goals */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-[10px] font-bold">
+                  <div className={`p-2.5 rounded-xl border flex items-center gap-2 ${
+                    goalSofteningUsed ? "bg-accent-teal/10 border-accent-teal/30 text-accent-teal" : "bg-zinc-900 border-white/5 text-zinc-500"
+                  }`}>
+                    <CheckCircle2 className="w-4 h-4 shrink-0" />
+                    <span>Used softening/hedging marker (e.g. 것 같다, 대체로)</span>
                   </div>
-
-                  <div className="flex justify-end pt-2">
-                    <button
-                      onClick={handleStartDiscussion}
-                      className="bg-brand-500 hover:bg-brand-600 text-white px-8 py-3 rounded-xl text-sm font-bold transition flex items-center gap-2 cursor-pointer"
-                    >
-                      <MessageCircle className="w-4 h-4" /> Start Debate Discussion
-                    </button>
+                  <div className={`p-2.5 rounded-xl border flex items-center gap-2 ${
+                    goalConcessionUsed ? "bg-accent-teal/10 border-accent-teal/30 text-accent-teal" : "bg-zinc-900 border-white/5 text-zinc-500"
+                  }`}>
+                    <CheckCircle2 className="w-4 h-4 shrink-0" />
+                    <span>Used concession/partial agreement (e.g. 일리가 있다)</span>
                   </div>
                 </div>
-              ) : (
-                <div className="space-y-4 animate-fade-in">
-                  
-                  {/* Goals Checkpoints */}
-                  <div className="grid grid-cols-2 gap-2 text-[10px] font-bold">
-                    <div className={`p-2 rounded-lg border flex items-center gap-2 ${
-                      goalSofteningUsed ? "bg-accent-teal/10 border-accent-teal/30 text-accent-teal" : "bg-zinc-900 border-white/5 text-zinc-400"
-                    }`}>
-                      <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
-                      <span>Used 1 softening / hedging phrase</span>
-                    </div>
-                    <div className={`p-2 rounded-lg border flex items-center gap-2 ${
-                      goalConcessionUsed ? "bg-accent-teal/10 border-accent-teal/30 text-accent-teal" : "bg-zinc-900 border-white/5 text-zinc-400"
-                    }`}>
-                      <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
-                      <span>Used 1 concession / partial agreement</span>
-                    </div>
-                  </div>
 
-                  {/* Message Log */}
-                  <div className="bg-zinc-950 rounded-2xl border border-white/5 p-4 h-48 overflow-y-auto space-y-3 pr-1">
-                    {aiMessages.map((msg, idx) => (
-                      <div 
-                        key={idx} 
-                        className={`flex ${msg.sender === "user" ? "justify-end" : "justify-start"}`}
-                      >
-                        <div className={`p-3 rounded-2xl max-w-[85%] text-xs ${
-                          msg.sender === "user" 
-                            ? "bg-brand-500 text-white rounded-br-none" 
-                            : "bg-zinc-900 text-zinc-300 rounded-bl-none border border-white/5"
-                        }`}>
-                          <p>{msg.text}</p>
-                        </div>
+                {/* Message logs */}
+                <div className="bg-zinc-950 rounded-2xl border border-white/5 p-4 h-48 overflow-y-auto space-y-3 pr-1">
+                  {aiMessages.map((msg, idx) => (
+                    <div 
+                      key={idx} 
+                      className={`flex ${msg.sender === "user" ? "justify-end" : "justify-start"}`}
+                    >
+                      <div className={`p-3.5 rounded-2xl max-w-[85%] text-xs ${
+                        msg.sender === "user" 
+                          ? "bg-brand-500 text-white rounded-br-none" 
+                          : "bg-zinc-900 text-zinc-300 rounded-bl-none border border-white/5"
+                      }`}>
+                        <p>{msg.text}</p>
                       </div>
-                    ))}
-                  </div>
-
-                  {aiFinished && aiEvaluation && (
-                    <div className="p-4 bg-zinc-900 border border-white/5 rounded-2xl text-xs space-y-2 animate-fade-in">
-                      <div className="flex justify-between items-center font-bold text-white mb-1">
-                        <span className="flex items-center gap-1"><Award className="w-4 h-4 text-brand-400" /> Stance Quality Summary</span>
-                        <span className="text-brand-400">Hedging markers used: {aiEvaluation.hedging_count}</span>
-                      </div>
-                      <p className="text-zinc-300 leading-normal">{aiEvaluation.feedback}</p>
-                      <p className="text-[10px] text-zinc-500">Stance variety level: {aiEvaluation.stance_variety}</p>
                     </div>
-                  )}
+                  ))}
+                </div>
 
-                  {!aiFinished && (
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        value={aiText}
-                        onChange={(e) => setAiText(e.target.value)}
-                        placeholder="Type response in Korean..."
-                        className="flex-grow bg-zinc-900 border border-white/10 p-3 rounded-xl outline-none focus:border-brand-500 text-xs text-white"
-                        onKeyDown={(e) => e.key === "Enter" && handleSendAiTurn()}
-                      />
-                      {mode === "voice" && (
-                        <button 
-                          onClick={() => setAiText("제 생각에는 대체로 맞는 말씀이지만, 한편으로는 다른 문제도 있습니다.")}
-                          className="p-3 bg-zinc-900 hover:bg-zinc-800 border border-white/10 rounded-xl text-zinc-400 hover:text-white"
-                        >
-                          <Mic className="w-4 h-4" />
-                        </button>
-                      )}
-                      <button
-                        onClick={handleSendAiTurn}
-                        disabled={aiSending || !aiText.trim()}
-                        className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white px-4 py-2.5 rounded-xl text-xs font-bold cursor-pointer"
+                {aiFinished && aiEvaluation && (
+                  <div className="p-4 bg-zinc-900 border border-white/5 rounded-2xl text-xs space-y-2 animate-fade-in">
+                    <div className="flex justify-between items-center font-bold text-white mb-1">
+                      <span className="flex items-center gap-1"><Award className="w-4 h-4 text-brand-400" /> Stance Quality Summary</span>
+                      <span className="text-brand-400">Hedging markers used: {aiEvaluation.hedging_count}</span>
+                    </div>
+                    <p className="text-zinc-300 leading-normal">{aiEvaluation.feedback}</p>
+                    <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider">Stance variety level: {aiEvaluation.stance_variety || "Medium"}</p>
+                  </div>
+                )}
+
+                {!aiFinished && (
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={aiText}
+                      onChange={(e) => setAiText(e.target.value)}
+                      placeholder="Type your response in Korean using softening markers..."
+                      className="flex-grow bg-zinc-900 border border-white/10 p-3 rounded-xl outline-none focus:border-brand-500 text-xs text-white"
+                      onKeyDown={(e) => e.key === "Enter" && handleSendAiTurn()}
+                    />
+                    {mode === "voice" && (
+                      <button 
+                        onClick={() => setAiText("제 생각에는 대체로 맞는 말씀이지만, 한편으로는 다른 문제도 있습니다.")}
+                        className="p-3 bg-zinc-900 hover:bg-zinc-800 border border-white/10 rounded-xl text-zinc-400 hover:text-white"
                       >
-                        {aiSending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Send"}
+                        <Mic className="w-4 h-4" />
                       </button>
-                    </div>
-                  )}
+                    )}
+                    <button
+                      onClick={handleSendAiTurn}
+                      disabled={aiSending || !aiText.trim()}
+                      className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white px-5 py-2.5 rounded-xl text-xs font-bold cursor-pointer"
+                    >
+                      {aiSending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Send"}
+                    </button>
+                  </div>
+                )}
 
-                  <div className="flex justify-end gap-2">
+                <div className="flex justify-between items-center pt-2">
+                  <button 
+                    onClick={() => {
+                      setChatStarted(false);
+                      setGoalSofteningUsed(false);
+                      setGoalConcessionUsed(false);
+                    }} 
+                    className="text-xs text-zinc-500 hover:underline"
+                  >
+                    Reset debate topic
+                  </button>
+                  <div className="flex gap-2">
                     {!aiFinished && (
                       <button
                         onClick={handleFinishDiscussion}
                         disabled={finishingDiscussion}
-                        className="bg-zinc-900 hover:bg-zinc-800 border border-white/10 text-zinc-300 px-4 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
+                        className="bg-zinc-900 hover:bg-zinc-800 border border-white/10 text-zinc-300 px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
                       >
                         {finishingDiscussion && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                         <span>Finish & Evaluate Stance</span>
@@ -1309,50 +1474,27 @@ return (
                     )}
                     {aiFinished && (
                       <button
-                        onClick={() => setStep(5)}
-                        className="bg-accent-teal text-zinc-950 hover:bg-accent-teal/90 px-4 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer"
+                        onClick={() => setStep(9)}
+                        className="bg-accent-teal text-zinc-950 hover:bg-accent-teal/90 px-5 py-2 rounded-lg text-xs font-bold transition cursor-pointer"
                       >
-                        Proceed to Mini-Quiz
+                        Proceed to Stance Quiz
                       </button>
                     )}
                   </div>
                 </div>
-              )}
-            </div>
-          )}
-
-          <div className="flex justify-between items-center pt-4 border-t border-white/5">
-            <button 
-              onClick={() => {
-                if (activity2SubStep === "2C") {
-                  setActivity2SubStep("2B");
-                  setChatStarted(false);
-                  setGoalSofteningUsed(false);
-                  setGoalConcessionUsed(false);
-                } else if (activity2SubStep === "2B") {
-                  setActivity2SubStep("2A");
-                  setPaFeedback(null);
-                  setSelectedPaOption(null);
-                } else {
-                  setStep(3);
-                }
-              }} 
-              className="glass-panel px-4 py-2 rounded-xl hover:bg-white/5 text-zinc-400 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
-            >
-              <ChevronLeft className="w-4 h-4" /> Back
-            </button>
-            <div />
+              </div>
+            )}
           </div>
         </div>
       )}
 
-      {/* Screen 5: Mini-Quiz Checkpoint */}
-      {step === 5 && quizBlueprint.length > 0 && (
+      {/* Step 9: Activity 7 – Stance strategy quiz */}
+      {step === 9 && quizBlueprint.length > 0 && (
         <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
           <div className="flex justify-between items-center border-b border-white/5 pb-4">
             <h2 className="text-2xl font-black text-white flex items-center gap-2">
               <Award className="w-6 h-6 text-brand-400" />
-              <span>Stance Checkpoint Quiz</span>
+              <span>Activity G: Final stance quiz</span>
             </h2>
             <span className="text-xs text-zinc-500 font-bold">Question {quizIdx + 1}/{quizBlueprint.length}</span>
           </div>
@@ -1371,7 +1513,7 @@ return (
                     quizSelectedOpt === opt 
                       ? "border-brand-500 bg-brand-500/10 text-white" 
                       : "border-white/5 bg-zinc-900/60 text-zinc-400 hover:border-white/10"
-                  } ${quizChecked && opt === quizBlueprint[quizIdx].correct_answer ? "border-accent-teal bg-accent-teal/10 text-white" : ""}`}
+                  } ${quizChecked && opt === quizBlueprint[quizIdx].correct_answer ? "border-accent-teal bg-accent-teal/10 text-white font-bold" : ""}`}
                   disabled={quizChecked}
                 >
                   {opt}
@@ -1387,12 +1529,12 @@ return (
                 : "bg-accent-pink/5 border-accent-pink/20 text-accent-pink"
             }`}>
               <p className="font-black">{quizCorrect ? "✓ Correct!" : `✗ Incorrect (Correct Answer: ${quizBlueprint[quizIdx].correct_answer})`}</p>
-              <p className="text-zinc-400 leading-normal">{quizBlueprint[quizIdx].explanation}</p>
+              <p className="text-zinc-350 leading-normal">{quizBlueprint[quizIdx].explanation}</p>
             </div>
           )}
 
           <div className="flex justify-between items-center pt-4 border-t border-white/5">
-            <div />
+            <button onClick={() => setStep(8)} className="glass-panel px-4 py-2 rounded-xl text-zinc-400 text-xs font-bold flex items-center gap-1.5"><ChevronLeft className="w-4 h-4" /> Back</button>
             {!quizChecked ? (
               <button
                 onClick={handleCheckQuiz}
@@ -1408,39 +1550,42 @@ return (
                 className="bg-accent-teal text-zinc-950 hover:bg-accent-teal/90 px-5 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
               >
                 {finishingQuiz && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                <span>{quizIdx < quizBlueprint.length - 1 ? "Next Question" : "Complete & Finish"}</span>
+                <span>{quizIdx < quizBlueprint.length - 1 ? "Next Question" : "Complete & Receive Badge"}</span>
               </button>
             )}
           </div>
         </div>
       )}
 
-      {/* Screen 6: Graduation / Homework Checklist */}
-      {step === 6 && (
+      {/* Step 10: Completion / Graduation */}
+      {step === 10 && (
         <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center text-center animate-fade-in">
-          <div className="p-3 bg-accent-teal/10 rounded-full border border-accent-teal/25 w-fit mx-auto text-accent-teal shrink-0">
-            <Award className="w-10 h-10 animate-bounce shrink-0" />
+          <div className="p-4 bg-accent-teal/10 rounded-full border border-accent-teal/25 w-fit mx-auto text-accent-teal shrink-0">
+            <Award className="w-12 h-12 animate-bounce shrink-0" />
           </div>
 
-          <h2 className="text-2xl font-black text-white">Phase 3 Completed!</h2>
-          <p className="text-xs text-zinc-400">You have earned the badge & graduation reward:</p>
+          <h2 className="text-3xl font-black text-white">Stance & Soft Power Completion</h2>
+          <p className="text-xs text-zinc-400">Congratulations! You have completed Phase 3 and earned your graduation credentials:</p>
 
-          <div className="bg-zinc-900/60 p-4 rounded-2xl border border-white/5 max-w-sm mx-auto w-full flex items-center gap-4 text-left">
-            <div className="p-2.5 bg-brand-500/10 text-brand-400 rounded-xl border border-brand-500/25">
-              <Award className="w-6 h-6" />
+          <div className="bg-zinc-900/60 p-4 rounded-2xl border border-white/5 max-w-sm mx-auto w-full flex items-center gap-4 text-left shadow-lg">
+            <div className="p-3 bg-brand-500/10 text-brand-400 rounded-xl border border-brand-500/25">
+              <Award className="w-7 h-7" />
             </div>
             <div>
               <p className="text-xs font-extrabold text-white">{quizBadge || "Nuanced Communicator C1"}</p>
-              <p className="text-[10px] text-zinc-500">Graduation Score: {quizScore || 100}% | +150 XP rewarded</p>
+              <p className="text-[10px] text-zinc-400">Graduation Score: {quizScore || 100}% | +150 XP rewarded</p>
             </div>
           </div>
 
-          {/* Homework checklist */}
+          {/* Homework recommended lists */}
           <div className="bg-zinc-950 p-5 rounded-2xl border border-white/5 text-left space-y-3 max-w-md mx-auto w-full">
             <span className="text-[9px] text-zinc-500 uppercase tracking-widest font-mono font-bold block">Spaced Homework Recommendations:</span>
             
             <div className="space-y-2">
-              {homeworkItems.map((item: any) => (
+              {(homeworkItems.length > 0 ? homeworkItems : [
+                { id: "hw1", text: "Identify stance markers in a Korean newspaper editorial." },
+                { id: "hw2", text: "Practice softening three blunt disagreements with classmates." }
+              ]).map((item: any) => (
                 <div 
                   key={item.id}
                   onClick={() => handleToggleHomework(item.id, !!completedHomework[item.id])}
@@ -1449,7 +1594,7 @@ return (
                   <button className="mt-0.5 shrink-0">
                     <CheckSquare className={`w-4 h-4 ${completedHomework[item.id] ? "text-accent-teal" : "text-zinc-600"}`} />
                   </button>
-                  <p className="text-[11px] text-zinc-300 leading-normal">{item.text}</p>
+                  <p className="text-[11px] text-zinc-350 leading-normal">{item.text}</p>
                 </div>
               ))}
             </div>
@@ -1458,7 +1603,7 @@ return (
           {/* Practice nuanced opinions with AI tutor */}
           {!practiceSessionId ? (
             <div className="bg-zinc-950 p-4 rounded-2xl border border-white/5 max-w-md mx-auto w-full space-y-2 text-left">
-              <span className="text-[9px] text-zinc-500 uppercase tracking-widest font-mono font-bold block">AI Stance Practice:</span>
+              <span className="text-[9px] text-zinc-500 uppercase tracking-widest font-mono font-bold block">Optional AI Stance Room:</span>
               <p className="text-[10px] text-zinc-400">Practice shifting opinions between Strong and Cautious versions in a live tutoring room.</p>
               <div className="flex justify-end">
                 <button
@@ -1510,7 +1655,7 @@ return (
                   </button>
                   <button
                     onClick={handleFinishPractice}
-                    className="bg-zinc-850 hover:bg-zinc-800 text-zinc-300 px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer border border-white/5"
+                    className="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer border border-white/5"
                   >
                     Done
                   </button>
@@ -1534,8 +1679,12 @@ return (
 
           <div className="flex flex-col gap-2 max-w-xs mx-auto pt-4 border-t border-white/5 w-full">
             <button 
-              onClick={onComplete}
-              className="bg-accent-teal hover:bg-accent-teal/90 text-zinc-950 font-black py-3 px-8 rounded-xl transition text-sm flex items-center justify-center gap-1.5 cursor-pointer shadow-lg shadow-accent-teal/20"
+              onClick={() => {
+                // Dispatch completion bonus XP
+                window.dispatchEvent(new CustomEvent("hangeulai-xp", { detail: { amount: 150, type: "correct" } }));
+                onComplete();
+              }}
+              className="bg-accent-teal hover:bg-accent-teal/90 text-zinc-950 font-black py-4 px-8 rounded-xl transition text-base flex items-center justify-center gap-1.5 cursor-pointer shadow-lg shadow-accent-teal/20"
             >
               <span>Graduate Phase 3</span>
               <ArrowRight className="w-4 h-4" />

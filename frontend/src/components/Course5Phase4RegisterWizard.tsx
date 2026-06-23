@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -17,7 +17,8 @@ import {
   MessageCircle,
   Users,
   Briefcase,
-  GraduationCap
+  GraduationCap,
+  Info
 } from "lucide-react";
 
 let API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
@@ -45,6 +46,39 @@ async function apiJson(path: string, opts: RequestInit = {}) {
   return res.json();
 }
 
+const playSFX = (type: "correct" | "wrong") => {
+  if (typeof window === "undefined") return;
+  try {
+    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    if (type === "correct") {
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(659.25, ctx.currentTime);
+      gain.gain.setValueAtTime(0.1, ctx.currentTime);
+      osc.start();
+      osc.frequency.setValueAtTime(783.99, ctx.currentTime + 0.1);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+      osc.stop(ctx.currentTime + 0.4);
+      window.dispatchEvent(new CustomEvent("hangeulai-xp", { detail: { amount: 20, type: "correct" } }));
+    } else {
+      osc.type = "triangle";
+      osc.frequency.setValueAtTime(150.0, ctx.currentTime);
+      gain.gain.setValueAtTime(0.15, ctx.currentTime);
+      osc.start();
+      osc.frequency.exponentialRampToValueAtTime(80.0, ctx.currentTime + 0.35);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+      osc.stop(ctx.currentTime + 0.4);
+      window.dispatchEvent(new CustomEvent("hangeulai-xp", { detail: { amount: -10, type: "wrong" } }));
+    }
+  } catch (e) {
+    console.error("AudioContext not supported or blocked", e);
+  }
+};
+
 interface Course5Phase4RegisterWizardProps {
   activeLesson: any;
   speakWord: (text: string) => void;
@@ -59,14 +93,18 @@ export default function Course5Phase4RegisterWizard({
   const [step, setStep] = useState(1);
   const [showOutline, setShowOutline] = useState(false);
   const [mode, setMode] = useState<"text" | "voice">("text");
-  const totalSteps = 6;
+  const totalSteps = 9;
 
   // Data loaded from Backend
   const [metadata, setMetadata] = useState<any>(null);
   const [coreData, setCoreData] = useState<any>(null);
 
-  // Activity 1 states
-  const [activity1Step, setActivity1Step] = useState<"1A" | "1B">("1A");
+  // Micro-check C1
+  const [c1Selected, setC1Selected] = useState<string | null>(null);
+  const [c1Checked, setC1Checked] = useState(false);
+  const [c1Correct, setC1Correct] = useState<boolean | null>(null);
+
+  // Activity 1 states (Register Recognition)
   const [recognitionItems, setRecognitionItems] = useState<any[]>([]);
   const [recIdx, setRecIdx] = useState(0);
   const [selectedListener, setSelectedListener] = useState<string | null>(null);
@@ -74,10 +112,7 @@ export default function Course5Phase4RegisterWizard({
   const [act1Checked, setAct1Checked] = useState(false);
   const [act1Correct, setAct1Correct] = useState<boolean | null>(null);
 
-  // Activity 2 states
-  const [activity2SubStep, setActivity2SubStep] = useState<"2A" | "2B" | "2C">("2A");
-  
-  // Activity 2A transform templates
+  // Activity 2 states (Transform adapts)
   const [transformTemplates, setTransformTemplates] = useState<any[]>([]);
   const [activeTransIdx, setActiveTransIdx] = useState(0);
   const [selectedContext, setSelectedContext] = useState<string>("friend");
@@ -85,13 +120,13 @@ export default function Course5Phase4RegisterWizard({
   const [builtTransform, setBuiltTransform] = useState<any>(null);
   const [buildingTransform, setBuildingTransform] = useState(false);
 
-  // Activity 2B Softening Builder
+  // Activity 3 states (Softening Builder)
   const [selectedSoftener, setSelectedSoftener] = useState<string | null>(null);
   const [selectedBaseIdea, setSelectedBaseIdea] = useState<string>("그건 틀렸어요 (That is wrong)");
   const [builtSoften, setBuiltSoften] = useState<any>(null);
   const [buildingSoften, setBuildingSoften] = useState(false);
 
-  // Activity 2C AI Context Switch Roleplay
+  // Activity 4 states (Contrastive role-play: friend vs teacher)
   const [roleplaySessionId, setRoleplaySessionId] = useState<string | null>(null);
   const [roleplayScenario, setRoleplayScenario] = useState<string>("friend"); // friend vs teacher
   const [roleplayMessages, setRoleplayMessages] = useState<any[]>([]);
@@ -101,7 +136,7 @@ export default function Course5Phase4RegisterWizard({
   const [roleplayFeedback, setRoleplayFeedback] = useState<string | null>(null);
   const [recording, setRecording] = useState(false);
 
-  // Quiz states
+  // Quiz states (Activity 5)
   const [quizBlueprint, setQuizBlueprint] = useState<any[]>([]);
   const [quizIdx, setQuizIdx] = useState(0);
   const [quizChecked, setQuizChecked] = useState(false);
@@ -112,11 +147,7 @@ export default function Course5Phase4RegisterWizard({
   const [finishingQuiz, setFinishingQuiz] = useState(false);
   const [quizBadge, setQuizBadge] = useState<string | null>(null);
 
-  // Homework states
-  const [homeworkItems, setHomeworkItems] = useState<any[]>([]);
-  const [completedHomework, setCompletedHomework] = useState<Record<string, boolean>>({});
-
-  // Homework AI Politeness Practice Rooms
+  // Activity 6 states (Politeness practice chat)
   const [practiceSessionId, setPracticeSessionId] = useState<string | null>(null);
   const [practiceScenario, setPracticeScenario] = useState<string>("friend");
   const [practiceMessages, setPracticeMessages] = useState<any[]>([]);
@@ -124,6 +155,23 @@ export default function Course5Phase4RegisterWizard({
   const [practiceSending, setPracticeSending] = useState(false);
   const [practiceFinished, setPracticeFinished] = useState(false);
   const [practiceFeedback, setPracticeFeedback] = useState<string | null>(null);
+
+  // Homework check lists (Step 9)
+  const [homeworkItems, setHomeworkItems] = useState<any[]>([]);
+  const [completedHomework, setCompletedHomework] = useState<Record<string, boolean>>({});
+
+  // Persist progress to localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem("hangeulai_c5p4_step");
+    if (saved) {
+      const parsedStep = parseInt(saved, 10);
+      if (parsedStep >= 1 && parsedStep <= 9) setStep(parsedStep);
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem("hangeulai_c5p4_step", String(step));
+  }, [step]);
 
   // Load API Data per Step
   useEffect(() => {
@@ -138,15 +186,13 @@ export default function Course5Phase4RegisterWizard({
         } else if (step === 3 && recognitionItems.length === 0) {
           const res = await apiJson("/practice/register/recognition");
           setRecognitionItems(res.items || []);
-        } else if (step === 4) {
-          if (transformTemplates.length === 0) {
-            const res = await apiJson("/practice/register/transform-templates");
-            setTransformTemplates(res || []);
-          }
-        } else if (step === 5 && quizBlueprint.length === 0) {
+        } else if (step === 4 && transformTemplates.length === 0) {
+          const res = await apiJson("/practice/register/transform-templates");
+          setTransformTemplates(res || []);
+        } else if (step === 7 && quizBlueprint.length === 0) {
           const res = await apiJson("/quiz/korean4/phase-4/start", { method: "POST" });
           setQuizBlueprint(res.blueprint || []);
-        } else if (step === 6 && homeworkItems.length === 0) {
+        } else if (step === 9 && homeworkItems.length === 0) {
           const res = await apiJson("/phases/korean4/4/homework");
           setHomeworkItems(res || []);
         }
@@ -161,51 +207,41 @@ export default function Course5Phase4RegisterWizard({
     speakWord(text);
   };
 
-  // Activity 1 Checks
-  const handleCheckActivity1 = async () => {
+  const handleC1Check = () => {
+    if (!c1Selected) return;
+    setC1Checked(true);
+    setC1Correct(true);
+    playSFX("correct");
+  };
+
+  // Activity 1 check
+  const handleCheckActivity1 = () => {
     const current = recognitionItems[recIdx];
     if (!current) return;
 
-    let isCorrect = false;
-    if (activity1Step === "1A") {
-      isCorrect = selectedListener === current.listener;
-    } else {
-      isCorrect = selectedApprop === "OK"; // Simple check
-    }
+    const correctListener = selectedListener === current.listener;
+    const correctApprop = selectedApprop === "OK"; // Simple mapping for OK check
+    const isCorrect = correctListener && correctApprop;
 
     setAct1Checked(true);
     setAct1Correct(isCorrect);
-
-    try {
-      await apiJson("/practice/register/recognition/answer", {
-        method: "POST",
-        body: JSON.stringify({
-          item_id: `${current.id}_${activity1Step}`,
-          is_correct: isCorrect,
-          time_taken_ms: 3000
-        })
-      });
-    } catch (e) {
-      console.error(e);
-    }
+    playSFX(isCorrect ? "correct" : "wrong");
   };
 
   const handleNextActivity1 = () => {
     setAct1Checked(false);
     setAct1Correct(null);
-    if (activity1Step === "1A") {
-      setActivity1Step("1B");
+    setSelectedListener(null);
+    setSelectedApprop(null);
+
+    if (recIdx < recognitionItems.length - 1) {
+      setRecIdx(recIdx + 1);
     } else {
-      setActivity1Step("1A");
-      if (recIdx < recognitionItems.length - 1) {
-        setRecIdx(recIdx + 1);
-      } else {
-        setStep(4);
-      }
+      setStep(4); // Go to Transform activity
     }
   };
 
-  // Activity 2A transform register
+  // Activity 2 Adapt transform
   const handleTransformRegister = async () => {
     const current = transformTemplates[activeTransIdx];
     if (!current || !selectedTransformOption) return;
@@ -235,11 +271,11 @@ export default function Course5Phase4RegisterWizard({
     if (activeTransIdx < transformTemplates.length - 1) {
       setActiveTransIdx(activeTransIdx + 1);
     } else {
-      setActivity2SubStep("2B");
+      setStep(5); // Move to Softening
     }
   };
 
-  // Activity 2B Soften Builder
+  // Activity 3 Softening
   const handleSoftenRegister = async () => {
     if (!selectedSoftener) return;
     setBuildingSoften(true);
@@ -260,7 +296,7 @@ export default function Course5Phase4RegisterWizard({
     }
   };
 
-  // Activity 2C AI Context Switch Roleplay
+  // Activity 4 Contrastive Roleplay
   const handleStartRoleplay = async (scen: string) => {
     setRoleplayScenario(scen);
     setRoleplayMessages([]);
@@ -327,7 +363,7 @@ export default function Course5Phase4RegisterWizard({
     }, 2000);
   };
 
-  // Quiz checks
+  // Activity 5 Quiz check
   const handleCheckQuiz = async () => {
     const current = quizBlueprint[quizIdx];
     if (!current || !quizSelectedOpt) return;
@@ -335,6 +371,7 @@ export default function Course5Phase4RegisterWizard({
     const isCorrect = quizSelectedOpt === current.correct_answer;
     setQuizChecked(true);
     setQuizCorrect(isCorrect);
+    playSFX(isCorrect ? "correct" : "wrong");
     if (!isCorrect) {
       setQuizMistakes((prev) => [...prev, current.id]);
     }
@@ -373,7 +410,7 @@ export default function Course5Phase4RegisterWizard({
         });
         setQuizScore(score);
         setQuizBadge(res.badge || "Polite Speaker B1");
-        setStep(6);
+        setStep(8); // Go to Activity 6
       } catch (err) {
         console.error(err);
       } finally {
@@ -382,21 +419,8 @@ export default function Course5Phase4RegisterWizard({
     }
   };
 
-  // Homework check logging
-  const handleToggleHomework = async (id: string, currentStatus: boolean) => {
-    setCompletedHomework((prev) => ({ ...prev, [id]: !currentStatus }));
-    try {
-      await apiJson("/phases/korean4/4/homework/check", {
-        method: "POST",
-        body: JSON.stringify({ homework_id: id, checked: !currentStatus })
-      });
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  // Homework AI Politeness Practice Rooms
-  const handleStartHomeworkPractice = async (scen: string) => {
+  // Activity 6 Politeness Practice
+  const handleStartPractice = async (scen: string) => {
     setPracticeScenario(scen);
     setPracticeMessages([]);
     setPracticeFeedback(null);
@@ -450,69 +474,75 @@ export default function Course5Phase4RegisterWizard({
     }
   };
 
-    const outlineSteps = [
-    { num: 1, label: "Screen 1 – Welcome / Phase Overview" },
-    { num: 2, label: "Screen 2 – Register, Politeness & Softening Chunks" },
-    { num: 3, label: "Screen 3 – Activity 1: Recognize Appropriate Register" },
-    { num: 4, label: "Screen 4 – Activity 2: Adjust & Soften Disagreements" },
-    { num: 5, label: "Screen 5 – Mini-Quiz: Polite Interaction Check" },
-    { num: 6, label: "Screen 6 – Homework & AI Politeness Practices" }
+  const handleToggleHomework = async (id: string, currentStatus: boolean) => {
+    setCompletedHomework((prev) => ({ ...prev, [id]: !currentStatus }));
+    try {
+      await apiJson("/phases/korean4/4/homework/check", {
+        method: "POST",
+        body: JSON.stringify({ homework_id: id, checked: !currentStatus })
+      });
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const outlineSteps = [
+    { num: 1, label: "Welcome & Goals" },
+    { num: 2, label: "Concept 1: Definition" },
+    { num: 3, label: "Activity 1: Recognition" },
+    { num: 4, label: "Activity 2: Transforms" },
+    { num: 5, label: "Activity 3: Softenings" },
+    { num: 6, label: "Activity 4: Peer/Teacher Chat" },
+    { num: 7, label: "Activity 5: Strategy Quiz" },
+    { num: 8, label: "Activity 6: Practice Lab" },
+    { num: 9, label: "Phase Graduation" }
   ];
 
-  
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      window.dispatchEvent(new CustomEvent("hangeulai-step-change", {
-        detail: {
-          courseId: 5,
-          phaseNum: 4,
-          step: step
-        }
-      }));
-    }
-  }, [step]);
-
-return (
-    <div className="flex-grow flex flex-col justify-between">
+  return (
+    <div className="flex-grow flex flex-col justify-between min-h-[75vh] text-zinc-100 font-sans">
       
       {/* Top Header tracking */}
       <header className="flex justify-between items-center py-4 border-b border-white/5 mb-6">
         <div className="flex items-center space-x-4">
           <div className="p-3 rounded-2xl bg-zinc-900 border border-white/10 shadow-lg">
-            <BookOpen className="w-6 h-6 text-brand-400" />
+            <GraduationCap className="w-6 h-6 text-brand-400" />
           </div>
           <div>
             <h2 className="font-black text-xl text-white tracking-tight flex items-center gap-2">
-              <span>{activeLesson?.title || "Korean 4.4 – Politeness & Register in Real Life"}</span>
+              <span>{activeLesson?.title || "Korean 4.4 – Register & Politeness"}</span>
+              <span className="px-2 py-0.5 text-[10px] font-bold bg-brand-500/10 text-brand-300 border border-brand-500/20 rounded-md uppercase tracking-wider font-sans">B1 Register</span>
             </h2>
-            <p className="text-xs text-zinc-500 font-medium">Topic: Casual vs Respectful Speech Registers</p>
+            <p className="text-xs text-zinc-400 font-medium">Course 5 &bull; Phase 4</p>
           </div>
         </div>
         
         {/* Active progress bar */}
         <div className="flex items-center space-x-4">
-          <div className="w-40 h-3 bg-zinc-900/80 rounded-full overflow-hidden border border-white/5 p-[2px]">
+          <div className="w-40 h-3 bg-zinc-950 rounded-full overflow-hidden border border-white/5 p-[2px]">
             <div 
-              className="h-full bg-gradient-to-r from-yellow-500 via-orange-500 to-indigo-500 rounded-full transition-all duration-500" 
+              className="h-full bg-gradient-to-r from-amber-500 via-orange-500 to-yellow-500 rounded-full transition-all duration-500" 
               style={{ width: `${(step / totalSteps) * 100}%` }}
             />
           </div>
           <span className="text-xs text-zinc-400 font-bold">{Math.round((step / totalSteps) * 100)}%</span>
           <button 
+            id="toggle-outline-btn"
             onClick={() => setShowOutline(!showOutline)}
-            className="text-[10px] bg-zinc-900 border border-white/10 hover:bg-zinc-900 text-zinc-300 px-3 py-1.5 rounded-lg transition duration-200 cursor-pointer uppercase tracking-wider font-bold"
+            className="text-[10px] bg-zinc-900 border border-white/10 hover:bg-zinc-800 text-zinc-300 px-3 py-1.5 rounded-lg transition duration-200 cursor-pointer uppercase tracking-wider font-extrabold"
           >
             {showOutline ? "Hide Outline" : "View Outline"}
           </button>
         </div>
       </header>
+
       {showOutline && (
-        <div className="mb-6 p-5 bg-zinc-950/80 rounded-3xl border border-white/5 shadow-2xl animate-in fade-in slide-in-from-top-4 duration-300">
-          <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest block mb-3 font-mono">Curriculum Syllabus Map</span>
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
+        <div className="mb-6 p-5 bg-zinc-950/80 rounded-3xl border border-white/10 shadow-2xl animate-in fade-in slide-in-from-top-4 duration-300">
+          <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest block mb-3 font-mono">Curriculum Roadmap</span>
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-9 gap-2">
             {outlineSteps.map(s => (
               <button
                 key={s.num}
+                id={`outline-step-${s.num}`}
                 onClick={() => {
                   setStep(s.num);
                   setShowOutline(false);
@@ -532,110 +562,118 @@ return (
 
       {/* Screen 1: Welcome/Overview */}
       {step === 1 && (
-        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center text-center animate-fade-in">
-          <div className="p-3 bg-brand-500/10 rounded-full border border-brand-500/25 w-fit mx-auto text-brand-400 shrink-0">
-            <Sparkles className="w-8 h-8 animate-pulse shrink-0" />
+        <div className="glass-panel p-10 rounded-[2.5rem] bg-zinc-900/40 border border-white/10 shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center text-center animate-fade-in">
+          <div className="p-4 bg-brand-500/10 rounded-full border border-brand-500/25 w-fit mx-auto text-brand-400 shrink-0">
+            <GraduationCap className="w-10 h-10 animate-bounce shrink-0" />
           </div>
           
-          <h2 className="text-5xl font-black text-white tracking-tight font-sans">Korean 4.4</h2>
-          <h3 className="text-2xl font-extrabold text-brand-400 mt-2">Politeness & Register in Real Life</h3>
+          <div>
+            <h2 className="text-4xl md:text-5xl font-black text-white tracking-tight">Register &amp; Politeness</h2>
+            <h3 className="text-xl font-extrabold text-brand-400 mt-2">Friends vs Teachers vs Staff</h3>
+          </div>
           
-          <p className="text-zinc-300 text-base leading-relaxed max-w-2xl mx-auto">
+          <p className="text-zinc-300 text-base leading-relaxed max-w-2xl mx-auto font-sans">
             {metadata?.description || "Speak differently with friends, teachers, and staff."}
           </p>
 
-          <div className="bg-zinc-900/60 p-5 rounded-2xl border border-white/5 text-left text-xs text-zinc-400 space-y-3 max-w-md mx-auto w-full">
+          <div className="bg-zinc-950/60 p-6 rounded-2xl border border-white/5 text-left text-sm text-zinc-400 space-y-3 max-w-2xl mx-auto w-full">
             <p className="text-[10px] text-zinc-500 font-mono uppercase tracking-wider font-black">🎯 Objectives:</p>
-            <ul className="list-disc list-inside space-y-1.5 text-zinc-300 pl-1">
+            <ul className="list-disc list-inside space-y-1 text-zinc-300 pl-1 font-sans">
               {(metadata?.goals || [
-                "Recognize when speech is casual, polite, or more formal",
-                "Adjust your Korean when speaking to friends, older people, and staff",
-                "Use softening phrases for polite disagreement and requests"
+                "Understand register rules and why politeness varies with listener and context",
+                "Recognize appropriate register forms for friends vs teachers vs strangers",
+                "Transform sentences appropriately matching listener constraints",
+                "Soften direct speech, commands, or complaints"
               ]).map((g: string, idx: number) => (
-                <li key={idx}>{g}</li>
+                <li key={idx} className="text-zinc-300">{g}</li>
               ))}
             </ul>
-            <p className="pt-2"><strong>⏱️ Estimated Time:</strong> {metadata?.estimated_minutes || 30}–35 minutes</p>
+            <div className="pt-2 grid grid-cols-2 gap-2 text-xs border-t border-white/5 mt-4">
+              <p><strong>⏱️ Estimated Time:</strong> {metadata?.estimated_minutes || 35} minutes</p>
+              <p><strong>📋 Level:</strong> Intermediate B1 (Korean 4.4)</p>
+            </div>
           </div>
 
           {/* Mode Selector */}
-          <div className="bg-zinc-950 p-4 rounded-2xl border border-white/5 max-w-sm mx-auto w-full space-y-2 text-left">
+          <div className="bg-zinc-950 p-4 rounded-2xl border border-white/5 max-w-xs mx-auto w-full space-y-2 text-left">
             <span className="text-[9px] text-zinc-500 uppercase tracking-widest font-black block">Conversation Mode</span>
             <div className="grid grid-cols-2 gap-2">
               <button
                 onClick={() => setMode("text")}
-                className={`p-3 rounded-xl border text-xs font-bold transition ${
+                className={`p-2.5 rounded-xl border text-xs font-bold transition cursor-pointer ${
                   mode === "text" 
                     ? "border-brand-500 bg-brand-500/10 text-white" 
                     : "border-white/5 bg-zinc-900/60 text-zinc-400 hover:border-white/10"
                 }`}
               >
-                Text Input
+                Text input
               </button>
               <button
                 onClick={() => setMode("voice")}
-                className={`p-3 rounded-xl border text-xs font-bold transition flex items-center justify-center gap-1.5 ${
+                className={`p-2.5 rounded-xl border text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
                   mode === "voice" 
                     ? "border-brand-500 bg-brand-500/10 text-white" 
                     : "border-white/5 bg-zinc-900/60 text-zinc-400 hover:border-white/10"
                 }`}
               >
                 <Mic className="w-3.5 h-3.5" />
-                <span>Voice + Text</span>
+                <span>Voice input</span>
               </button>
             </div>
           </div>
 
-          <div className="flex flex-col gap-3 max-w-xs mx-auto pt-2">
+          <div className="flex flex-col gap-3 max-w-xs mx-auto pt-4">
             <button 
+              id="start-phase-btn"
               onClick={() => setStep(2)}
-              className="bg-brand-500 hover:bg-brand-600 text-white font-black py-4 px-10 rounded-2xl transition text-base flex items-center justify-center gap-2.5 cursor-pointer shadow-lg shadow-brand-500/20"
+              className="bg-brand-600 hover:bg-brand-500 text-white font-black py-4 px-10 rounded-2xl transition text-base flex items-center justify-center gap-2.5 cursor-pointer shadow-lg shadow-brand-600/20"
             >
               <span>Start Phase 4</span>
-              <ChevronRight className="w-4 h-4" />
+              <ChevronRight className="w-5 h-5" />
             </button>
-            
           </div>
-
-          
         </div>
       )}
 
-      {/* Screen 2: Concept Explanation */}
+      {/* Screen 2: Concept 1 - Register Definition */}
       {step === 2 && (
-        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
+        <div className="glass-panel p-10 rounded-[2.5rem] bg-zinc-900/40 border border-white/10 shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in font-sans">
           <div className="flex justify-between items-center border-b border-white/5 pb-4">
             <h2 className="text-2xl font-black text-white flex items-center gap-2">
               <BookOpen className="w-6 h-6 text-brand-400" />
-              <span>Register, Politeness & Softening</span>
+              <span>Concept Screen 1: Definition of Register</span>
             </h2>
-            <span className="text-xs text-zinc-500 font-bold">Step 2 of {totalSteps}</span>
+            <span className="text-xs text-zinc-400 font-mono">Step 2 of {totalSteps}</span>
           </div>
 
-          <div className="bg-brand-500/5 p-4 rounded-xl border border-brand-500/10 text-xs leading-relaxed text-zinc-300">
-            <p className="font-bold text-white mb-1">What is “register” and politeness?</p>
-            <p className="italic">
-              “Register is how you say something, not just what you say. You change your language depending on who you’re talking to and the situation.”
+          {/* Goal Callout */}
+          <div className="bg-brand-950/30 p-5 rounded-2xl border border-brand-500/20 text-sm leading-relaxed text-zinc-300 text-left">
+            <div className="flex items-center gap-2 mb-2 font-sans">
+              <Info className="w-4 h-4 text-brand-400" />
+              <span className="font-bold text-white uppercase tracking-wider text-xs font-sans">Pragmatic Definition:</span>
+            </div>
+            <p className="italic text-zinc-200">
+              "Register is how you say something, not just what you say. You change your language depending on who you’re talking to and the situation."
             </p>
           </div>
 
-          {/* Three Context Examples */}
-          <div className="space-y-2 text-left text-xs">
-            <span className="text-[9px] text-zinc-500 font-bold uppercase tracking-wider block">Context Examples (Meaning: Can we meet tomorrow?)</span>
+          {/* Register Examples */}
+          <div className="space-y-3.5 text-left text-xs">
+            <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider block font-sans">Korean Register Spectrum</span>
             {coreData?.register_examples?.map((ex: any, idx: number) => (
-              <div key={idx} className="p-3 bg-zinc-900 border border-white/5 rounded-xl space-y-2">
-                <span className="text-brand-400 font-bold font-sans">Semantic Intent: "{ex.meaning}"</span>
-                <div className="grid grid-cols-3 gap-2 text-[10px]">
-                  <div className="bg-zinc-950 p-2 rounded border border-white/5">
-                    <span className="text-red-400 font-bold block mb-0.5">Friend (Casual):</span>
+              <div key={idx} className="p-4 bg-zinc-900 border border-white/5 rounded-2xl space-y-3">
+                <span className="text-brand-400 font-bold">Semantic Intent: "{ex.meaning}"</span>
+                <div className="grid grid-cols-3 gap-2.5 text-[10px]">
+                  <div className="bg-zinc-950 p-2.5 rounded-xl border border-white/5">
+                    <span className="text-red-400 font-bold block mb-1">Friend (반말):</span>
                     <span className="font-korean">{ex.friend}</span>
                   </div>
-                  <div className="bg-zinc-950 p-2 rounded border border-white/5">
-                    <span className="text-green-400 font-bold block mb-0.5">Teacher (Honorific):</span>
+                  <div className="bg-zinc-950 p-2.5 rounded-xl border border-white/5">
+                    <span className="text-green-400 font-bold block mb-1">Teacher (존댓말):</span>
                     <span className="font-korean">{ex.teacher}</span>
                   </div>
-                  <div className="bg-zinc-950 p-2 rounded border border-white/5">
-                    <span className="text-cyan-400 font-bold block mb-0.5">Staff (Polite):</span>
+                  <div className="bg-zinc-950 p-2.5 rounded-xl border border-white/5">
+                    <span className="text-cyan-400 font-bold block mb-1">Staff (공손함):</span>
                     <span className="font-korean">{ex.staff}</span>
                   </div>
                 </div>
@@ -643,189 +681,209 @@ return (
             ))}
           </div>
 
-          {/* Softening phrases cards */}
-          <div className="space-y-2 text-left">
-            <span className="text-[9px] text-zinc-500 font-bold uppercase tracking-wider block">B1 Polite Disagreement Softeners</span>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-              {coreData?.softening_phrases?.map((sf: any, idx: number) => (
-                <div key={idx} className="p-3 bg-zinc-900/60 rounded-xl border border-white/5 flex justify-between items-center text-[10px]">
-                  <div>
-                    <span className="font-korean font-bold text-white block truncate">{sf.ko}</span>
-                    <span className="text-zinc-500 block truncate">{sf.en}</span>
-                  </div>
-                  <button onClick={() => playAudio(sf.ko)} className="p-1 bg-zinc-950 rounded text-zinc-400 hover:text-white shrink-0 ml-1"><Volume2 className="w-3 h-3" /></button>
-                </div>
-              ))}
+          {/* Micro-question C1 */}
+          <div className="bg-zinc-950 p-6 rounded-2xl border border-white/10 space-y-4 max-w-xl mx-auto w-full text-left">
+            <span className="text-[9px] text-zinc-400 uppercase font-black tracking-widest block font-mono">Micro Checkpoint C1</span>
+            <p className="text-sm font-bold text-white">Can you think of one phrase you’d say differently to a close friend versus a professor in English?</p>
+            
+            <div className="flex flex-col gap-2">
+              {[
+                { id: "A", text: "Yes. Say 'Hey, what's up?' to friend vs 'Good morning, Professor' to teacher." },
+                { id: "B", text: "No, they would sound exactly identical in English." }
+              ].map((opt) => {
+                let borderStyle = "border-white/5 bg-zinc-900/60 text-zinc-300";
+                if (c1Selected === opt.id) {
+                  borderStyle = "border-brand-500 bg-brand-500/10 text-white";
+                }
+                if (c1Checked) {
+                  if (opt.id === "A") {
+                    borderStyle = "border-green-500 bg-green-500/10 text-green-300 font-extrabold";
+                  } else if (c1Selected === opt.id) {
+                    borderStyle = "border-red-500 bg-red-500/10 text-red-300 font-extrabold";
+                  }
+                }
+                return (
+                  <button
+                    key={opt.id}
+                    disabled={c1Checked}
+                    onClick={() => setC1Selected(opt.id)}
+                    className={`py-3 px-4 rounded-xl border text-left text-xs font-bold transition cursor-pointer ${borderStyle}`}
+                  >
+                    {opt.text}
+                  </button>
+                );
+              })}
             </div>
+
+            {c1Checked && (
+              <div className="p-4 bg-green-500/5 border border-green-500/20 rounded-xl text-xs text-left animate-fade-in text-green-300">
+                <p className="font-extrabold mb-1">✓ Correct!</p>
+                <p>Same concept in Korean! We choose between casual banmal (반말) and polite jondetmal (존댓말) depending on hierarchy and intimacy.</p>
+              </div>
+            )}
+
+            {!c1Checked && (
+              <button
+                onClick={handleC1Check}
+                disabled={!c1Selected}
+                className="w-full py-2.5 bg-brand-600 hover:bg-brand-500 text-white text-xs font-bold rounded-xl disabled:opacity-40 transition cursor-pointer"
+              >
+                Submit Response
+              </button>
+            )}
           </div>
 
-          <div className="flex justify-between items-center pt-4 border-t border-white/5">
-            <button onClick={() => setStep(1)} className="glass-panel px-4 py-2 rounded-xl hover:bg-white/5 text-zinc-400 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
-            <button onClick={() => setStep(3)} className="bg-brand-500 hover:bg-brand-600 text-white px-5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer">Start Activities <ChevronRight className="w-4 h-4" /></button>
+          <div className="flex justify-between items-center pt-4 border-t border-white/5 font-sans">
+            <button onClick={() => setStep(1)} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-sm font-bold transition flex items-center gap-2 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
+            <button onClick={() => setStep(3)} className="bg-brand-600 hover:bg-brand-500 text-white px-8 py-3 rounded-xl text-sm font-bold transition flex items-center gap-2 cursor-pointer">Next Screen <ChevronRight className="w-4 h-4" /></button>
           </div>
         </div>
       )}
 
-      {/* Screen 3: Activity 1: Recognize Appropriate Register */}
+      {/* Screen 3: Activity 1 - Register Recognition */}
       {step === 3 && (
-        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
+        <div className="glass-panel p-10 rounded-[2.5rem] bg-zinc-900/40 border border-white/10 shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in font-sans">
           <div className="flex justify-between items-center border-b border-white/5 pb-4">
             <h2 className="text-2xl font-black text-white flex items-center gap-2">
               <Sparkles className="w-6 h-6 text-brand-400" />
-              <span>{activity1Step === "1A" ? "Activity 1A – Listener Identification" : "Activity 1B – Appropriateness Rating"}</span>
+              <span>Activity 1 – Register Recognition &amp; Appropriateness</span>
             </h2>
-            <span className="text-xs text-zinc-500 font-bold">Step 3 of {totalSteps}</span>
+            <span className="text-xs text-zinc-400 font-mono">Step 3 of {totalSteps}</span>
           </div>
 
-          {recognitionItems[recIdx] && (
-            <div className="space-y-4 text-left">
-              {activity1Step === "1A" ? (
-                /* 1A: Who is speaker talking to? */
-                <div className="space-y-4">
-                  <div className="p-4 bg-zinc-950 border border-white/5 rounded-2xl text-center space-y-1">
-                    <span className="text-[9px] text-zinc-500 uppercase font-mono block">Analyze this Korean response:</span>
-                    <p className="font-korean text-xl font-bold text-white">{recognitionItems[recIdx].sentence}</p>
-                    <p className="text-xs text-zinc-400 italic font-mono">{recognitionItems[recIdx].gloss}</p>
-                  </div>
+          {recognitionItems.length > 0 && recognitionItems[recIdx] && (
+            <div className="bg-zinc-950 p-6 rounded-2xl border border-white/10 space-y-6 text-left max-w-3xl mx-auto w-full animate-fade-in">
+              
+              {/* Context prompt */}
+              <div className="p-4 bg-zinc-900 border border-white/5 rounded-xl space-y-2">
+                <span className="text-[9px] text-brand-400 font-mono block">ANALYZE SENTENCE:</span>
+                <p className="font-korean text-lg font-bold text-white">{recognitionItems[recIdx].sentence}</p>
+                <p className="text-zinc-500 text-xs italic">{recognitionItems[recIdx].gloss}</p>
+              </div>
 
-                  <div className="space-y-2">
-                    <p className="text-xs text-zinc-400 font-bold">Who is the most likely listener?</p>
-                    <div className="grid grid-cols-3 gap-2">
-                      {recognitionItems[recIdx].choices_listener.map((lst: string) => (
+              {/* Questions */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Q1 Listener */}
+                <div className="space-y-2">
+                  <span className="text-[10px] font-bold text-white">Q1: Who is the most likely listener?</span>
+                  <div className="flex flex-col gap-1.5 font-sans">
+                    {recognitionItems[recIdx].choices_listener.map((lstOpt: string) => {
+                      let btnStyle = "border-white/5 bg-zinc-900 text-zinc-300";
+                      if (selectedListener === lstOpt) {
+                        btnStyle = "border-brand-500 bg-brand-500/10 text-white";
+                      }
+                      if (act1Checked) {
+                        if (lstOpt === recognitionItems[recIdx].listener) {
+                          btnStyle = "border-green-500 bg-green-500/10 text-green-300 font-extrabold";
+                        } else if (selectedListener === lstOpt) {
+                          btnStyle = "border-red-500 bg-red-500/10 text-red-300";
+                        }
+                      }
+                      return (
                         <button
-                          key={lst}
-                          onClick={() => !act1Checked && setSelectedListener(lst)}
+                          key={lstOpt}
                           disabled={act1Checked}
-                          className={`p-3 rounded-xl border text-center text-xs font-bold uppercase transition ${
-                            selectedListener === lst
-                              ? "border-brand-500 bg-brand-500/10 text-white"
-                              : "border-white/5 bg-zinc-950 text-zinc-400 hover:border-white/10"
-                          } ${act1Checked && recognitionItems[recIdx].listener === lst ? "border-accent-teal bg-accent-teal/15 text-white" : ""}`}
+                          onClick={() => setSelectedListener(lstOpt)}
+                          className={`p-2.5 rounded-xl border text-left text-xs font-semibold transition cursor-pointer ${btnStyle}`}
                         >
-                          {lst}
+                          {lstOpt}
                         </button>
-                      ))}
-                    </div>
+                      );
+                    })}
                   </div>
                 </div>
-              ) : (
-                /* 1B: Appropriateness Rating */
-                <div className="space-y-4">
-                  <div className="p-4 bg-zinc-950 border border-white/5 rounded-2xl text-left space-y-2">
-                    <span className="text-[9px] text-zinc-500 uppercase block">Context description:</span>
-                    <p className="text-xs text-white font-bold">Speaking to a professor after class.</p>
-                    <div className="p-3 bg-zinc-900 rounded-xl border border-white/5">
-                      <span className="text-[8px] text-zinc-400 block font-mono">CANDIDATE STATEMENT:</span>
-                      <p className="font-korean text-sm font-bold text-zinc-200">{recognitionItems[recIdx].sentence}</p>
-                    </div>
-                  </div>
 
-                  <div className="space-y-2">
-                    <p className="text-xs text-zinc-400 font-bold">Is this statement appropriate for the context?</p>
-                    <div className="grid grid-cols-3 gap-2">
-                      {["too casual", "too formal", "OK"].map((appr) => (
+                {/* Q2 Appropriateness */}
+                <div className="space-y-2">
+                  <span className="text-[10px] font-bold text-white">Q2: Speaking to a professor after class: is this statement appropriate?</span>
+                  <div className="flex flex-col gap-1.5 font-sans">
+                    {["too casual", "too formal", "OK"].map((apprOpt) => {
+                      let btnStyle = "border-white/5 bg-zinc-900 text-zinc-300";
+                      if (selectedApprop === apprOpt) {
+                        btnStyle = "border-brand-500 bg-brand-500/10 text-white";
+                      }
+                      if (act1Checked) {
+                        if (apprOpt === "OK") {
+                          btnStyle = "border-green-500 bg-green-500/10 text-green-300 font-extrabold";
+                        } else if (selectedApprop === apprOpt) {
+                          btnStyle = "border-red-500 bg-red-500/10 text-red-300";
+                        }
+                      }
+                      return (
                         <button
-                          key={appr}
-                          onClick={() => !act1Checked && setSelectedApprop(appr)}
+                          key={apprOpt}
                           disabled={act1Checked}
-                          className={`p-3 rounded-xl border text-center text-xs font-bold uppercase transition ${
-                            selectedApprop === appr
-                              ? "border-brand-500 bg-brand-500/10 text-white"
-                              : "border-white/5 bg-zinc-950 text-zinc-400 hover:border-white/10"
-                          }`}
+                          onClick={() => setSelectedApprop(apprOpt)}
+                          className={`p-2.5 rounded-xl border text-left text-xs font-semibold transition cursor-pointer ${btnStyle}`}
                         >
-                          {appr}
+                          {apprOpt}
                         </button>
-                      ))}
-                    </div>
+                      );
+                    })}
                   </div>
                 </div>
-              )}
+              </div>
 
               {act1Checked && (
-                <div className="p-3.5 bg-zinc-950 rounded-xl border border-white/5 text-xs text-zinc-400 text-center max-w-md mx-auto">
-                  <p className="font-extrabold text-white">{act1Correct ? "✓ Correct register detection!" : "✗ Mismatch detected."}</p>
-                  <p>{recognitionItems[recIdx].appropriateness}</p>
+                <div className={`p-4 rounded-xl text-xs text-left animate-fade-in border ${
+                  act1Correct ? "bg-green-500/5 border-green-500/20 text-green-300" : "bg-red-500/5 border-red-500/20 text-red-400"
+                }`}>
+                  <p className="font-extrabold text-sm">{act1Correct ? "✓ Correct register detection!" : "✗ Mismatch detected."}</p>
+                  <p className="text-zinc-350 mt-1">{recognitionItems[recIdx].appropriateness}</p>
                 </div>
               )}
 
-              <div className="flex justify-end pt-1">
+              <div className="flex justify-end pt-1 font-sans">
                 {!act1Checked ? (
                   <button
                     onClick={handleCheckActivity1}
-                    disabled={activity1Step === "1A" ? !selectedListener : !selectedApprop}
-                    className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white px-5 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer"
+                    disabled={!selectedListener || !selectedApprop}
+                    className="bg-brand-500 hover:bg-brand-600 disabled:opacity-40 text-white px-6 py-3 rounded-xl text-xs font-bold transition cursor-pointer"
                   >
-                    Verify Politeness
+                    Check Appropriateness
                   </button>
                 ) : (
                   <button
                     onClick={handleNextActivity1}
-                    className="bg-accent-teal text-zinc-950 hover:bg-accent-teal/90 px-5 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer"
+                    className="bg-purple-600 text-white hover:bg-purple-500 px-5 py-3 rounded-xl text-xs font-bold transition cursor-pointer"
                   >
-                    {activity1Step === "1A" ? "Move to Activity 1B" : "Go to Register Adjustments"}
+                    {recIdx < recognitionItems.length - 1 ? "Next Challenge" : "Continue to Transforms"}
                   </button>
                 )}
               </div>
+
             </div>
           )}
 
-          <div className="flex justify-between items-center pt-4 border-t border-white/5">
-            <button 
-              onClick={() => {
-                if (activity1Step === "1B") {
-                  setActivity1Step("1A");
-                } else {
-                  setStep(2);
-                }
-              }} 
-              className="glass-panel px-4 py-2 rounded-xl hover:bg-white/5 text-zinc-400 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
-            >
-              <ChevronLeft className="w-4 h-4" /> Back
-            </button>
-            <button onClick={() => setStep(4)} className="bg-brand-500 hover:bg-brand-600 text-white px-5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer">Move to Activity 2 <ChevronRight className="w-4 h-4" /></button>
+          <div className="flex justify-between items-center pt-4 border-t border-white/5 font-sans">
+            <button onClick={() => setStep(2)} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-sm font-bold transition flex items-center gap-2 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
+            <button onClick={() => setStep(4)} className="bg-brand-600 hover:bg-brand-500 text-white px-8 py-3 rounded-xl text-sm font-bold transition flex items-center gap-2 cursor-pointer">Move to Transforms <ChevronRight className="w-4 h-4" /></button>
           </div>
         </div>
       )}
 
-      {/* Screen 4: Activity 2: Adjust & Soften */}
+      {/* Screen 4: Activity 2 - Adapting Transforms */}
       {step === 4 && (
-        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
+        <div className="glass-panel p-10 rounded-[2.5rem] bg-zinc-900/40 border border-white/10 shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in font-sans">
           <div className="flex justify-between items-center border-b border-white/5 pb-4">
             <h2 className="text-2xl font-black text-white flex items-center gap-2">
               <Sparkles className="w-6 h-6 text-brand-400" />
-              <span>Activity 2 – Register Adaptations</span>
+              <span>Activity 2 – Register Adaptation Transforms</span>
             </h2>
-            <div className="flex gap-1">
-              {["2A", "2B", "2C"].map((sub) => (
-                <button
-                  key={sub}
-                  onClick={() => setActivity2SubStep(sub as any)}
-                  className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                    activity2SubStep === sub 
-                      ? "bg-brand-500 text-white" 
-                      : "bg-zinc-900 text-zinc-400 hover:text-zinc-200"
-                  }`}
-                >
-                  {sub}
-                </button>
-              ))}
-            </div>
+            <span className="text-xs text-zinc-400 font-mono">Step 4 of {totalSteps}</span>
           </div>
 
-          {/* Substep 2A: Change for friend vs teacher vs staff */}
-          {activity2SubStep === "2A" && transformTemplates[activeTransIdx] && (
-            <div className="space-y-4 text-left">
-              <span className="text-[10px] text-zinc-500 font-black uppercase tracking-wider block">Activity 2A – Adjust register for different people</span>
-              
-              <div className="p-4 bg-zinc-950 border border-white/5 rounded-2xl space-y-1">
-                <span className="text-[9px] text-zinc-500 uppercase block font-bold">Base Meaning:</span>
-                <p className="text-xs text-white font-bold">{transformTemplates[activeTransIdx].base_meaning}</p>
-                <p className="font-korean text-xs text-zinc-400 italic mt-0.5">Neutral Ko: {transformTemplates[activeTransIdx].neutral_ko}</p>
+          {transformTemplates.length > 0 && transformTemplates[activeTransIdx] && (
+            <div className="bg-zinc-950 p-6 rounded-2xl border border-white/10 space-y-6 text-left max-w-3xl mx-auto w-full animate-fade-in">
+              <div className="p-4 bg-zinc-900 border border-white/5 rounded-xl">
+                <span className="text-[9px] text-zinc-500 block uppercase font-mono mb-0.5">Base Intent Meaning:</span>
+                <p className="text-sm font-bold text-white">{transformTemplates[activeTransIdx].base_meaning}</p>
+                <p className="font-korean text-xs text-zinc-400 italic mt-0.5">Neutral form: {transformTemplates[activeTransIdx].neutral_ko}</p>
               </div>
 
-              <div className="space-y-1.5">
-                <span className="text-[9px] text-zinc-500 block uppercase font-bold">Select Target Context:</span>
+              {/* Context Selector */}
+              <div className="space-y-2">
+                <span className="text-[10px] font-bold text-white">Select Target Context Listener:</span>
                 <div className="flex gap-2">
                   {["friend", "teacher", "staff"].map((ctx) => (
                     <button
@@ -835,10 +893,10 @@ return (
                         setBuiltTransform(null);
                         setSelectedTransformOption(null);
                       }}
-                      className={`flex-grow py-1.5 rounded border text-xs font-bold uppercase transition ${
+                      className={`flex-grow py-2 rounded-xl border text-xs font-bold uppercase transition cursor-pointer ${
                         selectedContext === ctx
                           ? "border-brand-500 bg-brand-500/10 text-white"
-                          : "border-white/5 bg-zinc-900 text-zinc-400"
+                          : "border-white/5 bg-zinc-900 text-zinc-400 hover:border-white/10"
                       }`}
                     >
                       {ctx}
@@ -847,9 +905,10 @@ return (
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <span className="text-[9px] text-zinc-500 block uppercase font-bold">Choose appropriate variant:</span>
-                <div className="flex flex-col gap-2">
+              {/* Select transforms option */}
+              <div className="space-y-3">
+                <span className="text-[10px] font-bold text-white">Choose the context-appropriate variant:</span>
+                <div className="flex flex-col gap-2 font-korean">
                   {[
                     transformTemplates[activeTransIdx].friend_ver,
                     transformTemplates[activeTransIdx].teacher_ver,
@@ -858,7 +917,7 @@ return (
                     <button
                       key={verOption}
                       onClick={() => setSelectedTransformOption(verOption)}
-                      className={`p-3 rounded-xl border text-left text-xs font-semibold font-korean transition ${
+                      className={`p-3.5 rounded-xl border text-left text-xs font-semibold transition cursor-pointer ${
                         selectedTransformOption === verOption
                           ? "border-brand-500 bg-brand-500/10 text-white"
                           : "border-white/5 bg-zinc-900 text-zinc-300 hover:border-white/10"
@@ -871,18 +930,18 @@ return (
               </div>
 
               {builtTransform ? (
-                <div className="p-4 bg-zinc-950 border border-accent-teal/20 rounded-2xl space-y-2">
-                  <span className="text-[9px] text-accent-teal font-bold block uppercase">Correct transformation result</span>
-                  <p className="font-korean text-base font-bold text-white">{builtTransform.evaluated_sentence}</p>
-                  <p className="text-[10px] text-zinc-500">Register adapted for: <strong>{selectedContext.toUpperCase()}</strong></p>
+                <div className="p-4 bg-zinc-900 rounded-xl border border-brand-500/20 text-xs space-y-2 animate-fade-in font-korean">
+                  <span className="text-[9px] text-brand-400 font-black block uppercase font-mono">Adapted Sentence:</span>
+                  <p className="text-base font-extrabold text-white bg-zinc-950 p-3 rounded-lg border border-white/5 leading-relaxed">{builtTransform.evaluated_sentence}</p>
+                  <p className="text-[10px] text-zinc-450 font-sans">Register adapted for: <strong>{selectedContext.toUpperCase()}</strong></p>
                 </div>
               ) : (
                 <button
                   onClick={handleTransformRegister}
                   disabled={buildingTransform || !selectedTransformOption}
-                  className="w-full bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white font-bold py-3 rounded-xl transition text-xs flex justify-center items-center gap-1.5 cursor-pointer"
+                  className="w-full bg-brand-500 hover:bg-brand-600 disabled:opacity-40 text-white font-bold py-3.5 rounded-xl text-xs transition cursor-pointer text-center flex items-center justify-center gap-1.5"
                 >
-                  {buildingTransform ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
+                  {buildingTransform ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
                   <span>Transform Register</span>
                 </button>
               )}
@@ -890,367 +949,377 @@ return (
               {builtTransform && (
                 <button
                   onClick={handleNextTransform}
-                  className="w-full bg-accent-teal text-zinc-950 hover:bg-accent-teal/90 font-bold py-3 rounded-xl transition text-xs flex justify-center items-center gap-1 cursor-pointer"
+                  className="w-full bg-emerald-500 text-zinc-950 hover:bg-emerald-450 font-bold py-3 rounded-xl transition text-xs flex justify-center items-center gap-1 cursor-pointer"
                 >
-                  <span>{activeTransIdx < transformTemplates.length - 1 ? "Next Sentence" : "Go to Softening Builder"}</span>
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-              )}
-            </div>
-          )}
-
-          {/* Substep 2B: Softening Builder */}
-          {activity2SubStep === "2B" && coreData && (
-            <div className="space-y-4 text-left">
-              <span className="text-[10px] text-zinc-500 font-black uppercase tracking-wider block">Activity 2B – Softening disagreement and requests</span>
-              
-              <div className="p-4 bg-zinc-950 border border-white/5 rounded-2xl">
-                <span className="text-[9px] text-red-400 block font-bold uppercase mb-1">Direct / Strong Statement:</span>
-                <p className="font-korean text-sm font-bold text-white">{selectedBaseIdea}</p>
-              </div>
-
-              <div className="space-y-1.5">
-                <span className="text-[9px] text-zinc-500 block uppercase font-bold">Choose a softening phrase starter:</span>
-                <div className="flex flex-col gap-1.5">
-                  {coreData.softening_phrases.map((sf: any) => (
-                    <button
-                      key={sf.ko}
-                      onClick={() => {
-                        setSelectedSoftener(sf.ko);
-                        setBuiltSoften(null);
-                      }}
-                      className={`p-2.5 rounded-xl border text-left text-xs font-semibold font-korean transition ${
-                        selectedSoftener === sf.ko
-                          ? "border-brand-500 bg-brand-500/10 text-white"
-                          : "border-white/5 bg-zinc-900 text-zinc-300 hover:border-white/10"
-                      }`}
-                    >
-                      {sf.ko} ({sf.en})
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {builtSoften ? (
-                <div className="p-4 bg-zinc-950 border border-accent-teal/20 rounded-2xl space-y-1 text-xs">
-                  <span className="text-[9px] text-accent-teal font-bold block uppercase">Softened Polite output result</span>
-                  <p className="font-korean text-base font-bold text-white">{builtSoften.reply_ko}</p>
-                  <p className="text-[10px] text-zinc-500">Intent softened. Softer and more polite tone.</p>
-                </div>
-              ) : (
-                <button
-                  onClick={handleSoftenRegister}
-                  disabled={buildingSoften || !selectedSoftener}
-                  className="w-full bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white font-bold py-3 rounded-xl transition text-xs flex justify-center items-center gap-1.5 cursor-pointer"
-                >
-                  {buildingSoften ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
-                  <span>Build Softened Sentence</span>
+                  <span>{activeTransIdx < transformTemplates.length - 1 ? "Next Sentence" : "Proceed to Softening Builders"}</span>
+                  <ChevronRight className="w-4 h-4 text-zinc-950" />
                 </button>
               )}
 
-              {builtSoften && (
-                <button
-                  onClick={() => setActivity2SubStep("2C")}
-                  className="w-full bg-accent-teal text-zinc-950 hover:bg-accent-teal/90 font-bold py-3 rounded-xl transition text-xs flex justify-center items-center gap-1 cursor-pointer"
-                >
-                  <span>Go to AI Context-Switch Roleplay</span>
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-              )}
             </div>
           )}
 
-          {/* Substep 2C: AI context-switch roleplays */}
-          {activity2SubStep === "2C" && (
-            <div className="space-y-4 text-left">
-              <span className="text-[10px] text-zinc-500 font-black uppercase tracking-wider block">Activity 2C – Short AI context‑switch role‑plays</span>
-              
-              {!roleplaySessionId ? (
-                <div className="p-6 bg-zinc-950 border border-white/5 rounded-2xl text-center space-y-4">
-                  <div className="p-3 bg-brand-500/10 border border-brand-500/25 rounded-full w-fit mx-auto text-brand-400">
-                    <MessageCircle className="w-6 h-6" />
-                  </div>
-                  <p className="text-xs text-zinc-300 max-w-sm mx-auto leading-relaxed">
-                    Compare how you interact differently with a friend versus a teacher about the same homework question scene.
-                  </p>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => handleStartRoleplay("friend")}
-                      className="flex-grow bg-brand-500 hover:bg-brand-600 text-white py-2.5 rounded-xl text-xs font-bold transition cursor-pointer"
-                    >
-                      Talk to Friend (Banmal)
-                    </button>
-                    <button
-                      onClick={() => handleStartRoleplay("teacher")}
-                      className="flex-grow bg-zinc-800 hover:bg-zinc-700 text-zinc-300 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer border border-white/5"
-                    >
-                      Talk to Teacher (Respectful)
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center text-[10px]">
-                    <span className="text-brand-400 font-bold">Active Roleplay: {roleplayScenario.toUpperCase()} context</span>
-                    <button onClick={() => setRoleplaySessionId(null)} className="text-zinc-500 hover:text-white underline cursor-pointer">Switch Interlocutor</button>
-                  </div>
-
-                  <div className="bg-zinc-950 rounded-2xl border border-white/5 p-4 h-40 overflow-y-auto space-y-2.5 custom-scrollbar">
-                    {roleplayMessages.map((msg, idx) => {
-                      const isUser = msg.sender === "user";
-                      return (
-                        <div key={idx} className={`flex ${isUser ? "justify-end" : "justify-start"} animate-fade-in`}>
-                          <div className={`max-w-[80%] rounded-2xl p-2.5 text-xs leading-relaxed ${
-                            isUser 
-                              ? "bg-brand-500 text-white rounded-tr-none" 
-                              : "bg-zinc-900 text-zinc-300 rounded-tl-none border border-white/5"
-                          }`}>
-                            <p className={!isUser ? "font-korean" : ""}>{msg.text}</p>
-                          </div>
-                        </div>
-                      );
-                    })}
-                    {roleplaySending && (
-                      <div className="flex justify-start">
-                        <div className="bg-zinc-900 p-2 rounded-xl border border-white/5 flex gap-1 items-center">
-                          <Loader2 className="w-3 animate-spin text-brand-400" />
-                          <span className="text-[9px] text-zinc-500">Partner is typing...</span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Scaffolding chips */}
-                  <div className="space-y-1">
-                    <span className="text-[8px] text-zinc-500 uppercase tracking-widest font-black block">Suggested chips:</span>
-                    <div className="flex gap-1 flex-wrap">
-                      {roleplayScenario === "friend" 
-                        ? ["응, 숙제 다 했어.", "내일 볼까?", "고마워!"]
-                        : ["네, 과제 제출 완료했습니다.", "혹시 시간 괜찮으십니까?", "감사합니다, 교수님."]
-                      .map((chip) => (
-                        <button
-                          key={chip}
-                          onClick={() => setRoleplayText((prev) => prev + (prev ? " " : "") + chip)}
-                          className="px-2 py-1 bg-zinc-900 border border-white/5 hover:border-brand-500/35 text-[10px] text-zinc-300 rounded-lg font-korean transition cursor-pointer"
-                        >
-                          {chip}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {!roleplayFinished ? (
-                    <div className="flex gap-2">
-                      {mode === "voice" && (
-                        <button 
-                          onClick={handleStartVoiceRecording}
-                          className={`p-2.5 rounded-xl border transition ${recording ? "bg-red-500 text-white border-red-500 animate-pulse" : "bg-zinc-900 border-white/5 text-zinc-400 hover:text-white"}`}
-                        >
-                          <Mic className="w-4 h-4" />
-                        </button>
-                      )}
-                      <input
-                        type="text"
-                        value={roleplayText}
-                        onChange={(e) => setRoleplayText(e.target.value)}
-                        placeholder="Respond matching the correct register..."
-                        onKeyDown={(e) => e.key === "Enter" && handleSendRoleplayTurn()}
-                        className="flex-grow bg-zinc-950 border border-white/5 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-brand-500 font-korean"
-                      />
-                      <button
-                        onClick={handleSendRoleplayTurn}
-                        disabled={roleplaySending || !roleplayText.trim()}
-                        className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white px-4 rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer shrink-0"
-                      >
-                        <span>Send</span>
-                        <ArrowRight className="w-3.5 h-3.5" />
-                      </button>
-                      <button 
-                        onClick={handleFinishRoleplay}
-                        className="px-3 bg-red-950/20 border border-red-500/20 text-red-400 hover:text-red-300 text-[10px] font-bold rounded-xl transition cursor-pointer"
-                      >
-                        End Chat
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="p-4 bg-zinc-900 rounded-xl border border-brand-500/20 space-y-2 text-xs">
-                      <p className="font-extrabold text-white">Pragmatic Assessment Report:</p>
-                      <p className="text-zinc-400">{roleplayFeedback}</p>
-                      <button
-                        onClick={() => setStep(5)}
-                        className="w-full mt-2 bg-brand-500 hover:bg-brand-600 text-white py-2 rounded-xl text-xs font-bold transition cursor-pointer"
-                      >
-                        Proceed to Mini-Quiz
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
-
-          <div className="flex justify-between items-center pt-4 border-t border-white/5">
-            <button 
-              onClick={() => {
-                if (activity2SubStep === "2C") setActivity2SubStep("2B");
-                else if (activity2SubStep === "2B") setActivity2SubStep("2A");
-                else setStep(3);
-              }} 
-              className="glass-panel px-4 py-2 rounded-xl hover:bg-white/5 text-zinc-400 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
-            >
-              <ChevronLeft className="w-4 h-4" /> Back
-            </button>
-            <button onClick={() => setStep(5)} className="bg-brand-500 hover:bg-brand-600 text-white px-5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer">Move to Quiz <ChevronRight className="w-4 h-4" /></button>
+          <div className="flex justify-between items-center pt-4 border-t border-white/5 font-sans">
+            <button onClick={() => setStep(3)} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-sm font-bold transition flex items-center gap-2 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
+            <button onClick={() => setStep(5)} className="bg-brand-500 hover:bg-brand-600 text-white px-8 py-3 rounded-xl text-sm font-bold transition flex items-center gap-2 cursor-pointer font-bold">Move to Softening <ChevronRight className="w-4 h-4" /></button>
           </div>
         </div>
       )}
 
-      {/* Screen 5: Mini-Quiz */}
+      {/* Screen 5: Activity 3 - Softening directness requests */}
       {step === 5 && (
-        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
+        <div className="glass-panel p-10 rounded-[2.5rem] bg-zinc-900/40 border border-white/10 shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in font-sans">
+          <div className="flex justify-between items-center border-b border-white/5 pb-4">
+            <h2 className="text-2xl font-black text-white flex items-center gap-2">
+              <Sparkles className="w-6 h-6 text-brand-400" />
+              <span>Activity 3 – Softening Directness</span>
+            </h2>
+            <span className="text-xs text-zinc-400 font-mono">Step 5 of {totalSteps}</span>
+          </div>
+
+          <div className="bg-zinc-950 p-6 rounded-2xl border border-white/10 space-y-6 text-left max-w-2xl mx-auto w-full animate-fade-in font-sans">
+            <div className="p-4 bg-zinc-900 border border-white/5 rounded-xl">
+              <span className="text-[9px] text-red-400 block font-bold uppercase mb-1 font-mono">Direct/Strong Complaint statement:</span>
+              <p className="font-korean text-base font-bold text-white">{selectedBaseIdea}</p>
+            </div>
+
+            <div className="space-y-1.5 font-sans">
+              <span className="text-[10px] font-bold text-white">Choose a softening phrase mitigator:</span>
+              <div className="flex flex-col gap-2">
+                {[
+                  { ko: "혹시 괜찮으시면", en: "If it's okay with you..." },
+                  { ko: "실례지만 혹시", en: "Excuse me, but..." },
+                  { ko: "죄송하지만 좀", en: "I'm sorry, but would you mind..." }
+                ].map((sf) => (
+                  <button
+                    key={sf.ko}
+                    onClick={() => {
+                      setSelectedSoftener(sf.ko);
+                      setBuiltSoften(null);
+                    }}
+                    className={`p-3 rounded-xl border text-left text-xs font-semibold font-korean transition cursor-pointer ${
+                      selectedSoftener === sf.ko
+                        ? "border-brand-500 bg-brand-500/10 text-white"
+                        : "border-white/5 bg-zinc-900 text-zinc-300 hover:border-white/10"
+                    }`}
+                  >
+                    {sf.ko} ({sf.en})
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {builtSoften ? (
+              <div className="p-4 bg-zinc-900 rounded-xl border border-brand-500/20 text-xs space-y-2 animate-fade-in font-korean">
+                <span className="text-[9px] text-brand-400 font-black block uppercase font-mono">Softened variant statement:</span>
+                <p className="text-base font-extrabold text-white bg-zinc-950 p-3 rounded-lg border border-white/5 leading-relaxed">{builtSoften.reply_ko}</p>
+                <p className="text-[10px] text-zinc-500 font-sans">Intent softened. Softer and more polite tone.</p>
+              </div>
+            ) : (
+              <button
+                onClick={handleSoftenRegister}
+                disabled={buildingSoften || !selectedSoftener}
+                className="w-full bg-brand-500 hover:bg-brand-600 disabled:opacity-40 text-white font-bold py-3.5 rounded-xl text-xs transition cursor-pointer text-center flex items-center justify-center gap-1.5"
+              >
+                {buildingSoften ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                <span>Assemble Softened Request</span>
+              </button>
+            )}
+          </div>
+
+          <div className="flex justify-between items-center pt-4 border-t border-white/5 font-sans">
+            <button onClick={() => setStep(4)} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-sm font-bold transition flex items-center gap-2 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
+            <button onClick={() => setStep(6)} className="bg-brand-600 hover:bg-brand-500 text-white px-8 py-3 rounded-xl text-sm font-bold transition flex items-center gap-2 cursor-pointer font-bold">Move to Peer/Teacher Chat <ChevronRight className="w-4 h-4" /></button>
+          </div>
+        </div>
+      )}
+
+      {/* Screen 6: Activity 4 - Friend vs Teacher Homework Chat */}
+      {step === 6 && (
+        <div className="glass-panel p-10 rounded-[2.5rem] bg-zinc-900/40 border border-white/10 shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in font-sans">
+          <div className="flex justify-between items-center border-b border-white/5 pb-4">
+            <h2 className="text-2xl font-black text-white flex items-center gap-2">
+              <MessageSquare className="w-6 h-6 text-brand-400" />
+              <span>Activity 4 – Contrastive homework scene: friend vs teacher</span>
+            </h2>
+            <span className="text-xs text-zinc-400 font-mono">Step 6 of {totalSteps}</span>
+          </div>
+
+          <div className="space-y-4 max-w-2xl mx-auto w-full text-left">
+            <div className="flex justify-between items-center">
+              <span className="text-xs font-bold text-brand-400">Context shift: homework question</span>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => handleStartRoleplay("friend")}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${roleplayScenario === "friend" && roleplaySessionId ? "bg-brand-500 text-white" : "bg-zinc-900 text-zinc-400"}`}
+                >
+                  Friend (Banmal)
+                </button>
+                <button
+                  onClick={() => handleStartRoleplay("teacher")}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${roleplayScenario === "teacher" && roleplaySessionId ? "bg-brand-500 text-white" : "bg-zinc-900 text-zinc-400"}`}
+                >
+                  Teacher (Nopimmal)
+                </button>
+              </div>
+            </div>
+
+            {!roleplaySessionId ? (
+              <div className="p-8 bg-zinc-950 border border-white/10 rounded-[2rem] text-center space-y-5 w-full">
+                <div className="p-4 bg-brand-500/10 border border-brand-500/25 rounded-full w-fit mx-auto text-brand-400">
+                  <MessageCircle className="w-8 h-8" />
+                </div>
+                <p className="text-xs text-zinc-300 leading-relaxed max-w-md mx-auto">
+                  Compare how you interact differently with a friend versus a teacher about the same homework question scene.
+                </p>
+                <div className="flex justify-center gap-3">
+                  <button
+                    onClick={() => handleStartRoleplay("friend")}
+                    className="bg-brand-600 hover:bg-brand-500 text-white font-black py-3 px-6 rounded-xl text-xs transition cursor-pointer"
+                  >
+                    Start Friend Chat
+                  </button>
+                  <button
+                    onClick={() => handleStartRoleplay("teacher")}
+                    className="bg-zinc-800 hover:bg-zinc-700 border border-white/5 text-zinc-300 font-black py-3 px-6 rounded-xl text-xs transition cursor-pointer"
+                  >
+                    Start Teacher Chat
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4 w-full animate-fade-in">
+                {/* Chat window */}
+                <div className="bg-zinc-950 rounded-2xl border border-white/10 p-4 h-60 overflow-y-auto space-y-3.5 custom-scrollbar">
+                  {roleplayMessages.map((msg, idx) => {
+                    const isUser = msg.sender === "user";
+                    return (
+                      <div key={idx} className={`flex ${isUser ? "justify-end" : "justify-start"} animate-fade-in`}>
+                        <div className={`max-w-[80%] rounded-2xl p-3 text-xs leading-relaxed ${
+                          isUser 
+                            ? "bg-brand-500 text-white rounded-tr-none" 
+                            : "bg-zinc-900 text-zinc-200 rounded-tl-none border border-white/5"
+                        }`}>
+                          <p className={!isUser ? "font-korean font-semibold" : ""}>{msg.text}</p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {roleplaySending && (
+                    <div className="flex justify-start">
+                      <div className="bg-zinc-900 p-2.5 rounded-xl border border-white/5 flex gap-1.5 items-center">
+                        <Loader2 className="w-3.5 h-3.5 animate-spin text-brand-400" />
+                        <span className="text-[10px] text-zinc-550">Interlocutor typing...</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Scaffolding chips */}
+                <div className="space-y-2">
+                  <span className="text-[8px] text-zinc-500 uppercase tracking-widest font-black block font-mono">Suggested phrases:</span>
+                  <div className="flex gap-1.5 flex-wrap">
+                    {roleplayScenario === "friend" 
+                      ? ["이거 어떻게 풀어?", "고마워, 역시 최고야!", "내일 빌려줘."] 
+                      : ["이 문제 좀 여쭤봐도 되겠습니까?", "혹시 시간 괜찮으실 때 봐 주실 수 있습니까?", "감사합니다, 선생님."]
+                    .map((chip) => (
+                      <button
+                        key={chip}
+                        onClick={() => setRoleplayText((prev) => prev + (prev ? " " : "") + chip)}
+                        className="px-2.5 py-1 bg-zinc-900 border border-white/5 hover:border-brand-500/35 text-[10px] text-zinc-300 rounded-lg font-korean transition cursor-pointer"
+                      >
+                        {chip}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {!roleplayFeedback ? (
+                  <div className="flex gap-2">
+                    {mode === "voice" && (
+                      <button 
+                        onClick={handleStartVoiceRecording}
+                        className={`p-3 rounded-xl border transition cursor-pointer ${recording ? "bg-red-500 text-white border-red-500 animate-pulse" : "bg-zinc-900 border-white/5 text-zinc-400 hover:text-white"}`}
+                      >
+                        <Mic className="w-4 h-4" />
+                      </button>
+                    )}
+                    <input
+                      type="text"
+                      value={roleplayText}
+                      onChange={(e) => setRoleplayText(e.target.value)}
+                      placeholder={roleplayScenario === "friend" ? "Chat casually (반말)..." : "Chat respectfully (존댓말)..."}
+                      onKeyDown={(e) => e.key === "Enter" && handleSendRoleplayTurn()}
+                      className="flex-grow bg-zinc-900 border border-white/10 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-brand-500 font-korean"
+                    />
+                    <button
+                      onClick={handleSendRoleplayTurn}
+                      disabled={roleplaySending || !roleplayText.trim()}
+                      className="bg-brand-500 hover:bg-brand-600 disabled:opacity-40 text-white px-5 rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer shrink-0"
+                    >
+                      <span>Send</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </button>
+                    <button 
+                      onClick={handleFinishRoleplay}
+                      className="px-4 bg-red-950/20 border border-red-500/20 text-red-400 hover:text-red-300 text-xs font-bold rounded-xl transition cursor-pointer"
+                    >
+                      Finish Both
+                    </button>
+                  </div>
+                ) : (
+                  <div className="p-5 bg-zinc-900 rounded-xl border border-brand-500/20 space-y-3 animate-fade-in">
+                    <p className="font-extrabold text-white">Pragmatic Assessment Report:</p>
+                    <p className="text-xs text-zinc-350 leading-relaxed bg-zinc-950 p-3.5 rounded-lg border border-white/5 italic">
+                      {roleplayFeedback}
+                    </p>
+                    <button
+                      onClick={() => setStep(7)}
+                      className="w-full mt-2 bg-brand-500 hover:bg-brand-600 text-white py-3 rounded-xl text-xs font-bold transition cursor-pointer"
+                    >
+                      Proceed to Quiz
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          <div className="flex justify-between items-center pt-4 border-t border-white/5 font-sans">
+            <button onClick={() => setStep(5)} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-sm font-bold transition flex items-center gap-2 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
+            <button onClick={() => setStep(7)} className="bg-brand-500 hover:bg-brand-600 text-white px-8 py-3 rounded-xl text-sm font-bold transition flex items-center gap-2 cursor-pointer font-bold">Move to Quiz <ChevronRight className="w-4 h-4" /></button>
+          </div>
+        </div>
+      )}
+
+      {/* Screen 7: Activity 5 - Register Strategy Quiz */}
+      {step === 7 && (
+        <div className="glass-panel p-10 rounded-[2.5rem] bg-zinc-900/40 border border-white/10 shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in font-sans">
           <div className="flex justify-between items-center border-b border-white/5 pb-4">
             <h2 className="text-2xl font-black text-white flex items-center gap-2">
               <Award className="w-6 h-6 text-brand-400" />
-              <span>Mini‑Quiz: Register Check</span>
+              <span>Mini-Quiz: Pragmatics &amp; Register Check</span>
             </h2>
-            <span className="text-xs text-zinc-500 font-bold">Step 5 of {totalSteps}</span>
+            <span className="text-xs text-zinc-400 font-mono">Step 7 of {totalSteps}</span>
           </div>
 
           {quizBlueprint.length > 0 && quizBlueprint[quizIdx] && (
-            <div className="space-y-4 text-left">
-              <div className="w-full bg-zinc-800 h-1.5 rounded-full overflow-hidden mb-1">
-                <div 
-                  className="bg-brand-500 h-full transition-all duration-300"
-                  style={{ width: `${((quizIdx + 1) / quizBlueprint.length) * 100}%` }}
-                />
+            <div className="space-y-6 max-w-xl mx-auto w-full text-left animate-fade-in">
+              <div className="flex justify-between text-[10px] text-zinc-450 font-mono">
+                <span>Quiz Question {quizIdx + 1} of {quizBlueprint.length}</span>
+                <span>Type: B1 Register Strategy</span>
               </div>
 
-              <div className="p-4 bg-zinc-950 border border-white/5 rounded-2xl space-y-1">
-                <span className="text-[9px] text-zinc-500 uppercase tracking-widest font-mono">Question {quizIdx + 1} of {quizBlueprint.length}</span>
-                <p className="text-xs text-zinc-300">{quizBlueprint[quizIdx].question}</p>
-              </div>
+              <h3 className="text-base md:text-lg font-black text-white text-center leading-relaxed whitespace-pre-line bg-zinc-950 p-5 rounded-2xl border border-white/5">
+                {quizBlueprint[quizIdx].question}
+              </h3>
 
-              {quizBlueprint[quizIdx].options && (
-                <div className="flex flex-col gap-2">
-                  {quizBlueprint[quizIdx].options.map((opt: string) => (
+              <div className="grid grid-cols-1 gap-2.5 max-w-md mx-auto w-full font-sans">
+                {quizBlueprint[quizIdx].options?.map((opt: string) => {
+                  let borderStyle = "border-white/5 bg-zinc-900 text-zinc-300 hover:bg-zinc-800";
+                  if (quizSelectedOpt === opt) {
+                    borderStyle = "border-brand-500 bg-brand-500/10 text-white";
+                  }
+                  if (quizChecked) {
+                    if (opt === quizBlueprint[quizIdx].correct_answer) {
+                      borderStyle = "border-green-500 bg-green-500/10 text-green-300 font-extrabold";
+                    } else if (quizSelectedOpt === opt) {
+                      borderStyle = "border-red-500 bg-red-500/10 text-red-300 font-extrabold";
+                    }
+                  }
+                  return (
                     <button
                       key={opt}
+                      id={`quiz-opt-${opt.substring(0, 15).replace(/\s+/g, "-").toLowerCase()}`}
                       onClick={() => !quizChecked && setQuizSelectedOpt(opt)}
                       disabled={quizChecked}
-                      className={`p-3 rounded-xl border text-left text-xs font-semibold font-korean transition ${
-                        quizSelectedOpt === opt
-                          ? "border-brand-500 bg-brand-500/10 text-white"
-                          : "border-white/5 bg-zinc-900 text-zinc-400 hover:border-white/10"
-                      } ${quizChecked && opt === quizBlueprint[quizIdx].correct_answer ? "border-accent-teal bg-accent-teal/15 text-white" : ""} ${
-                        quizChecked && quizSelectedOpt === opt && !quizCorrect ? "border-red-500 bg-red-500/15" : ""
-                      }`}
+                      className={`p-3.5 rounded-xl border text-left text-xs font-bold transition cursor-pointer ${borderStyle}`}
                     >
                       {opt}
                     </button>
-                  ))}
-                </div>
-              )}
+                  );
+                })}
+              </div>
 
               {quizChecked && (
-                <div className="p-4 bg-zinc-950 rounded-xl border border-white/5 text-xs text-zinc-400 space-y-1">
-                  <p className="font-extrabold text-white">{quizCorrect ? "✓ Correct!" : "✗ Incorrect."}</p>
-                  <p>{quizBlueprint[quizIdx].explanation}</p>
+                <div className={`p-4 rounded-xl border text-xs text-left space-y-1.5 animate-fade-in ${
+                  quizCorrect ? "bg-green-500/5 border-green-500/20 text-green-300" : "bg-red-500/5 border-red-500/20 text-red-400"
+                }`}>
+                  <p className="font-extrabold text-sm">{quizCorrect ? "✓ Correct!" : "✗ Incorrect."}</p>
+                  <p className="text-zinc-300">{quizBlueprint[quizIdx].explanation}</p>
                 </div>
               )}
 
-              <div className="flex justify-end pt-2">
+              <div className="flex justify-between items-center pt-4 border-t border-white/5 font-sans">
+                <button id="prev-btn-6" onClick={() => setStep(6)} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-sm font-bold transition flex items-center gap-2 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
                 {!quizChecked ? (
                   <button
+                    id="submit-quiz-btn"
                     onClick={handleCheckQuiz}
                     disabled={!quizSelectedOpt}
-                    className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white px-5 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer"
+                    className="bg-brand-500 hover:bg-brand-600 disabled:opacity-40 text-white px-5 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer"
                   >
-                    Submit Answer
+                    Check Answer
                   </button>
                 ) : (
                   <button
+                    id="next-quiz-btn"
                     onClick={handleNextQuizOrComplete}
                     disabled={finishingQuiz}
-                    className="bg-accent-teal text-zinc-950 hover:bg-accent-teal/90 px-5 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1"
+                    className="bg-purple-600 text-white hover:bg-purple-500 px-5 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer"
                   >
-                    {finishingQuiz ? <Loader2 className="w-3 animate-spin" /> : null}
-                    <span>{quizIdx < quizBlueprint.length - 1 ? "Next Question" : "Finish Quiz"}</span>
+                    {finishingQuiz ? <Loader2 className="w-4 h-4 animate-spin text-white" /> : (quizIdx < quizBlueprint.length - 1 ? "Next Question" : "See Capstone Results")}
                   </button>
                 )}
               </div>
             </div>
           )}
-
-          <div className="flex justify-between items-center pt-4 border-t border-white/5">
-            <button onClick={() => setStep(4)} className="glass-panel px-4 py-2 rounded-xl hover:bg-white/5 text-zinc-400 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
-            <button onClick={() => setStep(6)} className="bg-brand-500 hover:bg-brand-600 text-white px-5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer">Skip to Homework <ChevronRight className="w-4 h-4" /></button>
-          </div>
         </div>
       )}
 
-      {/* Screen 6: Homework & Politeness Rooms */}
-      {step === 6 && (
-        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
+      {/* Screen 8: Activity 6 - Politeness Free Practice Chat */}
+      {step === 8 && (
+        <div className="glass-panel p-10 rounded-[2.5rem] bg-zinc-900/40 border border-white/10 shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in font-sans">
           <div className="flex justify-between items-center border-b border-white/5 pb-4">
             <h2 className="text-2xl font-black text-white flex items-center gap-2">
-              <Award className="w-6 h-6 text-brand-400" />
-              <span>Homework & Pragmatics Lab</span>
+              <MessageSquare className="w-6 h-6 text-brand-400" />
+              <span>Activity 6 – Free Practice Register Switching</span>
             </h2>
-            <span className="text-xs text-zinc-500 font-bold">Step 6 of {totalSteps}</span>
+            <span className="text-xs text-zinc-400 font-mono">Step 8 of {totalSteps}</span>
           </div>
 
-          {/* Homework checklist */}
-          <div className="space-y-2.5 text-left">
-            <span className="text-[10px] text-zinc-500 font-black uppercase tracking-wider block">Recommended Homework Tasks:</span>
-            <div className="space-y-2">
-              {homeworkItems.map((item) => {
-                const isDone = completedHomework[item.id] || false;
-                return (
-                  <label key={item.id} className="flex items-start gap-3 p-3 bg-zinc-950/60 border border-white/5 rounded-xl cursor-pointer hover:border-white/10 transition">
-                    <input
-                      type="checkbox"
-                      checked={isDone}
-                      onChange={() => handleToggleHomework(item.id, isDone)}
-                      className="mt-0.5 rounded border-zinc-800 text-brand-500 focus:ring-brand-500/20"
-                    />
-                    <div className="text-xs text-zinc-300">
-                      <span className="font-extrabold text-white block mb-0.5">{item.id === "hw_b1_reg_1" ? "Task 1: Register Writing" : item.id === "hw_b1_reg_2" ? "Task 2: Disagreement Softening" : "Task 3: Written Reflection"}</span>
-                      {item.text}
-                    </div>
-                  </label>
-                );
-              })}
+          <div className="bg-zinc-950 p-6 rounded-2xl border border-white/10 space-y-4 text-left max-w-2xl mx-auto w-full font-sans">
+            <div className="space-y-1">
+              <span className="text-[9px] text-brand-400 font-mono uppercase tracking-widest block font-bold">Extra AI Register Lab</span>
+              <p className="text-xs text-zinc-400 leading-normal font-sans">
+                Practice adjusting your register on the fly. Switch between friends, colleagues, and seniors.
+              </p>
             </div>
-          </div>
 
-          {/* Extra AI Politeness Practice Rooms */}
-          <div className="p-4 bg-zinc-900 border border-white/5 rounded-2xl text-left space-y-3">
-            <span className="text-[10px] text-brand-400 font-mono uppercase tracking-widest block font-bold">AI Politeness Practice Lab</span>
-            
             {!practiceSessionId ? (
-              <div className="flex gap-2">
+              <div className="flex gap-2 font-sans">
                 <button
-                  onClick={() => handleStartHomeworkPractice("friend")}
-                  className="flex-grow bg-brand-500 hover:bg-brand-600 text-white font-bold py-2 px-3 rounded-xl transition text-[10px] cursor-pointer text-center"
+                  onClick={() => handleStartPractice("friend")}
+                  className="flex-grow bg-brand-500 hover:bg-brand-600 text-white font-bold py-2.5 px-4 rounded-xl transition text-xs cursor-pointer text-center"
                 >
-                  Banmal Practice Room
+                  Start Casual Practice
                 </button>
                 <button
-                  onClick={() => handleStartHomeworkPractice("teacher")}
-                  className="flex-grow bg-zinc-850 hover:bg-zinc-800 border border-white/5 text-white font-bold py-2 px-3 rounded-xl transition text-[10px] cursor-pointer text-center"
+                  onClick={() => handleStartPractice("teacher")}
+                  className="flex-grow bg-zinc-805 hover:bg-zinc-800 border border-white/5 text-white font-bold py-2.5 px-4 rounded-xl transition text-xs cursor-pointer text-center"
                 >
-                  Nopimmal Practice Room
+                  Start Honorific Practice
                 </button>
               </div>
             ) : (
-              <div className="space-y-3">
-                <div className="bg-zinc-950 rounded-xl p-3 border border-white/5 max-h-32 overflow-y-auto space-y-2 custom-scrollbar">
+              <div className="space-y-3 w-full animate-fade-in">
+                <div className="bg-zinc-900 rounded-xl p-4 border border-white/5 h-44 overflow-y-auto space-y-2.5 custom-scrollbar">
                   {practiceMessages.map((msg, idx) => {
                     const isUser = msg.sender === "user";
                     return (
-                      <div key={idx} className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
-                        <div className={`max-w-[80%] rounded-xl p-2 text-[10px] leading-relaxed ${
-                          isUser ? "bg-brand-500 text-white" : "bg-zinc-900 text-zinc-300 border border-white/5"
+                      <div key={idx} className={`flex ${isUser ? "justify-end" : "justify-start"} animate-fade-in`}>
+                        <div className={`max-w-[80%] rounded-xl p-2.5 text-xs leading-relaxed ${
+                          isUser ? "bg-brand-500 text-white" : "bg-zinc-950 text-zinc-300 border border-white/5"
                         }`}>
                           <p>{msg.text}</p>
                         </div>
@@ -1258,7 +1327,10 @@ return (
                     );
                   })}
                   {practiceSending && (
-                    <div className="text-[9px] text-zinc-500 italic font-mono">Tutor typing...</div>
+                    <div className="flex items-center gap-1 text-[10px] text-zinc-500 italic">
+                      <Loader2 className="w-3 h-3 animate-spin text-brand-400" />
+                      <span>Partner is typing...</span>
+                    </div>
                   )}
                 </div>
 
@@ -1268,26 +1340,26 @@ return (
                       type="text"
                       value={practiceText}
                       onChange={(e) => setPracticeText(e.target.value)}
-                      placeholder="Type your polite/casual reply..."
+                      placeholder="Input casual or honorific variant matching context..."
                       onKeyDown={(e) => e.key === "Enter" && handleSendPracticeTurn()}
-                      className="flex-grow bg-zinc-950 border border-white/5 rounded-lg p-2 text-[10px] text-white focus:outline-none focus:border-brand-500"
+                      className="flex-grow bg-zinc-900 border border-white/10 rounded-lg p-2.5 text-xs text-white focus:outline-none focus:border-brand-500 font-korean"
                     />
                     <button
                       onClick={handleSendPracticeTurn}
                       disabled={practiceSending || !practiceText.trim()}
-                      className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white px-3 rounded-lg text-[10px] font-bold transition"
+                      className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white px-4 rounded-lg text-xs font-bold transition cursor-pointer"
                     >
                       Send
                     </button>
                     <button
                       onClick={handleFinishPractice}
-                      className="bg-red-950/20 border border-red-500/20 text-red-400 hover:text-red-300 px-3 rounded-lg text-[10px] font-bold transition"
+                      className="bg-red-950/20 border border-red-500/20 text-red-400 hover:text-red-300 px-4 rounded-lg text-xs font-bold transition cursor-pointer"
                     >
                       End
                     </button>
                   </div>
                 ) : (
-                  <div className="p-3 bg-zinc-950 rounded-xl border border-brand-500/10 text-[10px] text-zinc-400">
+                  <div className="p-4 bg-zinc-900 rounded-xl border border-brand-500/10 text-xs text-zinc-400 animate-fade-in">
                     <p className="font-bold text-white mb-1">Feedback Summary:</p>
                     <p>{practiceFeedback || "Politeness practice successfully complete!"}</p>
                   </div>
@@ -1296,35 +1368,80 @@ return (
             )}
           </div>
 
-          {/* Phase completion card */}
-          <div className="p-5 bg-gradient-to-r from-brand-500/10 to-accent-teal/10 rounded-2xl border border-brand-500/20 text-center space-y-2">
-            <div className="flex justify-center items-center gap-1 text-amber-400 font-extrabold text-sm uppercase">
-              <Award className="w-5 h-5" />
-              <span>Badge Earned: {quizBadge || "Polite Speaker B1"}</span>
-            </div>
-            <p className="text-xs text-zinc-300">
-              Congratulations on completing Korean 4.4! Next: Phase 5 – Understanding Longer Speech & Note‑Taking.
-            </p>
-            <div className="flex justify-center gap-4 text-xs font-bold pt-1">
-              <span className="text-brand-400">XP +150</span>
-              <span className="text-zinc-500">|</span>
-              <span className="text-accent-teal">Phase 4 Complete</span>
-            </div>
-          </div>
-
-          <div className="flex justify-between items-center pt-4 border-t border-white/5">
-            <button onClick={() => setStep(5)} className="glass-panel px-4 py-2 rounded-xl hover:bg-white/5 text-zinc-400 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
-            <button 
-              onClick={onComplete}
-              className="bg-accent-teal text-zinc-950 hover:bg-accent-teal/90 px-6 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-lg shadow-accent-teal/20"
-            >
-              <span>Complete Phase 4</span>
-              <CheckCircle2 className="w-4 h-4" />
-            </button>
+          <div className="flex justify-between items-center pt-4 border-t border-white/5 font-sans">
+            <button onClick={() => setStep(7)} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-sm font-bold transition flex items-center gap-2 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
+            <button onClick={() => setStep(9)} className="bg-brand-500 hover:bg-brand-600 text-white px-8 py-3 rounded-xl text-sm font-bold transition flex items-center gap-2 cursor-pointer font-bold">Proceed to Graduation <ChevronRight className="w-4 h-4" /></button>
           </div>
         </div>
       )}
 
+      {/* Screen 9: Graduation & Completion */}
+      {step === 9 && (
+        <div className="glass-panel p-10 rounded-[2.5rem] bg-zinc-900/40 border border-white/10 shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center text-center animate-fade-in max-w-3xl mx-auto">
+          <div className="p-4 bg-brand-500/10 rounded-full border border-brand-500/25 w-fit mx-auto text-brand-400">
+            <Award className="w-10 h-10 animate-bounce" />
+          </div>
+          
+          <div>
+            <h2 className="text-3xl font-black text-white font-sans">Korean 4.4 Register Graduated! 🎓🤵</h2>
+            <p className="text-zinc-400 text-sm mt-1.5 font-sans">Congratulations on completing Korean 4.4! Next: Phase 5 – Understanding Longer Speech & Note‑Taking.</p>
+          </div>
+
+          {/* Homework list */}
+          <div className="bg-zinc-950 p-6 rounded-2xl border border-white/5 text-left text-xs space-y-3 font-sans leading-relaxed">
+            <span className="text-[10px] font-black uppercase tracking-widest text-brand-400 block font-sans">Interactive Homework List:</span>
+            <div className="space-y-2">
+              {homeworkItems.map((item: any) => {
+                const isChecked = !!completedHomework[item.id];
+                return (
+                  <label key={item.id} className="flex items-start gap-3 p-3 bg-zinc-900/45 rounded-lg border border-white/[0.03] cursor-pointer hover:bg-zinc-900 transition">
+                    <input
+                      type="checkbox"
+                      id={`hw-checkbox-${item.id}`}
+                      checked={isChecked}
+                      onChange={() => handleToggleHomework(item.id, isChecked)}
+                      className="mt-0.5 rounded border-white/10 text-amber-500 focus:ring-0 focus:ring-offset-0 bg-zinc-950"
+                    />
+                    <div className="text-zinc-300">
+                      <span className="font-bold text-white block mb-0.5 font-sans">
+                        {item.id === "hw_b1_reg_1" ? "Task 1: Register Writing" : item.id === "hw_b1_reg_2" ? "Task 2: Disagreement Softening" : "Task 3: Written Reflection"}
+                      </span>
+                      <span className={isChecked ? "line-through text-zinc-500" : ""}>{item.text}</span>
+                    </div>
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* completion path details */}
+          <div className="p-5 bg-gradient-to-r from-brand-500/10 to-yellow-500/10 rounded-2xl border border-brand-500/20 text-center space-y-1">
+            <div className="flex justify-center items-center gap-1 text-brand-400 font-extrabold text-sm uppercase">
+              <Award className="w-5 h-5" />
+              <span>Badge Earned: {quizBadge || "Polite Speaker B1"}</span>
+            </div>
+            <div className="flex justify-center gap-4 text-xs font-bold pt-1">
+              <span className="text-brand-400 font-sans">XP +150 Completion Bonus</span>
+              <span className="text-zinc-655">|</span>
+              <span className="text-yellow-400 font-sans">Phase 4 Complete</span>
+            </div>
+          </div>
+
+          <button
+            id="finish-phase-btn"
+            onClick={() => {
+              if (typeof window !== "undefined") {
+                window.dispatchEvent(new CustomEvent("hangeulai-xp", { detail: { amount: 150, type: "correct" } }));
+              }
+              onComplete();
+            }}
+            className="bg-gradient-to-r from-brand-500 to-yellow-500 hover:from-brand-600 text-white font-black py-4 px-10 rounded-2xl transition text-sm flex items-center justify-center gap-2 mx-auto shadow-lg shadow-brand-500/20 cursor-pointer"
+          >
+            <span>Complete Phase 4 &amp; Continue</span>
+            <ChevronRight className="w-4 h-4 text-white" />
+          </button>
+        </div>
+      )}
     </div>
   );
 }

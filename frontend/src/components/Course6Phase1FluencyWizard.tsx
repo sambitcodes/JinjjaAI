@@ -11,11 +11,18 @@ import {
   Loader2, 
   CheckCircle2, 
   Mic,
+  MessageSquare,
+  ArrowRight,
+  HelpCircle,
   MessageCircle,
+  FileText,
+  Bookmark,
+  CheckSquare,
+  Info,
   TrendingUp,
-  Play,
   Activity,
-  CheckSquare
+  Layers,
+  List
 } from "lucide-react";
 
 let API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
@@ -43,6 +50,39 @@ async function apiJson(path: string, opts: RequestInit = {}) {
   return res.json();
 }
 
+const playSFX = (type: "correct" | "wrong") => {
+  if (typeof window === "undefined") return;
+  try {
+    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    if (type === "correct") {
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(659.25, ctx.currentTime);
+      gain.gain.setValueAtTime(0.1, ctx.currentTime);
+      osc.start();
+      osc.frequency.setValueAtTime(783.99, ctx.currentTime + 0.1);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+      osc.stop(ctx.currentTime + 0.4);
+      window.dispatchEvent(new CustomEvent("hangeulai-xp", { detail: { amount: 20, type: "correct" } }));
+    } else {
+      osc.type = "triangle";
+      osc.frequency.setValueAtTime(150.0, ctx.currentTime);
+      gain.gain.setValueAtTime(0.15, ctx.currentTime);
+      osc.start();
+      osc.frequency.exponentialRampToValueAtTime(80.0, ctx.currentTime + 0.35);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+      osc.stop(ctx.currentTime + 0.4);
+      window.dispatchEvent(new CustomEvent("hangeulai-xp", { detail: { amount: -10, type: "wrong" } }));
+    }
+  } catch (e) {
+    console.error("AudioContext not supported or blocked", e);
+  }
+};
+
 interface Course6Phase1FluencyWizardProps {
   activeLesson: any;
   speakWord: (text: string) => void;
@@ -57,42 +97,34 @@ export default function Course6Phase1FluencyWizard({
   const [step, setStep] = useState(1);
   const [showOutline, setShowOutline] = useState(false);
   const [mode, setMode] = useState<"text" | "voice">("text");
-  const totalSteps = 6;
+  const totalSteps = 8;
 
   // Data loaded from Backend
   const [metadata, setMetadata] = useState<any>(null);
   const [coreData, setCoreData] = useState<any>(null);
 
-  // Activity 1 states
-  const [activity1SubStep, setActivity1SubStep] = useState<"1A" | "1B">("1A");
+  // Concept C1 micro checkpoint
+  const [c1Selected, setC1Selected] = useState<string | null>(null);
+  const [c1Checked, setC1Checked] = useState(false);
+
+  // Activity A (Structural parsing)
   const [analysisStory, setAnalysisStory] = useState<any>(null);
-  const [selectedParagraphStage, setSelectedParagraphStage] = useState<Record<number, string>>({});
   const [selectedEvaluationAns, setSelectedEvaluationAns] = useState<string | null>(null);
   const [act1Checked, setAct1Checked] = useState(false);
   const [act1Correct, setAct1Correct] = useState<boolean | null>(null);
 
-  // Reorder task
-  const [reorderData, setReorderData] = useState<any>(null);
-  const [scrambledBlocks, setScrambledBlocks] = useState<any[]>([]);
-  const [selectedConnectors, setSelectedConnectors] = useState<Record<string, string>>({});
-  const [improvedStory, setImprovedStory] = useState<any>(null);
-  const [buildingImproved, setBuildingImproved] = useState(false);
-
-  // Activity 2 states
-  const [activity2SubStep, setActivity2SubStep] = useState<"2A" | "2B" | "2C">("2A");
-  
-  // Story builder
+  // Activity B (Story Outline & Improvement)
   const [builderTopic, setBuilderTopic] = useState("A challenge you overcame");
   const [blueprintDrafts, setBlueprintDrafts] = useState<Record<string, string>>({});
   const [builderFeedback, setBuilderFeedback] = useState<any>(null);
   const [buildingDraft, setBuildingDraft] = useState(false);
 
-  // Speech monologue
+  // Activity C (Spoken performance & evaluation)
   const [recording, setRecording] = useState(false);
   const [speechEvaluation, setSpeechEvaluation] = useState<any>(null);
   const [submittingSpeech, setSubmittingSpeech] = useState(false);
-
-  // AI Prompt long turn chat
+  
+  // AI reflection/examination session
   const [aiSessionId, setAiSessionId] = useState<string | null>(null);
   const [aiMessages, setAiMessages] = useState<any[]>([]);
   const [aiText, setAiText] = useState("");
@@ -101,7 +133,7 @@ export default function Course6Phase1FluencyWizard({
   const [aiEvaluation, setAiEvaluation] = useState<any>(null);
   const [finishingLongTurn, setFinishingLongTurn] = useState(false);
 
-  // Quiz states
+  // Activity D (Quiz)
   const [quizBlueprint, setQuizBlueprint] = useState<any[]>([]);
   const [quizIdx, setQuizIdx] = useState(0);
   const [quizChecked, setQuizChecked] = useState(false);
@@ -112,17 +144,30 @@ export default function Course6Phase1FluencyWizard({
   const [finishingQuiz, setFinishingQuiz] = useState(false);
   const [quizBadge, setQuizBadge] = useState<string | null>(null);
 
-  // Homework states
-  const [homeworkItems, setHomeworkItems] = useState<any[]>([]);
-  const [completedHomework, setCompletedHomework] = useState<Record<string, boolean>>({});
-
-  // Homework AI practice session
+  // Activity E (Free practice chat)
   const [practiceSessionId, setPracticeSessionId] = useState<string | null>(null);
   const [practiceMessages, setPracticeMessages] = useState<any[]>([]);
   const [practiceText, setPracticeText] = useState("");
   const [practiceSending, setPracticeSending] = useState(false);
   const [practiceFinished, setPracticeFinished] = useState(false);
   const [practiceFeedback, setPracticeFeedback] = useState<string | null>(null);
+
+  // Graduation Checklist (Step 8)
+  const [homeworkItems, setHomeworkItems] = useState<any[]>([]);
+  const [completedHomework, setCompletedHomework] = useState<Record<string, boolean>>({});
+
+  // Restore step from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem("hangeulai_c6p1_step");
+    if (saved) {
+      const parsedStep = parseInt(saved, 10);
+      if (parsedStep >= 1 && parsedStep <= 8) setStep(parsedStep);
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem("hangeulai_c6p1_step", String(step));
+  }, [step]);
 
   // Load API Data per Step
   useEffect(() => {
@@ -134,20 +179,13 @@ export default function Course6Phase1FluencyWizard({
         } else if (step === 2 && !coreData) {
           const res = await apiJson("/phases/korean5/1/core-data");
           setCoreData(res);
-        } else if (step === 3) {
-          if (!analysisStory) {
-            const res = await apiJson("/practice/advanced-story/analysis");
-            setAnalysisStory(res);
-          }
-          if (!reorderData) {
-            const res = await apiJson("/practice/advanced-story/reorder");
-            setReorderData(res);
-            setScrambledBlocks(res.scrambled || []);
-          }
-        } else if (step5Condition()) {
+        } else if (step === 3 && !analysisStory) {
+          const res = await apiJson("/practice/advanced-story/analysis");
+          setAnalysisStory(res);
+        } else if (step === 6 && quizBlueprint.length === 0) {
           const res = await apiJson("/quiz/korean5/phase-1/start", { method: "POST" });
           setQuizBlueprint(res.blueprint || []);
-        } else if (step === 6 && homeworkItems.length === 0) {
+        } else if (step === 8 && homeworkItems.length === 0) {
           const res = await apiJson("/phases/korean5/1/homework");
           setHomeworkItems(res || []);
         }
@@ -158,58 +196,30 @@ export default function Course6Phase1FluencyWizard({
     load();
   }, [step]);
 
-  const step5Condition = () => {
-    return step === 5 && quizBlueprint.length === 0;
-  };
-
   const playAudio = (text: string) => {
     speakWord(text);
   };
 
-  // Activity 1A checks
-  const handleCheckActivity1A = () => {
+  // C1 Micro reflection check
+  const handleC1Check = () => {
+    if (!c1Selected) return;
+    setC1Checked(true);
+    playSFX("correct");
+  };
+
+  // Activity A (Structural parsing check)
+  const handleCheckActivity1 = () => {
     if (!analysisStory) return;
-    const correctVal = selectedEvaluationAns === "그때 정말 포기하고 싶을 만큼 절망스러웠습니다. (At that time, I was desperate enough to really want to give up.)";
-    
-    // Simple mock check for segment alignments
-    const allSegmentsMatched = Object.keys(selectedParagraphStage).length >= 3;
+    // Model correct evaluation sentence target
+    const modelTarget = "그때 정말 포기하고 싶을 만큼 절망스러웠습니다. (At that time, I was desperate enough to really want to give up.)";
+    const isCorrect = selectedEvaluationAns === modelTarget;
 
     setAct1Checked(true);
-    setAct1Correct(correctVal && allSegmentsMatched);
+    setAct1Correct(isCorrect);
+    playSFX(isCorrect ? "correct" : "wrong");
   };
 
-  // Reorder task re-arranger
-  const moveBlock = (fromIndex: number, toIndex: number) => {
-    const updated = [...scrambledBlocks];
-    const [moved] = updated.splice(fromIndex, 1);
-    updated.splice(toIndex, 0, moved);
-    setScrambledBlocks(updated);
-  };
-
-  const handleBuildReorderStory = async () => {
-    setBuildingImproved(true);
-    try {
-      const res = await apiJson("/practice/advanced-story/reorder/answer", {
-        method: "POST",
-        body: JSON.stringify({
-          question_id: reorderData.id,
-          answer: JSON.stringify({
-            order: scrambledBlocks.map(b => b.id),
-            connectors: selectedConnectors
-          }),
-          time_taken_ms: 4000
-        })
-      });
-      setImprovedStory(res);
-      playAudio(res.improved_text);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setBuildingImproved(false);
-    }
-  };
-
-  // Activity 2 Story Builder
+  // Activity B (Outline & improve draft compilation)
   const handleBuildStoryDraft = async () => {
     setBuildingDraft(true);
     try {
@@ -232,7 +242,7 @@ export default function Course6Phase1FluencyWizard({
     }
   };
 
-  // Speech monologue recorder
+  // Activity C (Continuous monologue spoken coaching)
   const handleRecordMonologue = () => {
     setRecording(true);
     setTimeout(async () => {
@@ -252,10 +262,10 @@ export default function Course6Phase1FluencyWizard({
       } finally {
         setSubmittingSpeech(false);
       }
-    }, 3000);
+    }, 2500);
   };
 
-  // AI Prompt long turn chat session
+  // AI reflection examiner room triggers
   const handleStartAiLongTurn = async () => {
     setAiMessages([]);
     setAiEvaluation(null);
@@ -312,7 +322,7 @@ export default function Course6Phase1FluencyWizard({
     }
   };
 
-  // Quiz Checks
+  // Activity D: Quiz Check
   const handleCheckQuiz = async () => {
     const current = quizBlueprint[quizIdx];
     if (!current || !quizSelectedOpt) return;
@@ -320,6 +330,8 @@ export default function Course6Phase1FluencyWizard({
     const isCorrect = quizSelectedOpt === current.correct_answer;
     setQuizChecked(true);
     setQuizCorrect(isCorrect);
+    playSFX(isCorrect ? "correct" : "wrong");
+
     if (!isCorrect) {
       setQuizMistakes((prev) => [...prev, current.id]);
     }
@@ -330,7 +342,7 @@ export default function Course6Phase1FluencyWizard({
         body: JSON.stringify({
           question_id: current.id,
           answer: quizSelectedOpt,
-          time_taken_ms: 2000
+          time_taken_ms: 3000
         })
       });
     } catch (e) {
@@ -358,7 +370,7 @@ export default function Course6Phase1FluencyWizard({
         });
         setQuizScore(score);
         setQuizBadge(res.badge || "Advanced Storyteller C1");
-        setStep(6);
+        setStep(7); // Proceed to Activity E (Free practice chat)
       } catch (err) {
         console.error(err);
       } finally {
@@ -367,20 +379,7 @@ export default function Course6Phase1FluencyWizard({
     }
   };
 
-  // Homework check logging
-  const handleToggleHomework = async (id: string, currentStatus: boolean) => {
-    setCompletedHomework((prev) => ({ ...prev, [id]: !currentStatus }));
-    try {
-      await apiJson("/phases/korean5/1/homework/check", {
-        method: "POST",
-        body: JSON.stringify({ homework_id: id, checked: !currentStatus })
-      });
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  // Homework AI practice session
+  // Activity E: Free practice chat
   const handleStartPractice = async (scen: string) => {
     setPracticeMessages([]);
     setPracticeFeedback(null);
@@ -434,66 +433,70 @@ export default function Course6Phase1FluencyWizard({
     }
   };
 
-    const outlineSteps = [
-    { num: 1, label: "Screen 1 – Welcome / Phase Overview" },
-    { num: 2, label: "Screen 2 – C1 Fluency & Story blueprints" },
-    { num: 3, label: "Screen 3 – Activity 1: Analyze & Reorder Scenarios" },
-    { num: 4, label: "Screen 4 – Activity 2: Form Builders & Spoken Monologues" },
-    { num: 5, label: "Screen 5 – Mini-Quiz: Connector & Logic Checkpoints" },
-    { num: 6, label: "Screen 6 – Homework & Exit reflections" }
+  // Step 8: Homework toggle
+  const handleToggleHomework = async (id: string, currentStatus: boolean) => {
+    setCompletedHomework((prev) => ({ ...prev, [id]: !currentStatus }));
+    try {
+      await apiJson("/phases/korean5/1/homework/check", {
+        method: "POST",
+        body: JSON.stringify({ homework_id: id, checked: !currentStatus })
+      });
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const outlineSteps = [
+    { num: 1, label: "Welcome & Goals" },
+    { num: 2, label: "Concept: Annotated Monologue" },
+    { num: 3, label: "Activity A: Structural Parsing" },
+    { num: 4, label: "Activity B: Story Outline Compiler" },
+    { num: 5, label: "Activity C: Spoken Monologue Coach" },
+    { num: 6, label: "Activity D: Strategy Quiz" },
+    { num: 7, label: "Activity E: Story Practice Chat" },
+    { num: 8, label: "Phase Graduation" }
   ];
 
-  
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      window.dispatchEvent(new CustomEvent("hangeulai-step-change", {
-        detail: {
-          courseId: 6,
-          phaseNum: 1,
-          step: step
-        }
-      }));
-    }
-  }, [step]);
-
-return (
-    <div className="flex-grow flex flex-col justify-between">
+  return (
+    <div className="flex-grow flex flex-col justify-between min-h-[75vh] text-zinc-100 font-sans">
       
       {/* Top Header tracking */}
       <header className="flex justify-between items-center py-4 border-b border-white/5 mb-6">
         <div className="flex items-center space-x-4">
           <div className="p-3 rounded-2xl bg-zinc-900 border border-white/10 shadow-lg">
-            <BookOpen className="w-6 h-6 text-brand-400" />
+            <TrendingUp className="w-6 h-6 text-brand-400" />
           </div>
           <div>
             <h2 className="font-black text-xl text-white tracking-tight flex items-center gap-2">
-              <span>{activeLesson?.title || "Korean 5.1 – Advanced Fluency & Storytelling"}</span>
+              <span>{activeLesson?.title || "Korean 6.1 – Advanced Fluency & Storytelling"}</span>
+              <span className="px-2 py-0.5 text-[10px] font-bold bg-brand-500/10 text-brand-300 border border-brand-500/20 rounded-md uppercase tracking-wider">C1 Fluency</span>
             </h2>
-            <p className="text-xs text-zinc-500 font-medium">Topic: C1 Narrative Structures & Connectors</p>
+            <p className="text-xs text-zinc-400 font-medium">Course 6 &bull; Phase 1</p>
           </div>
         </div>
         
         {/* Active progress bar */}
         <div className="flex items-center space-x-4">
-          <div className="w-40 h-3 bg-zinc-900/80 rounded-full overflow-hidden border border-white/5 p-[2px]">
+          <div className="w-40 h-3 bg-zinc-950 rounded-full overflow-hidden border border-white/5 p-[2px]">
             <div 
-              className="h-full bg-gradient-to-r from-yellow-500 via-orange-500 to-indigo-500 rounded-full transition-all duration-500" 
+              className="h-full bg-gradient-to-r from-teal-500 via-emerald-500 to-green-500 rounded-full transition-all duration-500" 
               style={{ width: `${(step / totalSteps) * 100}%` }}
             />
           </div>
           <span className="text-xs text-zinc-400 font-bold">{Math.round((step / totalSteps) * 100)}%</span>
           <button 
             onClick={() => setShowOutline(!showOutline)}
-            className="text-[10px] bg-zinc-900 border border-white/10 hover:bg-zinc-900 text-zinc-300 px-3 py-1.5 rounded-lg transition duration-200 cursor-pointer uppercase tracking-wider font-bold"
+            className="text-[10px] bg-zinc-900 border border-white/10 hover:bg-zinc-800 text-zinc-300 px-3 py-1.5 rounded-lg transition duration-200 cursor-pointer uppercase tracking-wider font-extrabold"
           >
             {showOutline ? "Hide Outline" : "View Outline"}
           </button>
         </div>
       </header>
+
       {showOutline && (
-        <div className="mb-6 p-5 bg-zinc-950/80 rounded-3xl border border-white/5 shadow-2xl animate-in fade-in slide-in-from-top-4 duration-300">
+        <div className="mb-6 p-5 bg-zinc-950/80 rounded-3xl border border-white/10 shadow-2xl animate-in fade-in slide-in-from-top-4 duration-300">
           <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest block mb-3 font-mono">Curriculum Syllabus Map</span>
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-2">
             {outlineSteps.map(s => (
               <button
                 key={s.num}
@@ -514,638 +517,488 @@ return (
         </div>
       )}
 
-      {/* Screen 1: Welcome/Overview */}
+      {/* Step 1: Welcome/Goals */}
       {step === 1 && (
-        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center text-center animate-fade-in">
-          <div className="p-3 bg-brand-500/10 rounded-full border border-brand-500/25 w-fit mx-auto text-brand-400 shrink-0">
-            <Sparkles className="w-8 h-8 animate-pulse shrink-0" />
+        <div className="glass-panel p-10 rounded-[2.5rem] bg-zinc-900/40 border border-white/10 shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center text-center animate-fade-in">
+          <div className="p-4 bg-brand-500/10 rounded-full border border-brand-500/25 w-fit mx-auto text-brand-400 shrink-0">
+            <TrendingUp className="w-10 h-10 animate-pulse shrink-0" />
           </div>
           
-          <h2 className="text-5xl font-black text-white tracking-tight font-sans">Korean 5.1</h2>
-          <h3 className="text-2xl font-extrabold text-brand-400 mt-2">Advanced Fluency & Storytelling</h3>
+          <div>
+            <h2 className="text-4xl md:text-5xl font-black text-white tracking-tight">Complex Stories &amp; Ideas</h2>
+            <h3 className="text-xl font-extrabold text-brand-450 mt-2">Advanced C1 Fluency</h3>
+          </div>
           
           <p className="text-zinc-300 text-base leading-relaxed max-w-2xl mx-auto">
             {metadata?.description || "Tell complex stories and ideas smoothly in Korean."}
           </p>
 
-          <div className="bg-zinc-900/60 p-5 rounded-2xl border border-white/5 text-left text-xs text-zinc-400 space-y-3 max-w-md mx-auto w-full">
-            <p className="text-[10px] text-zinc-500 font-mono uppercase tracking-wider font-black">🎯 Objectives:</p>
-            <ul className="list-disc list-inside space-y-1.5 text-zinc-300 pl-1">
+          <div className="bg-zinc-950/60 p-6 rounded-2xl border border-white/5 text-left text-sm text-zinc-400 space-y-3 max-w-2xl mx-auto w-full font-sans">
+            <p className="text-[10px] text-zinc-500 font-mono uppercase tracking-wider font-black">🎯 C1 Fluency Objectives:</p>
+            <ul className="list-disc list-inside space-y-1 text-zinc-300 pl-1">
               {(metadata?.goals || [
-                "Speak at length without stopping to search for every word",
-                "Structure stories with clear beginnings, turning points, and reflections",
-                "Use advanced connectors and discourse markers to sound organized"
+                "Express ideas fluently and spontaneously, with little searching for expressions",
+                "Produce clear, well-structured, detailed speech on complex topics (challenges, personal growth)",
+                "Analyze an advanced Korean monologue for structure and evaluation",
+                "Draft and refine your own C1-level story outline and full text",
+                "Perform a spoken version and receive multi-dimensional feedback"
               ]).map((g: string, idx: number) => (
-                <li key={idx}>{g}</li>
+                <li key={idx} className="text-zinc-300">{g}</li>
               ))}
             </ul>
-            <p className="pt-2"><strong>⏱️ Estimated Time:</strong> {metadata?.estimated_minutes || 35}–45 minutes</p>
+            <div className="pt-2 grid grid-cols-2 gap-2 text-xs border-t border-white/5 mt-4">
+              <p><strong>⏱️ Estimated Time:</strong> {metadata?.estimated_minutes || 45} minutes</p>
+              <p><strong>📋 Level:</strong> Advanced C1 (Korean 6.1)</p>
+            </div>
           </div>
 
           {/* Mode Selector */}
-          <div className="bg-zinc-950 p-4 rounded-2xl border border-white/5 max-w-sm mx-auto w-full space-y-2 text-left">
+          <div className="bg-zinc-950 p-4 rounded-2xl border border-white/5 max-w-xs mx-auto w-full space-y-2 text-left">
             <span className="text-[9px] text-zinc-500 uppercase tracking-widest font-black block">Conversation Mode</span>
             <div className="grid grid-cols-2 gap-2">
               <button
                 onClick={() => setMode("text")}
-                className={`p-3 rounded-xl border text-xs font-bold transition ${
+                className={`p-2.5 rounded-xl border text-xs font-bold transition cursor-pointer ${
                   mode === "text" 
                     ? "border-brand-500 bg-brand-500/10 text-white" 
                     : "border-white/5 bg-zinc-900/60 text-zinc-400 hover:border-white/10"
                 }`}
               >
-                Text Input
+                Text input
               </button>
               <button
                 onClick={() => setMode("voice")}
-                className={`p-3 rounded-xl border text-xs font-bold transition flex items-center justify-center gap-1.5 ${
+                className={`p-2.5 rounded-xl border text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
                   mode === "voice" 
                     ? "border-brand-500 bg-brand-500/10 text-white" 
                     : "border-white/5 bg-zinc-900/60 text-zinc-400 hover:border-white/10"
                 }`}
               >
                 <Mic className="w-3.5 h-3.5" />
-                <span>Voice + Text</span>
+                <span>Voice input</span>
               </button>
             </div>
           </div>
 
-          <div className="flex flex-col gap-3 max-w-xs mx-auto pt-2">
+          <div className="flex flex-col gap-3 max-w-xs mx-auto pt-4">
             <button 
               onClick={() => setStep(2)}
-              className="bg-brand-500 hover:bg-brand-600 text-white font-black py-4 px-10 rounded-2xl transition text-base flex items-center justify-center gap-2.5 cursor-pointer shadow-lg shadow-brand-500/20"
+              className="bg-brand-600 hover:bg-brand-500 text-white font-black py-4 px-10 rounded-2xl transition text-base flex items-center justify-center gap-2.5 cursor-pointer shadow-lg shadow-brand-600/20"
             >
               <span>Start Phase 1</span>
-              <ChevronRight className="w-4 h-4" />
+              <ChevronRight className="w-5 h-5 text-white" />
             </button>
-            
           </div>
-
-          
         </div>
       )}
 
-      {/* Screen 2: Concept Explanation */}
+      {/* Step 2: Concept: Annotated Monologue */}
       {step === 2 && (
-        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
+        <div className="glass-panel p-10 rounded-[2.5rem] bg-zinc-900/40 border border-white/10 shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in font-sans">
           <div className="flex justify-between items-center border-b border-white/5 pb-4">
             <h2 className="text-2xl font-black text-white flex items-center gap-2">
               <BookOpen className="w-6 h-6 text-brand-400" />
-              <span>C1‑Level Fluency & Story Structure</span>
+              <span>Concept Screen: Advanced Monologue &amp; Story Arc</span>
             </h2>
-            <span className="text-xs text-zinc-500 font-bold">Step 2 of {totalSteps}</span>
+            <span className="text-xs text-zinc-400 font-mono">Step 2 of {totalSteps}</span>
           </div>
 
-          <div className="bg-brand-500/5 p-4 rounded-xl border border-brand-500/10 text-xs leading-relaxed text-zinc-300">
-            <p className="font-bold text-white mb-1">C1 Fluency Goal</p>
-            <p className="italic font-serif">
-              “At C1, you can express ideas fluently and spontaneously without much obvious searching for expressions, and you can produce clear, well-structured, detailed speech on complex subjects.”
-            </p>
-          </div>
+          <p className="text-zinc-300 text-xs text-left max-w-2xl mx-auto leading-relaxed">
+            Advanced C1 storytelling revolves around structural storytelling models. A complete story arc usually contains: <strong>Orientation (Background context)</strong>, a **Sequence of Events (Complicating Action)**, a core **Evaluation (reflection/feeling)**, and a **Coda (lesson/wrap-up)**.
+          </p>
 
-          {/* Story Arc Diagram */}
-          <div className="space-y-2 text-left">
-            <span className="text-[9px] text-zinc-500 font-bold uppercase tracking-wider block">1. Horizontal Story Arc Structure</span>
-            <div className="bg-zinc-950 p-3.5 rounded-xl border border-white/5 flex gap-1 justify-between text-[8px] font-black uppercase text-center font-mono">
-              {coreData?.story_blueprint?.stages.map((st: string) => (
-                <div key={st} className="flex-grow p-1 bg-zinc-900 border border-brand-500/20 text-brand-400 rounded">
-                  {st}
+          {coreData?.annotated_monologue && (
+            <div className="bg-zinc-950 p-6 rounded-2xl border border-white/10 space-y-4 text-left max-w-3xl mx-auto w-full">
+              <div className="flex justify-between items-center bg-zinc-900 p-4 rounded-xl border border-white/5">
+                <div className="space-y-0.5">
+                  <span className="text-[9px] text-zinc-550 uppercase tracking-wider block font-mono">C1 Story Monologue:</span>
+                  <p className="font-korean text-base font-bold text-white mt-1">{coreData.annotated_monologue.text}</p>
                 </div>
-              ))}
-            </div>
-          </div>
+                <button
+                  onClick={() => playAudio(coreData.annotated_monologue.text)}
+                  className="p-3 bg-brand-500/10 hover:bg-brand-500/20 border border-brand-500/25 text-brand-400 rounded-xl transition cursor-pointer flex items-center gap-1 text-xs shrink-0"
+                >
+                  <Volume2 className="w-4 h-4" /> Listen
+                </button>
+              </div>
 
-          {/* Connector Category Grid */}
-          <div className="space-y-2 text-left text-xs">
-            <span className="text-[9px] text-zinc-500 font-bold uppercase tracking-wider block">2. Advanced Connector Inventory</span>
-            <div className="grid grid-cols-3 gap-2">
-              {coreData?.discourse_markers && Object.entries(coreData.discourse_markers).map(([cat, list]: any) => (
-                <div key={cat} className="p-2 bg-zinc-900 rounded-lg border border-white/5">
-                  <span className="text-[8px] text-zinc-500 uppercase font-mono font-bold block mb-1">{cat}</span>
-                  <div className="space-y-0.5 text-[10px]">
-                    {list.map((c: string) => (
-                      <p key={c} className="text-zinc-300 truncate font-korean">{c}</p>
-                    ))}
-                  </div>
-                </div>
-              ))}
+              <div className="bg-zinc-900 p-4 rounded-xl border border-white/5 space-y-1">
+                <span className="text-[9px] text-zinc-500 uppercase tracking-widest block font-mono">English Translation:</span>
+                <p className="text-zinc-300 text-xs leading-relaxed italic">"{coreData.annotated_monologue.translation}"</p>
+              </div>
             </div>
-          </div>
+          )}
 
-          {/* Annotated Story Monologue */}
-          <div className="space-y-2 text-left text-xs bg-zinc-900/40 p-4 rounded-xl border border-white/5">
-            <div className="flex justify-between items-center mb-1">
-              <span className="text-[9px] text-zinc-500 font-bold uppercase tracking-wider">3. Labeled C1 Monologue Example</span>
-              <button 
-                onClick={() => playAudio(coreData?.annotated_monologue?.text || "")}
-                className="p-1 bg-zinc-950 rounded text-zinc-400 hover:text-white flex items-center gap-1 text-[9px] px-2 border border-white/5 cursor-pointer"
+          {/* Micro-reflection Question */}
+          <div className="bg-zinc-950 p-6 rounded-2xl border border-white/10 space-y-4 max-w-xl mx-auto w-full text-left font-sans">
+            <span className="text-[9px] text-zinc-400 uppercase font-black tracking-widest block font-mono">Micro Checkpoint C1</span>
+            <p className="text-sm font-bold text-white">From the English translation, which sentence sounds like the main evaluation or lesson of the story?</p>
+            
+            <div className="flex flex-col gap-2">
+              {[
+                { id: "A", text: "At that time, I was desperate enough to really want to give up." },
+                { id: "B", text: "But I studied every day and successfully passed the examination." },
+                { id: "C", text: "Next week, I am going to celebrate with my family." }
+              ].map((opt) => {
+                let borderStyle = "border-white/5 bg-zinc-900/60 text-zinc-300";
+                if (c1Selected === opt.id) {
+                  borderStyle = "border-brand-500 bg-brand-500/10 text-white";
+                }
+                if (c1Checked) {
+                  if (opt.id === "A") {
+                    borderStyle = "border-green-500 bg-green-500/10 text-green-300 font-extrabold";
+                  } else if (c1Selected === opt.id) {
+                    borderStyle = "border-red-500 bg-red-500/10 text-red-300 font-extrabold";
+                  }
+                }
+                return (
+                  <button
+                    key={opt.id}
+                    disabled={c1Checked}
+                    onClick={() => setC1Selected(opt.id)}
+                    className={`py-3 px-4 rounded-xl border text-left text-xs font-bold transition cursor-pointer ${borderStyle}`}
+                  >
+                    {opt.text}
+                  </button>
+                );
+              })}
+            </div>
+
+            {c1Checked && (
+              <div className="p-4 bg-green-500/5 border border-green-500/20 rounded-xl text-xs text-left animate-fade-in text-green-300 font-sans">
+                <p className="font-extrabold mb-1">✓ Correct!</p>
+                <p>The sentence expressing feeling, desperation, or meaning ("절망스러웠습니다") represents the **Evaluation** stage of the story. C1 learners must clearly label their subjective evaluations to differentiate their speaking from simple factual B1 descriptions.</p>
+              </div>
+            )}
+
+            {!c1Checked && (
+              <button
+                onClick={handleC1Check}
+                disabled={!c1Selected}
+                className="w-full py-2.5 bg-brand-500 text-white text-xs font-bold rounded-xl disabled:opacity-40 transition cursor-pointer"
               >
-                <Volume2 className="w-3 h-3" /> Play Flow
+                Submit Response
               </button>
-            </div>
-            <p className="font-korean text-zinc-200 leading-relaxed text-[11px]">{coreData?.annotated_monologue?.text}</p>
-            <p className="text-zinc-500 italic text-[10px] mt-1.5">"{coreData?.annotated_monologue?.translation}"</p>
+            )}
           </div>
 
-          <div className="flex justify-between items-center pt-4 border-t border-white/5">
-            <button onClick={() => setStep(1)} className="glass-panel px-4 py-2 rounded-xl hover:bg-white/5 text-zinc-400 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
-            <button onClick={() => setStep(3)} className="bg-brand-500 hover:bg-brand-600 text-white px-5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer">Start Activities <ChevronRight className="w-4 h-4" /></button>
+          <div className="flex justify-between items-center pt-4 border-t border-white/5 font-sans">
+            <button onClick={() => setStep(1)} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-sm font-bold transition flex items-center gap-2 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
+            <button onClick={() => setStep(3)} className="bg-brand-650 hover:bg-brand-600 text-white px-8 py-3 rounded-xl text-sm font-bold transition flex items-center gap-2 cursor-pointer">Start Activities <ChevronRight className="w-4 h-4 text-white" /></button>
           </div>
         </div>
       )}
 
-      {/* Screen 3: Activity 1: Analyze & Restructure */}
+      {/* Step 3: Activity A: Structural parsing */}
       {step === 3 && (
-        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
+        <div className="glass-panel p-10 rounded-[2.5rem] bg-zinc-900/40 border border-white/10 shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in font-sans">
           <div className="flex justify-between items-center border-b border-white/5 pb-4">
             <h2 className="text-2xl font-black text-white flex items-center gap-2">
               <Sparkles className="w-6 h-6 text-brand-400" />
-              <span>{activity1SubStep === "1A" ? "Activity 1A – Segment story parts" : "Activity 1B – Reorder scrambled story"}</span>
+              <span>Activity A – Structural Parsing Challenge</span>
             </h2>
-            <div className="flex gap-1.5">
-              <button 
-                onClick={() => setActivity1SubStep("1A")}
-                className={`px-2 py-0.5 rounded text-[10px] font-bold ${activity1SubStep === "1A" ? "bg-brand-500 text-white" : "bg-zinc-900 text-zinc-400"}`}
-              >
-                1A
-              </button>
-              <button 
-                onClick={() => setActivity1SubStep("1B")}
-                className={`px-2 py-0.5 rounded text-[10px] font-bold ${activity1SubStep === "1B" ? "bg-brand-500 text-white" : "bg-zinc-900 text-zinc-400"}`}
-              >
-                1B
-              </button>
-            </div>
+            <span className="text-xs text-zinc-400 font-mono">Step 3 of {totalSteps}</span>
           </div>
 
-          {/* Substep 1A: Segment story parts */}
-          {activity1SubStep === "1A" && analysisStory && (
-            <div className="space-y-4 text-left">
-              <span className="text-[10px] text-zinc-500 font-black uppercase tracking-wider block">Align the narrative chunks:</span>
-              <div className="p-3 bg-zinc-950 border border-white/5 rounded-xl space-y-2 max-h-[140px] overflow-y-auto pr-1">
-                {analysisStory.paragraphs.map((p: any, idx: number) => (
-                  <div key={idx} className="space-y-1 p-2 bg-zinc-900 rounded border border-white/[0.04]">
-                    <div className="flex justify-between items-center text-[8px] font-mono text-zinc-500">
-                      <span>Paragraph {idx + 1}</span>
-                      <select 
-                        value={selectedParagraphStage[idx] || ""}
-                        onChange={(e) => setSelectedParagraphStage(prev => ({ ...prev, [idx]: e.target.value }))}
-                        className="bg-zinc-950 border border-white/10 text-zinc-300 rounded px-1"
+          {analysisStory && (
+            <div className="bg-zinc-950 p-6 rounded-2xl border border-white/10 space-y-6 text-left max-w-3xl mx-auto w-full animate-fade-in font-sans">
+              
+              <div className="space-y-3">
+                <span className="text-xs font-bold text-white block">Click or select the sentence expressing the speaker's main Evaluation:</span>
+                
+                <div className="flex flex-col gap-2">
+                  {analysisStory.paragraphs?.map((p: any) => {
+                    let borderStyle = "border-white/5 bg-zinc-900 text-zinc-300 hover:border-brand-500/20";
+                    if (selectedEvaluationAns === p.ko) {
+                      borderStyle = "border-brand-500 bg-brand-500/10 text-white font-bold";
+                    }
+                    if (act1Checked) {
+                      if (p.ko.includes("절망스러웠습니다")) {
+                        borderStyle = "border-green-500 bg-green-500/10 text-green-300 font-extrabold";
+                      } else if (selectedEvaluationAns === p.ko) {
+                        borderStyle = "border-red-500 bg-red-500/10 text-red-300";
+                      }
+                    }
+                    return (
+                      <button
+                        key={p.ko}
+                        disabled={act1Checked}
+                        onClick={() => setSelectedEvaluationAns(p.ko)}
+                        className={`p-3.5 rounded-xl border text-left text-xs transition cursor-pointer font-korean ${borderStyle}`}
                       >
-                        <option value="">Select Blueprint Stage</option>
-                        <option value="Abstract">Abstract</option>
-                        <option value="Orientation">Orientation</option>
-                        <option value="Complicating Action">Complicating Action</option>
-                        <option value="Evaluation">Evaluation</option>
-                        <option value="Resolution">Resolution</option>
-                        <option value="Coda">Coda</option>
-                      </select>
-                    </div>
-                    <p className="font-korean text-[10px] text-zinc-300">{p.ko}</p>
-                  </div>
-                ))}
-              </div>
-
-              {/* MCQ Detail Evaluation question */}
-              <div className="p-3.5 bg-zinc-950 rounded-xl border border-white/5 space-y-2">
-                <p className="text-xs font-bold text-white">Identify the sentence expressing the speaker's main Evaluation:</p>
-                <div className="space-y-1.5">
-                  {analysisStory.paragraphs.filter((p: any) => p.stage === "Evaluation" || p.stage === "Orientation" || p.stage === "Resolution").map((p: any) => (
-                    <button
-                      key={p.ko}
-                      onClick={() => setSelectedEvaluationAns(p.ko)}
-                      className={`w-full p-2.5 rounded text-left text-[10px] border transition ${
-                        selectedEvaluationAns === p.ko 
-                          ? "border-brand-500 bg-brand-500/10 text-white" 
-                          : "border-white/5 bg-zinc-900 text-zinc-400"
-                      }`}
-                    >
-                      {p.ko}
-                    </button>
-                  ))}
+                        {p.ko}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
               {act1Checked && (
-                <div className="p-3 bg-zinc-950 border border-white/5 rounded-xl text-center text-xs">
-                  <p className="font-bold text-white">{act1Correct ? "✓ Structural parsing matches model!" : "✗ Structural parsing mismatch."}</p>
+                <div className={`p-4 rounded-xl text-xs text-left animate-fade-in border ${
+                  act1Correct ? "bg-green-500/5 border-green-500/20 text-green-300" : "bg-red-500/5 border-red-500/20 text-red-400"
+                }`}>
+                  <p className="font-extrabold text-sm">{act1Correct ? "✓ Structural parsing matches model!" : "✗ Structural parsing mismatch."}</p>
+                  <p className="text-zinc-300 mt-1">Reflecting on emotional and cognitive weight is the signature of high-level discourse parsing.</p>
                 </div>
               )}
 
-              <div className="flex justify-end">
+              <div className="flex justify-end pt-1">
                 {!act1Checked ? (
                   <button
-                    onClick={handleCheckActivity1A}
-                    disabled={!selectedEvaluationAns || Object.keys(selectedParagraphStage).length === 0}
-                    className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white px-4 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer"
+                    onClick={handleCheckActivity1}
+                    disabled={!selectedEvaluationAns}
+                    className="bg-brand-500 hover:bg-brand-600 disabled:opacity-40 text-white px-6 py-3 rounded-xl text-xs font-bold transition cursor-pointer"
                   >
-                    Verify Segments
+                    Verify Evaluation
                   </button>
                 ) : (
                   <button
-                    onClick={() => setActivity1SubStep("1B")}
-                    className="bg-accent-teal text-zinc-950 hover:bg-accent-teal/90 px-4 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer"
+                    onClick={() => setStep(4)}
+                    className="bg-emerald-500 text-zinc-955 hover:bg-emerald-450 px-5 py-3 rounded-xl text-xs font-bold transition cursor-pointer"
                   >
-                    Move to Reordering
+                    Proceed to Story Builder
                   </button>
                 )}
               </div>
+
             </div>
           )}
 
-          {/* Substep 1B: Reorder blocks */}
-          {activity1SubStep === "1B" && reorderData && (
-            <div className="space-y-4 text-left animate-fade-in">
-              <span className="text-[10px] text-zinc-500 font-black uppercase tracking-wider block">Drag/reorder blocks chronologically:</span>
-              <div className="space-y-1.5 max-h-[160px] overflow-y-auto pr-1">
-                {scrambledBlocks.map((block, idx) => (
-                  <div 
-                    key={block.id} 
-                    className="p-2.5 bg-zinc-950 rounded-xl border border-white/5 flex justify-between items-center text-[10px] hover:border-brand-500/20 transition"
-                  >
-                    <p className="font-korean text-zinc-300 flex-grow pr-2">{block.text}</p>
-                    <div className="flex gap-1 shrink-0">
-                      <button 
-                        onClick={() => idx > 0 && moveBlock(idx, idx - 1)}
-                        className="p-1 bg-zinc-900 border border-white/5 rounded hover:text-white"
-                        disabled={idx === 0}
-                      >
-                        ▲
-                      </button>
-                      <button 
-                        onClick={() => idx < scrambledBlocks.length - 1 && moveBlock(idx, idx + 1)}
-                        className="p-1 bg-zinc-900 border border-white/5 rounded hover:text-white"
-                        disabled={idx === scrambledBlocks.length - 1}
-                      >
-                        ▼
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Connector selections */}
-              <div className="p-3 bg-zinc-950 rounded-xl border border-white/5 space-y-2">
-                <span className="text-[9px] text-zinc-500 block uppercase font-mono font-bold">Select C1 logic connectors:</span>
-                {reorderData.connector_slots?.map((slot: any) => (
-                  <div key={slot.id} className="flex items-center justify-between gap-3 text-[10px]">
-                    <span className="text-zinc-400 font-bold">{slot.label}:</span>
-                    <div className="flex gap-1.5">
-                      {slot.options.map((opt: string) => (
-                        <button
-                          key={opt}
-                          onClick={() => setSelectedConnectors(prev => ({ ...prev, [slot.id]: opt }))}
-                          className={`px-2.5 py-1 rounded border transition font-bold ${
-                            selectedConnectors[slot.id] === opt
-                              ? "border-brand-500 bg-brand-500/10 text-white"
-                              : "border-white/5 bg-zinc-900 text-zinc-400 hover:border-white/10"
-                          }`}
-                        >
-                          {opt}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {improvedStory && (
-                <div className="p-3 bg-zinc-950 border border-white/5 rounded-xl text-[10px] space-y-1.5 animate-fade-in">
-                  <span className="font-bold text-white block uppercase tracking-wider font-mono">Improved Story Preview:</span>
-                  <p className="font-korean text-zinc-300 leading-relaxed">{improvedStory.improved_text}</p>
-                </div>
-              )}
-
-              <div className="flex justify-end">
-                <button
-                  onClick={handleBuildReorderStory}
-                  disabled={Object.keys(selectedConnectors).length < 2 || buildingImproved}
-                  className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white px-4 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
-                >
-                  {buildingImproved && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                  <span>Generate Improved Story</span>
-                </button>
-              </div>
-            </div>
-          )}
-
-          <div className="flex justify-between items-center pt-4 border-t border-white/5">
-            <button 
-              onClick={() => {
-                if (activity1SubStep === "1B") {
-                  setActivity1SubStep("1A");
-                } else {
-                  setStep(2);
-                }
-              }} 
-              className="glass-panel px-4 py-2 rounded-xl hover:bg-white/5 text-zinc-400 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
-            >
-              <ChevronLeft className="w-4 h-4" /> Back
-            </button>
-            <button onClick={() => setStep(4)} className="bg-brand-500 hover:bg-brand-600 text-white px-5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer">Move to Activity 2 <ChevronRight className="w-4 h-4" /></button>
+          <div className="flex justify-between items-center pt-4 border-t border-white/5 font-sans">
+            <button onClick={() => setStep(2)} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-sm font-bold transition flex items-center gap-2 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
+            <button onClick={() => setStep(4)} className="bg-brand-500 hover:bg-brand-600 text-white px-8 py-3 rounded-xl text-sm font-bold transition flex items-center gap-2 cursor-pointer font-bold">Move to Builder <ChevronRight className="w-4 h-4" /></button>
           </div>
         </div>
       )}
 
-      {/* Screen 4: Activity 2: Story production */}
+      {/* Step 4: Activity B: Story Outline Compiler */}
       {step === 4 && (
-        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
+        <div className="glass-panel p-10 rounded-[2.5rem] bg-zinc-900/40 border border-white/10 shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in font-sans">
           <div className="flex justify-between items-center border-b border-white/5 pb-4">
             <h2 className="text-2xl font-black text-white flex items-center gap-2">
               <Sparkles className="w-6 h-6 text-brand-400" />
-              <span>Activity 2 – Scaffolded Production</span>
+              <span>Activity B – Outline and Improve Story</span>
             </h2>
-            <div className="flex gap-1.5">
-              {["2A", "2B", "2C"].map((sub) => (
-                <button
-                  key={sub}
-                  onClick={() => setActivity2SubStep(sub as any)}
-                  className={`px-2 py-0.5 rounded text-[10px] font-bold ${activity2SubStep === sub ? "bg-brand-500 text-white" : "bg-zinc-900 text-zinc-400"}`}
-                >
-                  {sub}
-                </button>
-              ))}
-            </div>
+            <span className="text-xs text-zinc-400 font-mono">Step 4 of {totalSteps}</span>
           </div>
 
-          {/* Substep 2A: Story blueprint builder */}
-          {activity2SubStep === "2A" && (
-            <div className="space-y-4 text-left">
-              <div className="flex justify-between items-center">
-                <span className="text-[10px] text-zinc-500 font-black uppercase tracking-wider">Activity 2A – Blueprint draft builder</span>
-                <select 
-                  value={builderTopic} 
-                  onChange={(e) => setBuilderTopic(e.target.value)}
-                  className="bg-zinc-950 border border-white/10 text-zinc-300 rounded text-[10px] px-2 py-0.5"
-                >
-                  <option>A challenge you overcame</option>
-                  <option>A time a plan changed</option>
-                  <option>A project or goal you worked on</option>
-                  <option>A memorable trip or event</option>
-                </select>
-              </div>
-
-              {/* Form fields */}
-              <div className="space-y-2 max-h-[160px] overflow-y-auto pr-1 p-1">
-                {["Abstract", "Orientation", "ComplicatingAction", "Evaluation", "Resolution", "Coda"].map((stage) => (
-                  <div key={stage} className="space-y-1">
-                    <label className="text-[9px] text-zinc-500 font-mono font-bold uppercase block">{stage}:</label>
-                    <input
-                      type="text"
-                      placeholder={`Draft ${stage}...`}
-                      value={blueprintDrafts[stage] || ""}
-                      onChange={(e) => setBlueprintDrafts(prev => ({ ...prev, [stage]: e.target.value }))}
-                      className="w-full bg-zinc-900 border border-white/5 focus:border-brand-500 outline-none p-2 rounded-xl text-xs text-white"
-                    />
-                  </div>
-                ))}
-              </div>
-
-              {builderFeedback && (
-                <div className="p-3 bg-zinc-950 border border-white/5 rounded-xl text-[10px] space-y-1 animate-fade-in">
-                  <p className="text-emerald-400 font-bold">✓ Outline compiled successfully</p>
-                  <p className="text-zinc-300"><strong>Discourse suggestions:</strong> {builderFeedback.suggestions?.join(", ")}</p>
-                </div>
-              )}
-
-              <div className="flex justify-end pt-1">
-                <button
-                  onClick={handleBuildStoryDraft}
-                  disabled={Object.keys(blueprintDrafts).length < 2 || buildingDraft}
-                  className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white px-5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
-                >
-                  {buildingDraft && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                  <span>Compile Outline</span>
-                </button>
-              </div>
+          <div className="bg-zinc-950 p-6 rounded-2xl border border-white/10 space-y-5 text-left max-w-3xl mx-auto w-full animate-fade-in font-sans">
+            <div className="flex justify-between items-center">
+              <span className="text-xs font-bold text-white block">Select your Narrative Topic:</span>
+              <select 
+                value={builderTopic} 
+                onChange={(e) => setBuilderTopic(e.target.value)}
+                className="bg-zinc-900 border border-white/10 text-zinc-300 rounded-lg text-xs px-3 py-1.5 focus:outline-none"
+              >
+                <option>A challenge you overcame</option>
+                <option>A time a plan changed</option>
+                <option>A project or goal you worked on</option>
+                <option>A memorable trip or event</option>
+              </select>
             </div>
-          )}
 
-          {/* Substep 2B: Spoken monologue */}
-          {activity2SubStep === "2B" && (
-            <div className="space-y-4 text-left animate-fade-in">
-              <span className="text-[10px] text-zinc-500 font-black uppercase tracking-wider block">Activity 2B – Record oral monologue</span>
-              
-              <div className="p-3.5 bg-zinc-950 border border-white/5 rounded-2xl space-y-2">
-                <span className="text-[9px] text-zinc-500 uppercase font-mono block">Your outline notes:</span>
-                <div className="grid grid-cols-2 gap-2 text-[9px] text-zinc-400">
-                  {Object.entries(blueprintDrafts).map(([k, v]) => (
-                    <p key={k}>• <strong>{k}:</strong> {v}</p>
-                  ))}
+            {/* Input stages */}
+            <div className="space-y-3.5 max-h-[170px] overflow-y-auto pr-1">
+              {[
+                { stage: "Abstract", hint: "Summary of story" },
+                { stage: "Orientation", hint: "Background (who, when, where)" },
+                { stage: "ComplicatingAction", hint: "Main turning point / conflict" },
+                { stage: "Evaluation", hint: "Subjective meaning & feelings" },
+                { stage: "Resolution", hint: "Outcome / final result" },
+                { stage: "Coda", hint: "Lesson for the future" }
+              ].map((item) => (
+                <div key={item.stage} className="flex flex-col gap-1">
+                  <span className="text-[10px] text-zinc-550 font-bold uppercase tracking-wider font-mono">{item.stage} ({item.hint}):</span>
+                  <input
+                    type="text"
+                    placeholder={`e.g. Write details for ${item.stage}`}
+                    value={blueprintDrafts[item.stage] || ""}
+                    onChange={(e) => setBlueprintDrafts(prev => ({ ...prev, [item.stage]: e.target.value }))}
+                    className="w-full bg-zinc-900 border border-white/5 focus:border-brand-500 outline-none p-2.5 rounded-xl text-xs text-white"
+                  />
                 </div>
-              </div>
-
-              <div className="p-4 bg-zinc-950 border border-white/5 rounded-2xl flex flex-col items-center gap-3">
-                <span className="text-xs text-zinc-400 text-center">Speak for 2-3 minutes using your outline notes.</span>
-                
-                <button
-                  onClick={handleRecordMonologue}
-                  disabled={recording || submittingSpeech}
-                  className={`p-4 rounded-full border transition flex items-center justify-center gap-2 font-bold text-xs ${
-                    recording 
-                      ? "border-red-500 bg-red-500/10 text-white animate-pulse" 
-                      : "border-brand-500 bg-brand-500/10 text-brand-400 hover:bg-brand-500/20"
-                  } cursor-pointer`}
-                >
-                  <Mic className="w-4 h-4" />
-                  <span>{recording ? "Recording... (Speak now)" : "Record Spoken Monologue"}</span>
-                </button>
-              </div>
-
-              {submittingSpeech && (
-                <div className="flex items-center gap-2 justify-center text-xs text-zinc-500">
-                  <Loader2 className="w-4 h-4 animate-spin text-brand-500" /> Transcribing & scoring C1 speech flow...
-                </div>
-              )}
-
-              {speechEvaluation && (
-                <div className="p-4 bg-zinc-950 border border-white/5 rounded-2xl space-y-2 text-xs">
-                  <div className="text-emerald-400 font-bold">✓ Speech evaluated successfully</div>
-                  <p className="text-zinc-300 font-mono"><strong>Transcribed:</strong> "{speechEvaluation.transcribed_text}"</p>
-                  <p className="text-zinc-400 leading-relaxed"><strong>Coach feedback:</strong> {speechEvaluation.feedback}</p>
-                </div>
-              )}
-
-              <div className="flex justify-end pt-1">
-                <button
-                  onClick={() => setActivity2SubStep("2C")}
-                  className="bg-accent-teal text-zinc-950 hover:bg-accent-teal/90 px-5 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer"
-                >
-                  Proceed to AI Examiner
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-              </div>
+              ))}
             </div>
-          )}
 
-          {/* Substep 2C: AI Prompt chat */}
-          {activity2SubStep === "2C" && (
-            <div className="space-y-4 text-left animate-fade-in">
-              <span className="text-[10px] text-zinc-500 font-black uppercase tracking-wider block">Activity 2C – AI story examiner room</span>
-              
-              {!aiSessionId ? (
-                <button
-                  onClick={handleStartAiLongTurn}
-                  className="w-full bg-brand-500 hover:bg-brand-600 text-white font-bold py-3 rounded-xl text-xs flex items-center justify-center gap-1.5 transition cursor-pointer"
-                >
-                  <Play className="w-4 h-4" /> Start C1 oral story interview session
-                </button>
-              ) : (
-                <div className="space-y-3">
-                  <div className="max-h-[130px] overflow-y-auto space-y-2 p-2 bg-zinc-900 rounded-lg border border-white/5">
-                    {aiMessages.map((msg, idx) => (
-                      <div key={idx} className={`p-2 rounded-lg text-xs leading-relaxed max-w-[85%] ${
-                        msg.sender === "user" 
-                          ? "bg-brand-500/10 border border-brand-500/20 text-white ml-auto" 
-                          : "bg-zinc-950 border border-white/5 text-zinc-300 mr-auto"
-                      }`}>
-                        {msg.text}
-                      </div>
+            {builderFeedback && (
+              <div className="p-4 bg-zinc-900 border border-indigo-500/20 rounded-xl space-y-3.5 text-xs animate-fade-in leading-relaxed">
+                <p className="text-emerald-450 font-bold">✓ Outline compiled successfully</p>
+                <div>
+                  <strong className="text-white block mb-0.5">Discourse suggestions:</strong>
+                  <ul className="list-disc list-inside space-y-1 text-zinc-300 font-sans pl-1">
+                    {builderFeedback.suggestions?.map((sug: string, idx: number) => (
+                      <li key={idx}>{sug}</li>
                     ))}
-                  </div>
-
-                  {!aiFinished ? (
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        placeholder="Tell your story and reflections in Korean..."
-                        value={aiText}
-                        onChange={(e) => setAiText(e.target.value)}
-                        onKeyDown={(e) => e.key === "Enter" && handleSendAiTurn()}
-                        className="flex-grow bg-zinc-900 border border-white/5 focus:border-brand-500 outline-none p-2 rounded-xl text-xs text-white"
-                      />
-                      <button
-                        onClick={handleSendAiTurn}
-                        disabled={aiSending || !aiText.trim()}
-                        className="bg-brand-500 hover:bg-brand-600 px-4 rounded-xl text-xs font-bold text-white transition flex items-center gap-1 cursor-pointer"
-                      >
-                        {aiSending && <Loader2 className="w-3 animate-spin" />}
-                        <span>Send</span>
-                      </button>
-                      <button
-                        onClick={handleFinishAiLongTurn}
-                        className="bg-zinc-900 hover:bg-zinc-800 border border-white/5 px-3 rounded-xl text-xs font-bold text-red-400 cursor-pointer"
-                      >
-                        End
-                      </button>
-                    </div>
-                  ) : (
-                    /* Scorecard evaluation */
-                    <div className="p-3.5 bg-zinc-950 rounded-xl border border-white/5 text-xs space-y-3 animate-fade-in">
-                      <p className="font-bold text-emerald-400">✓ Story evaluation completed successfully</p>
-                      {aiEvaluation && (
-                        <>
-                          <div className="grid grid-cols-3 gap-2 text-center text-[9px] uppercase font-mono">
-                            <div className="bg-zinc-900 p-2 rounded border border-white/5">
-                              <span className="text-zinc-500 block mb-0.5">Coherent</span>
-                              <span className="text-white font-bold">{aiEvaluation.coherence_score}%</span>
-                            </div>
-                            <div className="bg-zinc-900 p-2 rounded border border-white/5">
-                              <span className="text-zinc-500 block mb-0.5">Connectors</span>
-                              <span className="text-white font-bold">{aiEvaluation.connector_variety}%</span>
-                            </div>
-                            <div className="bg-zinc-900 p-2 rounded border border-white/5">
-                              <span className="text-zinc-500 block mb-0.5">Fluency</span>
-                              <span className="text-white font-bold">{aiEvaluation.fluency_score}%</span>
-                            </div>
-                          </div>
-                          <p className="text-zinc-400">{aiEvaluation.feedback}</p>
-                        </>
-                      )}
-                    </div>
-                  )}
+                  </ul>
                 </div>
-              )}
-            </div>
-          )}
+              </div>
+            )}
 
-          <div className="flex justify-between items-center pt-4 border-t border-white/5">
-            <button 
-              onClick={() => {
-                if (activity2SubStep === "2C") {
-                  setActivity2SubStep("2B");
-                } else if (activity2SubStep === "2B") {
-                  setActivity2SubStep("2A");
-                } else {
-                  setStep(3);
-                }
-              }} 
-              className="glass-panel px-4 py-2 rounded-xl hover:bg-white/5 text-zinc-400 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
-            >
-              <ChevronLeft className="w-4 h-4" /> Back
-            </button>
-            <button onClick={() => setStep(5)} className="bg-brand-500 hover:bg-brand-600 text-white px-5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer">Move to Quiz <ChevronRight className="w-4 h-4" /></button>
+            <div className="flex justify-end pt-1">
+              <button
+                onClick={handleBuildStoryDraft}
+                disabled={Object.keys(blueprintDrafts).length < 2 || buildingDraft}
+                className="bg-brand-500 hover:bg-brand-650 disabled:opacity-40 text-white px-5 py-3 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5"
+              >
+                {buildingDraft && <Loader2 className="w-4 h-4 animate-spin text-white" />}
+                <span>Compile Outline</span>
+              </button>
+            </div>
+
+          </div>
+
+          <div className="flex justify-between items-center pt-4 border-t border-white/5 font-sans">
+            <button onClick={() => setStep(3)} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-sm font-bold transition flex items-center gap-2 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
+            <button onClick={() => setStep(5)} className="bg-brand-500 hover:bg-brand-600 text-white px-8 py-3 rounded-xl text-sm font-bold transition flex items-center gap-2 cursor-pointer font-bold">Move to Speaking <ChevronRight className="w-4 h-4" /></button>
           </div>
         </div>
       )}
 
-      {/* Screen 5: Mini-Quiz */}
+      {/* Step 5: Activity C: Spoken performance & evaluation */}
       {step === 5 && (
-        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
+        <div className="glass-panel p-10 rounded-[2.5rem] bg-zinc-900/40 border border-white/10 shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in font-sans">
+          <div className="flex justify-between items-center border-b border-white/5 pb-4">
+            <h2 className="text-2xl font-black text-white flex items-center gap-2">
+              <Mic className="w-6 h-6 text-brand-400" />
+              <span>Activity C – Continuous Monologue Coach</span>
+            </h2>
+            <span className="text-xs text-zinc-400 font-mono">Step 5 of {totalSteps}</span>
+          </div>
+
+          <div className="bg-zinc-950 p-6 rounded-2xl border border-white/10 space-y-6 text-left max-w-2xl mx-auto w-full animate-fade-in font-sans">
+            
+            <div className="p-4 bg-zinc-900 border border-white/5 rounded-xl text-center space-y-3">
+              <span className="text-xs text-zinc-350 block">
+                Record your C1 story continuous monologue. Use advanced logical connectors (예: 그럼에도 불구하고, 그렇기 때문에) and elaborate on orientation, complications, and evaluation.
+              </span>
+              <button
+                onClick={handleRecordMonologue}
+                disabled={recording || submittingSpeech}
+                className={`py-3.5 px-6 rounded-xl border transition flex items-center justify-center gap-2.5 font-bold text-xs mx-auto cursor-pointer ${
+                  recording 
+                    ? "border-red-500 bg-red-500/10 text-white animate-pulse" 
+                    : "border-brand-500 bg-brand-500/10 text-brand-400 hover:bg-brand-500/20"
+                }`}
+              >
+                <Mic className="w-4 h-4" />
+                <span>{recording ? "Recording... (Speak now)" : "Record Spoken Monologue"}</span>
+              </button>
+            </div>
+
+            {submittingSpeech && (
+              <div className="flex items-center gap-2 justify-center text-xs text-zinc-500 font-sans">
+                <Loader2 className="w-4 h-4 animate-spin text-brand-500" /> Analyzing discourse coherence metrics...
+              </div>
+            )}
+
+            {speechEvaluation && (
+              <div className="p-4 bg-zinc-900 border border-brand-500/20 rounded-xl space-y-3 animate-fade-in">
+                <span className="text-emerald-450 font-bold block text-xs flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4.5 h-4.5" /> Story evaluation completed successfully
+                </span>
+                <div>
+                  <span className="text-[9px] text-zinc-550 uppercase tracking-widest font-mono block">ASR Transcribed Text:</span>
+                  <p className="font-korean text-xs text-white bg-zinc-950 p-2.5 rounded border border-white/5 mt-1 leading-relaxed">"{speechEvaluation.transcribed_text}"</p>
+                </div>
+                <div>
+                  <span className="text-[9px] text-zinc-550 uppercase tracking-widest font-mono block">Speech Coach comments:</span>
+                  <p className="text-xs text-zinc-300 leading-relaxed mt-1">{speechEvaluation.feedback}</p>
+                </div>
+              </div>
+            )}
+
+            <div className="flex justify-end pt-1">
+              <button
+                onClick={() => setStep(6)}
+                className="bg-brand-500 hover:bg-brand-655 text-white px-6 py-3 rounded-xl text-xs font-bold transition cursor-pointer"
+              >
+                Proceed to Strategy Quiz
+              </button>
+            </div>
+
+          </div>
+
+          <div className="flex justify-between items-center pt-4 border-t border-white/5 font-sans">
+            <button onClick={() => setStep(4)} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-sm font-bold transition flex items-center gap-2 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
+            <button onClick={() => setStep(6)} className="bg-brand-500 hover:bg-brand-600 text-white px-8 py-3 rounded-xl text-sm font-bold transition flex items-center gap-2 cursor-pointer font-bold">Move to Quiz <ChevronRight className="w-4 h-4" /></button>
+          </div>
+        </div>
+      )}
+
+      {/* Step 6: Activity D: Strategy quiz */}
+      {step === 6 && (
+        <div className="glass-panel p-10 rounded-[2.5rem] bg-zinc-900/40 border border-white/10 shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in font-sans">
           <div className="flex justify-between items-center border-b border-white/5 pb-4">
             <h2 className="text-2xl font-black text-white flex items-center gap-2">
               <Award className="w-6 h-6 text-brand-400" />
-              <span>Mini‑Quiz: Structure & Connector Check</span>
+              <span>Mini-Quiz: C1 Strategy &amp; Discourse Logic</span>
             </h2>
-            <div className="flex items-center gap-2">
-              <div className="w-16 h-2 bg-zinc-800 rounded-full overflow-hidden">
-                <div 
-                  className="h-full bg-brand-500 rounded-full transition-all duration-300"
-                  style={{ width: `${((quizIdx + 1) / quizBlueprint.length) * 100}%` }}
-                />
-              </div>
-              <span className="text-[10px] text-zinc-500 font-bold">Q {quizIdx + 1}/{quizBlueprint.length}</span>
-            </div>
+            <span className="text-xs text-zinc-400 font-mono">Step 6 of {totalSteps}</span>
           </div>
 
-          {quizBlueprint[quizIdx] && (
-            <div className="space-y-4 text-left">
-              <span className="text-[9px] text-zinc-500 uppercase font-mono block">Question category: {quizBlueprint[quizIdx].type}</span>
-              <h3 className="text-sm font-bold text-white leading-relaxed">{quizBlueprint[quizIdx].question}</h3>
+          {quizBlueprint.length > 0 && quizBlueprint[quizIdx] && (
+            <div className="space-y-6 max-w-xl mx-auto w-full text-left animate-fade-in">
+              <div className="flex justify-between text-[10px] text-zinc-500 font-mono">
+                <span>Quiz Question {quizIdx + 1} of {quizBlueprint.length}</span>
+                <span>Type: C1 Discourse Strategy</span>
+              </div>
 
-              <div className="space-y-2">
-                {quizBlueprint[quizIdx].options.map((opt: string) => (
-                  <button
-                    key={opt}
-                    onClick={() => !quizChecked && setQuizSelectedOpt(opt)}
-                    disabled={quizChecked}
-                    className={`w-full text-left p-3.5 rounded-xl border text-xs font-medium transition ${
-                      quizSelectedOpt === opt
-                        ? "border-brand-500 bg-brand-500/10 text-white"
-                        : "border-white/5 bg-zinc-950 text-zinc-300 hover:border-white/10"
-                    } ${quizChecked && quizBlueprint[quizIdx].correct_answer === opt ? "border-accent-teal bg-accent-teal/15 text-white" : ""}`}
-                  >
-                    {opt}
-                  </button>
-                ))}
+              <h3 className="text-sm md:text-base font-bold text-white text-center leading-relaxed whitespace-pre-line bg-zinc-950 p-5 rounded-2xl border border-white/5">
+                {quizBlueprint[quizIdx].question}
+              </h3>
+
+              <div className="grid grid-cols-1 gap-2.5 max-w-md mx-auto w-full font-sans">
+                {quizBlueprint[quizIdx].options?.map((opt: string) => {
+                  let borderStyle = "border-white/5 bg-zinc-900 text-zinc-300 hover:bg-zinc-800";
+                  if (quizSelectedOpt === opt) {
+                    borderStyle = "border-brand-500 bg-brand-500/10 text-white";
+                  }
+                  if (quizChecked) {
+                    if (opt === quizBlueprint[quizIdx].correct_answer) {
+                      borderStyle = "border-green-500 bg-green-500/10 text-green-300 font-extrabold";
+                    } else if (quizSelectedOpt === opt) {
+                      borderStyle = "border-red-500 bg-red-500/10 text-red-300 font-extrabold";
+                    }
+                  }
+                  return (
+                    <button
+                      key={opt}
+                      onClick={() => !quizChecked && setQuizSelectedOpt(opt)}
+                      disabled={quizChecked}
+                      className={`p-3.5 rounded-xl border text-left text-xs font-bold transition cursor-pointer ${borderStyle}`}
+                    >
+                      {opt}
+                    </button>
+                  );
+                })}
               </div>
 
               {quizChecked && (
-                <div className={`p-4 rounded-xl border text-xs space-y-1 ${
-                  quizCorrect ? "border-accent-teal/20 bg-accent-teal/5 text-accent-teal" : "border-red-500/20 bg-red-500/5 text-red-400"
+                <div className={`p-4 rounded-xl border text-xs text-left space-y-1.5 animate-fade-in ${
+                  quizCorrect ? "bg-green-500/5 border-green-500/20 text-green-300" : "bg-red-500/5 border-red-500/20 text-red-400"
                 }`}>
-                  <p className="font-bold">{quizCorrect ? "✓ Correct!" : "✗ Incorrect."}</p>
-                  <p className="text-zinc-400 font-sans mt-0.5">{quizBlueprint[quizIdx].explanation}</p>
+                  <p className="font-extrabold text-sm">{quizCorrect ? "✓ Correct!" : "✗ Incorrect."}</p>
+                  <p className="text-zinc-300">{quizBlueprint[quizIdx].explanation}</p>
                 </div>
               )}
 
-              <div className="flex justify-end pt-1">
+              <div className="flex justify-between items-center pt-4 border-t border-white/5 font-sans">
+                <button onClick={() => setStep(5)} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-sm font-bold transition flex items-center gap-2 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
                 {!quizChecked ? (
                   <button
                     onClick={handleCheckQuiz}
                     disabled={!quizSelectedOpt}
-                    className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white px-5 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer"
+                    className="bg-brand-500 hover:bg-brand-600 disabled:opacity-40 text-white px-5 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer"
                   >
-                    Submit Answer
+                    Check Answer
                   </button>
                 ) : (
                   <button
                     onClick={handleNextQuizOrComplete}
                     disabled={finishingQuiz}
-                    className="bg-accent-teal text-zinc-950 hover:bg-accent-teal/90 px-5 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
+                    className="bg-indigo-650 text-white hover:bg-indigo-600 px-5 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer"
                   >
-                    {finishingQuiz && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                    <span>{quizIdx < quizBlueprint.length - 1 ? "Next Question" : "Finish Quiz"}</span>
+                    {finishingQuiz ? <Loader2 className="w-4 h-4 animate-spin text-white" /> : (quizIdx < quizBlueprint.length - 1 ? "Next Question" : "See Capstone Results")}
                   </button>
                 )}
               </div>
@@ -1154,129 +1007,161 @@ return (
         </div>
       )}
 
-      {/* Screen 6: Homework & Completion */}
-      {step === 6 && (
-        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center text-center animate-fade-in">
-          <div className="p-3 bg-accent-teal/10 rounded-full border border-accent-teal/25 w-fit mx-auto text-accent-teal shrink-0">
-            <Award className="w-10 h-10 animate-bounce" />
+      {/* Step 7: Activity E: Free story practice & feedback */}
+      {step === 7 && (
+        <div className="glass-panel p-10 rounded-[2.5rem] bg-zinc-900/40 border border-white/10 shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in font-sans">
+          <div className="flex justify-between items-center border-b border-white/5 pb-4">
+            <h2 className="text-2xl font-black text-white flex items-center gap-2">
+              <MessageSquare className="w-6 h-6 text-brand-400" />
+              <span>Activity E – AI Story Practice Room</span>
+            </h2>
+            <span className="text-xs text-zinc-400 font-mono">Step 7 of {totalSteps}</span>
           </div>
 
-          <div>
-            <h2 className="text-2xl font-black text-white">Course 5 Phase 1 Complete!</h2>
-            <p className="text-xs text-zinc-400 mt-1">Excellent C1 advanced fluency & storytelling reflections.</p>
-          </div>
-
-          {quizScore !== null && (
-            <div className="bg-zinc-900/60 p-4 rounded-2xl border border-white/5 max-w-sm mx-auto w-full flex items-center justify-between text-left">
-              <div>
-                <span className="text-[9px] text-zinc-500 uppercase font-mono block">Accuracy Metrics:</span>
-                <span className="text-lg font-black text-white">{quizScore}% Quiz Score</span>
-              </div>
-              <div className="px-3 py-1 bg-brand-500/10 border border-brand-500/25 rounded-lg text-brand-400 text-xs font-bold">
-                🏆 {quizBadge} Badge Earned!
-              </div>
+          <div className="bg-zinc-950 p-6 rounded-2xl border border-white/10 space-y-4 text-left max-w-2xl mx-auto w-full font-sans">
+            <div className="space-y-1">
+              <span className="text-[9px] text-brand-400 font-mono uppercase tracking-widest block font-bold">Extra AI Discourse Lab:</span>
+              <p className="text-xs text-zinc-400 leading-normal">
+                Exercise your storytelling and logic-building on the fly. Elaborate on complex life experiences or values.
+              </p>
             </div>
-          )}
 
-          {/* Homework checklist */}
-          <div className="bg-zinc-950 p-4 rounded-2xl border border-white/5 text-left text-xs space-y-3 max-w-md mx-auto w-full">
-            <span className="text-[9px] text-zinc-500 uppercase tracking-widest font-black block">📝 Practical Homework Tasks:</span>
-            <div className="space-y-2">
-              {homeworkItems.map((hw: any) => (
-                <div 
-                  key={hw.id}
-                  onClick={() => handleToggleHomework(hw.id, completedHomework[hw.id] || false)}
-                  className="flex items-start gap-2.5 p-2 bg-zinc-900/40 rounded-lg border border-white/[0.04] cursor-pointer hover:bg-zinc-900 transition"
-                >
-                  <input
-                    type="checkbox"
-                    checked={completedHomework[hw.id] || false}
-                    readOnly
-                    className="mt-0.5 pointer-events-none"
-                  />
-                  <span className={`text-[11px] leading-relaxed ${completedHomework[hw.id] ? "text-zinc-500 line-through" : "text-zinc-300"}`}>{hw.text}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* AI practice room launch */}
-          <div className="bg-zinc-950 p-4.5 rounded-2xl border border-white/5 text-left space-y-3 max-w-md mx-auto w-full">
-            <span className="text-[9px] text-zinc-500 uppercase tracking-widest font-black block">🤖 Practice advanced storytelling with AI Tutor:</span>
-            
             {!practiceSessionId ? (
               <button
                 onClick={() => handleStartPractice("life_change")}
-                className="w-full bg-brand-500 hover:bg-brand-600 text-white font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-1.5 transition cursor-pointer"
+                className="w-full bg-brand-500 hover:bg-brand-655 text-white font-bold py-3 px-4 rounded-xl transition text-xs cursor-pointer text-center flex items-center justify-center gap-2"
               >
-                <MessageCircle className="w-4 h-4" />
-                <span>Start AI Storytelling Practice</span>
+                <MessageCircle className="w-4 h-4 text-white" />
+                <span>Launch Storytelling Practice Session</span>
               </button>
             ) : (
-              <div className="space-y-3">
-                <div className="max-h-[150px] overflow-y-auto space-y-2 p-2 bg-zinc-900 rounded-lg border border-white/5">
-                  {practiceMessages.map((msg, idx) => (
-                    <div key={idx} className={`p-2 rounded-lg text-xs leading-relaxed max-w-[85%] ${
-                      msg.sender === "user" 
-                        ? "bg-brand-500/10 border border-brand-500/20 text-white ml-auto" 
-                        : "bg-zinc-950 border border-white/5 text-zinc-300 mr-auto"
-                    }`}>
-                      {msg.text}
+              <div className="space-y-3 w-full animate-fade-in">
+                <div className="bg-zinc-900 rounded-xl p-4 border border-white/5 h-44 overflow-y-auto space-y-2.5 custom-scrollbar">
+                  {practiceMessages.map((msg, idx) => {
+                    const isUser = msg.sender === "user";
+                    return (
+                      <div key={idx} className={`flex ${isUser ? "justify-end" : "justify-start"} animate-fade-in`}>
+                        <div className={`max-w-[80%] rounded-xl p-2.5 text-xs leading-relaxed ${
+                          isUser ? "bg-brand-500 text-white" : "bg-zinc-950 text-zinc-300 border border-white/5"
+                        }`}>
+                          <p>{msg.text}</p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {practiceSending && (
+                    <div className="flex items-center gap-1 text-[10px] text-zinc-500 italic">
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-brand-500" />
+                      <span>Gwan-Sik is typing...</span>
                     </div>
-                  ))}
+                  )}
                 </div>
 
                 {!practiceFinished ? (
                   <div className="flex gap-2">
                     <input
                       type="text"
-                      placeholder="Write your story/reply in Korean..."
                       value={practiceText}
                       onChange={(e) => setPracticeText(e.target.value)}
+                      placeholder="Type your story block or reply in Korean..."
                       onKeyDown={(e) => e.key === "Enter" && handleSendPracticeTurn()}
-                      className="flex-grow bg-zinc-900 border border-white/5 focus:border-brand-500 outline-none p-2 rounded-xl text-xs text-white"
+                      className="flex-grow bg-zinc-900 border border-white/10 rounded-lg p-2.5 text-xs text-white focus:outline-none focus:border-brand-500 font-korean"
                     />
                     <button
                       onClick={handleSendPracticeTurn}
                       disabled={practiceSending || !practiceText.trim()}
-                      className="bg-brand-500 hover:bg-brand-600 px-4 rounded-xl text-xs font-bold text-white transition flex items-center gap-1 cursor-pointer"
+                      className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white px-4 rounded-lg text-xs font-bold transition cursor-pointer"
                     >
-                      {practiceSending && <Loader2 className="w-3 animate-spin" />}
-                      <span>Send</span>
+                      Send
                     </button>
                     <button
                       onClick={handleFinishPractice}
-                      className="bg-zinc-900 hover:bg-zinc-800 border border-white/5 px-3 rounded-xl text-xs font-bold text-red-400 cursor-pointer"
+                      className="bg-red-950/20 border border-red-500/20 text-red-400 hover:text-red-300 px-4 rounded-lg text-xs font-bold transition cursor-pointer"
                     >
-                      End
+                      Finish
                     </button>
                   </div>
                 ) : (
-                  <div className="p-3 bg-zinc-900 rounded-xl border border-white/5 text-[11px] text-zinc-400 space-y-1.5 animate-fade-in">
-                    <p className="font-bold text-white">Story Practice Feedback:</p>
-                    <p>{practiceFeedback}</p>
-                    <button 
-                      onClick={() => setPracticeSessionId(null)}
-                      className="text-[10px] text-brand-400 hover:underline block mt-1 cursor-pointer"
-                    >
-                      Start new practice scenario
-                    </button>
+                  <div className="p-4 bg-zinc-900 rounded-xl border border-brand-500/20 text-xs text-zinc-400 animate-fade-in space-y-1">
+                    <p className="font-bold text-white mb-1">Story Practice Feedback:</p>
+                    <p className="leading-relaxed italic">{practiceFeedback || "Excellent C1 advanced fluency & storytelling reflections."}</p>
                   </div>
                 )}
               </div>
             )}
           </div>
 
-          <div className="flex flex-col gap-2 max-w-xs mx-auto pt-2">
-            <button 
-              onClick={onComplete}
-              className="bg-accent-teal hover:bg-accent-teal/90 text-zinc-950 font-extrabold py-3 px-8 rounded-xl transition text-sm flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-accent-teal/20"
-            >
-              <span>Continue to Phase 2</span>
-              <ChevronRight className="w-4 h-4" />
-            </button>
-            <p className="text-[10px] text-zinc-500">Next: Phase 2 – Idioms & Fixed Expressions for Everyday Topics.</p>
+          <div className="flex justify-between items-center pt-4 border-t border-white/5 font-sans">
+            <button onClick={() => setStep(6)} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-sm font-bold transition flex items-center gap-2 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
+            <button onClick={() => setStep(8)} className="bg-brand-500 hover:bg-brand-655 text-white px-8 py-3 rounded-xl text-sm font-bold transition flex items-center gap-2 cursor-pointer font-bold">Proceed to Graduation <ChevronRight className="w-4 h-4" /></button>
           </div>
+        </div>
+      )}
+
+      {/* Step 8: Completion / Graduation */}
+      {step === 8 && (
+        <div className="glass-panel p-10 rounded-[2.5rem] bg-zinc-900/40 border border-white/10 shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center text-center animate-fade-in max-w-3xl mx-auto">
+          <div className="p-4 bg-brand-500/10 rounded-full border border-brand-500/25 w-fit mx-auto text-brand-400">
+            <Award className="w-10 h-10 animate-bounce" />
+          </div>
+          
+          <div>
+            <h2 className="text-3xl font-black text-white font-sans">Korean 5.1 Narrative Complete! 🎓🔥</h2>
+            <p className="text-zinc-400 text-sm mt-1.5 font-sans">Congratulations on completing Korean 5.1! Excellent C1 advanced fluency &amp; storytelling reflections.</p>
+            <p className="text-xs text-zinc-550 mt-1 font-sans">Next: Phase 2 – Idioms &amp; Fixed Expressions for Everyday Topics.</p>
+          </div>
+
+          {/* Homework checklist */}
+          <div className="bg-zinc-950 p-6 rounded-2xl border border-white/5 text-left text-xs space-y-3 font-sans leading-relaxed">
+            <span className="text-[10px] font-black uppercase tracking-widest text-brand-400 block font-sans">Interactive Homework List:</span>
+            <div className="space-y-2">
+              {homeworkItems.map((item: any) => {
+                const isChecked = !!completedHomework[item.id];
+                return (
+                  <label key={item.id} className="flex items-start gap-3 p-3 bg-zinc-900/45 rounded-lg border border-white/[0.03] cursor-pointer hover:bg-zinc-900 transition">
+                    <input
+                      type="checkbox"
+                      checked={isChecked}
+                      onChange={() => handleToggleHomework(item.id, isChecked)}
+                      className="mt-0.5 rounded border-white/10 text-brand-500 focus:ring-0 focus:ring-offset-0 bg-zinc-950"
+                    />
+                    <div className="text-zinc-300">
+                      <span className="font-bold text-white block mb-0.5 font-sans">
+                        {item.id === "hw_c1_fl_1" ? "Task 1: Written Narrative" : item.id === "hw_c1_fl_2" ? "Task 2: Speech Recording" : "Task 3: Narrative Reflection"}
+                      </span>
+                      <span className={isChecked ? "line-through text-zinc-500" : ""}>{item.text}</span>
+                    </div>
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Rewards */}
+          <div className="p-5 bg-gradient-to-r from-brand-500/10 to-emerald-500/10 rounded-2xl border border-brand-500/20 text-center space-y-1">
+            <div className="flex justify-center items-center gap-1 text-brand-400 font-extrabold text-sm uppercase">
+              <Award className="w-5 h-5" />
+              <span>Badge Earned: {quizBadge || "Advanced Storyteller C1"}</span>
+            </div>
+            <div className="flex justify-center gap-4 text-xs font-bold pt-1">
+              <span className="text-brand-450 font-sans">XP +150 Completion Bonus</span>
+              <span className="text-zinc-700">|</span>
+              <span className="text-emerald-400 font-sans">Phase 1 Complete</span>
+            </div>
+          </div>
+
+          <button
+            onClick={() => {
+              if (typeof window !== "undefined") {
+                window.dispatchEvent(new CustomEvent("hangeulai-xp", { detail: { amount: 150, type: "correct" } }));
+              }
+              onComplete();
+            }}
+            className="bg-gradient-to-r from-brand-500 to-emerald-500 hover:from-brand-600 text-white font-black py-4 px-10 rounded-2xl transition text-sm flex items-center justify-center gap-2 mx-auto shadow-lg shadow-brand-500/20 cursor-pointer"
+          >
+            <span>Complete Phase 1 &amp; Continue</span>
+            <ChevronRight className="w-4 h-4 text-white" />
+          </button>
         </div>
       )}
     </div>

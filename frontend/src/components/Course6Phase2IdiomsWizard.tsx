@@ -46,6 +46,39 @@ async function apiJson(path: string, opts: RequestInit = {}) {
   return res.json();
 }
 
+const playSFX = (type: "correct" | "wrong") => {
+  if (typeof window === "undefined") return;
+  try {
+    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    if (type === "correct") {
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(659.25, ctx.currentTime);
+      gain.gain.setValueAtTime(0.1, ctx.currentTime);
+      osc.start();
+      osc.frequency.setValueAtTime(783.99, ctx.currentTime + 0.1);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+      osc.stop(ctx.currentTime + 0.4);
+      window.dispatchEvent(new CustomEvent("hangeulai-xp", { detail: { amount: 20, type: "correct" } }));
+    } else {
+      osc.type = "triangle";
+      osc.frequency.setValueAtTime(150.0, ctx.currentTime);
+      gain.gain.setValueAtTime(0.15, ctx.currentTime);
+      osc.start();
+      osc.frequency.exponentialRampToValueAtTime(80.0, ctx.currentTime + 0.35);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+      osc.stop(ctx.currentTime + 0.4);
+      window.dispatchEvent(new CustomEvent("hangeulai-xp", { detail: { amount: -10, type: "wrong" } }));
+    }
+  } catch (e) {
+    console.error("AudioContext not supported or blocked", e);
+  }
+};
+
 interface Course6Phase2IdiomsWizardProps {
   activeLesson: any;
   speakWord: (text: string) => void;
@@ -142,6 +175,16 @@ export default function Course6Phase2IdiomsWizard({
   const [practiceFinished, setPracticeFinished] = useState(false);
   const [practiceFeedback, setPracticeFeedback] = useState<string | null>(null);
 
+  // Restore step from localStorage on mount
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("hangeulai_c6p2_step");
+      if (saved) {
+        setStep(parseInt(saved, 10));
+      }
+    }
+  }, []);
+
   // Load API Data per Step
   useEffect(() => {
     const load = async () => {
@@ -188,12 +231,13 @@ export default function Course6Phase2IdiomsWizard({
 
   // Activity 1A Context dialogue answer verification
   const handleCheckActivity1A = async () => {
-    if (!contextData) return;
+    if (!contextData || compChecked) return;
     const currentDiag = contextData.context_dialogues[activeDialogueIdx];
     const isCorrect = selectedComprehensionAns === currentDiag.options.find((o: any) => o.is_correct)?.text;
 
     setCompChecked(true);
     setCompCorrect(isCorrect);
+    playSFX(isCorrect ? "correct" : "wrong");
 
     try {
       await apiJson("/practice/idioms/context-comprehension/answer", {
@@ -211,27 +255,29 @@ export default function Course6Phase2IdiomsWizard({
 
   // Activity 1B Literal vs Idiomatic verification
   const handleCheckActivity1B = () => {
-    if (!contextData) return;
+    if (!contextData || lviChecked) return;
     const currentLvi = contextData.literal_vs_idiomatic[activeLviIdx];
     const isCorrect = selectedLviChoice === currentLvi.correct;
 
     setLviChecked(true);
     setLviCorrect(isCorrect);
+    playSFX(isCorrect ? "correct" : "wrong");
   };
 
   // Activity 1C Collocation check
   const handleCheckActivity1C = () => {
-    if (!contextData) return;
+    if (!contextData || collChecked) return;
     const currentColl = contextData.collocations[activeCollocationIdx];
     const isCorrect = selectedCollocationVerb === currentColl.options.find((o: any) => o.is_correct)?.text;
 
     setCollChecked(true);
     setCollCorrect(isCorrect);
+    playSFX(isCorrect ? "correct" : "wrong");
   };
 
   // Activity 2A Gap Fill submission
   const handleCheckActivity2A = async () => {
-    if (!productionData) return;
+    if (!productionData || gapFillFeedback) return;
     const currentTemplate = productionData.production_templates.find((t: any) => t.theme === selectedProdTheme);
     if (!currentTemplate) return;
 
@@ -245,6 +291,8 @@ export default function Course6Phase2IdiomsWizard({
         })
       });
       setGapFillFeedback(res);
+      const hasErrors = res?.feedback && Object.values(res.feedback).some((f: any) => f.is_correct === false);
+      playSFX(hasErrors ? "wrong" : "correct");
     } catch (e) {
       console.error(e);
     } finally {
@@ -254,7 +302,7 @@ export default function Course6Phase2IdiomsWizard({
 
   // Activity 2B Rewrite submission
   const handleCheckActivity2B = async () => {
-    if (!productionData) return;
+    if (!productionData || rewriteFeedback) return;
     const currentRewrite = productionData.rewrites[activeRewriteIdx];
 
     setSubmittingRewrite(true);
@@ -267,6 +315,7 @@ export default function Course6Phase2IdiomsWizard({
         })
       });
       setRewriteFeedback(res);
+      playSFX(res.is_correct !== false ? "correct" : "wrong");
     } catch (e) {
       console.error(e);
     } finally {
@@ -344,11 +393,12 @@ export default function Course6Phase2IdiomsWizard({
   // Quiz Checks
   const handleCheckQuiz = async () => {
     const current = quizBlueprint[quizIdx];
-    if (!current || !quizSelectedOpt) return;
+    if (!current || !quizSelectedOpt || quizChecked) return;
 
     const isCorrect = quizSelectedOpt === current.correct_answer;
     setQuizChecked(true);
     setQuizCorrect(isCorrect);
+    playSFX(isCorrect ? "correct" : "wrong");
     if (!isCorrect) {
       setQuizMistakes(prev => [...prev, current.id]);
     }
@@ -482,6 +532,7 @@ export default function Course6Phase2IdiomsWizard({
   
   useEffect(() => {
     if (typeof window !== "undefined") {
+      localStorage.setItem("hangeulai_c6p2_step", step.toString());
       window.dispatchEvent(new CustomEvent("hangeulai-step-change", {
         detail: {
           courseId: 6,
@@ -1604,7 +1655,10 @@ return (
 
           <div className="flex flex-col gap-2 max-w-xs mx-auto pt-4 border-t border-white/5 w-full">
             <button 
-              onClick={onComplete}
+              onClick={() => {
+                window.dispatchEvent(new CustomEvent("hangeulai-xp", { detail: { amount: 150, type: "correct" } }));
+                onComplete();
+              }}
               className="bg-accent-teal hover:bg-accent-teal/90 text-zinc-950 font-black py-3 px-8 rounded-xl transition text-sm flex items-center justify-center gap-1.5 cursor-pointer shadow-lg shadow-accent-teal/20"
             >
               <span>Graduate Phase 2</span>

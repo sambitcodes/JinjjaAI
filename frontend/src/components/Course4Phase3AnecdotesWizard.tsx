@@ -12,7 +12,8 @@ import {
   CheckCircle2, 
   Mic,
   Save,
-  MessageSquare
+  MessageSquare,
+  ArrowRight
 } from "lucide-react";
 
 let API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
@@ -40,6 +41,39 @@ async function apiJson(path: string, opts: RequestInit = {}) {
   return res.json();
 }
 
+const playSFX = (type: "correct" | "wrong") => {
+  if (typeof window === "undefined") return;
+  try {
+    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    if (type === "correct") {
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(659.25, ctx.currentTime);
+      gain.gain.setValueAtTime(0.1, ctx.currentTime);
+      osc.start();
+      osc.frequency.setValueAtTime(783.99, ctx.currentTime + 0.1);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+      osc.stop(ctx.currentTime + 0.4);
+      window.dispatchEvent(new CustomEvent("hangeulai-xp", { detail: { amount: 20, type: "correct" } }));
+    } else {
+      osc.type = "triangle";
+      osc.frequency.setValueAtTime(150.0, ctx.currentTime);
+      gain.gain.setValueAtTime(0.15, ctx.currentTime);
+      osc.start();
+      osc.frequency.exponentialRampToValueAtTime(80.0, ctx.currentTime + 0.35);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+      osc.stop(ctx.currentTime + 0.4);
+      window.dispatchEvent(new CustomEvent("hangeulai-xp", { detail: { amount: -10, type: "wrong" } }));
+    }
+  } catch (e) {
+    console.error("AudioContext not supported or blocked", e);
+  }
+};
+
 interface Course4Phase3AnecdotesWizardProps {
   activeLesson: any;
   speakWord: (text: string) => void;
@@ -53,13 +87,39 @@ export default function Course4Phase3AnecdotesWizard({
 }: Course4Phase3AnecdotesWizardProps) {
   const [step, setStep] = useState(1);
   const [showOutline, setShowOutline] = useState(false);
-  const totalSteps = 6;
+  const totalSteps = 8;
+
+  // Persist progress to localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem("hangeulai_c4p3_step");
+    if (saved) {
+      const parsedStep = parseInt(saved, 10);
+      if (parsedStep >= 1 && parsedStep <= 8) setStep(parsedStep);
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem("hangeulai_c4p3_step", String(step));
+  }, [step]);
 
   // Data loaded from Backend
   const [metadata, setMetadata] = useState<any>(null);
   const [coreData, setCoreData] = useState<any>(null);
 
-  // Activity 1 states (Reading & Listening)
+  // Concept Micro-questions state
+  const [c1Answer, setC1Answer] = useState<string | null>(null);
+  const [c1Checked, setC1Checked] = useState(false);
+  const [c1Correct, setC1Correct] = useState<boolean | null>(null);
+
+  const [c2Answer, setC2Answer] = useState<string | null>(null);
+  const [c2Checked, setC2Checked] = useState(false);
+  const [c2Correct, setC2Correct] = useState<boolean | null>(null);
+
+  const [c3Answer, setC3Answer] = useState<string | null>(null);
+  const [c3Checked, setC3Checked] = useState(false);
+  const [c3Correct, setC3Correct] = useState<boolean | null>(null);
+
+  // Activity 1 states (Reading & Listening - understandingItems)
   const [understandingItems, setUnderstandingItems] = useState<any[]>([]);
   const [undIdx, setUndIdx] = useState(0);
   const [qIdx, setQIdx] = useState(0);
@@ -112,19 +172,23 @@ export default function Course4Phase3AnecdotesWizard({
   useEffect(() => {
     const load = async () => {
       try {
-        if (step === 1 && !metadata) {
+        if (!metadata) {
           const res = await apiJson("/lessons/phases/korean3/3/metadata");
           setMetadata(res);
-        } else if (step === 2 && !coreData) {
+        }
+        if (step >= 2 && !coreData) {
           const res = await apiJson("/lessons/phases/korean3/3/core-data");
           setCoreData(res);
-        } else if (step === 3 && understandingItems.length === 0) {
+        }
+        if (step >= 5 && understandingItems.length === 0) {
           const res = await apiJson("/lessons/practice/anecdotes/listening-reading");
           setUnderstandingItems(res.items || []);
-        } else if (step === 5 && quizBlueprint.length === 0) {
+        }
+        if (step >= 7 && quizBlueprint.length === 0) {
           const res = await apiJson("/lessons/quiz/korean3/phase-3/start", { method: "POST" });
           setQuizBlueprint(res.blueprint || []);
-        } else if (step === 6 && homeworkItems.length === 0) {
+        }
+        if (step >= 8 && homeworkItems.length === 0) {
           const res_hw = await apiJson("/lessons/phases/korean3/3/homework");
           setHomeworkItems(res_hw || []);
         }
@@ -139,6 +203,32 @@ export default function Course4Phase3AnecdotesWizard({
     speakWord(text);
   };
 
+  // Concept checks
+  const handleCheckC1 = () => {
+    if (!c1Answer) return;
+    const correct = c1Answer === "B";
+    setC1Correct(correct);
+    setC1Checked(true);
+    playSFX(correct ? "correct" : "wrong");
+  };
+
+  const handleCheckC2 = () => {
+    if (!c2Answer) return;
+    const correct = c2Answer === "B";
+    setC2Correct(correct);
+    setC2Checked(true);
+    playSFX(correct ? "correct" : "wrong");
+  };
+
+  const handleCheckC3 = () => {
+    if (!c3Answer) return;
+    const correct = c3Answer === "B";
+    setC3Correct(correct);
+    setC3Checked(true);
+    playSFX(correct ? "correct" : "wrong");
+  };
+
+  // Activity 1 Check
   const handleCheckUnd = async () => {
     const current = understandingItems[undIdx];
     if (!current) return;
@@ -148,6 +238,7 @@ export default function Course4Phase3AnecdotesWizard({
     const isCorrect = selectedOpt === activeQ.correct_answer;
     setUndChecked(true);
     setUndCorrect(isCorrect);
+    playSFX(isCorrect ? "correct" : "wrong");
 
     try {
       await apiJson("/lessons/practice/anecdotes/listening-reading/answer", {
@@ -183,6 +274,7 @@ export default function Course4Phase3AnecdotesWizard({
     }
   };
 
+  // Activity 2: Builder
   const handleBuildAnecdote = async () => {
     setBuilding(true);
     setSpeakingChecked(false);
@@ -245,6 +337,7 @@ export default function Course4Phase3AnecdotesWizard({
     }
   };
 
+  // Quiz
   const handleCheckQuiz = async () => {
     const current = quizBlueprint[quizIdx];
     if (!current) return;
@@ -252,6 +345,7 @@ export default function Course4Phase3AnecdotesWizard({
     const isCorrect = quizSelectedOpt === current.correct_answer;
     setQuizChecked(true);
     setQuizCorrect(isCorrect);
+    playSFX(isCorrect ? "correct" : "wrong");
     if (!isCorrect) {
       setQuizMistakes(prev => [...prev, current.id]);
     }
@@ -289,7 +383,7 @@ export default function Course4Phase3AnecdotesWizard({
           })
         });
         setQuizScore(score);
-        setStep(6);
+        setStep(8);
       } catch (err) {
         console.error(err);
       } finally {
@@ -331,15 +425,17 @@ export default function Course4Phase3AnecdotesWizard({
     setEvents(nextEvents);
   };
 
-    const outlineSteps = [
+  const outlineSteps = [
     { num: 1, label: "Welcome & Overview" },
-    { num: 2, label: "Activity 1 – Beginning-Middle-End Story Framing Grid" },
-    { num: 3, label: "Activity 2 – Reading/listening narrative comprehension" },
-    { num: 4, label: "Activity 3 – Custom Story builder with sequence flow mapping" },
-    { num: 5, label: "Activity 4 – Grammar check quizzes" }
+    { num: 2, label: "Concept 1 – B1 Storytelling Goal" },
+    { num: 3, label: "Concept 2 – Story Framing Structure" },
+    { num: 4, label: "Concept 3 – Example Anecdote Analysis" },
+    { num: 5, label: "Activity A – Understanding Checks" },
+    { num: 6, label: "Activity B – Chronicle Story Builder" },
+    { num: 7, label: "Quiz – Story Organisation Checks" },
+    { num: 8, label: "Tutor Live Story Session" }
   ];
 
-  
   useEffect(() => {
     if (typeof window !== "undefined") {
       window.dispatchEvent(new CustomEvent("hangeulai-step-change", {
@@ -352,20 +448,20 @@ export default function Course4Phase3AnecdotesWizard({
     }
   }, [step]);
 
-return (
+  return (
     <div className="flex-grow flex flex-col justify-between">
       
       {/* Top Header tracking */}
       <header className="flex justify-between items-center py-4 border-b border-white/5 mb-6">
         <div className="flex items-center space-x-4">
           <div className="p-3 rounded-2xl bg-zinc-900 border border-white/10 shadow-lg">
-            <BookOpen className="w-6 h-6 text-brand-400" />
+            <BookOpen className="w-6 h-6 text-indigo-400" />
           </div>
           <div>
             <h2 className="font-black text-xl text-white tracking-tight flex items-center gap-2">
               <span>{activeLesson?.title || "Experiences & Simple Anecdotes (B1 Core)"}</span>
             </h2>
-            <p className="text-xs text-zinc-500 font-medium">Curated Topic: Storytelling Structure</p>
+            <p className="text-xs text-zinc-500 font-bold uppercase tracking-wider">Level B1 - Phase 3</p>
           </div>
         </div>
         
@@ -373,7 +469,7 @@ return (
         <div className="flex items-center space-x-4">
           <div className="w-40 h-3 bg-zinc-900/80 rounded-full overflow-hidden border border-white/5 p-[2px]">
             <div 
-              className="h-full bg-gradient-to-r from-yellow-500 via-orange-500 to-indigo-500 rounded-full transition-all duration-500" 
+              className="h-full bg-gradient-to-r from-indigo-500 via-violet-500 to-purple-500 rounded-full transition-all duration-500" 
               style={{ width: `${(step / totalSteps) * 100}%` }}
             />
           </div>
@@ -386,6 +482,7 @@ return (
           </button>
         </div>
       </header>
+
       {showOutline && (
         <div className="mb-6 p-5 bg-zinc-950/80 rounded-3xl border border-white/5 shadow-2xl animate-in fade-in slide-in-from-top-4 duration-300">
           <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest block mb-3 font-mono">Curriculum Syllabus Map</span>
@@ -398,7 +495,7 @@ return (
                   setShowOutline(false);
                 }}
                 className={`p-2.5 rounded-xl border text-left transition ${step === s.num
-                    ? "border-brand-500 bg-brand-500/10 text-white"
+                    ? "border-indigo-500 bg-indigo-500/10 text-white"
                     : "border-white/5 bg-zinc-900/40 text-zinc-400 hover:border-white/10 hover:text-white"
                   }`}
               >
@@ -412,144 +509,323 @@ return (
 
       {/* Screen 1: Welcome/Overview */}
       {step === 1 && (
-        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center text-center animate-fade-in">
-          <div className="p-3 bg-brand-500/10 rounded-full border border-brand-500/25 w-fit mx-auto text-brand-400 shrink-0">
+        <div className="glass-panel border border-indigo-500/20 p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center text-center animate-fade-in hover:border-indigo-500/40 hover:shadow-[0_0_30px_rgba(99,102,241,0.2)] transition-all duration-300">
+          <div className="p-3 bg-indigo-500/10 rounded-full border border-indigo-500/25 w-fit mx-auto text-indigo-400 shrink-0">
             <Sparkles className="w-8 h-8 animate-pulse shrink-0" />
           </div>
           
-          <h2 className="text-5xl font-black text-white tracking-tight">Korean 3.3</h2>
-          <h3 className="text-2xl font-extrabold text-brand-400 mt-2">Experiences & Simple Anecdotes</h3>
+          <h2 className="text-5xl font-black text-white tracking-tight">Anecdotes – “Yesterday & Last Weekend”</h2>
+          <h3 className="text-2xl font-extrabold text-indigo-400 mt-2">Level B1 - Phase 3</h3>
           
           <p className="text-zinc-300 text-base leading-relaxed max-w-2xl mx-auto">
             {metadata?.description || "Describe what you did yesterday and last weekend."}
           </p>
 
           <div className="bg-zinc-900/60 p-6 rounded-2xl border border-white/5 text-left text-sm text-zinc-400 space-y-3 max-w-2xl mx-auto w-full">
-            <p className="text-[10px] text-zinc-500 font-mono uppercase tracking-wider font-black">🎯 Objectives:</p>
+            <p className="text-[10px] text-zinc-500 font-mono uppercase tracking-wider font-black">🎯 Learning Goals:</p>
             <ul className="list-disc list-inside space-y-1 text-zinc-300 pl-1">
               {(metadata?.goals || [
-                "Describe past experiences in 6–8 connected sentences",
-                "Use sequence words (first, then, after that, finally) to structure stories",
-                "Say how you felt and give simple comments on events"
+                "Tell a short logical anecdote about a past event with beginning-middle-end layout",
+                "Utilize chronological sequence words (먼저, 그 다음에, 그리고, 마지막으로)",
+                "Synthesize results and emotional evaluations to close narratives"
               ]).map((g: string, idx: number) => (
                 <li key={idx}>{g}</li>
               ))}
             </ul>
             <p className="pt-2"><strong>⏱️ Estimated Time:</strong> {metadata?.estimated_minutes || 30} minutes</p>
-            <p><strong>📋 Prerequisites:</strong> {metadata?.prerequisites || "Korean 3.2 – Describing People & Places"}</p>
           </div>
 
           <div className="flex flex-col gap-3 max-w-sm mx-auto pt-4">
             <button 
               onClick={() => setStep(2)}
-              className="bg-brand-500 hover:bg-brand-600 text-white font-black py-4 px-10 rounded-2xl transition text-base flex items-center justify-center gap-2.5 cursor-pointer shadow-lg shadow-brand-500/20"
+              className="bg-indigo-600 hover:bg-indigo-700 text-white font-black py-4 px-10 rounded-2xl transition text-base flex items-center justify-center gap-2.5 cursor-pointer shadow-lg shadow-indigo-600/20"
             >
               <span>Start Phase 3</span>
               <ChevronRight className="w-4 h-4" />
             </button>
-            
           </div>
-
-          
         </div>
       )}
 
-      {/* Screen 2: Concept Explanation */}
+      {/* Screen 2: Concept C1 – B1 storytelling goal */}
       {step === 2 && (
-        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
+        <div className="glass-panel border border-indigo-500/20 p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in hover:border-indigo-500/40 hover:shadow-[0_0_30px_rgba(99,102,241,0.2)] transition-all duration-300">
           <div className="flex justify-between items-center border-b border-white/5 pb-4">
             <h2 className="text-2xl font-black text-white flex items-center gap-2">
-              <BookOpen className="w-6 h-6 text-brand-400" />
-              <span>B1 Storytelling Frames</span>
+              <BookOpen className="w-6 h-6 text-indigo-400" />
+              <span>Concept Screen C1 – B1 Storytelling Goal</span>
             </h2>
             <span className="text-xs text-zinc-500 font-bold">Step 2 of {totalSteps}</span>
           </div>
 
-          <div className="bg-brand-500/5 p-4 rounded-xl border border-brand-500/10 text-xs leading-relaxed text-zinc-300">
-            <p className="font-bold text-white mb-1">B1 Storytelling Goal:</p>
-            <p className="italic">
+          <div className="space-y-4 text-left max-w-2xl mx-auto text-sm text-zinc-300">
+            <p className="text-lg text-zinc-200 italic font-medium leading-relaxed border-l-4 border-indigo-500 pl-4 py-1 bg-indigo-500/5 rounded-r-xl">
               "At B1, you should be able to organize a story logically with a clear chronological timeline and wrap up with your personal evaluations."
+            </p>
+            <p>
+              Rather than list unlinked actions in the past tense (A2 level), B1 narrative layout establishes:
+              <br />
+              - <strong>A Clear Stage Setting</strong> (Beginning: Time, Place, Who).
+              <br />
+              - <strong>Logical Chronology</strong> (Middle: sequence connectors).
+              <br />
+              - <strong>Evaluative Reflection</strong> (End: feeling or final state).
             </p>
           </div>
 
-          {/* Interactive B-M-E Diagram Flow */}
-          <div className="grid grid-cols-3 gap-3">
-            <div className="p-3 bg-zinc-900 border border-white/5 rounded-xl text-center space-y-1">
-              <span className="text-[10px] text-brand-400 font-bold block uppercase tracking-wider">1. Beginning</span>
-              <p className="text-xs text-white font-extrabold">{coreData?.story_frames?.beginning || "Time, Place, Who"}</p>
+          {/* Micro MCQ Check */}
+          <div className="bg-zinc-900/60 p-6 rounded-2xl border border-white/5 max-w-xl mx-auto w-full space-y-4 text-left">
+            <p className="text-xs text-indigo-400 font-black uppercase tracking-wider font-mono">💡 Micro-Question Check:</p>
+            <p className="text-sm font-bold text-white">What information usually belongs in the beginning of an anecdote?</p>
+            
+            <div className="flex flex-col gap-2">
+              {[
+                { id: "A", text: "A) your feelings at the end" },
+                { id: "B", text: "B) time, place, and who you were with" }
+              ].map((opt) => {
+                const isSelected = c1Answer === opt.id;
+                const isCorrectOpt = opt.id === "B";
+                return (
+                  <button
+                    key={opt.id}
+                    disabled={c1Checked}
+                    onClick={() => setC1Answer(opt.id)}
+                    className={`p-3 rounded-xl border text-left text-xs font-bold transition-all duration-200 ${
+                      isSelected 
+                        ? "border-indigo-500 bg-indigo-500/10 text-white" 
+                        : "border-white/5 bg-zinc-950 text-zinc-300 hover:border-white/10"
+                    } ${c1Checked && isCorrectOpt ? "border-emerald-500 bg-emerald-500/10 text-white" : ""} ${
+                      c1Checked && isSelected && !isCorrectOpt ? "border-red-500 bg-red-500/10 text-white" : ""
+                    }`}
+                  >
+                    {opt.text}
+                  </button>
+                );
+              })}
             </div>
-            <div className="p-3 bg-zinc-900 border border-white/5 rounded-xl text-center space-y-1">
-              <span className="text-[10px] text-brand-400 font-bold block uppercase tracking-wider">2. Middle</span>
-              <p className="text-xs text-white font-extrabold">{coreData?.story_frames?.middle || "Chronological Events"}</p>
-            </div>
-            <div className="p-3 bg-zinc-900 border border-white/5 rounded-xl text-center space-y-1">
-              <span className="text-[10px] text-brand-400 font-bold block uppercase tracking-wider">3. End</span>
-              <p className="text-xs text-white font-extrabold">{coreData?.story_frames?.end || "Result & Feelings"}</p>
-            </div>
-          </div>
 
-          {/* Sequence Words Grid */}
-          <div className="space-y-3">
-            <label className="text-[10px] text-zinc-500 uppercase tracking-widest font-black block">Chaining Connectors:</label>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-              {coreData?.sequence_words?.map((word: any, idx: number) => (
-                <div key={idx} className="p-2.5 rounded-xl border border-white/5 bg-zinc-900/60 text-center space-y-0.5">
-                  <span className="font-korean font-bold text-sm text-white">{word.ko}</span>
-                  <span className="text-[10px] text-zinc-500 block">{word.en}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Example Anecdote with highlights */}
-          {coreData?.example_anecdotes?.[0] && (
-            <div className="bg-zinc-900/60 p-4 rounded-xl border border-white/5 space-y-2 text-xs">
-              <span className="text-[10px] text-zinc-500 font-black uppercase tracking-wider block text-left">Color-Coded Narrative Blueprint:</span>
-              <p className="font-korean text-sm leading-relaxed text-zinc-200 text-left">
-                지난달에 저는 친구랑 부산으로 여행을 갔어요. <span className="text-blue-400 font-extrabold">먼저</span> 아침에 KTX 열차를 탔어요. <span className="text-blue-400 font-extrabold">그 다음에</span> 부산역 근처 식당에서 맛있는 해물 밀면을 먹었어요. <span className="text-blue-400 font-extrabold">그리고</span> 바다를 구경하고 사진을 많이 찍었어요. <span className="text-blue-400 font-extrabold">마지막으로</span> 저녁에 호텔에 돌아와서 쉬었어요. 조금 <span className="text-emerald-400 font-extrabold">피곤했지만</span> 아주 <span className="text-emerald-400 font-extrabold">행복했어요</span>.
-              </p>
-              
-              <div className="flex gap-4 text-[9px] font-bold border-t border-white/5 pt-2 justify-center">
-                <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 bg-blue-400 rounded-sm" /> Chaining Connectors</span>
-                <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 bg-emerald-400 rounded-sm" /> Feelings & Evaluations</span>
+            {c1Checked && (
+              <div className="p-3 bg-zinc-950 rounded-xl border border-white/5 text-xs text-zinc-400 animate-fade-in">
+                <p className="font-extrabold text-white mb-1">
+                  {c1Correct ? "✓ Correct!" : "✗ Incorrect."}
+                </p>
+                <p>Setting the scene (when, where, and with whom) is crucial to give the listener context before detailing sequential events.</p>
               </div>
-            </div>
-          )}
+            )}
+
+            {!c1Checked && (
+              <button
+                disabled={!c1Answer}
+                onClick={handleCheckC1}
+                className="w-full py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold transition"
+              >
+                Check Answer
+              </button>
+            )}
+          </div>
 
           <div className="flex justify-between items-center pt-4 border-t border-white/5">
             <button onClick={() => setStep(1)} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-sm font-bold transition flex items-center gap-2 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
-            <button onClick={() => setStep(3)} className="bg-brand-500 hover:bg-brand-600 text-white px-8 py-3 rounded-xl text-sm font-bold transition flex items-center gap-2 cursor-pointer">Start Activities <ChevronRight className="w-4 h-4" /></button>
+            <button onClick={() => setStep(3)} className="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3 rounded-xl text-sm font-bold transition flex items-center gap-2 cursor-pointer">Continue <ChevronRight className="w-4 h-4" /></button>
           </div>
         </div>
       )}
 
-      {/* Screen 3: Activity 1: Understanding Narrative Flow */}
+      {/* Screen 3: Concept C2 – Story frames: beginning / middle / end */}
       {step === 3 && (
-        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
+        <div className="glass-panel border border-indigo-500/20 p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in hover:border-indigo-500/40 hover:shadow-[0_0_30px_rgba(99,102,241,0.2)] transition-all duration-300">
           <div className="flex justify-between items-center border-b border-white/5 pb-4">
             <h2 className="text-2xl font-black text-white flex items-center gap-2">
-              <Sparkles className="w-6 h-6 text-brand-400" />
-              <span>Activity 1 – Anecdote Analysis</span>
+              <BookOpen className="w-6 h-6 text-indigo-400" />
+              <span>Concept Screen C2 – Story Frames Structure</span>
             </h2>
             <span className="text-xs text-zinc-500 font-bold">Step 3 of {totalSteps}</span>
           </div>
 
+          <div className="space-y-4 text-left max-w-2xl mx-auto text-xs text-zinc-300">
+            <p className="text-sm">B1 narratives partition details across three major frames:</p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div className="p-3.5 bg-zinc-950 border border-white/5 rounded-xl space-y-1">
+                <span className="text-indigo-400 font-extrabold text-sm block">🎬 Beginning</span>
+                <p className="font-bold text-white text-xs">{coreData?.story_frames?.beginning || "Time, Place, Who"}</p>
+                <p className="text-[10px] text-zinc-500">Sets the baseline coordinates of the story memory.</p>
+              </div>
+              <div className="p-3.5 bg-zinc-950 border border-white/5 rounded-xl space-y-1">
+                <span className="text-indigo-400 font-extrabold text-sm block">🔄 Middle</span>
+                <p className="font-bold text-white text-xs">{coreData?.story_frames?.middle || "Chronological Events"}</p>
+                <p className="text-[10px] text-zinc-500">Uses sequence links: 먼저, 그 다음에, 그리고, 마지막으로.</p>
+              </div>
+              <div className="p-3.5 bg-zinc-950 border border-white/5 rounded-xl space-y-1">
+                <span className="text-indigo-400 font-extrabold text-sm block">🏁 End</span>
+                <p className="font-bold text-white text-xs">{coreData?.story_frames?.end || "Result & Feelings"}</p>
+                <p className="text-[10px] text-zinc-500">Includes final consequence and personal emotional assessment.</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Micro MCQ Check */}
+          <div className="bg-zinc-900/60 p-6 rounded-2xl border border-white/5 max-w-xl mx-auto w-full space-y-4 text-left">
+            <p className="text-xs text-indigo-400 font-black uppercase tracking-wider font-mono">💡 Micro-Question Check:</p>
+            <p className="text-sm font-bold text-white">Which words show the chronological order in a story?</p>
+            
+            <div className="flex flex-col gap-2">
+              {[
+                { id: "A", text: "A) KTX, 해물 밀면, 사진" },
+                { id: "B", text: "B) 먼저, 그 다음에, 그리고, 마지막으로" }
+              ].map((opt) => {
+                const isSelected = c2Answer === opt.id;
+                const isCorrectOpt = opt.id === "B";
+                return (
+                  <button
+                    key={opt.id}
+                    disabled={c2Checked}
+                    onClick={() => setC2Answer(opt.id)}
+                    className={`p-3 rounded-xl border text-left text-xs font-bold transition-all duration-200 ${
+                      isSelected 
+                        ? "border-indigo-500 bg-indigo-500/10 text-white" 
+                        : "border-white/5 bg-zinc-950 text-zinc-300 hover:border-white/10"
+                    } ${c2Checked && isCorrectOpt ? "border-emerald-500 bg-emerald-500/10 text-white" : ""} ${
+                      c2Checked && isSelected && !isCorrectOpt ? "border-red-500 bg-red-500/10 text-white" : ""
+                    }`}
+                  >
+                    {opt.text}
+                  </button>
+                );
+              })}
+            </div>
+
+            {c2Checked && (
+              <div className="p-3 bg-zinc-950 rounded-xl border border-white/5 text-xs text-zinc-400 animate-fade-in">
+                <p className="font-extrabold text-white mb-1">
+                  {c2Correct ? "✓ Correct!" : "✗ Incorrect."}
+                </p>
+                <p>Sequence markers (first, next, and, finally) form the backbone of chronological narrative timelines.</p>
+              </div>
+            )}
+
+            {!c2Checked && (
+              <button
+                disabled={!c2Answer}
+                onClick={handleCheckC2}
+                className="w-full py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold transition"
+              >
+                Check Answer
+              </button>
+            )}
+          </div>
+
+          <div className="flex justify-between items-center pt-4 border-t border-white/5">
+            <button onClick={() => setStep(2)} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-sm font-bold transition flex items-center gap-2 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
+            <button onClick={() => setStep(4)} className="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3 rounded-xl text-sm font-bold transition flex items-center gap-2 cursor-pointer">Continue <ChevronRight className="w-4 h-4" /></button>
+          </div>
+        </div>
+      )}
+
+      {/* Screen 4: Concept C3 – Busan Trip Example / Routine vs Anecdote */}
+      {step === 4 && (
+        <div className="glass-panel border border-indigo-500/20 p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in hover:border-indigo-500/40 hover:shadow-[0_0_30px_rgba(99,102,241,0.2)] transition-all duration-300">
+          <div className="flex justify-between items-center border-b border-white/5 pb-4">
+            <h2 className="text-2xl font-black text-white flex items-center gap-2">
+              <BookOpen className="w-6 h-6 text-indigo-400" />
+              <span>Concept Screen C3 – Busan Trip Anecdote</span>
+            </h2>
+            <span className="text-xs text-zinc-500 font-bold">Step 4 of {totalSteps}</span>
+          </div>
+
+          <div className="bg-zinc-900/60 p-5 rounded-2xl border border-white/5 max-w-xl mx-auto w-full text-left space-y-3 text-xs leading-normal">
+            <span className="text-[10px] text-zinc-500 font-black uppercase tracking-wider block">Example Story:</span>
+            <p className="font-korean text-sm leading-relaxed text-zinc-200">
+              지난달에 저는 친구랑 부산으로 여행을 갔어요. <strong className="text-indigo-400">먼저</strong> 아침에 KTX 열차를 탔어요. <strong className="text-indigo-400">그 다음에</strong> 부산역 근처 식당에서 맛있는 해물 밀면을 먹었어요. <strong className="text-indigo-400">그리고</strong> 바다를 구경하고 사진을 많이 찍었어요. <strong className="text-indigo-400">마지막으로</strong> 저녁에 호텔에 돌아와서 쉬었어요. 조금 피곤했지만 아주 <strong className="text-emerald-400">행복했어요</strong>.
+            </p>
+            <p className="text-zinc-500 italic">
+              "Last month, I went on a trip to Busan with a friend. First, in the morning, I took the KTX. Next, I ate seafood noodles near Busan Station. Then, we saw the sea and took pictures. Finally, we returned to the hotel and rested. I was tired, but very happy."
+            </p>
+          </div>
+
+          {/* Micro MCQ Check */}
+          <div className="bg-zinc-900/60 p-6 rounded-2xl border border-white/5 max-w-xl mx-auto w-full space-y-4 text-left">
+            <p className="text-xs text-indigo-400 font-black uppercase tracking-wider font-mono">💡 Micro-Question Check:</p>
+            <p className="text-sm font-bold text-white">What is new at B1 compared to simple past routines?</p>
+            
+            <div className="flex flex-col gap-2">
+              {[
+                { id: "A", text: "A) only listing past tense actions in chronological order" },
+                { id: "B", text: "B) organizing actions into beginning-middle-end with evaluations" }
+              ].map((opt) => {
+                const isSelected = c3Answer === opt.id;
+                const isCorrectOpt = opt.id === "B";
+                return (
+                  <button
+                    key={opt.id}
+                    disabled={c3Checked}
+                    onClick={() => setC3Answer(opt.id)}
+                    className={`p-3 rounded-xl border text-left text-xs font-bold transition-all duration-200 ${
+                      isSelected 
+                        ? "border-indigo-500 bg-indigo-500/10 text-white" 
+                        : "border-white/5 bg-zinc-950 text-zinc-300 hover:border-white/10"
+                    } ${c3Checked && isCorrectOpt ? "border-emerald-500 bg-emerald-500/10 text-white" : ""} ${
+                      c3Checked && isSelected && !isCorrectOpt ? "border-red-500 bg-red-500/10 text-white" : ""
+                    }`}
+                  >
+                    {opt.text}
+                  </button>
+                );
+              })}
+            </div>
+
+            {c3Checked && (
+              <div className="p-3 bg-zinc-950 rounded-xl border border-white/5 text-xs text-zinc-400 animate-fade-in">
+                <p className="font-extrabold text-white mb-1">
+                  {c3Correct ? "✓ Correct!" : "✗ Incorrect."}
+                </p>
+                <p>Instead of merely cataloging daily actions, B1 storytelling builds a narrative flow by packaging sequences with scene setups and final personal opinions.</p>
+              </div>
+            )}
+
+            {!c3Checked && (
+              <button
+                disabled={!c3Answer}
+                onClick={handleCheckC3}
+                className="w-full py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold transition"
+              >
+                Check Answer
+              </button>
+            )}
+          </div>
+
+          <div className="flex justify-between items-center pt-4 border-t border-white/5">
+            <button onClick={() => setStep(3)} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-sm font-bold transition flex items-center gap-2 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
+            <button onClick={() => setStep(5)} className="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3 rounded-xl text-sm font-bold transition flex items-center gap-2 cursor-pointer">Start Activities <ChevronRight className="w-4 h-4" /></button>
+          </div>
+        </div>
+      )}
+
+      {/* Screen 5: Activity A – Anecdote understanding checks */}
+      {step === 5 && (
+        <div className="glass-panel border border-indigo-500/20 p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in hover:border-indigo-500/40 hover:shadow-[0_0_30px_rgba(99,102,241,0.2)] transition-all duration-300">
+          <div className="flex justify-between items-center border-b border-white/5 pb-4">
+            <h2 className="text-2xl font-black text-white flex items-center gap-2">
+              <Sparkles className="w-6 h-6 text-indigo-400" />
+              <span>Activity A – Anecdote Understanding Checks</span>
+            </h2>
+            <span className="text-xs text-zinc-500 font-bold">Step 5 of {totalSteps}</span>
+          </div>
+
           {understandingItems.length > 0 && (
             <div className="bg-zinc-900/30 p-5 rounded-2xl border border-white/5 space-y-4">
-              
-              {/* Anecdote block */}
+              {/* Story prompt */}
               <div className="p-4 bg-zinc-950 border border-white/5 rounded-xl text-center space-y-2">
-                <span className="text-[9px] text-brand-400 font-black uppercase tracking-wider block">B1 Anecdote Text</span>
+                <span className="text-[9px] text-indigo-400 font-black uppercase tracking-wider block font-mono">B1 Anecdote Paragraph</span>
                 <p className="font-korean text-sm leading-relaxed text-white font-extrabold">{understandingItems[undIdx]?.text}</p>
                 <div className="flex justify-center pt-1">
-                  <button onClick={() => playAudio(understandingItems[undIdx]?.text)} className="p-1.5 bg-zinc-900 hover:bg-zinc-800 text-zinc-400 rounded-lg border border-white/5 transition flex items-center gap-1 text-[10px] font-bold">
-                    <Volume2 className="w-3.5 h-3.5" />
+                  <button onClick={() => playAudio(understandingItems[undIdx]?.text)} className="p-1.5 bg-zinc-900 hover:bg-zinc-800 text-zinc-400 rounded-lg border border-white/5 transition flex items-center gap-1.5 text-xs font-bold cursor-pointer">
+                    <Volume2 className="w-4 h-4" />
                     <span>Listen</span>
                   </button>
                 </div>
               </div>
 
-              {/* Comprehension Questions */}
+              {/* Comprehension check questions */}
               <div className="space-y-3">
                 <div className="p-3 bg-zinc-900 rounded-xl border border-white/5 text-center text-xs">
                   <span className="text-[9px] text-zinc-500 uppercase font-mono block">Question {qIdx + 1}:</span>
@@ -557,25 +833,31 @@ return (
                 </div>
 
                 <div className="grid grid-cols-1 gap-2 max-w-sm mx-auto">
-                  {understandingItems[undIdx]?.questions[qIdx]?.options.map((opt: string) => (
-                    <button
-                      key={opt}
-                      onClick={() => !undChecked && setSelectedOpt(opt)}
-                      disabled={undChecked}
-                      className={`p-3 rounded-xl border text-left text-xs font-bold transition ${
-                        selectedOpt === opt
-                          ? "border-brand-500 bg-brand-500/10 text-white"
-                          : "border-white/5 bg-zinc-950 text-zinc-300 hover:border-white/10"
-                      } ${undChecked && opt === understandingItems[undIdx]?.questions[qIdx]?.correct_answer ? "border-accent-teal bg-accent-teal/15 text-white" : ""}`}
-                    >
-                      {opt}
-                    </button>
-                  ))}
+                  {understandingItems[undIdx]?.questions[qIdx]?.options.map((opt: string) => {
+                    const isSelected = selectedOpt === opt;
+                    const isCorrect = opt === understandingItems[undIdx]?.questions[qIdx]?.correct_answer;
+                    return (
+                      <button
+                        key={opt}
+                        onClick={() => !undChecked && setSelectedOpt(opt)}
+                        disabled={undChecked}
+                        className={`p-3 rounded-xl border text-left text-xs font-bold transition-all duration-200 ${
+                          isSelected
+                            ? "border-indigo-500 bg-indigo-500/10 text-white"
+                            : "border-white/5 bg-zinc-950 text-zinc-300 hover:border-white/10"
+                        } ${undChecked && isCorrect ? "border-emerald-500 bg-emerald-500/10 text-white font-black" : ""} ${
+                          undChecked && isSelected && !isCorrect ? "border-red-500 bg-red-500/10 text-white font-black" : ""
+                        }`}
+                      >
+                        {opt}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
               {undChecked && (
-                <div className="p-3 bg-zinc-950 rounded-xl border border-white/5 text-xs text-zinc-400 max-w-sm mx-auto text-left animate-fade-in">
+                <div className="p-4 bg-zinc-950 rounded-xl border border-white/5 text-xs text-zinc-400 max-w-sm mx-auto text-left animate-fade-in">
                   <p className="font-extrabold text-white mb-1">{undCorrect ? "✓ Correct!" : "✗ Incorrect."}</p>
                   <p>{understandingItems[undIdx]?.questions[qIdx]?.explanation}</p>
                 </div>
@@ -586,50 +868,51 @@ return (
                   <button
                     onClick={handleCheckUnd}
                     disabled={!selectedOpt}
-                    className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer"
+                    className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white px-5 py-2 rounded-xl text-xs font-bold transition cursor-pointer"
                   >
-                    Check Answer
+                    Verify Answer
                   </button>
                 ) : (
                   <button
                     onClick={handleNextQuestionOrDescription}
-                    className="bg-accent-teal text-zinc-950 hover:bg-accent-teal/90 px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer"
+                    className="bg-emerald-500 text-zinc-950 hover:bg-emerald-400 px-5 py-2 rounded-xl text-xs font-bold transition cursor-pointer"
                   >
                     Next Question
                   </button>
                 )}
               </div>
-
             </div>
           )}
 
           <div className="flex justify-between items-center pt-4 border-t border-white/5">
-            <button onClick={() => setStep(2)} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-sm font-bold transition flex items-center gap-2 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
-            <button onClick={() => setStep(4)} className="bg-brand-500 hover:bg-brand-600 text-white px-8 py-3 rounded-xl text-sm font-bold transition flex items-center gap-2 cursor-pointer">Move to Activity 2 <ChevronRight className="w-4 h-4" /></button>
+            <button onClick={() => setStep(4)} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-sm font-bold transition flex items-center gap-2 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
+            <button onClick={() => setStep(6)} className="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3 rounded-xl text-sm font-bold transition flex items-center gap-2 cursor-pointer">Continue to Activity B <ChevronRight className="w-4 h-4" /></button>
           </div>
         </div>
       )}
 
-      {/* Screen 4: Activity 2: Anecdote Builder */}
-      {step === 4 && (
-        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
+      {/* Screen 6: Activity B – Anecdote builder (yesterday/last weekend) */}
+      {step === 6 && (
+        <div className="glass-panel border border-indigo-500/20 p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in hover:border-indigo-500/40 hover:shadow-[0_0_30px_rgba(99,102,241,0.2)] transition-all duration-300">
           <div className="flex justify-between items-center border-b border-white/5 pb-4">
             <h2 className="text-2xl font-black text-white flex items-center gap-2">
-              <Sparkles className="w-6 h-6 text-brand-400" />
-              <span>Activity 2 – Anecdote Builder</span>
+              <Sparkles className="w-6 h-6 text-indigo-400" />
+              <span>Activity B – Anecdote builder</span>
             </h2>
-            <span className="text-xs text-zinc-500 font-bold">Step 4 of {totalSteps}</span>
+            <span className="text-xs text-zinc-500 font-bold">Step 6 of {totalSteps}</span>
           </div>
 
           <div className="bg-zinc-900/30 p-5 rounded-2xl border border-white/5 space-y-4 text-left">
-            {/* Story Type Selector */}
-            <div className="grid grid-cols-2 gap-2">
-              {coreData?.story_types?.map((type: any) => (
-                <button
-                  key={type.id}
-                  onClick={() => {
-                    setSelectedStoryType(type.id);
-                    if (type.id === "trip_visit") {
+            <div className="grid grid-cols-2 gap-3">
+              {/* Story type selection */}
+              <div>
+                <label className="text-[9px] text-zinc-500 uppercase font-black tracking-wider block mb-1">Story Topic</label>
+                <select
+                  value={selectedStoryType}
+                  onChange={(e) => {
+                    const typeId = e.target.value;
+                    setSelectedStoryType(typeId);
+                    if (typeId === "trip_visit") {
                       setTimeExpr("지난달에");
                       setPlaceExpr("부산으로");
                       setWhoExpr("친구랑");
@@ -651,52 +934,52 @@ return (
                       setFeelingExpr("조금 힘들었지만 아주 보람 있었어요");
                     }
                   }}
-                  className={`p-2.5 rounded-xl border text-center text-xs font-bold transition flex flex-col items-center justify-center ${
-                    selectedStoryType === type.id 
-                      ? "border-brand-500 bg-brand-500/10 text-white" 
-                      : "border-white/5 bg-zinc-950 text-zinc-400"
-                  }`}
+                  className="w-full bg-zinc-950 p-2.5 rounded-xl border border-white/5 text-xs text-white"
                 >
-                  <span>{type.name}</span>
-                  <span className="text-[9px] font-normal text-zinc-500 block mt-0.5">{type.description}</span>
-                </button>
-              ))}
-            </div>
+                  <option value="fun_day">Fun Day out at Park</option>
+                  <option value="trip_visit">Weekend Trip to Busan</option>
+                </select>
+              </div>
 
-            {/* Inputs grid */}
-            <div className="grid grid-cols-3 gap-3">
+              {/* Time Expressions */}
               <div>
-                <label className="text-[9px] text-zinc-500 uppercase font-black tracking-wider block mb-1">Time Expression</label>
+                <label className="text-[9px] text-zinc-500 uppercase font-black tracking-wider block mb-1">Time (어제 / 지난 주말에...)</label>
                 <input
                   type="text"
                   value={timeExpr}
                   onChange={(e) => setTimeExpr(e.target.value)}
-                  className="w-full bg-zinc-950 p-2 rounded-xl border border-white/5 text-xs text-white"
-                />
-              </div>
-              <div>
-                <label className="text-[9px] text-zinc-500 uppercase font-black tracking-wider block mb-1">Place (with particles)</label>
-                <input
-                  type="text"
-                  value={placeExpr}
-                  onChange={(e) => setPlaceExpr(e.target.value)}
-                  className="w-full bg-zinc-950 p-2 rounded-xl border border-white/5 text-xs text-white"
-                />
-              </div>
-              <div>
-                <label className="text-[9px] text-zinc-500 uppercase font-black tracking-wider block mb-1">Who with</label>
-                <input
-                  type="text"
-                  value={whoExpr}
-                  onChange={(e) => setWhoExpr(e.target.value)}
-                  className="w-full bg-zinc-950 p-2 rounded-xl border border-white/5 text-xs text-white"
+                  className="w-full bg-zinc-950 p-2.5 rounded-xl border border-white/5 text-xs text-white"
                 />
               </div>
             </div>
 
-            {/* Ordered Events list */}
+            <div className="grid grid-cols-2 gap-3">
+              {/* Place Expression */}
+              <div>
+                <label className="text-[9px] text-zinc-500 uppercase font-black tracking-wider block mb-1">Place (with particle)</label>
+                <input
+                  type="text"
+                  value={placeExpr}
+                  onChange={(e) => setPlaceExpr(e.target.value)}
+                  className="w-full bg-zinc-950 p-2.5 rounded-xl border border-white/5 text-xs text-white"
+                />
+              </div>
+
+              {/* Who you were with */}
+              <div>
+                <label className="text-[9px] text-zinc-500 uppercase font-black tracking-wider block mb-1">With whom</label>
+                <input
+                  type="text"
+                  value={whoExpr}
+                  onChange={(e) => setWhoExpr(e.target.value)}
+                  className="w-full bg-zinc-950 p-2.5 rounded-xl border border-white/5 text-xs text-white"
+                />
+              </div>
+            </div>
+
+            {/* Chaining Events */}
             <div className="space-y-2">
-              <label className="text-[9px] text-zinc-500 uppercase font-black tracking-wider block">Middle Chronological Events (in order):</label>
+              <label className="text-[9px] text-zinc-500 uppercase font-black tracking-wider block">Middle Chronological Events (먼저, 그 다음에...):</label>
               {events.map((evt, idx) => (
                 <div key={idx} className="flex items-center gap-2">
                   <span className="text-[10px] text-zinc-500 font-bold w-4">#{idx+1}</span>
@@ -710,64 +993,64 @@ return (
               ))}
             </div>
 
-            {/* Feeling Expression */}
+            {/* Ending emotion */}
             <div>
-              <label className="text-[9px] text-zinc-500 uppercase font-black tracking-wider block mb-1">Ending Result / Final Feeling</label>
+              <label className="text-[9px] text-zinc-500 uppercase font-black tracking-wider block mb-1">Ending Result & Final Feelings</label>
               <input
                 type="text"
                 value={feelingExpr}
                 onChange={(e) => setFeelingExpr(e.target.value)}
-                className="w-full bg-zinc-950 p-2 rounded-xl border border-white/5 text-xs text-white"
+                className="w-full bg-zinc-950 p-2.5 rounded-xl border border-white/5 text-xs text-white"
               />
             </div>
 
             <button
               onClick={handleBuildAnecdote}
-              className="w-full bg-brand-500 hover:bg-brand-600 text-white font-bold py-2.5 rounded-xl text-xs transition cursor-pointer text-center"
+              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 rounded-xl text-xs transition cursor-pointer text-center"
             >
-              Generate Story Flow
+              Generate Anecdote Story
             </button>
           </div>
 
-          {/* Generated Result preview */}
+          {/* Result preview */}
           {builtKo && (
-            <div className="p-4 bg-zinc-950 rounded-xl border border-brand-500/20 text-center space-y-3 animate-fade-in">
+            <div className="p-4 bg-zinc-950 rounded-xl border border-indigo-500/20 text-center space-y-3 animate-fade-in">
               <div>
-                <span className="text-[9px] text-brand-400 uppercase tracking-wider block font-black mb-1">Generated B1 Anecdote:</span>
-                <p className="font-korean text-sm text-white font-extrabold leading-relaxed">{builtKo}</p>
+                <span className="text-[9px] text-indigo-400 uppercase tracking-wider block font-black mb-1">Generated Chronological Narrative:</span>
+                <p className="font-korean text-lg text-white font-extrabold leading-relaxed">{builtKo}</p>
                 <p className="text-xs text-zinc-400 mt-1">{builtEn}</p>
               </div>
 
               <div className="flex justify-center gap-2 pt-2">
-                <button onClick={() => playAudio(builtKo)} className="p-2 bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white rounded-lg border border-white/5 transition flex items-center gap-1.5 text-xs font-bold">
+                <button onClick={() => playAudio(builtKo)} className="p-2 bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white rounded-lg border border-white/5 transition flex items-center gap-1.5 text-xs font-bold cursor-pointer">
                   <Volume2 className="w-4 h-4" />
                   <span>Listen</span>
                 </button>
-                <button onClick={handleSaveAnecdote} className="p-2 bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white rounded-lg border border-white/5 transition flex items-center gap-1.5 text-xs font-bold">
+                <button onClick={handleSaveAnecdote} className="p-2 bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white rounded-lg border border-white/5 transition flex items-center gap-1.5 text-xs font-bold cursor-pointer">
                   <Save className="w-4 h-4" />
                   <span>Save Story</span>
                 </button>
               </div>
 
-              {/* Speaking practice */}
+              {/* Story recitation */}
               <div className="bg-zinc-950/60 p-3.5 rounded-xl border border-white/5 space-y-2 mt-2">
-                <span className="text-[9px] text-zinc-500 tracking-wider block font-black text-left">Narration Pronunciation Check:</span>
+                <span className="text-[9px] text-zinc-500 uppercase tracking-wider block font-black text-left">Narrate Your Story:</span>
                 <div className="flex justify-between items-center gap-3">
                   <button
                     onClick={handleStartRecording}
-                    className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer ${
-                      recording 
-                        ? "bg-red-500 text-white animate-pulse" 
-                        : "bg-brand-500 hover:bg-brand-600 text-white"
+                    disabled={recording}
+                    className={`px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                      recording ? "bg-red-500 text-white animate-pulse" : "bg-indigo-600 text-white hover:bg-indigo-700"
                     }`}
                   >
                     <Mic className="w-4 h-4" />
-                    <span>{recording ? "Recording..." : "Hold & Narrate Story"}</span>
+                    <span>{recording ? "Recording..." : "Read Aloud"}</span>
                   </button>
+                  
                   {speakingChecked && (
-                    <div className="text-right">
-                      <span className="text-xs font-bold text-accent-teal block">Score: {speakingScore}%</span>
-                      <span className="text-[9px] text-zinc-400 block">{speakingFeedback}</span>
+                    <div className="text-right space-y-0.5 text-xs">
+                      <p className="font-bold text-white">Score: {speakingScore}%</p>
+                      <p className="text-[10px] text-zinc-400 font-medium">{speakingFeedback}</p>
                     </div>
                   )}
                 </div>
@@ -776,157 +1059,176 @@ return (
           )}
 
           <div className="flex justify-between items-center pt-4 border-t border-white/5">
-            <button onClick={() => setStep(3)} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-sm font-bold transition flex items-center gap-2 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
-            <button onClick={() => setStep(5)} className="bg-brand-500 hover:bg-brand-600 text-white px-8 py-3 rounded-xl text-sm font-bold transition flex items-center gap-2 cursor-pointer">Move to Mini-Quiz <ChevronRight className="w-4 h-4" /></button>
+            <button onClick={() => setStep(5)} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-sm font-bold transition flex items-center gap-2 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
+            <button onClick={() => setStep(7)} className="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3 rounded-xl text-sm font-bold transition flex items-center gap-2 cursor-pointer">Continue to Mini-Quiz <ChevronRight className="w-4 h-4" /></button>
           </div>
         </div>
       )}
 
-      {/* Screen 5: Mini-Quiz */}
-      {step === 5 && (
-        <div className="glass-panel p-8 rounded-3xl border border-white/5 shadow-2xl w-full space-y-6 flex-grow flex flex-col justify-center">
+      {/* Screen 7: Quiz – Story organisation & evaluation */}
+      {step === 7 && (
+        <div className="glass-panel border border-indigo-500/20 p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in hover:border-indigo-500/40 hover:shadow-[0_0_30px_rgba(99,102,241,0.2)] transition-all duration-300">
           <div className="flex justify-between items-center border-b border-white/5 pb-4">
             <h2 className="text-2xl font-black text-white flex items-center gap-2">
-              <Sparkles className="w-6 h-6 text-brand-400" />
-              <span>Phase Checkpoint Quiz</span>
+              <Award className="w-6 h-6 text-indigo-400" />
+              <span>Mini-Quiz: Story Organisation Checks</span>
             </h2>
-            <span className="text-xs text-zinc-500 font-bold">Step 5 of {totalSteps}</span>
+            <span className="text-xs text-zinc-500 font-bold">Question {quizIdx + 1} of {quizBlueprint.length || 3}</span>
           </div>
 
-          {quizBlueprint.length > 0 && (
+          {quizBlueprint.length === 0 ? (
+            <div className="text-center py-6"><Loader2 className="w-8 h-8 animate-spin mx-auto text-indigo-400" /></div>
+          ) : (
             <div className="space-y-6 max-w-xl mx-auto w-full">
-              <div className="flex justify-between text-[10px] text-zinc-500 font-mono">
-                <span>Quiz Question {quizIdx + 1} of {quizBlueprint.length}</span>
-                <span>Level: B1 Storytelling</span>
+              <div className="p-4 bg-zinc-950 rounded-xl border border-white/5 text-xs text-center">
+                <span className="text-[10px] text-zinc-500 uppercase font-mono block">Question Prompt</span>
+                <p className="font-extrabold text-white text-base mt-1 whitespace-pre-line">{quizBlueprint[quizIdx]?.question}</p>
               </div>
 
-              <h3 className="text-base font-black text-white text-center leading-relaxed whitespace-pre-line">
-                {quizBlueprint[quizIdx]?.question}
-              </h3>
-
-              <div className="grid grid-cols-1 gap-2.5 max-w-sm mx-auto">
-                {quizBlueprint[quizIdx]?.options?.map((opt: string) => (
-                  <button
-                    key={opt}
-                    onClick={() => !quizChecked && setQuizSelectedOpt(opt)}
-                    disabled={quizChecked}
-                    className={`p-3.5 rounded-xl border text-left text-xs font-bold transition ${
-                      quizSelectedOpt === opt
-                        ? "border-brand-500 bg-brand-500/10 text-white"
-                        : "border-white/5 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-300"
-                    } ${quizChecked && opt === quizBlueprint[quizIdx]?.correct_answer ? "border-accent-teal bg-accent-teal/10 text-white" : ""}`}
-                  >
-                    {opt}
-                  </button>
-                ))}
+              <div className="grid grid-cols-1 gap-2">
+                {quizBlueprint[quizIdx]?.options.map((opt: string) => {
+                  const isSelected = quizSelectedOpt === opt;
+                  const isCorrect = opt === quizBlueprint[quizIdx]?.correct_answer;
+                  return (
+                    <button
+                      key={opt}
+                      onClick={() => !quizChecked && setQuizSelectedOpt(opt)}
+                      disabled={quizChecked}
+                      className={`p-3 rounded-xl border text-left text-xs font-bold transition-all duration-200 ${
+                        isSelected
+                          ? "border-indigo-500 bg-indigo-500/10 text-white"
+                          : "border-white/5 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-300"
+                      } ${quizChecked && isCorrect ? "border-emerald-500 bg-emerald-500/10 text-white font-black" : ""} ${
+                        quizChecked && isSelected && !isCorrect ? "border-red-500 bg-red-500/10 text-white font-black" : ""
+                      }`}
+                    >
+                      {opt}
+                    </button>
+                  );
+                })}
               </div>
 
               {quizChecked && (
-                <div className={`p-4 rounded-xl border text-xs text-left space-y-1 ${
-                  quizCorrect ? "bg-accent-teal/5 border-accent-teal/20 text-accent-teal animate-fade-in" : "bg-red-500/5 border-red-500/10 text-red-400 animate-fade-in"
-                }`}>
-                  <p className="font-extrabold">{quizCorrect ? "✓ Correct! Brilliant." : "✗ Incorrect."}</p>
+                <div className="p-4 bg-zinc-950 rounded-xl border border-white/5 text-xs text-zinc-400 text-left animate-fade-in">
+                  <p className="font-extrabold text-white mb-1">{quizCorrect ? "✓ Correct! Brilliant." : "✗ Incorrect."}</p>
                   <p>{quizBlueprint[quizIdx]?.explanation}</p>
                 </div>
               )}
 
-              <div className="flex justify-between items-center pt-4 border-t border-white/5">
-                <button onClick={() => setStep(4)} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-sm font-bold transition flex items-center gap-2 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
+              <div className="flex justify-end">
                 {!quizChecked ? (
                   <button
                     onClick={handleCheckQuiz}
                     disabled={!quizSelectedOpt}
-                    className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white px-5 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer"
+                    className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold px-6 py-2 rounded-xl text-xs cursor-pointer transition"
                   >
-                    Check Answer
+                    Verify Answer
                   </button>
                 ) : (
                   <button
                     onClick={handleNextQuizOrComplete}
                     disabled={finishingQuiz}
-                    className="bg-accent-teal text-zinc-950 hover:bg-accent-teal/90 px-5 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer"
+                    className="bg-emerald-500 text-zinc-950 hover:bg-emerald-400 font-bold px-6 py-2 rounded-xl text-xs cursor-pointer transition flex items-center gap-1.5"
                   >
-                    {finishingQuiz ? <Loader2 className="w-4 h-4 animate-spin text-zinc-950" /> : (quizIdx < quizBlueprint.length - 1 ? "Next Item" : "See Final Score")}
+                    {finishingQuiz && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                    <span>{quizIdx < quizBlueprint.length - 1 ? "Next Question" : "Complete Quiz"}</span>
                   </button>
                 )}
               </div>
             </div>
           )}
+
+          {/* Motivational line wrap-up when finished */}
+          {quizChecked && quizIdx === quizBlueprint.length - 1 && quizCorrect && (
+            <div className="mt-4 p-4 bg-zinc-900 border border-emerald-500/20 rounded-2xl max-w-sm mx-auto text-center space-y-1.5 animate-bounce">
+              <Award className="w-8 h-8 text-yellow-500 mx-auto" />
+              <p className="font-bold text-white text-sm">Anecdote Checkpoint Complete</p>
+              <p className="text-[10px] text-zinc-400">“You are fully capable of drafting logical anecdotes and yesterday's events.”</p>
+            </div>
+          )}
+
+          <div className="flex justify-between items-center pt-4 border-t border-white/5">
+            <button onClick={() => setStep(6)} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-sm font-bold transition flex items-center gap-2 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
+            <div className="h-4" />
+          </div>
         </div>
       )}
 
-      {/* Screen 6: Complete Panel */}
-      {step === 6 && (
-        <div className="glass-panel neon-border p-8 rounded-3xl shadow-2xl w-full space-y-6 flex-grow flex flex-col justify-center text-center max-w-xl mx-auto">
-          <div className="p-3 bg-brand-500/10 rounded-full border border-brand-500/25 w-fit mx-auto text-brand-400">
-            <Award className="w-10 h-10 animate-bounce" />
-          </div>
-          
-          <div>
-            <h2 className="text-2xl font-black text-white font-sans">Korean 3.3 Storytelling Complete! 🇰🇷✨</h2>
-            <p className="text-zinc-400 text-xs mt-1">You are fully capable of drafting logical anecdotes and yesterday's events.</p>
+      {/* Screen 8: Tutor session – Describe a friend or place */}
+      {step === 8 && (
+        <div className="glass-panel border border-indigo-500/20 p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center text-center animate-fade-in hover:border-indigo-500/40 hover:shadow-[0_0_30px_rgba(99,102,241,0.2)] transition-all duration-300">
+          <div className="p-3 bg-emerald-500/10 rounded-full border border-emerald-500/25 w-fit mx-auto text-emerald-400 shrink-0">
+            <Award className="w-8 h-8 animate-bounce shrink-0" />
           </div>
 
-          {/* Homework checklist */}
-          <div className="bg-zinc-900/60 p-5 rounded-2xl border border-white/5 text-left text-xs space-y-3 font-sans leading-relaxed">
-            <span className="text-[10px] font-black uppercase tracking-widest text-brand-400 block font-sans">Interactive Homework List:</span>
-            <div className="space-y-2">
-              {homeworkItems.map((item: any) => {
-                const checked = !!completedHomework[item.id];
+          <h2 className="text-5xl font-black text-white tracking-tight">Course 4 Phase 3 Completed!</h2>
+          <p className="text-xs text-zinc-400 font-mono">“You are fully capable of drafting logical anecdotes and yesterday’s events.”</p>
+
+          <div className="bg-zinc-900/40 p-5 rounded-2xl border border-white/5 text-left space-y-3 max-w-md mx-auto w-full">
+            <span className="text-[10px] text-zinc-500 font-black uppercase tracking-wider block">B1 Anecdote Homework Checklist:</span>
+            <div className="space-y-2.5">
+              {homeworkItems.map((item) => {
+                const isChecked = !!completedHomework[item.id];
                 return (
-                  <label key={item.id} className="flex items-start gap-3 p-2 bg-zinc-950/45 rounded-lg border border-white/[0.03] cursor-pointer hover:bg-zinc-950 transition">
+                  <label key={item.id} className="flex items-start gap-3 cursor-pointer group text-xs text-zinc-300 select-none">
                     <input
                       type="checkbox"
-                      checked={checked}
-                      onChange={() => handleToggleHomework(item.id, checked)}
-                      className="mt-0.5 rounded border-white/10 text-brand-500 focus:ring-0 focus:ring-offset-0 bg-zinc-900"
+                      checked={isChecked}
+                      onChange={() => handleToggleHomework(item.id, isChecked)}
+                      className="mt-0.5 h-4 w-4 rounded border-white/10 bg-zinc-950 text-indigo-500 focus:ring-0 focus:ring-offset-0"
                     />
-                    <span className={`text-zinc-300 font-medium ${checked ? "line-through text-zinc-500" : ""}`}>{item.text}</span>
+                    <span className={`group-hover:text-white transition ${isChecked ? "line-through text-zinc-500" : ""}`}>{item.text}</span>
                   </label>
                 );
               })}
             </div>
           </div>
 
-          {/* Gwan-Sik Anecdotes AI Tutor Launcher */}
-          <div className="p-4 bg-zinc-950 rounded-2xl border border-white/5 space-y-3">
-            <div className="flex items-center gap-2">
-              <MessageSquare className="w-6 h-6 text-brand-400" />
-              <div className="text-left">
-                <span className="text-xs font-bold text-white block">Tutor Gwan-Sik Roleplay</span>
-                <span className="text-[10px] text-zinc-500 block">Start B1 roleplay dialogue about trip memories</span>
-              </div>
+          {/* AI practice launcher */}
+          <div className="bg-zinc-950 p-5 rounded-2xl border border-white/5 text-left space-y-3 max-w-md mx-auto w-full">
+            <div className="space-y-0.5">
+              <span className="text-[9px] text-indigo-400 font-black uppercase tracking-wider block font-mono">AI Conversation Practice:</span>
+              <p className="text-[11px] text-zinc-400 leading-normal">Practice telling your story/anecdote in an interactive conversation session with Gwan-Sik.</p>
             </div>
+
             {tutorSession ? (
-              <div className="bg-zinc-900 p-3.5 rounded-xl border border-brand-500/20 text-left text-xs">
-                <span className="text-[9px] font-bold text-brand-400 block mb-1">Gwan-Sik:</span>
-                <p className="font-korean text-white leading-relaxed">{tutorSession.opener}</p>
-                <div className="mt-3 flex justify-end">
-                  <a href={`/conversation/chat?session_id=${tutorSession.session_id}`} className="bg-brand-500 hover:bg-brand-600 text-white font-bold py-1.5 px-4 rounded-xl text-[10px] transition cursor-pointer">
-                    Join Full Chat Room
-                  </a>
-                </div>
+              <div className="p-4 bg-zinc-900 border border-indigo-500/20 rounded-xl space-y-2 text-xs animate-fade-in">
+                <p className="font-extrabold text-white">Stateful Session Active!</p>
+                <p className="font-korean text-zinc-200">Gwan-Sik: "{tutorSession.opener}"</p>
+                <button
+                  onClick={() => window.location.href = `/tutor?session_id=${tutorSession.session_id}`}
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-1.5 px-4 rounded-lg text-[10px] cursor-pointer transition flex items-center gap-1"
+                >
+                  <span>Enter B1 Practice Room</span>
+                  <ArrowRight className="w-3 h-3" />
+                </button>
               </div>
             ) : (
               <button
                 onClick={handleLaunchB1AnecdotesPractice}
                 disabled={loadingTutor}
-                className="w-full bg-zinc-900 hover:bg-zinc-850 border border-white/10 text-brand-400 hover:text-brand-300 font-bold py-2.5 rounded-xl text-xs transition flex items-center justify-center gap-2 cursor-pointer"
+                className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold py-3 px-4 rounded-xl text-xs cursor-pointer transition flex items-center justify-center gap-2"
               >
-                {loadingTutor ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Initiate AI Roleplay session"}
+                {loadingTutor ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <MessageSquare className="w-3.5 h-3.5" />}
+                <span>Initiate AI Roleplay Session</span>
               </button>
             )}
           </div>
 
-          <button
-            onClick={() => {
-              onComplete();
-            }}
-            className="bg-gradient-to-r from-brand-500 to-amber-500 hover:from-brand-600 text-zinc-950 font-black py-4 px-8 rounded-2xl transition text-sm flex items-center justify-center gap-2 mx-auto shadow-lg shadow-brand-500/20 cursor-pointer"
-          >
-            <span>Finish Phase 3 & Return to Lessons</span>
-            <ChevronRight className="w-4 h-4 text-zinc-950" />
-          </button>
+          <div className="pt-2 flex justify-between items-center max-w-md mx-auto w-full">
+            <button onClick={() => setStep(7)} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-sm font-bold transition flex items-center gap-2 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
+            <button 
+              onClick={() => {
+                if (typeof window !== "undefined") {
+                  window.dispatchEvent(new CustomEvent("hangeulai-xp", { detail: { amount: 150, type: "correct" } }));
+                }
+                onComplete();
+              }}
+              className="bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-black py-3.5 px-8 rounded-xl transition text-sm shadow-lg shadow-emerald-500/15 cursor-pointer"
+            >
+              Finish B1 Phase 3
+            </button>
+          </div>
         </div>
       )}
     </div>

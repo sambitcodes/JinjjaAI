@@ -19,7 +19,8 @@ import {
   MapPin,
   Briefcase,
   Smartphone,
-  HelpCircle
+  HelpCircle,
+  ArrowRight
 } from "lucide-react";
 
 let API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
@@ -47,6 +48,39 @@ async function apiJson(path: string, opts: RequestInit = {}) {
   return res.json();
 }
 
+const playSFX = (type: "correct" | "wrong") => {
+  if (typeof window === "undefined") return;
+  try {
+    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    if (type === "correct") {
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(659.25, ctx.currentTime);
+      gain.gain.setValueAtTime(0.1, ctx.currentTime);
+      osc.start();
+      osc.frequency.setValueAtTime(783.99, ctx.currentTime + 0.1);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+      osc.stop(ctx.currentTime + 0.4);
+      window.dispatchEvent(new CustomEvent("hangeulai-xp", { detail: { amount: 20, type: "correct" } }));
+    } else {
+      osc.type = "triangle";
+      osc.frequency.setValueAtTime(150.0, ctx.currentTime);
+      gain.gain.setValueAtTime(0.15, ctx.currentTime);
+      osc.start();
+      osc.frequency.exponentialRampToValueAtTime(80.0, ctx.currentTime + 0.35);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+      osc.stop(ctx.currentTime + 0.4);
+      window.dispatchEvent(new CustomEvent("hangeulai-xp", { detail: { amount: -10, type: "wrong" } }));
+    }
+  } catch (e) {
+    console.error("AudioContext not supported or blocked", e);
+  }
+};
+
 interface Course4Phase4OpinionsWizardProps {
   activeLesson: any;
   speakWord: (text: string) => void;
@@ -60,13 +94,39 @@ export default function Course4Phase4OpinionsWizard({
 }: Course4Phase4OpinionsWizardProps) {
   const [step, setStep] = useState(1);
   const [showOutline, setShowOutline] = useState(false);
-  const totalSteps = 6;
+  const totalSteps = 8;
+
+  // Persist progress to localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem("hangeulai_c4p4_step");
+    if (saved) {
+      const parsedStep = parseInt(saved, 10);
+      if (parsedStep >= 1 && parsedStep <= 8) setStep(parsedStep);
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem("hangeulai_c4p4_step", String(step));
+  }, [step]);
 
   // Data loaded from Backend
   const [metadata, setMetadata] = useState<any>(null);
   const [coreData, setCoreData] = useState<any>(null);
 
-  // Activity 1 states (Recognize Opinions & Reasons)
+  // Concept Micro-questions state
+  const [c1Answer, setC1Answer] = useState<string | null>(null);
+  const [c1Checked, setC1Checked] = useState(false);
+  const [c1Correct, setC1Correct] = useState<boolean | null>(null);
+
+  const [c2Answer, setC2Answer] = useState<string | null>(null);
+  const [c2Checked, setC2Checked] = useState(false);
+  const [c2Correct, setC2Correct] = useState<boolean | null>(null);
+
+  const [c3Answer, setC3Answer] = useState<string | null>(null);
+  const [c3Checked, setC3Checked] = useState(false);
+  const [c3Correct, setC3Correct] = useState<boolean | null>(null);
+
+  // Activity 1 states (Recognize Opinions & Reasons - recognitionItems)
   const [recognitionItems, setRecognitionItems] = useState<any[]>([]);
   const [recIdx, setRecIdx] = useState(0);
   const [selectedStanceOpt, setSelectedStanceOpt] = useState<string | null>(null);
@@ -115,24 +175,29 @@ export default function Course4Phase4OpinionsWizard({
   useEffect(() => {
     const load = async () => {
       try {
-        if (step === 1 && !metadata) {
+        if (!metadata) {
           const res = await apiJson("/lessons/phases/korean3/4/metadata");
           setMetadata(res);
-        } else if (step === 2 && !coreData) {
+        }
+        if (step >= 2 && !coreData) {
           const res = await apiJson("/lessons/phases/korean3/4/core-data");
           setCoreData(res);
-        } else if (step === 3 && recognitionItems.length === 0) {
+        }
+        if (step >= 5 && recognitionItems.length === 0) {
           const res = await apiJson("/lessons/practice/opinions/recognition");
           setRecognitionItems(res.items || []);
-        } else if (step === 4 && builderTopics.length === 0) {
+        }
+        if (step >= 6 && builderTopics.length === 0) {
           const res = await apiJson("/lessons/practice/opinions/templates");
           setBuilderTopics(res.topics || []);
           setStanceOptions(res.stance_options || {});
           setReasonPhrases(res.reason_phrases || {});
-        } else if (step === 5 && quizBlueprint.length === 0) {
+        }
+        if (step >= 7 && quizBlueprint.length === 0) {
           const res = await apiJson("/lessons/quiz/korean3/phase-4/start", { method: "POST" });
           setQuizBlueprint(res.blueprint || []);
-        } else if (step === 6 && homeworkItems.length === 0) {
+        }
+        if (step >= 8 && homeworkItems.length === 0) {
           const res_hw = await apiJson("/lessons/phases/korean3/4/homework");
           setHomeworkItems(res_hw || []);
         }
@@ -147,6 +212,32 @@ export default function Course4Phase4OpinionsWizard({
     speakWord(text);
   };
 
+  // Concept Checks
+  const handleCheckC1 = () => {
+    if (!c1Answer) return;
+    const correct = c1Answer === "B";
+    setC1Correct(correct);
+    setC1Checked(true);
+    playSFX(correct ? "correct" : "wrong");
+  };
+
+  const handleCheckC2 = () => {
+    if (!c2Answer) return;
+    const correct = c2Answer === "B";
+    setC2Correct(correct);
+    setC2Checked(true);
+    playSFX(correct ? "correct" : "wrong");
+  };
+
+  const handleCheckC3 = () => {
+    if (!c3Answer) return;
+    const correct = c3Answer === "B";
+    setC3Correct(correct);
+    setC3Checked(true);
+    playSFX(correct ? "correct" : "wrong");
+  };
+
+  // Activity 1 Check
   const handleCheckRec = async (choice: string) => {
     const current = recognitionItems[recIdx];
     if (!current) return;
@@ -162,6 +253,7 @@ export default function Course4Phase4OpinionsWizard({
     setSelectedStanceOpt(choice);
     setRecChecked(true);
     setRecCorrect(isCorrect);
+    playSFX(isCorrect ? "correct" : "wrong");
 
     try {
       await apiJson("/lessons/practice/opinions/recognition/answer", {
@@ -262,6 +354,7 @@ export default function Course4Phase4OpinionsWizard({
     }
   };
 
+  // Quiz
   const handleCheckQuiz = async () => {
     const current = quizBlueprint[quizIdx];
     if (!current) return;
@@ -269,6 +362,7 @@ export default function Course4Phase4OpinionsWizard({
     const isCorrect = quizSelectedOpt === current.correct_answer;
     setQuizChecked(true);
     setQuizCorrect(isCorrect);
+    playSFX(isCorrect ? "correct" : "wrong");
     if (!isCorrect) {
       setQuizMistakes(prev => [...prev, current.id]);
     }
@@ -306,7 +400,7 @@ export default function Course4Phase4OpinionsWizard({
           })
         });
         setQuizScore(score);
-        setStep(6);
+        setStep(8);
       } catch (err) {
         console.error(err);
       } finally {
@@ -344,23 +438,25 @@ export default function Course4Phase4OpinionsWizard({
 
   const renderTopicIcon = (iconName: string) => {
     switch(iconName) {
-      case "laptop": return <Laptop className="w-4 h-4 text-brand-400" />;
-      case "map-pin": return <MapPin className="w-4 h-4 text-brand-400" />;
-      case "briefcase": return <Briefcase className="w-4 h-4 text-brand-400" />;
-      case "smartphone": return <Smartphone className="w-4 h-4 text-brand-400" />;
-      default: return <HelpCircle className="w-4 h-4 text-brand-400" />;
+      case "laptop": return <Laptop className="w-4 h-4 text-indigo-400" />;
+      case "map-pin": return <MapPin className="w-4 h-4 text-indigo-400" />;
+      case "briefcase": return <Briefcase className="w-4 h-4 text-indigo-400" />;
+      case "smartphone": return <Smartphone className="w-4 h-4 text-indigo-400" />;
+      default: return <HelpCircle className="w-4 h-4 text-indigo-400" />;
     }
   };
 
-    const outlineSteps = [
+  const outlineSteps = [
     { num: 1, label: "Welcome & Overview" },
-    { num: 2, label: "Activity 1 – Opinion Patterns & Agreement Indicators" },
-    { num: 3, label: "Activity 2 – Opinion vs Fact Comprehension drills" },
-    { num: 4, label: "Activity 3 – Custom Opinion Builder with reason appends" },
-    { num: 5, label: "Activity 4 – Grammar check quizzes" }
+    { num: 2, label: "Concept 1 – B1 Opinion Goal" },
+    { num: 3, label: "Concept 2 – Fact vs Opinion" },
+    { num: 4, label: "Concept 3 – Opinion Reason Suffixes" },
+    { num: 5, label: "Activity A – Facts & Clause Roles" },
+    { num: 6, label: "Activity B – Opinion Builder" },
+    { num: 7, label: "Quiz – Opinion Strategies" },
+    { num: 8, label: "Tutor Live Opinion Session" }
   ];
 
-  
   useEffect(() => {
     if (typeof window !== "undefined") {
       window.dispatchEvent(new CustomEvent("hangeulai-step-change", {
@@ -373,20 +469,20 @@ export default function Course4Phase4OpinionsWizard({
     }
   }, [step]);
 
-return (
+  return (
     <div className="flex-grow flex flex-col justify-between">
       
       {/* Top Header tracking */}
       <header className="flex justify-between items-center py-4 border-b border-white/5 mb-6">
         <div className="flex items-center space-x-4">
           <div className="p-3 rounded-2xl bg-zinc-900 border border-white/10 shadow-lg">
-            <BookOpen className="w-6 h-6 text-brand-400" />
+            <BookOpen className="w-6 h-6 text-indigo-400" />
           </div>
           <div>
             <h2 className="font-black text-xl text-white tracking-tight flex items-center gap-2">
               <span>{activeLesson?.title || "Opinions & Simple Arguments (B1 Core)"}</span>
             </h2>
-            <p className="text-xs text-zinc-500 font-medium">Curated Topic: Opinion Formations</p>
+            <p className="text-xs text-zinc-500 font-bold uppercase tracking-wider">Level B1 - Phase 4</p>
           </div>
         </div>
         
@@ -394,7 +490,7 @@ return (
         <div className="flex items-center space-x-4">
           <div className="w-40 h-3 bg-zinc-900/80 rounded-full overflow-hidden border border-white/5 p-[2px]">
             <div 
-              className="h-full bg-gradient-to-r from-yellow-500 via-orange-500 to-indigo-500 rounded-full transition-all duration-500" 
+              className="h-full bg-gradient-to-r from-indigo-500 via-violet-500 to-purple-500 rounded-full transition-all duration-500" 
               style={{ width: `${(step / totalSteps) * 100}%` }}
             />
           </div>
@@ -407,6 +503,7 @@ return (
           </button>
         </div>
       </header>
+
       {showOutline && (
         <div className="mb-6 p-5 bg-zinc-950/80 rounded-3xl border border-white/5 shadow-2xl animate-in fade-in slide-in-from-top-4 duration-300">
           <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest block mb-3 font-mono">Curriculum Syllabus Map</span>
@@ -419,7 +516,7 @@ return (
                   setShowOutline(false);
                 }}
                 className={`p-2.5 rounded-xl border text-left transition ${step === s.num
-                    ? "border-brand-500 bg-brand-500/10 text-white"
+                    ? "border-indigo-500 bg-indigo-500/10 text-white"
                     : "border-white/5 bg-zinc-900/40 text-zinc-400 hover:border-white/10 hover:text-white"
                   }`}
               >
@@ -433,130 +530,305 @@ return (
 
       {/* Screen 1: Welcome/Overview */}
       {step === 1 && (
-        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center text-center animate-fade-in">
-          <div className="p-3 bg-brand-500/10 rounded-full border border-brand-500/25 w-fit mx-auto text-brand-400 shrink-0">
+        <div className="glass-panel border border-indigo-500/20 p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center text-center animate-fade-in hover:border-indigo-500/40 hover:shadow-[0_0_30px_rgba(99,102,241,0.2)] transition-all duration-300">
+          <div className="p-3 bg-indigo-500/10 rounded-full border border-indigo-500/25 w-fit mx-auto text-indigo-400 shrink-0">
             <Sparkles className="w-8 h-8 animate-pulse shrink-0" />
           </div>
           
-          <h2 className="text-5xl font-black text-white tracking-tight">Korean 3.4</h2>
-          <h3 className="text-2xl font-extrabold text-brand-400 mt-2">Opinions & Simple Arguments</h3>
+          <h2 className="text-5xl font-black text-white tracking-tight">Opinions – “What You Think and Why”</h2>
+          <h3 className="text-2xl font-extrabold text-indigo-400 mt-2">Level B1 - Phase 4</h3>
           
           <p className="text-zinc-300 text-base leading-relaxed max-w-2xl mx-auto">
             {metadata?.description || "Say what you think and give short reasons."}
           </p>
 
           <div className="bg-zinc-900/60 p-6 rounded-2xl border border-white/5 text-left text-sm text-zinc-400 space-y-3 max-w-2xl mx-auto w-full">
-            <p className="text-[10px] text-zinc-500 font-mono uppercase tracking-wider font-black">🎯 Objectives:</p>
+            <p className="text-[10px] text-zinc-500 font-mono uppercase tracking-wider font-black">🎯 Learning Goals:</p>
             <ul className="list-disc list-inside space-y-1 text-zinc-300 pl-1">
               {(metadata?.goals || [
-                "Express likes/dislikes and simple opinions about everyday topics",
-                "Use 'I think...' patterns with reasons and contrasts",
-                "Respond in simple ways when you agree or disagree"
+                "Recognise the difference between a fact and an opinion in simple Korean statements",
+                "State simple opinions about everyday topics (school, hobbies) and append short reasons",
+                "Identify logical functions of second clauses (reason, result, contrast)"
               ]).map((g: string, idx: number) => (
                 <li key={idx}>{g}</li>
               ))}
             </ul>
             <p className="pt-2"><strong>⏱️ Estimated Time:</strong> {metadata?.estimated_minutes || 30} minutes</p>
-            <p><strong>📋 Prerequisites:</strong> {metadata?.prerequisites || "Korean 3.3 – Experiences & Simple Anecdotes"}</p>
           </div>
 
           <div className="flex flex-col gap-3 max-w-sm mx-auto pt-4">
             <button 
               onClick={() => setStep(2)}
-              className="bg-brand-500 hover:bg-brand-600 text-white font-black py-4 px-10 rounded-2xl transition text-base flex items-center justify-center gap-2.5 cursor-pointer shadow-lg shadow-brand-500/20"
+              className="bg-indigo-600 hover:bg-indigo-700 text-white font-black py-4 px-10 rounded-2xl transition text-base flex items-center justify-center gap-2.5 cursor-pointer shadow-lg shadow-indigo-600/20"
             >
               <span>Start Phase 4</span>
               <ChevronRight className="w-4 h-4" />
             </button>
-            
           </div>
-
-          
         </div>
       )}
 
-      {/* Screen 2: Concept Explanation */}
+      {/* Screen 2: Concept C1 – B1 opinion goal */}
       {step === 2 && (
-        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
+        <div className="glass-panel border border-indigo-500/20 p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in hover:border-indigo-500/40 hover:shadow-[0_0_30px_rgba(99,102,241,0.2)] transition-all duration-300">
           <div className="flex justify-between items-center border-b border-white/5 pb-4">
             <h2 className="text-2xl font-black text-white flex items-center gap-2">
-              <BookOpen className="w-6 h-6 text-brand-400" />
-              <span>Opinion Templates & Attitudes</span>
+              <BookOpen className="w-6 h-6 text-indigo-400" />
+              <span>Concept Screen C1 – B1 Opinion Goal</span>
             </h2>
             <span className="text-xs text-zinc-500 font-bold">Step 2 of {totalSteps}</span>
           </div>
 
-          <div className="bg-brand-500/5 p-4 rounded-xl border border-brand-500/10 text-xs leading-relaxed text-zinc-300">
-            <p className="font-bold text-white mb-1">B1 Opinion Goal:</p>
-            <p className="italic">
-              "At B1, you should be able to say what you think and briefly explain why about familiar topics like school, work, hobbies, and daily life."
+          <div className="space-y-4 text-left max-w-2xl mx-auto text-sm text-zinc-300">
+            <p className="text-lg text-zinc-200 italic font-medium leading-relaxed border-l-4 border-indigo-500 pl-4 py-1 bg-indigo-500/5 rounded-r-xl">
+              "At B1, you should be able to say what you think and briefly explain why about everyday topics."
+            </p>
+            <p>
+              An opinion expresses a personal viewpoint, feeling, or evaluation. A fact lists verifiable objective realities.
             </p>
           </div>
 
-          {/* Opinion patterns */}
-          <div className="space-y-2">
-            <label className="text-[10px] text-zinc-500 uppercase tracking-widest block text-left font-black">Core Opinion Patterns:</label>
-            <div className="grid grid-cols-2 gap-2">
-              {coreData?.opinion_patterns?.map((pattern: any, idx: number) => (
-                <div key={idx} className="p-2.5 rounded-xl border border-white/5 bg-zinc-900/60 text-left space-y-1">
-                  <span className="font-korean font-bold text-xs text-white block">{pattern.ko}</span>
-                  <span className="text-[9px] text-brand-400 block font-semibold">{pattern.en}</span>
-                  <span className="text-[8px] text-zinc-500 font-mono block">{pattern.rom}</span>
-                </div>
-              ))}
+          {/* Micro MCQ Check */}
+          <div className="bg-zinc-900/60 p-6 rounded-2xl border border-white/5 max-w-xl mx-auto w-full space-y-4 text-left">
+            <p className="text-xs text-indigo-400 font-black uppercase tracking-wider font-mono">💡 Micro-Question Check:</p>
+            <p className="text-sm font-bold text-white">Which is closer to an opinion?</p>
+            
+            <div className="flex flex-col gap-2">
+              {[
+                { id: "A", text: "A) “학교는 8시에 시작해요.” (School starts at 8.)" },
+                { id: "B", text: "B) “학교는 너무 일찍 시작해요.” (School starts too early.)" }
+              ].map((opt) => {
+                const isSelected = c1Answer === opt.id;
+                const isCorrectOpt = opt.id === "B";
+                return (
+                  <button
+                    key={opt.id}
+                    disabled={c1Checked}
+                    onClick={() => setC1Answer(opt.id)}
+                    className={`p-3 rounded-xl border text-left text-xs font-bold transition-all duration-200 ${
+                      isSelected 
+                        ? "border-indigo-500 bg-indigo-500/10 text-white" 
+                        : "border-white/5 bg-zinc-950 text-zinc-300 hover:border-white/10"
+                    } ${c1Checked && isCorrectOpt ? "border-emerald-500 bg-emerald-500/10 text-white" : ""} ${
+                      c1Checked && isSelected && !isCorrectOpt ? "border-red-500 bg-red-500/10 text-white" : ""
+                    }`}
+                  >
+                    {opt.text}
+                  </button>
+                );
+              })}
             </div>
-          </div>
 
-          {/* Agree / Disagree response cards */}
-          <div className="space-y-2">
-            <label className="text-[10px] text-zinc-500 uppercase tracking-widest block text-left font-black">Agreeing & Disagreeing Simply:</label>
-            <div className="grid grid-cols-2 gap-2">
-              {coreData?.agree_disagree_patterns?.map((pat: any, idx: number) => (
-                <div key={idx} className="p-2.5 rounded-xl border border-white/5 bg-zinc-900/60 text-left space-y-1">
-                  <span className="font-korean font-bold text-xs text-white block">{pat.ko}</span>
-                  <span className="text-[9px] text-accent-teal block font-semibold">{pat.en}</span>
-                  <span className="text-[8px] text-zinc-500 font-mono block">{pat.rom}</span>
-                </div>
-              ))}
-            </div>
-          </div>
+            {c1Checked && (
+              <div className="p-3 bg-zinc-950 rounded-xl border border-white/5 text-xs text-zinc-400 animate-fade-in">
+                <p className="font-extrabold text-white mb-1">
+                  {c1Correct ? "✓ Correct!" : "✗ Incorrect."}
+                </p>
+                <p>Option B contains the subjective modifier "너무 일찍" (too early), expressing a personal opinion. Option A is a verifiable scheduling fact.</p>
+              </div>
+            )}
 
-          {/* Topic Ideas */}
-          <div className="bg-zinc-900/60 p-4 rounded-xl border border-white/5 space-y-2 text-xs">
-            <span className="text-[10px] text-zinc-500 font-black uppercase tracking-wider block text-left">Typical B1 Opinion Topics:</span>
-            <div className="grid grid-cols-4 gap-2">
-              {coreData?.topic_ideas?.map((t: any) => (
-                <div key={t.id} className="p-2 bg-zinc-950 rounded-lg border border-white/[0.03] text-center flex flex-col items-center gap-1.5 justify-center">
-                  {renderTopicIcon(t.icon)}
-                  <span className="text-[9px] font-bold text-zinc-300 block leading-tight">{t.name}</span>
-                </div>
-              ))}
-            </div>
+            {!c1Checked && (
+              <button
+                disabled={!c1Answer}
+                onClick={handleCheckC1}
+                className="w-full py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold transition"
+              >
+                Check Answer
+              </button>
+            )}
           </div>
 
           <div className="flex justify-between items-center pt-4 border-t border-white/5">
             <button onClick={() => setStep(1)} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-sm font-bold transition flex items-center gap-2 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
-            <button onClick={() => setStep(3)} className="bg-brand-500 hover:bg-brand-600 text-white px-8 py-3 rounded-xl text-sm font-bold transition flex items-center gap-2 cursor-pointer">Start Activities <ChevronRight className="w-4 h-4" /></button>
+            <button onClick={() => setStep(3)} className="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3 rounded-xl text-sm font-bold transition flex items-center gap-2 cursor-pointer">Continue <ChevronRight className="w-4 h-4" /></button>
           </div>
         </div>
       )}
 
-      {/* Screen 3: Activity 1: Recognize Opinions & Reasons */}
+      {/* Screen 3: Concept C2 – Fact vs opinion */}
       {step === 3 && (
-        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
+        <div className="glass-panel border border-indigo-500/20 p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in hover:border-indigo-500/40 hover:shadow-[0_0_30px_rgba(99,102,241,0.2)] transition-all duration-300">
           <div className="flex justify-between items-center border-b border-white/5 pb-4">
             <h2 className="text-2xl font-black text-white flex items-center gap-2">
-              <Sparkles className="w-6 h-6 text-brand-400" />
-              <span>Activity 1 – Argument Analysis</span>
+              <BookOpen className="w-6 h-6 text-indigo-400" />
+              <span>Concept Screen C2 – Fact vs Opinion Definitions</span>
             </h2>
             <span className="text-xs text-zinc-500 font-bold">Step 3 of {totalSteps}</span>
+          </div>
+
+          <div className="space-y-4 text-left max-w-2xl mx-auto text-xs text-zinc-300 leading-relaxed">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="p-4 bg-zinc-950 border border-white/5 rounded-xl">
+                <span className="text-indigo-400 font-extrabold text-sm block">📊 Fact (사실)</span>
+                <p className="mt-1">Reality that can be checked objectively.</p>
+                <p className="italic text-zinc-500 mt-2">Example: "이 카페는 커피를 팔아요." (This cafe sells coffee.)</p>
+              </div>
+              <div className="p-4 bg-zinc-950 border border-white/5 rounded-xl">
+                <span className="text-indigo-400 font-extrabold text-sm block">💡 Opinion (의견)</span>
+                <p className="mt-1">A viewpoint showing what someone thinks or feels.</p>
+                <p className="italic text-zinc-500 mt-2">Example: "이 카페 커피가 제일 맛있어요." (This cafe's coffee is the best.)</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Micro MCQ Check */}
+          <div className="bg-zinc-900/60 p-6 rounded-2xl border border-white/5 max-w-xl mx-auto w-full space-y-4 text-left">
+            <p className="text-xs text-indigo-400 font-black uppercase tracking-wider font-mono">💡 Micro-Question Check:</p>
+            <p className="text-sm font-bold text-white">Which of these is a fact?</p>
+            
+            <div className="flex flex-col gap-2">
+              {[
+                { id: "A", text: "A) “이 책은 아주 재미있어요.” (This book is very interesting.)" },
+                { id: "B", text: "B) “이 책은 200페이지예요.” (This book is 200 pages.)" }
+              ].map((opt) => {
+                const isSelected = c2Answer === opt.id;
+                const isCorrectOpt = opt.id === "B";
+                return (
+                  <button
+                    key={opt.id}
+                    disabled={c2Checked}
+                    onClick={() => setC2Answer(opt.id)}
+                    className={`p-3 rounded-xl border text-left text-xs font-bold transition-all duration-200 ${
+                      isSelected 
+                        ? "border-indigo-500 bg-indigo-500/10 text-white" 
+                        : "border-white/5 bg-zinc-950 text-zinc-300 hover:border-white/10"
+                    } ${c2Checked && isCorrectOpt ? "border-emerald-500 bg-emerald-500/10 text-white" : ""} ${
+                      c2Checked && isSelected && !isCorrectOpt ? "border-red-500 bg-red-500/10 text-white" : ""
+                    }`}
+                  >
+                    {opt.text}
+                  </button>
+                );
+              })}
+            </div>
+
+            {c2Checked && (
+              <div className="p-3 bg-zinc-950 rounded-xl border border-white/5 text-xs text-zinc-400 animate-fade-in">
+                <p className="font-extrabold text-white mb-1">
+                  {c2Correct ? "✓ Correct!" : "✗ Incorrect."}
+                </p>
+                <p>The page count (Option B) is a verifiable fact, whereas how interesting the book is (Option A) represents a subjective opinion.</p>
+              </div>
+            )}
+
+            {!c2Checked && (
+              <button
+                disabled={!c2Answer}
+                onClick={handleCheckC2}
+                className="w-full py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold transition"
+              >
+                Check Answer
+              </button>
+            )}
+          </div>
+
+          <div className="flex justify-between items-center pt-4 border-t border-white/5">
+            <button onClick={() => setStep(2)} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-sm font-bold transition flex items-center gap-2 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
+            <button onClick={() => setStep(4)} className="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3 rounded-xl text-sm font-bold transition flex items-center gap-2 cursor-pointer">Continue <ChevronRight className="w-4 h-4" /></button>
+          </div>
+        </div>
+      )}
+
+      {/* Screen 4: Concept C3 – Opinion + reason structure */}
+      {step === 4 && (
+        <div className="glass-panel border border-indigo-500/20 p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in hover:border-indigo-500/40 hover:shadow-[0_0_30px_rgba(99,102,241,0.2)] transition-all duration-300">
+          <div className="flex justify-between items-center border-b border-white/5 pb-4">
+            <h2 className="text-2xl font-black text-white flex items-center gap-2">
+              <BookOpen className="w-6 h-6 text-indigo-400" />
+              <span>Concept Screen C3 – Opinion + Reason Structure</span>
+            </h2>
+            <span className="text-xs text-zinc-500 font-bold">Step 4 of {totalSteps}</span>
+          </div>
+
+          <div className="space-y-4 text-left max-w-2xl mx-auto text-sm text-zinc-300">
+            <p>
+              B1 opinion construction uses structural connectors to add supporting clauses:
+            </p>
+            <div className="p-4 bg-zinc-950 border border-white/5 rounded-xl font-mono text-center text-white">
+              [Stance Statement] + 왜냐하면 [Supporting Reason Clause] -아서/어서
+            </div>
+            <p>
+              Example: "저는 축구를 좋아해요. <strong className="text-indigo-400">재미있어서</strong> 자주 해요."
+              <br />
+              The second clause here functions explicitly as the **reason/cause** backing up the first stance.
+            </p>
+          </div>
+
+          {/* Micro MCQ Check */}
+          <div className="bg-zinc-900/60 p-6 rounded-2xl border border-white/5 max-w-xl mx-auto w-full space-y-4 text-left">
+            <p className="text-xs text-indigo-400 font-black uppercase tracking-wider font-mono">💡 Micro-Question Check:</p>
+            <p className="text-sm font-bold text-white">In “저는 축구를 좋아해요. 재미있어서 자주 해요.”, what is the function of the second clause?</p>
+            
+            <div className="flex flex-col gap-2">
+              {[
+                { id: "A", text: "A) It states a contrast (but...)." },
+                { id: "B", text: "B) It states a reason (because it's fun...)." }
+              ].map((opt) => {
+                const isSelected = c3Answer === opt.id;
+                const isCorrectOpt = opt.id === "B";
+                return (
+                  <button
+                    key={opt.id}
+                    disabled={c3Checked}
+                    onClick={() => setC3Answer(opt.id)}
+                    className={`p-3 rounded-xl border text-left text-xs font-bold transition-all duration-200 ${
+                      isSelected 
+                        ? "border-indigo-500 bg-indigo-500/10 text-white" 
+                        : "border-white/5 bg-zinc-950 text-zinc-300 hover:border-white/10"
+                    } ${c3Checked && isCorrectOpt ? "border-emerald-500 bg-emerald-500/10 text-white" : ""} ${
+                      c3Checked && isSelected && !isCorrectOpt ? "border-red-500 bg-red-500/10 text-white" : ""
+                    }`}
+                  >
+                    {opt.text}
+                  </button>
+                );
+              })}
+            </div>
+
+            {c3Checked && (
+              <div className="p-3 bg-zinc-950 rounded-xl border border-white/5 text-xs text-zinc-400 animate-fade-in">
+                <p className="font-extrabold text-white mb-1">
+                  {c3Correct ? "✓ Correct!" : "✗ Incorrect."}
+                </p>
+                <p>The suffix -아서/어서 in "재미있어서" translates directly to a cause or reason (because it is fun, I play often).</p>
+              </div>
+            )}
+
+            {!c3Checked && (
+              <button
+                disabled={!c3Answer}
+                onClick={handleCheckC3}
+                className="w-full py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold transition"
+              >
+                Check Answer
+              </button>
+            )}
+          </div>
+
+          <div className="flex justify-between items-center pt-4 border-t border-white/5">
+            <button onClick={() => setStep(3)} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-sm font-bold transition flex items-center gap-2 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
+            <button onClick={() => setStep(5)} className="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3 rounded-xl text-sm font-bold transition flex items-center gap-2 cursor-pointer">Start Activities <ChevronRight className="w-4 h-4" /></button>
+          </div>
+        </div>
+      )}
+
+      {/* Screen 5: Activity A – Facts & Clause Roles */}
+      {step === 5 && (
+        <div className="glass-panel border border-indigo-500/20 p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in hover:border-indigo-500/40 hover:shadow-[0_0_30px_rgba(99,102,241,0.2)] transition-all duration-300">
+          <div className="flex justify-between items-center border-b border-white/5 pb-4">
+            <h2 className="text-2xl font-black text-white flex items-center gap-2">
+              <Sparkles className="w-6 h-6 text-indigo-400" />
+              <span>Activity A – Fact/Opinion & Clause Function Checks</span>
+            </h2>
+            <span className="text-xs text-zinc-500 font-bold">Step 5 of {totalSteps}</span>
           </div>
 
           {recognitionItems.length > 0 && (
             <div className="bg-zinc-900/30 p-5 rounded-2xl border border-white/5 space-y-4">
               
               <div className="p-4 bg-zinc-950 border border-white/5 rounded-xl text-center space-y-2">
-                <span className="text-[9px] text-brand-400 font-black uppercase tracking-wider block">Target Statement</span>
+                <span className="text-[9px] text-indigo-400 font-black uppercase tracking-wider block font-mono">Target Statement</span>
                 <p className="font-korean text-sm leading-relaxed text-white font-extrabold">{recognitionItems[recIdx]?.text}</p>
                 <p className="text-xs text-zinc-400 italic">{recognitionItems[recIdx]?.en}</p>
               </div>
@@ -568,10 +840,12 @@ return (
                     <button
                       onClick={() => !recChecked && handleCheckRec("opinion")}
                       disabled={recChecked}
-                      className={`px-5 py-2.5 rounded-xl border text-xs font-bold transition flex items-center gap-1 ${
+                      className={`px-5 py-2.5 rounded-xl border text-xs font-bold transition-all duration-200 ${
                         selectedStanceOpt === "opinion"
-                          ? "border-brand-500 bg-brand-500/10 text-white"
+                          ? "border-indigo-500 bg-indigo-500/10 text-white"
                           : "border-white/5 bg-zinc-950 text-zinc-300 hover:border-white/10"
+                      } ${recChecked && recognitionItems[recIdx]?.is_opinion ? "border-emerald-500 bg-emerald-500/15 text-white" : ""} ${
+                        recChecked && selectedStanceOpt === "opinion" && !recognitionItems[recIdx]?.is_opinion ? "border-red-500 bg-red-500/15 text-white" : ""
                       }`}
                     >
                       <ThumbsUp className="w-4 h-4" />
@@ -580,10 +854,12 @@ return (
                     <button
                       onClick={() => !recChecked && handleCheckRec("fact")}
                       disabled={recChecked}
-                      className={`px-5 py-2.5 rounded-xl border text-xs font-bold transition flex items-center gap-1 ${
+                      className={`px-5 py-2.5 rounded-xl border text-xs font-bold transition-all duration-200 ${
                         selectedStanceOpt === "fact"
-                          ? "border-brand-500 bg-brand-500/10 text-white"
+                          ? "border-indigo-500 bg-indigo-500/10 text-white"
                           : "border-white/5 bg-zinc-950 text-zinc-300 hover:border-white/10"
+                      } ${recChecked && !recognitionItems[recIdx]?.is_opinion ? "border-emerald-500 bg-emerald-500/15 text-white" : ""} ${
+                        recChecked && selectedStanceOpt === "fact" && recognitionItems[recIdx]?.is_opinion ? "border-red-500 bg-red-500/15 text-white" : ""
                       }`}
                     >
                       <HelpCircle className="w-4 h-4" />
@@ -595,34 +871,32 @@ return (
                 <div className="space-y-3">
                   <p className="text-xs text-center text-zinc-400">Identify the function of the second clause:</p>
                   <div className="flex flex-col gap-2 max-w-xs mx-auto">
-                    <button
-                      onClick={() => !recChecked && handleCheckRec("reason")}
-                      disabled={recChecked}
-                      className={`p-3 rounded-xl border text-left text-xs font-bold transition ${
-                        selectedStanceOpt === "reason"
-                          ? "border-brand-500 bg-brand-500/10 text-white"
-                          : "border-white/5 bg-zinc-950 text-zinc-300"
-                      }`}
-                    >
-                      It gives a reason ("because...")
-                    </button>
-                    <button
-                      onClick={() => !recChecked && handleCheckRec("contrast")}
-                      disabled={recChecked}
-                      className={`p-3 rounded-xl border text-left text-xs font-bold transition ${
-                        selectedStanceOpt === "contrast"
-                          ? "border-brand-500 bg-brand-500/10 text-white"
-                          : "border-white/5 bg-zinc-950 text-zinc-300"
-                      }`}
-                    >
-                      It gives a contrast ("but...")
-                    </button>
+                    {["reason", "contrast"].map((optType) => {
+                      const isSelected = selectedStanceOpt === optType;
+                      const isCorrect = optType === "reason"; // standard fallback in mock data
+                      return (
+                        <button
+                          key={optType}
+                          onClick={() => !recChecked && handleCheckRec(optType)}
+                          disabled={recChecked}
+                          className={`p-3 rounded-xl border text-left text-xs font-bold transition-all duration-200 ${
+                            isSelected
+                              ? "border-indigo-500 bg-indigo-500/10 text-white"
+                              : "border-white/5 bg-zinc-950 text-zinc-300 hover:border-white/10"
+                          } ${recChecked && isCorrect ? "border-emerald-500 bg-emerald-500/15 text-white font-black" : ""} ${
+                            recChecked && isSelected && !isCorrect ? "border-red-500 bg-red-500/15 text-white font-black" : ""
+                          }`}
+                        >
+                          {optType === "reason" ? "It gives a reason (\"because...\")" : "It gives a contrast (\"but...\")"}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               )}
 
               {recChecked && (
-                <div className="p-3 bg-zinc-950 rounded-xl border border-white/5 text-xs text-zinc-400 max-w-sm mx-auto text-left animate-fade-in">
+                <div className="p-4 bg-zinc-950 rounded-xl border border-white/5 text-xs text-zinc-400 max-w-sm mx-auto text-left animate-fade-in">
                   <p className="font-extrabold text-white mb-1">{recCorrect ? "✓ Correct Choice!" : "✗ Incorrect Choice."}</p>
                   <p>{recognitionItems[recIdx]?.explanation}</p>
                 </div>
@@ -632,39 +906,38 @@ return (
                 {recChecked && (
                   <button
                     onClick={handleNextRec}
-                    className="bg-accent-teal text-zinc-950 hover:bg-accent-teal/90 px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer"
+                    className="bg-emerald-500 text-zinc-950 hover:bg-emerald-400 px-5 py-2 rounded-xl text-xs font-bold transition cursor-pointer"
                   >
                     Next Question
                   </button>
                 )}
               </div>
-
             </div>
           )}
 
           <div className="flex justify-between items-center pt-4 border-t border-white/5">
-            <button onClick={() => setStep(2)} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-sm font-bold transition flex items-center gap-2 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
-            <button onClick={() => setStep(4)} className="bg-brand-500 hover:bg-brand-600 text-white px-8 py-3 rounded-xl text-sm font-bold transition flex items-center gap-2 cursor-pointer">Move to Activity 2 <ChevronRight className="w-4 h-4" /></button>
+            <button onClick={() => setStep(4)} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-sm font-bold transition flex items-center gap-2 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
+            <button onClick={() => setStep(6)} className="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3 rounded-xl text-sm font-bold transition flex items-center gap-2 cursor-pointer">Continue to Activity B <ChevronRight className="w-4 h-4" /></button>
           </div>
         </div>
       )}
 
-      {/* Screen 4: Activity 2: Express Your Opinions with Reasons */}
-      {step === 4 && (
-        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
+      {/* Screen 6: Activity B – Opinion Builder */}
+      {step === 6 && (
+        <div className="glass-panel border border-indigo-500/20 p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in hover:border-indigo-500/40 hover:shadow-[0_0_30px_rgba(99,102,241,0.2)] transition-all duration-300">
           <div className="flex justify-between items-center border-b border-white/5 pb-4">
             <h2 className="text-2xl font-black text-white flex items-center gap-2">
-              <Sparkles className="w-6 h-6 text-brand-400" />
-              <span>Activity 2 – Opinion Builder</span>
+              <Sparkles className="w-6 h-6 text-indigo-400" />
+              <span>Activity B – Opinion & Reason Builder</span>
             </h2>
-            <span className="text-xs text-zinc-500 font-bold">Step 4 of {totalSteps}</span>
+            <span className="text-xs text-zinc-500 font-bold">Step 6 of {totalSteps}</span>
           </div>
 
           <div className="bg-zinc-900/30 p-5 rounded-2xl border border-white/5 space-y-4 text-left">
-            {/* Step 1: Choose Topic */}
+            {/* Step 1: Topic */}
             <div>
-              <label className="text-[9px] text-zinc-500 uppercase font-black tracking-wider block mb-1.5">Step 1: Choose Topic</label>
-              <div className="grid grid-cols-2 gap-2">
+              <label className="text-[9px] text-zinc-500 uppercase font-black tracking-wider block mb-1.5 font-mono">Step 1: Choose Topic</label>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                 {builderTopics.map((topic: any) => (
                   <button
                     key={topic.id}
@@ -676,7 +949,7 @@ return (
                     }}
                     className={`p-2.5 rounded-xl border text-center text-xs font-bold transition flex items-center gap-2 justify-center ${
                       selectedTopic === topic.id 
-                        ? "border-brand-500 bg-brand-500/10 text-white" 
+                        ? "border-indigo-500 bg-indigo-500/10 text-white" 
                         : "border-white/5 bg-zinc-950 text-zinc-400"
                     }`}
                   >
@@ -687,10 +960,10 @@ return (
               </div>
             </div>
 
-            {/* Step 2: Choose Stance */}
+            {/* Step 2: Stance */}
             <div>
-              <label className="text-[9px] text-zinc-500 uppercase font-black tracking-wider block mb-1.5">Step 2: Choose Stance</label>
-              <div className="flex gap-2">
+              <label className="text-[9px] text-zinc-500 uppercase font-black tracking-wider block mb-1.5 font-mono">Step 2: Choose Opinion Frame</label>
+              <div className="flex flex-col md:flex-row gap-2">
                 {stanceOptions[selectedTopic]?.map((stance: any) => (
                   <button
                     key={stance.id}
@@ -701,7 +974,7 @@ return (
                     }}
                     className={`w-full py-2 rounded-lg border text-xs font-semibold text-center transition ${
                       selectedStance === stance.id
-                        ? "border-brand-500 bg-brand-500/10 text-white"
+                        ? "border-indigo-500 bg-indigo-500/10 text-white"
                         : "border-white/5 bg-zinc-950 text-zinc-400"
                     }`}
                   >
@@ -711,9 +984,9 @@ return (
               </div>
             </div>
 
-            {/* Step 3: Choose Reason */}
+            {/* Step 3: Reasons */}
             <div>
-              <label className="text-[9px] text-zinc-500 uppercase font-black tracking-wider block mb-1.5">Step 3: Choose Reasons (Select 1 or 2)</label>
+              <label className="text-[9px] text-zinc-500 uppercase font-black tracking-wider block mb-1.5 font-mono">Step 3: Choose Reason Pattern (Select up to 2)</label>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                 {reasonPhrases[selectedTopic]?.map((phrase: any, idx: number) => {
                   const isChecked = selectedReasons.includes(phrase.ko);
@@ -721,13 +994,13 @@ return (
                     <button
                       key={idx}
                       onClick={() => toggleReasonPhrase(phrase.ko)}
-                      className={`p-2 rounded-lg border text-[11px] font-semibold text-left transition ${
+                      className={`p-2.5 rounded-xl border text-[11px] font-semibold text-left transition ${
                         isChecked
-                          ? "border-brand-500 bg-brand-500/10 text-white"
+                          ? "border-indigo-500 bg-indigo-500/10 text-white"
                           : "border-white/5 bg-zinc-950 text-zinc-400"
                       }`}
                     >
-                      <span className="block font-korean">{phrase.ko}</span>
+                      <span className="block font-korean font-extrabold">{phrase.ko}</span>
                       <span className="text-[9px] text-zinc-500 font-normal">{phrase.en}</span>
                     </button>
                   );
@@ -735,17 +1008,17 @@ return (
               </div>
             </div>
 
-            {/* Actions to build sentence or paragraph */}
-            <div className="grid grid-cols-2 gap-2">
+            {/* Generate Actions */}
+            <div className="grid grid-cols-2 gap-2 pt-2">
               <button
                 onClick={() => handleBuildOpinion(false)}
-                className="bg-brand-500 hover:bg-brand-600 text-white font-bold py-2 rounded-xl text-xs transition cursor-pointer text-center"
+                className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 rounded-xl text-xs transition cursor-pointer text-center"
               >
                 Build Opinion Sentence
               </button>
               <button
                 onClick={() => handleBuildOpinion(true)}
-                className="bg-gradient-to-r from-brand-500 to-accent-purple text-white font-bold py-2 rounded-xl text-xs transition cursor-pointer text-center"
+                className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-bold py-2.5 rounded-xl text-xs transition cursor-pointer text-center"
               >
                 Build Paragraph Flow
               </button>
@@ -754,43 +1027,43 @@ return (
 
           {/* Generated Result preview */}
           {builtKo && (
-            <div className="p-4 bg-zinc-950 rounded-xl border border-brand-500/20 text-center space-y-3 animate-fade-in">
+            <div className="p-4 bg-zinc-950 rounded-xl border border-indigo-500/20 text-center space-y-3 animate-fade-in">
               <div>
-                <span className="text-[9px] text-brand-400 uppercase tracking-wider block font-black mb-1">Generated B1 Argument:</span>
-                <p className="font-korean text-sm text-white font-extrabold leading-relaxed">{builtKo}</p>
+                <span className="text-[9px] text-indigo-400 uppercase tracking-wider block font-black mb-1">Generated B1 Opinion Paragraph:</span>
+                <p className="font-korean text-lg text-white font-extrabold leading-relaxed">{builtKo}</p>
                 <p className="text-xs text-zinc-400 mt-1">{builtEn}</p>
               </div>
 
               <div className="flex justify-center gap-2 pt-2">
-                <button onClick={() => playAudio(builtKo)} className="p-2 bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white rounded-lg border border-white/5 transition flex items-center gap-1.5 text-xs font-bold">
+                <button onClick={() => playAudio(builtKo)} className="p-2 bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white rounded-lg border border-white/5 transition flex items-center gap-1.5 text-xs font-bold cursor-pointer">
                   <Volume2 className="w-4 h-4" />
                   <span>Listen</span>
                 </button>
-                <button onClick={handleSaveOpinion} className="p-2 bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white rounded-lg border border-white/5 transition flex items-center gap-1.5 text-xs font-bold">
+                <button onClick={handleSaveOpinion} className="p-2 bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white rounded-lg border border-white/5 transition flex items-center gap-1.5 text-xs font-bold cursor-pointer">
                   <Save className="w-4 h-4" />
-                  <span>Save Argument</span>
+                  <span>Save Opinion</span>
                 </button>
               </div>
 
-              {/* Speaking practice */}
+              {/* Recitation */}
               <div className="bg-zinc-950/60 p-3.5 rounded-xl border border-white/5 space-y-2 mt-2">
-                <span className="text-[9px] text-zinc-500 tracking-wider block font-black text-left">Pronunciation Practice:</span>
+                <span className="text-[9px] text-zinc-500 uppercase tracking-wider block font-black text-left">Opinion Pronunciation Check:</span>
                 <div className="flex justify-between items-center gap-3">
                   <button
                     onClick={handleStartRecording}
-                    className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer ${
-                      recording 
-                        ? "bg-red-500 text-white animate-pulse" 
-                        : "bg-brand-500 hover:bg-brand-600 text-white"
+                    disabled={recording}
+                    className={`px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                      recording ? "bg-red-500 text-white animate-pulse" : "bg-indigo-600 text-white hover:bg-indigo-700"
                     }`}
                   >
                     <Mic className="w-4 h-4" />
-                    <span>{recording ? "Recording..." : "Read Argument Aloud"}</span>
+                    <span>{recording ? "Recording..." : "Read Opinion"}</span>
                   </button>
+                  
                   {speakingChecked && (
-                    <div className="text-right">
-                      <span className="text-xs font-bold text-accent-teal block">Accuracy: {speakingScore}%</span>
-                      <span className="text-[9px] text-zinc-400 block">{speakingFeedback}</span>
+                    <div className="text-right space-y-0.5 text-xs">
+                      <p className="font-bold text-white">Score: {speakingScore}%</p>
+                      <p className="text-[10px] text-zinc-400 font-medium">{speakingFeedback}</p>
                     </div>
                   )}
                 </div>
@@ -799,157 +1072,176 @@ return (
           )}
 
           <div className="flex justify-between items-center pt-4 border-t border-white/5">
-            <button onClick={() => setStep(3)} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-sm font-bold transition flex items-center gap-2 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
-            <button onClick={() => setStep(5)} className="bg-brand-500 hover:bg-brand-600 text-white px-8 py-3 rounded-xl text-sm font-bold transition flex items-center gap-2 cursor-pointer">Move to Mini-Quiz <ChevronRight className="w-4 h-4" /></button>
+            <button onClick={() => setStep(5)} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-sm font-bold transition flex items-center gap-2 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
+            <button onClick={() => setStep(7)} className="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3 rounded-xl text-sm font-bold transition flex items-center gap-2 cursor-pointer">Continue to Mini-Quiz <ChevronRight className="w-4 h-4" /></button>
           </div>
         </div>
       )}
 
-      {/* Screen 5: Mini-Quiz */}
-      {step === 5 && (
-        <div className="glass-panel p-8 rounded-3xl border border-white/5 shadow-2xl w-full space-y-6 flex-grow flex flex-col justify-center">
+      {/* Screen 7: Quiz – Opinion strategies & comprehension */}
+      {step === 7 && (
+        <div className="glass-panel border border-indigo-500/20 p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in hover:border-indigo-500/40 hover:shadow-[0_0_30px_rgba(99,102,241,0.2)] transition-all duration-300">
           <div className="flex justify-between items-center border-b border-white/5 pb-4">
             <h2 className="text-2xl font-black text-white flex items-center gap-2">
-              <Sparkles className="w-6 h-6 text-brand-400" />
-              <span>Phase Checkpoint Quiz</span>
+              <Award className="w-6 h-6 text-indigo-400" />
+              <span>Mini-Quiz: Opinion Strategies Check</span>
             </h2>
-            <span className="text-xs text-zinc-500 font-bold">Step 5 of {totalSteps}</span>
+            <span className="text-xs text-zinc-500 font-bold">Question {quizIdx + 1} of {quizBlueprint.length || 3}</span>
           </div>
 
-          {quizBlueprint.length > 0 && (
+          {quizBlueprint.length === 0 ? (
+            <div className="text-center py-6"><Loader2 className="w-8 h-8 animate-spin mx-auto text-indigo-400" /></div>
+          ) : (
             <div className="space-y-6 max-w-xl mx-auto w-full">
-              <div className="flex justify-between text-[10px] text-zinc-500 font-mono">
-                <span>Quiz Question {quizIdx + 1} of {quizBlueprint.length}</span>
-                <span>Level: B1 Arguments</span>
+              <div className="p-4 bg-zinc-950 rounded-xl border border-white/5 text-xs text-center">
+                <span className="text-[10px] text-zinc-500 uppercase font-mono block">Question Prompt</span>
+                <p className="font-extrabold text-white text-base mt-1 whitespace-pre-line">{quizBlueprint[quizIdx]?.question}</p>
               </div>
 
-              <h3 className="text-base font-black text-white text-center leading-relaxed whitespace-pre-line">
-                {quizBlueprint[quizIdx]?.question}
-              </h3>
-
-              <div className="grid grid-cols-1 gap-2.5 max-w-sm mx-auto">
-                {quizBlueprint[quizIdx]?.options?.map((opt: string) => (
-                  <button
-                    key={opt}
-                    onClick={() => !quizChecked && setQuizSelectedOpt(opt)}
-                    disabled={quizChecked}
-                    className={`p-3.5 rounded-xl border text-left text-xs font-bold transition ${
-                      quizSelectedOpt === opt
-                        ? "border-brand-500 bg-brand-500/10 text-white"
-                        : "border-white/5 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-300"
-                    } ${quizChecked && opt === quizBlueprint[quizIdx]?.correct_answer ? "border-accent-teal bg-accent-teal/10 text-white" : ""}`}
-                  >
-                    {opt}
-                  </button>
-                ))}
+              <div className="grid grid-cols-1 gap-2">
+                {quizBlueprint[quizIdx]?.options.map((opt: string) => {
+                  const isSelected = quizSelectedOpt === opt;
+                  const isCorrect = opt === quizBlueprint[quizIdx]?.correct_answer;
+                  return (
+                    <button
+                      key={opt}
+                      onClick={() => !quizChecked && setQuizSelectedOpt(opt)}
+                      disabled={quizChecked}
+                      className={`p-3 rounded-xl border text-left text-xs font-bold transition-all duration-200 ${
+                        isSelected
+                          ? "border-indigo-500 bg-indigo-500/10 text-white"
+                          : "border-white/5 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-300"
+                      } ${quizChecked && isCorrect ? "border-emerald-500 bg-emerald-500/10 text-white font-black" : ""} ${
+                        quizChecked && isSelected && !isCorrect ? "border-red-500 bg-red-500/10 text-white font-black" : ""
+                      }`}
+                    >
+                      {opt}
+                    </button>
+                  );
+                })}
               </div>
 
               {quizChecked && (
-                <div className={`p-4 rounded-xl border text-xs text-left space-y-1 ${
-                  quizCorrect ? "bg-accent-teal/5 border-accent-teal/20 text-accent-teal animate-fade-in" : "bg-red-500/5 border-red-500/10 text-red-400 animate-fade-in"
-                }`}>
-                  <p className="font-extrabold">{quizCorrect ? "✓ Correct! Brilliant." : "✗ Incorrect."}</p>
+                <div className="p-4 bg-zinc-950 rounded-xl border border-white/5 text-xs text-zinc-400 text-left animate-fade-in">
+                  <p className="font-extrabold text-white mb-1">{quizCorrect ? "✓ Correct! Brilliant." : "✗ Incorrect."}</p>
                   <p>{quizBlueprint[quizIdx]?.explanation}</p>
                 </div>
               )}
 
-              <div className="flex justify-between items-center pt-4 border-t border-white/5">
-                <button onClick={() => setStep(4)} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-sm font-bold transition flex items-center gap-2 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
+              <div className="flex justify-end">
                 {!quizChecked ? (
                   <button
                     onClick={handleCheckQuiz}
                     disabled={!quizSelectedOpt}
-                    className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white px-5 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer"
+                    className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold px-6 py-2 rounded-xl text-xs cursor-pointer transition"
                   >
-                    Check Answer
+                    Verify Answer
                   </button>
                 ) : (
                   <button
                     onClick={handleNextQuizOrComplete}
                     disabled={finishingQuiz}
-                    className="bg-accent-teal text-zinc-950 hover:bg-accent-teal/90 px-5 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer"
+                    className="bg-emerald-500 text-zinc-950 hover:bg-emerald-400 font-bold px-6 py-2 rounded-xl text-xs cursor-pointer transition flex items-center gap-1.5"
                   >
-                    {finishingQuiz ? <Loader2 className="w-4 h-4 animate-spin text-zinc-950" /> : (quizIdx < quizBlueprint.length - 1 ? "Next Item" : "See Final Score")}
+                    {finishingQuiz && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                    <span>{quizIdx < quizBlueprint.length - 1 ? "Next Question" : "Complete Quiz"}</span>
                   </button>
                 )}
               </div>
             </div>
           )}
+
+          {/* Encouragement wrap-up when finished */}
+          {quizChecked && quizIdx === quizBlueprint.length - 1 && quizCorrect && (
+            <div className="mt-4 p-4 bg-zinc-900 border border-emerald-500/20 rounded-2xl max-w-sm mx-auto text-center space-y-1.5 animate-bounce">
+              <Award className="w-8 h-8 text-yellow-500 mx-auto" />
+              <p className="font-bold text-white text-sm">Opinions Checkpoint Complete</p>
+              <p className="text-[10px] text-zinc-400">“You can now state simple opinions and reasons at a solid B1 level.”</p>
+            </div>
+          )}
+
+          <div className="flex justify-between items-center pt-4 border-t border-white/5">
+            <button onClick={() => setStep(6)} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-sm font-bold transition flex items-center gap-2 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
+            <div className="h-4" />
+          </div>
         </div>
       )}
 
-      {/* Screen 6: Complete Panel */}
-      {step === 6 && (
-        <div className="glass-panel neon-border p-8 rounded-3xl shadow-2xl w-full space-y-6 flex-grow flex flex-col justify-center text-center max-w-xl mx-auto">
-          <div className="p-3 bg-brand-500/10 rounded-full border border-brand-500/25 w-fit mx-auto text-brand-400">
-            <Award className="w-10 h-10 animate-bounce" />
-          </div>
-          
-          <div>
-            <h2 className="text-2xl font-black text-white font-sans">Korean 3.4 Opinions Complete! 🇰🇷✨</h2>
-            <p className="text-zinc-400 text-xs mt-1">You can now state simple opinions and reasons at a solid B1 level.</p>
+      {/* Screen 8: Tutor session – Describe a friend or place */}
+      {step === 8 && (
+        <div className="glass-panel border border-indigo-500/20 p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center text-center animate-fade-in hover:border-indigo-500/40 hover:shadow-[0_0_30px_rgba(99,102,241,0.2)] transition-all duration-300">
+          <div className="p-3 bg-emerald-500/10 rounded-full border border-emerald-500/25 w-fit mx-auto text-emerald-400 shrink-0">
+            <Award className="w-8 h-8 animate-bounce shrink-0" />
           </div>
 
-          {/* Homework checklist */}
-          <div className="bg-zinc-900/60 p-5 rounded-2xl border border-white/5 text-left text-xs space-y-3 font-sans leading-relaxed">
-            <span className="text-[10px] font-black uppercase tracking-widest text-brand-400 block font-sans">Interactive Homework List:</span>
-            <div className="space-y-2">
-              {homeworkItems.map((item: any) => {
-                const checked = !!completedHomework[item.id];
+          <h2 className="text-5xl font-black text-white tracking-tight">Course 4 Phase 4 Completed!</h2>
+          <p className="text-xs text-zinc-400 font-mono">“You can now state simple opinions and reasons at a solid B1 level.”</p>
+
+          <div className="bg-zinc-900/40 p-5 rounded-2xl border border-white/5 text-left space-y-3 max-w-md mx-auto w-full">
+            <span className="text-[10px] text-zinc-500 font-black uppercase tracking-wider block">B1 Opinions Homework Checklist:</span>
+            <div className="space-y-2.5">
+              {homeworkItems.map((item) => {
+                const isChecked = !!completedHomework[item.id];
                 return (
-                  <label key={item.id} className="flex items-start gap-3 p-2 bg-zinc-950/45 rounded-lg border border-white/[0.03] cursor-pointer hover:bg-zinc-950 transition">
+                  <label key={item.id} className="flex items-start gap-3 cursor-pointer group text-xs text-zinc-300 select-none">
                     <input
                       type="checkbox"
-                      checked={checked}
-                      onChange={() => handleToggleHomework(item.id, checked)}
-                      className="mt-0.5 rounded border-white/10 text-brand-500 focus:ring-0 focus:ring-offset-0 bg-zinc-900"
+                      checked={isChecked}
+                      onChange={() => handleToggleHomework(item.id, isChecked)}
+                      className="mt-0.5 h-4 w-4 rounded border-white/10 bg-zinc-950 text-indigo-500 focus:ring-0 focus:ring-offset-0"
                     />
-                    <span className={`text-zinc-300 font-medium ${checked ? "line-through text-zinc-500" : ""}`}>{item.text}</span>
+                    <span className={`group-hover:text-white transition ${isChecked ? "line-through text-zinc-500" : ""}`}>{item.text}</span>
                   </label>
                 );
               })}
             </div>
           </div>
 
-          {/* Gwan-Sik Opinions AI Tutor Launcher */}
-          <div className="p-4 bg-zinc-950 rounded-2xl border border-white/5 space-y-3">
-            <div className="flex items-center gap-2">
-              <MessageSquare className="w-6 h-6 text-brand-400" />
-              <div className="text-left">
-                <span className="text-xs font-bold text-white block">Tutor Gwan-Sik Roleplay</span>
-                <span className="text-[10px] text-zinc-500 block">Start B1 roleplay dialogue about opinions and reasons</span>
-              </div>
+          {/* AI practice launcher */}
+          <div className="bg-zinc-950 p-5 rounded-2xl border border-white/5 text-left space-y-3 max-w-md mx-auto w-full">
+            <div className="space-y-0.5">
+              <span className="text-[9px] text-indigo-400 font-black uppercase tracking-wider block font-mono">AI Conversation Practice:</span>
+              <p className="text-[11px] text-zinc-400 leading-normal">Practice sharing your viewpoints and opinions in an interactive conversation session with Gwan-Sik.</p>
             </div>
+
             {tutorSession ? (
-              <div className="bg-zinc-900 p-3.5 rounded-xl border border-brand-500/20 text-left text-xs animate-fade-in">
-                <span className="text-[9px] font-bold text-brand-400 block mb-1">Gwan-Sik:</span>
-                <p className="font-korean text-white leading-relaxed">{tutorSession.opener}</p>
-                <div className="mt-3 flex justify-end">
-                  <a href={`/conversation/chat?session_id=${tutorSession.session_id}`} className="bg-brand-500 hover:bg-brand-600 text-white font-bold py-1.5 px-4 rounded-xl text-[10px] transition cursor-pointer">
-                    Join Full Chat Room
-                  </a>
-                </div>
+              <div className="p-4 bg-zinc-900 border border-indigo-500/20 rounded-xl space-y-2 text-xs animate-fade-in">
+                <p className="font-extrabold text-white">Stateful Session Active!</p>
+                <p className="font-korean text-zinc-200">Gwan-Sik: "{tutorSession.opener}"</p>
+                <button
+                  onClick={() => window.location.href = `/tutor?session_id=${tutorSession.session_id}`}
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-1.5 px-4 rounded-lg text-[10px] cursor-pointer transition flex items-center gap-1"
+                >
+                  <span>Enter B1 Practice Room</span>
+                  <ArrowRight className="w-3 h-3" />
+                </button>
               </div>
             ) : (
               <button
                 onClick={handleLaunchB1OpinionsPractice}
                 disabled={loadingTutor}
-                className="w-full bg-zinc-900 hover:bg-zinc-850 border border-white/10 text-brand-400 hover:text-brand-300 font-bold py-2.5 rounded-xl text-xs transition flex items-center justify-center gap-2 cursor-pointer"
+                className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold py-3 px-4 rounded-xl text-xs cursor-pointer transition flex items-center justify-center gap-2"
               >
-                {loadingTutor ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Initiate AI Roleplay session"}
+                {loadingTutor ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <MessageSquare className="w-3.5 h-3.5" />}
+                <span>Initiate AI Opinion Conversation</span>
               </button>
             )}
           </div>
 
-          <button
-            onClick={() => {
-              onComplete();
-            }}
-            className="bg-gradient-to-r from-brand-500 to-amber-500 hover:from-brand-600 text-zinc-950 font-black py-4 px-8 rounded-2xl transition text-sm flex items-center justify-center gap-2 mx-auto shadow-lg shadow-brand-500/20 cursor-pointer"
-          >
-            <span>Finish Phase 4 & Return to Lessons</span>
-            <ChevronRight className="w-4 h-4 text-zinc-950" />
-          </button>
+          <div className="pt-2 flex justify-between items-center max-w-md mx-auto w-full">
+            <button onClick={() => setStep(7)} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-sm font-bold transition flex items-center gap-2 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
+            <button 
+              onClick={() => {
+                if (typeof window !== "undefined") {
+                  window.dispatchEvent(new CustomEvent("hangeulai-xp", { detail: { amount: 150, type: "correct" } }));
+                }
+                onComplete();
+              }}
+              className="bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-black py-3.5 px-8 rounded-xl transition text-sm shadow-lg shadow-emerald-500/15 cursor-pointer"
+            >
+              Finish B1 Phase 4
+            </button>
+          </div>
         </div>
       )}
     </div>

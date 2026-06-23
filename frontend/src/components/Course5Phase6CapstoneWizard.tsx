@@ -12,13 +12,13 @@ import {
   CheckCircle2, 
   Mic,
   MessageCircle,
-  TrendingUp,
-  Sliders,
-  Play,
-  RotateCcw,
-  CheckSquare,
   Trophy,
-  Star
+  Star,
+  Info,
+  Layers,
+  ArrowRight,
+  TrendingUp,
+  Play
 } from "lucide-react";
 
 let API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
@@ -46,6 +46,39 @@ async function apiJson(path: string, opts: RequestInit = {}) {
   return res.json();
 }
 
+const playSFX = (type: "correct" | "wrong") => {
+  if (typeof window === "undefined") return;
+  try {
+    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    if (type === "correct") {
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(659.25, ctx.currentTime);
+      gain.gain.setValueAtTime(0.1, ctx.currentTime);
+      osc.start();
+      osc.frequency.setValueAtTime(783.99, ctx.currentTime + 0.1);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+      osc.stop(ctx.currentTime + 0.4);
+      window.dispatchEvent(new CustomEvent("hangeulai-xp", { detail: { amount: 20, type: "correct" } }));
+    } else {
+      osc.type = "triangle";
+      osc.frequency.setValueAtTime(150.0, ctx.currentTime);
+      gain.gain.setValueAtTime(0.15, ctx.currentTime);
+      osc.start();
+      osc.frequency.exponentialRampToValueAtTime(80.0, ctx.currentTime + 0.35);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+      osc.stop(ctx.currentTime + 0.4);
+      window.dispatchEvent(new CustomEvent("hangeulai-xp", { detail: { amount: -10, type: "wrong" } }));
+    }
+  } catch (e) {
+    console.error("AudioContext not supported or blocked", e);
+  }
+};
+
 interface Course5Phase6CapstoneWizardProps {
   activeLesson: any;
   speakWord: (text: string) => void;
@@ -60,13 +93,17 @@ export default function Course5Phase6CapstoneWizard({
   const [step, setStep] = useState(1);
   const [showOutline, setShowOutline] = useState(false);
   const [mode, setMode] = useState<"text" | "voice">("text");
-  const totalSteps = 6;
+  const totalSteps = 7;
 
   // Data loaded from Backend
   const [metadata, setMetadata] = useState<any>(null);
   const [coreData, setCoreData] = useState<any>(null);
 
-  // Activity 1 Guided Scenario Walkthrough
+  // Concept C1 micro checkpoint
+  const [c1Selected, setC1Selected] = useState<string | null>(null);
+  const [c1Checked, setC1Checked] = useState(false);
+
+  // Activity 1 Guided Scenario snapshots
   const [guidedScenarios, setGuidedScenarios] = useState<any>(null);
   const [selectedScenarioType, setSelectedScenarioType] = useState<string>("scenario_a");
   const [snapIdx, setSnapIdx] = useState(0);
@@ -78,19 +115,19 @@ export default function Course5Phase6CapstoneWizard({
   const [planningSuggestion, setPlanningSuggestion] = useState<string | null>(null);
   const [gettingPlanningSuggestion, setGettingPlanningSuggestion] = useState(false);
 
-  // Activity 2 Live AI Capstone
+  // Activity 2: Scenario Day Route
   const [capstoneScenario, setCapstoneScenario] = useState<string>("scenario_a");
   const [capstoneSessionId, setCapstoneSessionId] = useState<string | null>(null);
   const [capstoneMessages, setCapstoneMessages] = useState<any[]>([]);
   const [capstoneText, setCapstoneText] = useState("");
   const [capstoneSending, setCapstoneSending] = useState(false);
-  const [capstoneStage, setCapstoneStage] = useState(1); // 1 to 4 stages
+  const [capstoneStage, setCapstoneStage] = useState(1);
   const [capstoneFinished, setCapstoneFinished] = useState(false);
   const [capstoneEvaluation, setCapstoneEvaluation] = useState<any>(null);
   const [finishingCapstone, setFinishingCapstone] = useState(false);
   const [recording, setRecording] = useState(false);
 
-  // Quiz states
+  // Activity 3: Strategy Quiz
   const [quizBlueprint, setQuizBlueprint] = useState<any[]>([]);
   const [quizIdx, setQuizIdx] = useState(0);
   const [quizChecked, setQuizChecked] = useState(false);
@@ -101,17 +138,30 @@ export default function Course5Phase6CapstoneWizard({
   const [finishingQuiz, setFinishingQuiz] = useState(false);
   const [quizBadge, setQuizBadge] = useState<string | null>(null);
 
-  // Homework states
-  const [homeworkItems, setHomeworkItems] = useState<any[]>([]);
-  const [completedHomework, setCompletedHomework] = useState<Record<string, boolean>>({});
-
-  // Exit Interview states
+  // Activity 4: Exit Interview
   const [exitSessionId, setExitSessionId] = useState<string | null>(null);
   const [exitMessages, setExitMessages] = useState<any[]>([]);
   const [exitText, setExitText] = useState("");
   const [exitSending, setExitSending] = useState(false);
   const [exitFinished, setExitFinished] = useState(false);
   const [exitFeedback, setExitFeedback] = useState<string | null>(null);
+
+  // Step 7: Graduation / Homework checklist
+  const [homeworkItems, setHomeworkItems] = useState<any[]>([]);
+  const [completedHomework, setCompletedHomework] = useState<Record<string, boolean>>({});
+
+  // Restore step from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem("hangeulai_c5p6_step");
+    if (saved) {
+      const parsedStep = parseInt(saved, 10);
+      if (parsedStep >= 1 && parsedStep <= 7) setStep(parsedStep);
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem("hangeulai_c5p6_step", String(step));
+  }, [step]);
 
   // Load API Data per Step
   useEffect(() => {
@@ -129,7 +179,7 @@ export default function Course5Phase6CapstoneWizard({
         } else if (step === 5 && quizBlueprint.length === 0) {
           const res = await apiJson("/quiz/korean4/phase-6/start", { method: "POST" });
           setQuizBlueprint(res.blueprint || []);
-        } else if (step === 6 && homeworkItems.length === 0) {
+        } else if (step === 7 && homeworkItems.length === 0) {
           const res = await apiJson("/phases/korean4/6/homework");
           setHomeworkItems(res || []);
         }
@@ -144,17 +194,26 @@ export default function Course5Phase6CapstoneWizard({
     speakWord(text);
   };
 
-  // Activity 1 Checks
+  // C1 Micro reflection check
+  const handleC1Check = () => {
+    if (!c1Selected) return;
+    setC1Checked(true);
+    playSFX("correct");
+  };
+
+  // Activity 1 checks
   const handleCheckGuided = () => {
     const snapshots = guidedScenarios?.[selectedScenarioType] || [];
     const current = snapshots[snapIdx];
     if (!current) return;
 
-    const correctTask = current.correct === selectedTaskAns;
-    const correctProb = current.correct_problem === selectedProbAns;
+    const correctTask = selectedTaskAns === current.correct;
+    const correctProb = selectedProbAns === current.correct_problem;
 
+    const isCorrect = correctTask && correctProb;
     setGuidedChecked(true);
-    setGuidedCorrect(correctTask && correctProb);
+    setGuidedCorrect(isCorrect);
+    playSFX(isCorrect ? "correct" : "wrong");
   };
 
   const handlePlanResponse = async () => {
@@ -188,11 +247,11 @@ export default function Course5Phase6CapstoneWizard({
     if (snapIdx < snapshots.length - 1) {
       setSnapIdx(snapIdx + 1);
     } else {
-      setStep(4);
+      setStep(4); // Proceed to Scenario Day Route
     }
   };
 
-  // Activity 2: Live AI Capstone
+  // Activity 2: Live AI Capstone Route
   const handleStartCapstoneFull = async () => {
     setCapstoneMessages([]);
     setCapstoneEvaluation(null);
@@ -229,7 +288,6 @@ export default function Course5Phase6CapstoneWizard({
       if (mode === "voice") {
         playAudio(res.reply_ko);
       }
-      // Increment stage after a couple turns
       if (capstoneStage < 4) {
         setCapstoneStage(prev => prev + 1);
       }
@@ -268,7 +326,7 @@ export default function Course5Phase6CapstoneWizard({
     }, 2000);
   };
 
-  // Quiz Checks
+  // Activity 3: Strategy Quiz Checks
   const handleCheckQuiz = async () => {
     const current = quizBlueprint[quizIdx];
     if (!current || !quizSelectedOpt) return;
@@ -276,6 +334,8 @@ export default function Course5Phase6CapstoneWizard({
     const isCorrect = quizSelectedOpt === current.correct_answer;
     setQuizChecked(true);
     setQuizCorrect(isCorrect);
+    playSFX(isCorrect ? "correct" : "wrong");
+
     if (!isCorrect) {
       setQuizMistakes((prev) => [...prev, current.id]);
     }
@@ -286,7 +346,7 @@ export default function Course5Phase6CapstoneWizard({
         body: JSON.stringify({
           question_id: current.id,
           answer: quizSelectedOpt,
-          time_taken_ms: 2000
+          time_taken_ms: 3000
         })
       });
     } catch (e) {
@@ -314,7 +374,7 @@ export default function Course5Phase6CapstoneWizard({
         });
         setQuizScore(score);
         setQuizBadge(res.badge || "Real-Life B1 Communicator");
-        setStep(6);
+        setStep(6); // Go to exit interview
       } catch (err) {
         console.error(err);
       } finally {
@@ -323,20 +383,7 @@ export default function Course5Phase6CapstoneWizard({
     }
   };
 
-  // Homework check logging
-  const handleToggleHomework = async (id: string, currentStatus: boolean) => {
-    setCompletedHomework((prev) => ({ ...prev, [id]: !currentStatus }));
-    try {
-      await apiJson("/phases/korean4/6/homework/check", {
-        method: "POST",
-        body: JSON.stringify({ homework_id: id, checked: !currentStatus })
-      });
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  // Exit Interview AI Conversation
+  // Activity 4: Exit Interview AI Conversation
   const handleStartExitInterview = async () => {
     setExitMessages([]);
     setExitFeedback(null);
@@ -387,66 +434,69 @@ export default function Course5Phase6CapstoneWizard({
     }
   };
 
-    const outlineSteps = [
-    { num: 1, label: "Screen 1 – Welcome / Phase Overview" },
-    { num: 2, label: "Screen 2 – Scenario-based Foundations" },
-    { num: 3, label: "Screen 3 – Activity 1: Read/Listen & Plan" },
-    { num: 4, label: "Screen 4 – Activity 2: Live AI Integrated Scenario" },
-    { num: 5, label: "Screen 5 – Mini-Quiz: Fluency Strategy Checks" },
-    { num: 6, label: "Screen 6 – Homework & Exit reflections" }
+  // Homework check logging
+  const handleToggleHomework = async (id: string, currentStatus: boolean) => {
+    setCompletedHomework((prev) => ({ ...prev, [id]: !currentStatus }));
+    try {
+      await apiJson("/phases/korean4/6/homework/check", {
+        method: "POST",
+        body: JSON.stringify({ homework_id: id, checked: !currentStatus })
+      });
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const outlineSteps = [
+    { num: 1, label: "Welcome & Overview" },
+    { num: 2, label: "Concept: B1 Independent Criteria" },
+    { num: 3, label: "Activity 1: Guided Snapshots" },
+    { num: 4, label: "Activity 2: Scenario Day Route" },
+    { num: 5, label: "Activity 3: Strategy Quiz" },
+    { num: 6, label: "Activity 4: Exit Interview" },
+    { num: 7, label: "Course Graduation" }
   ];
 
-  
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      window.dispatchEvent(new CustomEvent("hangeulai-step-change", {
-        detail: {
-          courseId: 5,
-          phaseNum: 6,
-          step: step
-        }
-      }));
-    }
-  }, [step]);
-
-return (
-    <div className="flex-grow flex flex-col justify-between">
+  return (
+    <div className="flex-grow flex flex-col justify-between min-h-[75vh] text-zinc-100 font-sans">
       
       {/* Top Header tracking */}
       <header className="flex justify-between items-center py-4 border-b border-white/5 mb-6">
         <div className="flex items-center space-x-4">
-          <div className="p-3 rounded-2xl bg-zinc-900 border border-white/10 shadow-lg">
-            <Trophy className="w-5 h-5 text-yellow-400" />
+          <div className="p-3 rounded-2xl bg-zinc-900 border border-white/10 shadow-lg animate-pulse">
+            <Trophy className="w-6 h-6 text-yellow-400" />
           </div>
           <div>
             <h2 className="font-black text-xl text-white tracking-tight flex items-center gap-2">
-              <span>{activeLesson?.title || "Korean 4.6 – Real‑Life B1 Fluency (Capstone)"}</span>
+              <span>{activeLesson?.title || "Korean 4.6 – B1 Fluency Capstone"}</span>
+              <span className="px-2 py-0.5 text-[10px] font-bold bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 rounded-md uppercase tracking-wider">Capstone</span>
             </h2>
-            <p className="text-xs text-zinc-500 font-medium">Topic: Integrated Situational Competence</p>
+            <p className="text-xs text-zinc-400 font-medium">Course 5 &bull; Phase 6</p>
           </div>
         </div>
         
         {/* Active progress bar */}
         <div className="flex items-center space-x-4">
-          <div className="w-40 h-3 bg-zinc-900/80 rounded-full overflow-hidden border border-white/5 p-[2px]">
+          <div className="w-40 h-3 bg-zinc-950 rounded-full overflow-hidden border border-white/5 p-[2px]">
             <div 
-              className="h-full bg-gradient-to-r from-yellow-500 via-orange-500 to-indigo-500 rounded-full transition-all duration-500" 
+              className="h-full bg-gradient-to-r from-yellow-500 via-orange-500 to-amber-500 rounded-full transition-all duration-500" 
               style={{ width: `${(step / totalSteps) * 100}%` }}
             />
           </div>
           <span className="text-xs text-zinc-400 font-bold">{Math.round((step / totalSteps) * 100)}%</span>
           <button 
             onClick={() => setShowOutline(!showOutline)}
-            className="text-[10px] bg-zinc-900 border border-white/10 hover:bg-zinc-900 text-zinc-300 px-3 py-1.5 rounded-lg transition duration-200 cursor-pointer uppercase tracking-wider font-bold"
+            className="text-[10px] bg-zinc-900 border border-white/10 hover:bg-zinc-800 text-zinc-300 px-3 py-1.5 rounded-lg transition duration-200 cursor-pointer uppercase tracking-wider font-extrabold"
           >
             {showOutline ? "Hide Outline" : "View Outline"}
           </button>
         </div>
       </header>
+
       {showOutline && (
-        <div className="mb-6 p-5 bg-zinc-950/80 rounded-3xl border border-white/5 shadow-2xl animate-in fade-in slide-in-from-top-4 duration-300">
+        <div className="mb-6 p-5 bg-zinc-950/80 rounded-3xl border border-white/10 shadow-2xl animate-in fade-in slide-in-from-top-4 duration-300">
           <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest block mb-3 font-mono">Curriculum Syllabus Map</span>
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-2">
             {outlineSteps.map(s => (
               <button
                 key={s.num}
@@ -455,7 +505,7 @@ return (
                   setShowOutline(false);
                 }}
                 className={`p-2.5 rounded-xl border text-left transition ${step === s.num
-                    ? "border-brand-500 bg-brand-500/10 text-white"
+                    ? "border-yellow-500 bg-yellow-500/10 text-white"
                     : "border-white/5 bg-zinc-900/40 text-zinc-400 hover:border-white/10 hover:text-white"
                   }`}
               >
@@ -467,157 +517,202 @@ return (
         </div>
       )}
 
-      {/* Screen 1: Welcome/Overview */}
+      {/* Step 1: Welcome/Goals */}
       {step === 1 && (
-        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center text-center animate-fade-in">
-          <div className="relative mx-auto w-fit">
+        <div className="glass-panel p-10 rounded-[2.5rem] bg-zinc-900/40 border border-white/10 shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center text-center animate-fade-in">
+          <div className="relative mx-auto w-fit shrink-0">
             <div className="p-4 bg-yellow-500/10 rounded-full border border-yellow-500/25 text-yellow-400">
-              <Trophy className="w-10 h-10" />
+              <Trophy className="w-10 h-10 animate-bounce" />
             </div>
-            <div className="absolute -top-1 -right-1 p-1 bg-brand-500 rounded-full border-2 border-zinc-950">
-              <Star className="w-3 h-3 text-white fill-white" />
+            <div className="absolute -top-1 -right-1 p-1.5 bg-brand-500 rounded-full border-2 border-zinc-950">
+              <Star className="w-3.5 h-3.5 text-white fill-white" />
             </div>
           </div>
           
-          <h2 className="text-5xl font-black text-white tracking-tight font-sans">Korean 4.6</h2>
-          <h3 className="text-xl font-bold text-yellow-400 mt-1">Real‑Life B1 Fluency (Capstone)</h3>
+          <div>
+            <h2 className="text-4xl md:text-5xl font-black text-white tracking-tight">Real‑Life B1 Fluency</h2>
+            <h3 className="text-xl font-extrabold text-yellow-400 mt-2">Integrated Capstone Journey</h3>
+          </div>
           
           <p className="text-zinc-300 text-base leading-relaxed max-w-2xl mx-auto">
             {metadata?.description || "Travel, daily life, and opinions in one integrated journey."}
           </p>
 
-          <div className="bg-zinc-900/60 p-5 rounded-2xl border border-white/5 text-left text-xs text-zinc-400 space-y-3 max-w-md mx-auto w-full">
-            <p className="text-[10px] text-zinc-500 font-mono uppercase tracking-wider font-black">🎯 Objectives:</p>
-            <ul className="list-disc list-inside space-y-1.5 text-zinc-300 pl-1">
+          <div className="bg-zinc-950/60 p-6 rounded-2xl border border-white/5 text-left text-sm text-zinc-400 space-y-3 max-w-2xl mx-auto w-full font-sans">
+            <p className="text-[10px] text-zinc-500 font-mono uppercase tracking-wider font-black">🎯 Capstone Objectives:</p>
+            <ul className="list-disc list-inside space-y-1 text-zinc-300 pl-1">
               {(metadata?.goals || [
-                "Handle a chain of real‑life situations in Korean (travel, social, study/work)",
-                "Combine stories, opinions, and problem‑solving in one conversation",
-                "Show you can communicate independently on familiar topics at B1 level"
+                "Handle most everyday situations around travel and daily life in Korean",
+                "Discuss familiar topics, tell short narratives, and express opinions with simple reasons",
+                "Maintain fluency, adjust register for friends vs staff, and keep conversations coherent",
+                "Navigate multi-step scenarios with basic problem-solving actions"
               ]).map((g: string, idx: number) => (
-                <li key={idx}>{g}</li>
+                <li key={idx} className="text-zinc-300">{g}</li>
               ))}
             </ul>
-            <p className="pt-2"><strong>⏱️ Estimated Time:</strong> {metadata?.estimated_minutes || 40}–45 minutes</p>
-          </div>
-
-          {/* Chips */}
-          <div className="space-y-2 max-w-md mx-auto w-full text-left">
-            <span className="text-[9px] text-zinc-500 uppercase tracking-widest font-black block">What you'll practise:</span>
-            <div className="flex flex-wrap gap-1.5">
-              {["Conversation fluency", "Travel/service tasks", "Social/work talk", "Politeness & register", "Listening & summary"].map(chip => (
-                <span key={chip} className="px-2.5 py-1 bg-zinc-900 text-zinc-300 rounded-full border border-white/5 text-[10px] font-bold">{chip}</span>
-              ))}
+            <div className="pt-2 grid grid-cols-2 gap-2 text-xs border-t border-white/5 mt-4">
+              <p><strong>⏱️ Estimated Time:</strong> {metadata?.estimated_minutes || 45} minutes</p>
+              <p><strong>📋 Level:</strong> Intermediate B1 Capstone (Korean 4.6)</p>
             </div>
           </div>
 
           {/* Mode Selector */}
-          <div className="bg-zinc-950 p-4 rounded-2xl border border-white/5 max-w-sm mx-auto w-full space-y-2 text-left">
+          <div className="bg-zinc-950 p-4 rounded-2xl border border-white/5 max-w-xs mx-auto w-full space-y-2 text-left">
             <span className="text-[9px] text-zinc-500 uppercase tracking-widest font-black block">Conversation Mode</span>
             <div className="grid grid-cols-2 gap-2">
               <button
                 onClick={() => setMode("text")}
-                className={`p-3 rounded-xl border text-xs font-bold transition ${
+                className={`p-2.5 rounded-xl border text-xs font-bold transition cursor-pointer ${
                   mode === "text" 
                     ? "border-yellow-500 bg-yellow-500/10 text-white" 
                     : "border-white/5 bg-zinc-900/60 text-zinc-400 hover:border-white/10"
                 }`}
               >
-                Text Input
+                Text input
               </button>
               <button
                 onClick={() => setMode("voice")}
-                className={`p-3 rounded-xl border text-xs font-bold transition flex items-center justify-center gap-1.5 ${
+                className={`p-2.5 rounded-xl border text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
                   mode === "voice" 
                     ? "border-yellow-500 bg-yellow-500/10 text-white" 
                     : "border-white/5 bg-zinc-900/60 text-zinc-400 hover:border-white/10"
                 }`}
               >
                 <Mic className="w-3.5 h-3.5" />
-                <span>Voice + Text</span>
+                <span>Voice input</span>
               </button>
             </div>
           </div>
 
-          <div className="flex flex-col gap-3 max-w-xs mx-auto pt-2">
+          <div className="flex flex-col gap-3 max-w-xs mx-auto pt-4">
             <button 
               onClick={() => setStep(2)}
-              className="bg-yellow-500 hover:bg-yellow-400 text-zinc-950 font-bold py-3 px-8 rounded-xl transition text-sm flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-yellow-500/20"
+              className="bg-yellow-500 hover:bg-yellow-400 text-zinc-950 font-black py-4 px-10 rounded-2xl transition text-base flex items-center justify-center gap-2.5 cursor-pointer shadow-lg shadow-yellow-500/20"
             >
-              <span>Start Capstone Phase</span>
-              <ChevronRight className="w-4 h-4 text-zinc-950" />
+              <span>Begin Capstone</span>
+              <ChevronRight className="w-5 h-5 text-zinc-950" />
             </button>
-            
           </div>
-
-          
         </div>
       )}
 
-      {/* Screen 2: Concept Explanation */}
+      {/* Step 2: Concept (B1 Criteria) */}
       {step === 2 && (
-        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
+        <div className="glass-panel p-10 rounded-[2.5rem] bg-zinc-900/40 border border-white/10 shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
           <div className="flex justify-between items-center border-b border-white/5 pb-4">
             <h2 className="text-2xl font-black text-white flex items-center gap-2">
-              <BookOpen className="w-5 h-5 text-yellow-400" />
-              <span>Integrated Real‑Life Scenarios</span>
+              <BookOpen className="w-6 h-6 text-yellow-400" />
+              <span>B1 Independent User Criteria</span>
             </h2>
-            <span className="text-xs text-zinc-500 font-bold">Step 2 of {totalSteps}</span>
+            <span className="text-xs text-zinc-400 font-mono">Step 2 of {totalSteps}</span>
           </div>
 
-          <div className="bg-yellow-500/5 p-4 rounded-xl border border-yellow-500/15 text-xs leading-relaxed text-zinc-300">
-            <p className="font-bold text-white mb-1">B1 “independent user” goal</p>
-            <p className="italic">
-              “At B1, you can handle most everyday situations, discuss familiar topics, express opinions, and describe experiences with simple reasons. This capstone lets you try that in realistic Korean scenarios.”
+          <div className="bg-yellow-500/5 p-5 rounded-2xl border border-yellow-500/15 text-sm leading-relaxed text-zinc-300 text-left max-w-2xl mx-auto w-full">
+            <div className="flex items-center gap-2 mb-2">
+              <Info className="w-4.5 h-4.5 text-yellow-400" />
+              <span className="font-bold text-white uppercase tracking-wider text-xs">Standard B1 Level Milestone:</span>
+            </div>
+            <p className="italic text-zinc-200">
+              "At B1, you can handle most everyday situations, discuss familiar topics, express opinions, and describe experiences with simple reasons. This capstone integrates travel, daily schedules, social registers, and listening."
             </p>
           </div>
 
-          {/* Scenario Preview Carousel */}
-          <div className="space-y-2 text-left text-xs">
-            <span className="text-[9px] text-zinc-500 font-bold uppercase tracking-wider block">Integrated Days Configs:</span>
-            <div className="grid grid-cols-3 gap-2 text-[10px]">
-              {coreData?.scenarios?.map((sc: any) => (
-                <div key={sc.id} className="p-3 bg-zinc-900 border border-white/5 rounded-xl space-y-1.5 flex flex-col justify-between">
-                  <div>
-                    <span className="text-yellow-400 font-bold block mb-0.5">{sc.name}</span>
-                    <ul className="list-disc list-inside space-y-0.5 text-zinc-400 text-[9px]">
-                      {sc.goals.map((g: string) => (
-                        <li key={g} className="truncate">{g}</li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-              ))}
+          {/* Three Evaluation Lenses */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-3xl mx-auto w-full text-left">
+            <div className="p-4 bg-zinc-900 border border-white/5 rounded-2xl space-y-2">
+              <div className="flex items-center gap-2 text-yellow-400">
+                <Star className="w-4.5 h-4.5 fill-yellow-400" />
+                <strong className="text-xs uppercase tracking-wider">1. Fluency</strong>
+              </div>
+              <p className="text-[11px] text-zinc-450 leading-relaxed font-sans">
+                Keep the interaction going without long freezing silence gaps. Use pause fillers and connectors naturally.
+              </p>
+            </div>
+            <div className="p-4 bg-zinc-900 border border-white/5 rounded-2xl space-y-2">
+              <div className="flex items-center gap-2 text-emerald-400">
+                <CheckCircle2 className="w-4.5 h-4.5" />
+                <strong className="text-xs uppercase tracking-wider">2. Politeness</strong>
+              </div>
+              <p className="text-[11px] text-zinc-450 leading-relaxed font-sans">
+                Shift register formats (casual 반말 vs polite/honorific 존댓말) matching your conversation partner's status.
+              </p>
+            </div>
+            <div className="p-4 bg-zinc-900 border border-white/5 rounded-2xl space-y-2">
+              <div className="flex items-center gap-2 text-indigo-400">
+                <Layers className="w-4.5 h-4.5" />
+                <strong className="text-xs uppercase tracking-wider">3. Content</strong>
+              </div>
+              <p className="text-[11px] text-zinc-450 leading-relaxed font-sans">
+                Construct logical narratives of past events and clearly support your statements/opinions with reasons.
+              </p>
             </div>
           </div>
 
-          {/* Success markers */}
-          <div className="bg-zinc-950 p-4.5 rounded-xl border border-white/5 text-left text-xs text-zinc-400 space-y-2">
-            <span className="text-[9px] text-zinc-500 font-bold uppercase block font-mono">B1 Success Criteria Checkpoints:</span>
-            <p><strong>Fluency:</strong> Keep the interaction going without long silence gaps.</p>
-            <p><strong>Politeness:</strong> Adjust registers appropriately for friends vs service staff.</p>
-            <p><strong>Content:</strong> Provide a clean narrative of what happened and express opinions with simple reasons.</p>
+          {/* Micro checkpoint C1 */}
+          <div className="bg-zinc-950 p-6 rounded-2xl border border-white/10 space-y-4 max-w-xl mx-auto w-full text-left font-sans">
+            <span className="text-[9px] text-zinc-400 uppercase font-black tracking-widest block font-mono">Micro Checkpoint C1</span>
+            <p className="text-sm font-bold text-white">Which of these three do you feel is your strongest right now: Fluency, Politeness, or Content?</p>
+            
+            <div className="flex flex-col gap-2">
+              {["Fluency (keeping dialogue going)", "Politeness (register switching)", "Content (opinions and logic)"].map((opt) => {
+                let borderStyle = "border-white/5 bg-zinc-900/60 text-zinc-300";
+                if (c1Selected === opt) {
+                  borderStyle = "border-yellow-500 bg-yellow-500/10 text-white";
+                }
+                if (c1Checked) {
+                  borderStyle = "border-green-500 bg-green-500/10 text-green-300 font-extrabold";
+                }
+                return (
+                  <button
+                    key={opt}
+                    disabled={c1Checked}
+                    onClick={() => setC1Selected(opt)}
+                    className={`py-3 px-4 rounded-xl border text-left text-xs font-bold transition cursor-pointer ${borderStyle}`}
+                  >
+                    {opt}
+                  </button>
+                );
+              })}
+            </div>
+
+            {c1Checked && (
+              <div className="p-4 bg-green-500/5 border border-green-500/20 rounded-xl text-xs text-left animate-fade-in text-green-300 font-sans">
+                <p className="font-extrabold mb-1">✓ Acknowledged!</p>
+                <p>Awesome! In this capstone, Gwan-Sik will holistically monitor and evaluate all three lenses to provide your final B1 evaluation report.</p>
+              </div>
+            )}
+
+            {!c1Checked && (
+              <button
+                onClick={handleC1Check}
+                disabled={!c1Selected}
+                className="w-full py-2.5 bg-yellow-500 text-zinc-950 text-xs font-bold rounded-xl disabled:opacity-40 transition cursor-pointer"
+              >
+                Submit Response
+              </button>
+            )}
           </div>
 
-          <div className="flex justify-between items-center pt-4 border-t border-white/5">
-            <button onClick={() => setStep(1)} className="glass-panel px-4 py-2 rounded-xl hover:bg-white/5 text-zinc-400 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
-            <button onClick={() => setStep(3)} className="bg-yellow-500 hover:bg-yellow-400 text-zinc-950 px-5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer">Start Activities <ChevronRight className="w-4 h-4" /></button>
+          <div className="flex justify-between items-center pt-4 border-t border-white/5 font-sans">
+            <button onClick={() => setStep(1)} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-sm font-bold transition flex items-center gap-2 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
+            <button onClick={() => setStep(3)} className="bg-yellow-500 hover:bg-yellow-400 text-zinc-950 px-8 py-3 rounded-xl text-sm font-bold transition flex items-center gap-2 cursor-pointer">Start Snapshots <ChevronRight className="w-4 h-4 text-zinc-955" /></button>
           </div>
         </div>
       )}
 
-      {/* Screen 3: Guided Scenario Walkthrough */}
+      {/* Step 3: Activity 1: Guided Scenario snapshots */}
       {step === 3 && (
-        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
-          <div className="flex justify-between items-center border-b border-white/5 pb-4">
+        <div className="glass-panel p-10 rounded-[2.5rem] bg-zinc-900/40 border border-white/10 shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
+          <div className="flex justify-between items-center border-b border-white/5 pb-4 font-sans">
             <h2 className="text-2xl font-black text-white flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-yellow-400" />
-              <span>Activity 1 – Guided Scenario Walkthrough</span>
+              <Sparkles className="w-6 h-6 text-yellow-400" />
+              <span>Activity 1 – Guided Scenario Snapshots</span>
             </h2>
-            <span className="text-xs text-zinc-500 font-bold">Step 3 of {totalSteps}</span>
+            <span className="text-xs text-zinc-400 font-mono">Step 3 of {totalSteps}</span>
           </div>
 
-          {/* Scenario selector */}
-          <div className="flex gap-2">
+          {/* Scenario toggle selectors */}
+          <div className="flex gap-2 font-sans">
             {["scenario_a", "scenario_b", "scenario_c"].map((type) => (
               <button
                 key={type}
@@ -631,108 +726,125 @@ return (
                   setLearnerPlanningNotes("");
                   setPlanningSuggestion(null);
                 }}
-                className={`flex-grow py-2 rounded-xl border text-xs font-bold uppercase transition ${
+                className={`flex-grow py-2.5 rounded-xl border text-xs font-bold uppercase transition cursor-pointer ${
                   selectedScenarioType === type
                     ? "border-yellow-500 bg-yellow-500/10 text-white"
-                    : "border-white/5 bg-zinc-950 text-zinc-400 hover:border-white/10"
+                    : "border-white/5 bg-zinc-900 text-zinc-450 hover:border-white/10"
                 }`}
               >
-                {type === "scenario_a" ? "Travel Day" : type === "scenario_b" ? "Campus Day" : "Social Day"}
+                {type === "scenario_a" ? "Travel" : type === "scenario_b" ? "Work/Campus" : "Weekend/Social"}
               </button>
             ))}
           </div>
 
           {guidedScenarios?.[selectedScenarioType]?.[snapIdx] && (
-            <div className="space-y-4 text-left">
+            <div className="space-y-5 text-left font-sans">
               <div className="p-4 bg-zinc-950 border border-white/5 rounded-2xl space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-[9px] text-zinc-500 uppercase font-mono block">Snapshot: {guidedScenarios[selectedScenarioType][snapIdx].title}</span>
-                  <button 
-                    onClick={() => playAudio(guidedScenarios[selectedScenarioType][snapIdx].dialogue[0].text)}
-                    className="p-1 bg-yellow-500/10 text-yellow-400 text-[9px] font-bold rounded flex items-center gap-1 px-2 cursor-pointer"
-                  >
-                    <Volume2 className="w-3 h-3" /> Listen snapshot
-                  </button>
-                </div>
-                <div className="space-y-1.5 max-h-[120px] overflow-y-auto pr-1">
-                  {guidedScenarios[selectedScenarioType][snapIdx].dialogue.map((line: any, lIdx: number) => (
-                    <p key={lIdx} className="text-xs font-korean">
+                <span className="text-[9px] text-zinc-550 uppercase tracking-widest font-black block font-mono">Dialogue Snippet:</span>
+                <div className="space-y-2">
+                  {guidedScenarios[selectedScenarioType][snapIdx].dialogue.map((line: any, idx: number) => (
+                    <div key={idx} className="text-xs font-korean">
                       <strong className="text-yellow-400">{line.speaker}:</strong> <span className="text-zinc-200">{line.text}</span>
-                    </p>
+                    </div>
                   ))}
                 </div>
               </div>
 
-              {/* Snapshot questions */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="p-3 bg-zinc-900 rounded-xl border border-white/5 space-y-1.5">
-                  <p className="text-[10px] text-zinc-400 font-bold">{guidedScenarios[selectedScenarioType][snapIdx].question}</p>
-                  {guidedScenarios[selectedScenarioType][snapIdx].options.map((opt: string) => (
-                    <button
-                      key={opt}
-                      onClick={() => !guidedChecked && setSelectedTaskAns(opt)}
-                      disabled={guidedChecked}
-                      className={`w-full p-2 text-left rounded border text-[9px] font-bold transition ${
-                        selectedTaskAns === opt
-                          ? "border-yellow-500 bg-yellow-500/10 text-white"
-                          : "border-white/5 bg-zinc-950 text-zinc-400 hover:border-white/10"
-                      }`}
-                    >
-                      {opt}
-                    </button>
-                  ))}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Q1: Gist */}
+                <div className="p-4 bg-zinc-900 border border-white/5 rounded-xl space-y-2">
+                  <span className="text-xs font-bold text-white block">{guidedScenarios[selectedScenarioType][snapIdx].question}</span>
+                  <div className="flex flex-col gap-1.5">
+                    {guidedScenarios[selectedScenarioType][snapIdx].options.map((opt: string) => {
+                      let btnStyle = "border-white/5 bg-zinc-950 text-zinc-400";
+                      if (selectedTaskAns === opt) {
+                        btnStyle = "border-yellow-500 bg-yellow-500/10 text-white";
+                      }
+                      if (guidedChecked) {
+                        if (opt === guidedScenarios[selectedScenarioType][snapIdx].correct) {
+                          btnStyle = "border-green-500 bg-green-500/10 text-green-300 font-extrabold";
+                        } else if (selectedTaskAns === opt) {
+                          btnStyle = "border-red-500 bg-red-500/10 text-red-300";
+                        }
+                      }
+                      return (
+                        <button
+                          key={opt}
+                          disabled={guidedChecked}
+                          onClick={() => setSelectedTaskAns(opt)}
+                          className={`p-2 rounded-lg border text-left text-[11px] font-semibold transition cursor-pointer ${btnStyle}`}
+                        >
+                          {opt}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
 
-                <div className="p-3 bg-zinc-900 rounded-xl border border-white/5 space-y-1.5">
-                  <p className="text-[10px] text-zinc-400 font-bold">{guidedScenarios[selectedScenarioType][snapIdx].problem_question}</p>
-                  {guidedScenarios[selectedScenarioType][snapIdx].problem_options.map((opt: string) => (
-                    <button
-                      key={opt}
-                      onClick={() => !guidedChecked && setSelectedProbAns(opt)}
-                      disabled={guidedChecked}
-                      className={`w-full p-2 text-left rounded border text-[9px] font-bold transition ${
-                        selectedProbAns === opt
-                          ? "border-yellow-500 bg-yellow-500/10 text-white"
-                          : "border-white/5 bg-zinc-950 text-zinc-400 hover:border-white/10"
-                      }`}
-                    >
-                      {opt}
-                    </button>
-                  ))}
+                {/* Q2: Problem */}
+                <div className="p-4 bg-zinc-900 border border-white/5 rounded-xl space-y-2">
+                  <span className="text-xs font-bold text-white block">{guidedScenarios[selectedScenarioType][snapIdx].problem_question}</span>
+                  <div className="flex flex-col gap-1.5">
+                    {guidedScenarios[selectedScenarioType][snapIdx].problem_options.map((opt: string) => {
+                      let btnStyle = "border-white/5 bg-zinc-950 text-zinc-400";
+                      if (selectedProbAns === opt) {
+                        btnStyle = "border-yellow-500 bg-yellow-500/10 text-white";
+                      }
+                      if (guidedChecked) {
+                        if (opt === guidedScenarios[selectedScenarioType][snapIdx].correct_problem) {
+                          btnStyle = "border-green-500 bg-green-500/10 text-green-300 font-extrabold";
+                        } else if (selectedProbAns === opt) {
+                          btnStyle = "border-red-500 bg-red-500/10 text-red-300";
+                        }
+                      }
+                      return (
+                        <button
+                          key={opt}
+                          disabled={guidedChecked}
+                          onClick={() => setSelectedProbAns(opt)}
+                          className={`p-2 rounded-lg border text-left text-[11px] font-semibold transition cursor-pointer ${btnStyle}`}
+                        >
+                          {opt}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
 
               {guidedChecked && (
-                <div className="p-3 bg-zinc-950 rounded-xl border border-white/5 text-center text-xs">
-                  <p className="font-bold text-white">{guidedCorrect ? "✓ Gist correct!" : "✗ Gist mismatch."}</p>
+                <div className={`p-4 rounded-xl text-xs text-left animate-fade-in border ${
+                  guidedCorrect ? "bg-green-500/5 border-green-500/20 text-green-300" : "bg-red-500/5 border-red-500/20 text-red-400"
+                }`}>
+                  <p className="font-extrabold text-sm">{guidedCorrect ? "✓ Gist correct!" : "✗ Gist mismatch."}</p>
                 </div>
               )}
 
-              {/* Planning form */}
-              <div className="p-3.5 bg-zinc-950 rounded-2xl border border-white/5 space-y-3 text-xs">
-                <span className="text-[9px] text-zinc-500 uppercase tracking-widest font-black block">Response planner:</span>
+              {/* Free response planner */}
+              <div className="p-4 bg-zinc-950 rounded-2xl border border-white/5 space-y-3 text-xs">
+                <span className="text-[9px] text-zinc-550 uppercase tracking-widest font-black block font-mono">Response Builder:</span>
                 <p className="text-zinc-400">How would you respond in Korean to continue the dialogue?</p>
                 <textarea
                   rows={2}
                   value={learnerPlanningNotes}
                   onChange={(e) => setLearnerPlanningNotes(e.target.value)}
-                  placeholder="Write draft sentence keywords..."
-                  className="w-full bg-zinc-900 border border-white/5 outline-none focus:border-yellow-500 p-2.5 rounded-xl text-xs text-white resize-none"
+                  placeholder="Draft your reply in Korean..."
+                  className="w-full bg-zinc-900 border border-white/5 outline-none focus:border-yellow-500 p-3 rounded-xl text-xs text-white resize-none font-korean"
                 />
 
                 {planningSuggestion && (
-                  <div className="p-2.5 bg-yellow-500/5 rounded-xl border border-yellow-500/15 text-[10px] text-zinc-300">
-                    <strong>Tutor B1 suggestion:</strong> "{planningSuggestion}"
+                  <div className="p-3 bg-yellow-500/5 rounded-xl border border-yellow-500/15 text-[11px] text-zinc-350 italic">
+                    <strong>Model response suggestion:</strong> "{planningSuggestion}"
                   </div>
                 )}
 
-                <div className="flex justify-end gap-2">
+                <div className="flex justify-end gap-2 pt-1 font-sans">
                   <button
                     onClick={handlePlanResponse}
                     disabled={!learnerPlanningNotes.trim() || gettingPlanningSuggestion}
-                    className="px-3 py-1.5 bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white rounded-lg text-xs font-bold border border-white/5 flex items-center gap-1 cursor-pointer"
+                    className="px-4 py-2 bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white rounded-xl text-xs font-bold border border-white/5 flex items-center gap-1.5 cursor-pointer"
                   >
-                    {gettingPlanningSuggestion && <Loader2 className="w-3 h-3 animate-spin" />}
+                    {gettingPlanningSuggestion && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                     <span>Get B1 Suggestion</span>
                   </button>
 
@@ -740,43 +852,48 @@ return (
                     <button
                       onClick={handleCheckGuided}
                       disabled={!selectedTaskAns || !selectedProbAns}
-                      className="bg-yellow-500 hover:bg-yellow-400 text-zinc-950 px-4 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer"
+                      className="bg-yellow-500 hover:bg-yellow-400 text-zinc-950 px-5 py-2 rounded-xl text-xs font-bold transition cursor-pointer"
                     >
-                      Verify Answers
+                      Verify Snapshot Gist
                     </button>
                   ) : (
                     <button
                       onClick={handleNextGuided}
-                      className="bg-yellow-500 hover:bg-yellow-400 text-zinc-950 px-4 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer"
+                      className="bg-emerald-500 text-zinc-950 hover:bg-emerald-450 px-5 py-2 rounded-xl text-xs font-bold transition cursor-pointer"
                     >
-                      Continue
+                      {snapIdx < guidedScenarios[selectedScenarioType].length - 1 ? "Next Snapshot" : "Continue to Day Route"}
                     </button>
                   )}
                 </div>
               </div>
             </div>
           )}
+
+          <div className="flex justify-between items-center pt-4 border-t border-white/5 font-sans">
+            <button onClick={() => setStep(2)} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-sm font-bold transition flex items-center gap-2 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
+            <button onClick={() => setStep(4)} className="bg-yellow-500 hover:bg-yellow-400 text-zinc-955 px-8 py-3 rounded-xl text-sm font-bold transition flex items-center gap-2 cursor-pointer font-bold">Move to Scenario Day <ChevronRight className="w-4 h-4 text-zinc-955" /></button>
+          </div>
         </div>
       )}
 
-      {/* Screen 4: Live AI Integrated Scenario */}
+      {/* Step 4: Activity 2: Scenario Day Route */}
       {step === 4 && (
-        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
+        <div className="glass-panel p-10 rounded-[2.5rem] bg-zinc-900/40 border border-white/10 shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in font-sans">
           <div className="flex justify-between items-center border-b border-white/5 pb-4">
             <h2 className="text-2xl font-black text-white flex items-center gap-2">
-              <MessageCircle className="w-5 h-5 text-yellow-400" />
-              <span>Activity 2 – Live AI Scenario</span>
+              <MessageCircle className="w-6 h-6 text-yellow-400" />
+              <span>Activity 2 – Scenario Day Route &amp; Evaluation</span>
             </h2>
             <div className="flex gap-2">
               {[1, 2, 3, 4].map((s) => (
                 <div 
                   key={s} 
-                  className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center text-[8px] font-bold ${
+                  className={`w-4 h-4 rounded-full border flex items-center justify-center text-[9px] font-bold ${
                     capstoneStage === s 
-                      ? "bg-yellow-500 border-yellow-500 text-zinc-950 animate-pulse" 
+                      ? "bg-yellow-500 border-yellow-500 text-zinc-955 animate-pulse" 
                       : capstoneStage > s 
-                        ? "bg-emerald-500 border-emerald-500 text-zinc-950" 
-                        : "bg-zinc-950 border-white/5 text-zinc-500"
+                        ? "bg-emerald-500 border-emerald-500 text-zinc-955" 
+                        : "bg-zinc-950 border-white/5 text-zinc-600"
                   }`}
                 >
                   {s}
@@ -786,63 +903,79 @@ return (
           </div>
 
           {!capstoneSessionId ? (
-            <div className="space-y-4 text-left">
+            <div className="space-y-5 text-left max-w-xl mx-auto w-full">
               <p className="text-xs text-zinc-400 font-bold">Select Scenario Day Route to test drive your B1 Fluency:</p>
-              <div className="grid grid-cols-3 gap-2.5">
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 {[
-                  { id: "scenario_a", name: "Travel & Lodge Day" },
-                  { id: "scenario_b", name: "Campus & Meeting Day" },
-                  { id: "scenario_c", name: "Weekend & Small Talk" }
+                  { id: "scenario_a", name: "Travel & Lodge Day", icon: "✈️" },
+                  { id: "scenario_b", name: "Campus & Schedule Day", icon: "🏫" },
+                  { id: "scenario_c", name: "Weekend & Small Talk", icon: "☕" }
                 ].map(sc => (
                   <button
                     key={sc.id}
                     onClick={() => setCapstoneScenario(sc.id)}
-                    className={`p-4 rounded-xl border text-center text-xs font-bold transition ${
+                    className={`p-5 rounded-2xl border text-center transition flex flex-col items-center justify-center gap-2 cursor-pointer ${
                       capstoneScenario === sc.id
                         ? "border-yellow-500 bg-yellow-500/10 text-white"
-                        : "border-white/5 bg-zinc-950 text-zinc-400 hover:border-white/10"
+                        : "border-white/5 bg-zinc-950 text-zinc-450 hover:border-white/10"
                     }`}
                   >
-                    {sc.name}
+                    <span className="text-2xl">{sc.icon}</span>
+                    <span className="text-xs font-bold">{sc.name}</span>
                   </button>
                 ))}
               </div>
+
               <button
                 onClick={handleStartCapstoneFull}
-                className="w-full bg-yellow-500 hover:bg-yellow-400 text-zinc-950 font-bold py-3 rounded-xl text-xs flex items-center justify-center gap-1.5 transition cursor-pointer shadow-lg shadow-yellow-500/20"
+                className="w-full bg-yellow-500 hover:bg-yellow-400 text-zinc-955 font-bold py-3.5 rounded-xl text-xs flex items-center justify-center gap-2 transition cursor-pointer shadow-lg shadow-yellow-500/20"
               >
-                <Play className="w-4 h-4 text-zinc-950" /> Start Live Integrated Capstone Dialogue
+                <Play className="w-4 h-4 text-zinc-955 fill-zinc-955" /> 
+                <span>Start Live Integrated Capstone Dialogue</span>
               </button>
             </div>
           ) : (
-            /* Dialogue Room */
-            <div className="space-y-4 text-left">
-              {/* Stages checklist visual indicator */}
-              <div className="p-3 bg-zinc-950 border border-white/5 rounded-xl grid grid-cols-4 gap-2 text-[8px] font-bold uppercase tracking-wider text-center">
-                <span className={capstoneStage >= 1 ? "text-yellow-400" : "text-zinc-500"}>1. Task</span>
-                <span className={capstoneStage >= 2 ? "text-yellow-400" : "text-zinc-500"}>2. Story</span>
-                <span className={capstoneStage >= 3 ? "text-yellow-400" : "text-zinc-500"}>3. Opinion</span>
-                <span className={capstoneStage >= 4 ? "text-yellow-400" : "text-zinc-500"}>4. Summary</span>
+            <div className="space-y-4 text-left max-w-2xl mx-auto w-full animate-fade-in">
+              
+              {/* Stages Indicator */}
+              <div className="p-3 bg-zinc-950 border border-white/5 rounded-xl grid grid-cols-4 gap-2 text-[9px] font-black uppercase tracking-widest text-center">
+                <span className={capstoneStage >= 1 ? "text-yellow-400 font-bold" : "text-zinc-650"}>1. Task</span>
+                <span className={capstoneStage >= 2 ? "text-yellow-400 font-bold" : "text-zinc-650"}>2. Story</span>
+                <span className={capstoneStage >= 3 ? "text-yellow-400 font-bold" : "text-zinc-650"}>3. Opinion</span>
+                <span className={capstoneStage >= 4 ? "text-yellow-400 font-bold" : "text-zinc-650"}>4. Summary</span>
               </div>
 
-              <div className="max-h-[160px] overflow-y-auto space-y-2 p-3 bg-zinc-900 rounded-xl border border-white/5">
-                {capstoneMessages.map((msg, idx) => (
-                  <div key={idx} className={`p-2.5 rounded-xl text-xs leading-relaxed max-w-[85%] ${
-                    msg.sender === "user" 
-                      ? "bg-yellow-500/10 border border-yellow-500/20 text-white ml-auto" 
-                      : "bg-zinc-950 border border-white/5 text-zinc-300 mr-auto"
-                  }`}>
-                    {msg.text}
+              {/* Chat Log */}
+              <div className="bg-zinc-950 rounded-2xl border border-white/10 p-4 h-56 overflow-y-auto space-y-3.5 custom-scrollbar">
+                {capstoneMessages.map((msg, idx) => {
+                  const isUser = msg.sender === "user";
+                  return (
+                    <div key={idx} className={`flex ${isUser ? "justify-end" : "justify-start"} animate-fade-in`}>
+                      <div className={`max-w-[80%] rounded-2xl p-3 text-xs leading-relaxed ${
+                        isUser 
+                          ? "bg-yellow-500/10 border border-yellow-500/20 text-white rounded-tr-none" 
+                          : "bg-zinc-900 text-zinc-200 rounded-tl-none border border-white/5 font-korean"
+                      }`}>
+                        <p>{msg.text}</p>
+                      </div>
+                    </div>
+                  );
+                })}
+                {capstoneSending && (
+                  <div className="flex justify-start">
+                    <div className="bg-zinc-900 p-2.5 rounded-xl border border-white/5 flex gap-1.5 items-center">
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-yellow-500" />
+                      <span className="text-[10px] text-zinc-550">Tutor typing...</span>
+                    </div>
                   </div>
-                ))}
+                )}
               </div>
 
-              {/* Scaffolding Hints */}
-              <div className="p-3 bg-zinc-900 border border-white/5 rounded-xl flex justify-between items-center text-[10px]">
-                <div className="flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 bg-yellow-400 rounded-full animate-ping" />
-                  <span className="text-zinc-400">💡 Recommended B1 Connector hint: <strong>~(으)ㄹ까요</strong> / <strong>~기 때문에</strong></span>
-                </div>
+              {/* Connector Hint */}
+              <div className="p-3.5 bg-zinc-900 border border-white/5 rounded-xl flex items-center gap-2 text-[10px] text-zinc-400">
+                <span className="w-2 h-2 bg-yellow-400 rounded-full animate-ping shrink-0" />
+                <span>Recommended Connector hint: <strong>~(으)ㄹ까요</strong> (shall we/let's) / <strong>~기 때문에</strong> (because)</span>
               </div>
 
               {!capstoneFinished ? (
@@ -850,9 +983,9 @@ return (
                   <button
                     onClick={handleRecordCapstoneVoice}
                     disabled={recording || capstoneSending}
-                    className={`p-3 rounded-xl border ${
+                    className={`p-3.5 rounded-xl border transition cursor-pointer ${
                       recording ? "bg-red-500/20 border-red-500 text-white animate-pulse" : "bg-zinc-900 border-white/5 text-zinc-400 hover:text-white"
-                    } transition cursor-pointer`}
+                    }`}
                   >
                     <Mic className="w-4 h-4" />
                   </button>
@@ -863,141 +996,157 @@ return (
                     value={capstoneText}
                     onChange={(e) => setCapstoneText(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && handleSendCapstoneTurn()}
-                    className="flex-grow bg-zinc-900 border border-white/5 outline-none focus:border-yellow-500 p-2.5 rounded-xl text-xs text-white"
+                    className="flex-grow bg-zinc-900 border border-white/10 rounded-xl p-3.5 text-xs text-white focus:outline-none focus:border-yellow-500 font-korean"
                   />
                   <button
                     onClick={handleSendCapstoneTurn}
                     disabled={capstoneSending || !capstoneText.trim()}
-                    className="bg-yellow-500 hover:bg-yellow-400 text-zinc-950 px-4 rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer"
+                    className="bg-yellow-500 hover:bg-yellow-400 text-zinc-955 px-5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
                   >
-                    {capstoneSending && <Loader2 className="w-3 animate-spin" />}
+                    {capstoneSending && <Loader2 className="w-3.5 h-3.5 animate-spin text-zinc-955" />}
                     <span>Send</span>
                   </button>
                   <button
                     onClick={handleFinishCapstone}
                     disabled={finishingCapstone}
-                    className="bg-red-950/20 hover:bg-red-950/40 text-red-400 border border-red-500/10 px-3 rounded-xl text-xs font-bold cursor-pointer"
+                    className="bg-red-950/20 hover:bg-red-900 border border-red-500/20 px-4 rounded-xl text-xs font-bold text-red-400 cursor-pointer"
                   >
-                    {finishingCapstone && <Loader2 className="w-3 animate-spin" />}
+                    {finishingCapstone && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                     <span>Finish</span>
                   </button>
                 </div>
               ) : (
-                /* Radar scorecard evaluation report dashboard */
-                <div className="p-4 bg-zinc-950 rounded-2xl border border-white/5 space-y-4 animate-fade-in text-xs">
-                  <div className="text-emerald-400 font-bold flex items-center gap-1.5">
-                    <CheckCircle2 className="w-4.5 h-4.5" /> B1 Fluency Capstone Evaluated successfully
+                /* holistic score review */
+                <div className="p-5 bg-zinc-900 border border-yellow-500/20 rounded-2xl space-y-4 animate-fade-in">
+                  <div className="text-emerald-450 font-bold text-xs flex items-center gap-1.5">
+                    <CheckCircle2 className="w-4.5 h-4.5" /> B1 Fluency Capstone Completed Holistically
                   </div>
 
                   {capstoneEvaluation && (
-                    <div className="space-y-3">
-                      <div className="grid grid-cols-5 gap-2 text-center text-[9px] uppercase font-mono">
-                        <div className="bg-zinc-900 p-2 rounded border border-white/5">
-                          <span className="text-zinc-500 block mb-1">Task</span>
-                          <span className="text-white font-bold">{capstoneEvaluation.task_completion}%</span>
+                    <div className="space-y-3 text-xs">
+                      <div className="grid grid-cols-2 md:grid-cols-5 gap-2 text-center text-[9px] uppercase font-mono">
+                        <div className="bg-zinc-950 p-2.5 rounded border border-white/5">
+                          <span className="text-zinc-550 block mb-1">Task</span>
+                          <span className="text-white font-black">{capstoneEvaluation.task_completion}%</span>
                         </div>
-                        <div className="bg-zinc-900 p-2 rounded border border-white/5">
-                          <span className="text-zinc-500 block mb-1">Interact</span>
-                          <span className="text-white font-bold">{capstoneEvaluation.interaction_skills}%</span>
+                        <div className="bg-zinc-950 p-2.5 rounded border border-white/5">
+                          <span className="text-zinc-550 block mb-1">Interaction</span>
+                          <span className="text-white font-black">{capstoneEvaluation.interaction_skills}%</span>
                         </div>
-                        <div className="bg-zinc-900 p-2 rounded border border-white/5">
-                          <span className="text-zinc-500 block mb-1">Register</span>
-                          <span className="text-white font-bold">{capstoneEvaluation.politeness_register}%</span>
+                        <div className="bg-zinc-950 p-2.5 rounded border border-white/5">
+                          <span className="text-zinc-550 block mb-1">Politeness</span>
+                          <span className="text-white font-black">{capstoneEvaluation.politeness_register}%</span>
                         </div>
-                        <div className="bg-zinc-900 p-2 rounded border border-white/5">
-                          <span className="text-zinc-500 block mb-1">Fluency</span>
-                          <span className="text-white font-bold">{capstoneEvaluation.content_fluency}%</span>
+                        <div className="bg-zinc-950 p-2.5 rounded border border-white/5">
+                          <span className="text-zinc-550 block mb-1">Fluency</span>
+                          <span className="text-white font-black">{capstoneEvaluation.content_fluency}%</span>
                         </div>
-                        <div className="bg-zinc-900 p-2 rounded border border-white/5">
-                          <span className="text-zinc-500 block mb-1">Coherent</span>
-                          <span className="text-white font-bold">{capstoneEvaluation.coherence}%</span>
+                        <div className="bg-zinc-950 p-2.5 rounded border border-white/5 col-span-2 md:col-span-1">
+                          <span className="text-zinc-550 block mb-1">Coherence</span>
+                          <span className="text-white font-black">{capstoneEvaluation.coherence}%</span>
                         </div>
                       </div>
 
-                      <p className="text-zinc-300 leading-relaxed font-sans mt-1 p-3 bg-zinc-900 rounded-xl border border-white/5">{capstoneEvaluation.feedback}</p>
+                      <div className="bg-zinc-950 p-4 rounded-xl border border-white/5 space-y-2">
+                        <p className="text-zinc-400 block font-mono font-bold uppercase tracking-wider text-[9px]">Holistic Evaluation:</p>
+                        <p className="text-zinc-300 leading-relaxed italic">{capstoneEvaluation.feedback}</p>
+                      </div>
                       
                       <button 
                         onClick={() => setCapstoneSessionId(null)}
-                        className="text-[10px] text-yellow-400 hover:underline block mt-1 cursor-pointer"
+                        className="text-[10px] text-yellow-400 hover:underline block mt-1 cursor-pointer font-bold uppercase tracking-wider"
                       >
-                        Try another capstone route
+                        Try another Scenario Route
                       </button>
                     </div>
                   )}
                 </div>
               )}
+
             </div>
           )}
+
+          <div className="flex justify-between items-center pt-4 border-t border-white/5 font-sans">
+            <button onClick={() => setStep(3)} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-sm font-bold transition flex items-center gap-2 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
+            <button onClick={() => setStep(5)} className="bg-yellow-500 hover:bg-yellow-400 text-zinc-955 px-8 py-3 rounded-xl text-sm font-bold transition flex items-center gap-2 cursor-pointer font-bold">Move to Quiz <ChevronRight className="w-4 h-4 text-zinc-955" /></button>
+          </div>
         </div>
       )}
 
-      {/* Screen 5: Mini-Quiz */}
+      {/* Step 5: Activity 3: Strategy Quiz */}
       {step === 5 && (
-        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in">
+        <div className="glass-panel p-10 rounded-[2.5rem] bg-zinc-900/40 border border-white/10 shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in font-sans">
           <div className="flex justify-between items-center border-b border-white/5 pb-4">
             <h2 className="text-2xl font-black text-white flex items-center gap-2">
-              <Trophy className="w-5 h-5 text-yellow-400" />
-              <span>Mini‑Quiz: Strategy & Fluency Check</span>
+              <Trophy className="w-6 h-6 text-yellow-400" />
+              <span>Mini‑Quiz: Strategy &amp; Fluency Check</span>
             </h2>
-            <div className="flex items-center gap-2">
-              <div className="w-16 h-2 bg-zinc-800 rounded-full overflow-hidden">
-                <div 
-                  className="h-full bg-yellow-500 rounded-full transition-all duration-300"
-                  style={{ width: `${((quizIdx + 1) / quizBlueprint.length) * 100}%` }}
-                />
-              </div>
-              <span className="text-[10px] text-zinc-500 font-bold">Q {quizIdx + 1}/{quizBlueprint.length}</span>
-            </div>
+            <span className="text-xs text-zinc-400 font-mono">Step 5 of {totalSteps}</span>
           </div>
 
-          {quizBlueprint[quizIdx] && (
-            <div className="space-y-4 text-left">
-              <span className="text-[9px] text-zinc-500 uppercase font-mono block">Question category: {quizBlueprint[quizIdx].type}</span>
-              <h3 className="text-sm font-bold text-white leading-relaxed">{quizBlueprint[quizIdx].question}</h3>
+          {quizBlueprint.length > 0 && quizBlueprint[quizIdx] && (
+            <div className="space-y-6 max-w-xl mx-auto w-full text-left animate-fade-in">
+              <div className="flex justify-between text-[10px] text-zinc-500 font-mono">
+                <span>Quiz Question {quizIdx + 1} of {quizBlueprint.length}</span>
+                <span>Type: {quizBlueprint[quizIdx].type}</span>
+              </div>
 
-              <div className="space-y-2">
-                {quizBlueprint[quizIdx].options.map((opt: string) => (
-                  <button
-                    key={opt}
-                    onClick={() => !quizChecked && setQuizSelectedOpt(opt)}
-                    disabled={quizChecked}
-                    className={`w-full text-left p-3.5 rounded-xl border text-xs font-medium transition ${
-                      quizSelectedOpt === opt
-                        ? "border-yellow-500 bg-yellow-500/10 text-white"
-                        : "border-white/5 bg-zinc-950 text-zinc-300 hover:border-white/10"
-                    } ${quizChecked && quizBlueprint[quizIdx].correct_answer === opt ? "border-accent-teal bg-accent-teal/15 text-white" : ""}`}
-                  >
-                    {opt}
-                  </button>
-                ))}
+              <h3 className="text-sm md:text-base font-bold text-white text-center leading-relaxed whitespace-pre-line bg-zinc-950 p-5 rounded-2xl border border-white/5">
+                {quizBlueprint[quizIdx].question}
+              </h3>
+
+              <div className="grid grid-cols-1 gap-2.5 max-w-md mx-auto w-full font-sans">
+                {quizBlueprint[quizIdx].options?.map((opt: string) => {
+                  let borderStyle = "border-white/5 bg-zinc-900 text-zinc-300 hover:bg-zinc-800";
+                  if (quizSelectedOpt === opt) {
+                    borderStyle = "border-yellow-500 bg-yellow-500/10 text-white";
+                  }
+                  if (quizChecked) {
+                    if (opt === quizBlueprint[quizIdx].correct_answer) {
+                      borderStyle = "border-green-500 bg-green-500/10 text-green-300 font-extrabold";
+                    } else if (quizSelectedOpt === opt) {
+                      borderStyle = "border-red-500 bg-red-500/10 text-red-300 font-extrabold";
+                    }
+                  }
+                  return (
+                    <button
+                      key={opt}
+                      onClick={() => !quizChecked && setQuizSelectedOpt(opt)}
+                      disabled={quizChecked}
+                      className={`p-3.5 rounded-xl border text-left text-xs font-bold transition cursor-pointer ${borderStyle}`}
+                    >
+                      {opt}
+                    </button>
+                  );
+                })}
               </div>
 
               {quizChecked && (
-                <div className={`p-4 rounded-xl border text-xs space-y-1 ${
-                  quizCorrect ? "border-accent-teal/20 bg-accent-teal/5 text-accent-teal" : "border-red-500/20 bg-red-500/5 text-red-400"
+                <div className={`p-4 rounded-xl border text-xs text-left space-y-1.5 animate-fade-in ${
+                  quizCorrect ? "bg-green-500/5 border-green-500/20 text-green-300" : "bg-red-500/5 border-red-500/20 text-red-400"
                 }`}>
-                  <p className="font-bold">{quizCorrect ? "✓ Correct!" : "✗ Incorrect."}</p>
-                  <p className="text-zinc-400 font-sans mt-0.5">{quizBlueprint[quizIdx].explanation}</p>
+                  <p className="font-extrabold text-sm">{quizCorrect ? "✓ Correct!" : "✗ Incorrect."}</p>
+                  <p className="text-zinc-300">{quizBlueprint[quizIdx].explanation}</p>
                 </div>
               )}
 
-              <div className="flex justify-end pt-1">
+              <div className="flex justify-between items-center pt-4 border-t border-white/5 font-sans">
+                <button onClick={() => setStep(4)} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-sm font-bold transition flex items-center gap-2 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
                 {!quizChecked ? (
                   <button
                     onClick={handleCheckQuiz}
                     disabled={!quizSelectedOpt}
-                    className="bg-yellow-500 hover:bg-yellow-400 text-zinc-950 px-5 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer"
+                    className="bg-yellow-500 hover:bg-yellow-400 text-zinc-955 px-5 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer"
                   >
-                    Submit Answer
+                    Check Answer
                   </button>
                 ) : (
                   <button
                     onClick={handleNextQuizOrComplete}
                     disabled={finishingQuiz}
-                    className="bg-accent-teal text-zinc-950 hover:bg-accent-teal/90 px-5 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
+                    className="bg-indigo-650 text-white hover:bg-indigo-600 px-5 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer"
                   >
-                    {finishingQuiz && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                    <span>{quizIdx < quizBlueprint.length - 1 ? "Next Question" : "Finish Quiz"}</span>
+                    {finishingQuiz ? <Loader2 className="w-4 h-4 animate-spin text-white" /> : (quizIdx < quizBlueprint.length - 1 ? "Next Question" : "See Capstone Results")}
                   </button>
                 )}
               </div>
@@ -1006,127 +1155,160 @@ return (
         </div>
       )}
 
-      {/* Screen 6: Homework & Completion */}
+      {/* Step 6: Activity 4: Exit Interview */}
       {step === 6 && (
-        <div className="glass-panel neon-border p-12 rounded-[2.5rem] shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center text-center animate-fade-in">
-          <div className="p-3 bg-yellow-500/10 rounded-full border border-yellow-500/25 w-fit mx-auto text-yellow-400 shrink-0 animate-bounce">
-            <Trophy className="w-10 h-10 animate-bounce" />
+        <div className="glass-panel p-10 rounded-[2.5rem] bg-zinc-900/40 border border-white/10 shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center animate-fade-in font-sans">
+          <div className="flex justify-between items-center border-b border-white/5 pb-4">
+            <h2 className="text-2xl font-black text-white flex items-center gap-2">
+              <MessageCircle className="w-6 h-6 text-yellow-400" />
+              <span>Activity 4 – Exit Interview with AI Tutor</span>
+            </h2>
+            <span className="text-xs text-zinc-400 font-mono">Step 6 of {totalSteps}</span>
           </div>
 
-          <div>
-            <h2 className="text-2xl font-black text-white">Course 4 Complete!</h2>
-            <p className="text-xs text-zinc-400 mt-1">You are now an Independent B1 User of Korean.</p>
-          </div>
-
-          <div className="bg-zinc-900/60 p-4 rounded-2xl border border-white/5 max-w-sm mx-auto w-full flex items-center justify-between text-left">
-            <div>
-              <span className="text-[9px] text-zinc-500 uppercase font-mono block">Accuracy Metrics:</span>
-              <span className="text-lg font-black text-white">{quizScore !== null ? `${quizScore}% Quiz Score` : "Completed"}</span>
+          <div className="bg-zinc-950 p-6 rounded-2xl border border-white/10 space-y-4 text-left max-w-2xl mx-auto w-full font-sans">
+            <div className="space-y-1">
+              <span className="text-[9px] text-yellow-400 font-mono uppercase tracking-widest block font-bold">Course Exit Reflection Room:</span>
+              <p className="text-xs text-zinc-400 leading-normal">
+                Reflect on your B1 intermediate communicative level. Gwan-Sik will interview you about your strengths and next objectives.
+              </p>
             </div>
-            <div className="px-3 py-1 bg-yellow-500/10 border border-yellow-500/25 rounded-lg text-yellow-400 text-xs font-bold">
-              🏆 {quizBadge || "B1 Communicator"} Badge Earned!
-            </div>
-          </div>
 
-          {/* Homework checklist */}
-          <div className="bg-zinc-950 p-4 rounded-2xl border border-white/5 text-left text-xs space-y-3 max-w-md mx-auto w-full">
-            <span className="text-[9px] text-zinc-500 uppercase tracking-widest font-black block">📝 Practical Homework Tasks:</span>
-            <div className="space-y-2">
-              {homeworkItems.map((hw: any) => (
-                <div 
-                  key={hw.id}
-                  onClick={() => handleToggleHomework(hw.id, completedHomework[hw.id] || false)}
-                  className="flex items-start gap-2.5 p-2 bg-zinc-900/40 rounded-lg border border-white/[0.04] cursor-pointer hover:bg-zinc-900 transition"
-                >
-                  <input
-                    type="checkbox"
-                    checked={completedHomework[hw.id] || false}
-                    readOnly
-                    className="mt-0.5 pointer-events-none"
-                  />
-                  <span className={`text-[11px] leading-relaxed ${completedHomework[hw.id] ? "text-zinc-500 line-through" : "text-zinc-300"}`}>{hw.text}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* AI exit interview */}
-          <div className="bg-zinc-950 p-4.5 rounded-2xl border border-white/5 text-left space-y-3 max-w-md mx-auto w-full">
-            <span className="text-[9px] text-zinc-500 uppercase tracking-widest font-black block">🤖 Course exit interview with AI Tutor:</span>
-            
             {!exitSessionId ? (
               <button
                 onClick={handleStartExitInterview}
-                className="w-full bg-yellow-500 hover:bg-yellow-400 text-zinc-950 font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-1.5 transition cursor-pointer shadow-lg shadow-yellow-500/20"
+                className="w-full bg-yellow-500 hover:bg-yellow-400 text-zinc-955 font-bold py-3 px-4 rounded-xl transition text-xs cursor-pointer text-center flex items-center justify-center gap-2"
               >
-                <MessageCircle className="w-4 h-4 text-zinc-950" />
-                <span>Start Exit Interview</span>
+                <MessageCircle className="w-4 h-4 text-zinc-955" />
+                <span>Begin Exit Interview Session</span>
               </button>
             ) : (
-              <div className="space-y-3">
-                <div className="max-h-[150px] overflow-y-auto space-y-2 p-2 bg-zinc-900 rounded-lg border border-white/5">
-                  {exitMessages.map((msg, idx) => (
-                    <div key={idx} className={`p-2 rounded-lg text-xs leading-relaxed max-w-[85%] ${
-                      msg.sender === "user" 
-                        ? "bg-yellow-500/10 border border-yellow-500/20 text-white ml-auto" 
-                        : "bg-zinc-950 border border-white/5 text-zinc-300 mr-auto"
-                    }`}>
-                      {msg.text}
+              <div className="space-y-3 w-full animate-fade-in">
+                <div className="bg-zinc-900 rounded-xl p-4 border border-white/5 h-44 overflow-y-auto space-y-2.5 custom-scrollbar">
+                  {exitMessages.map((msg, idx) => {
+                    const isUser = msg.sender === "user";
+                    return (
+                      <div key={idx} className={`flex ${isUser ? "justify-end" : "justify-start"} animate-fade-in`}>
+                        <div className={`max-w-[80%] rounded-xl p-2.5 text-xs leading-relaxed ${
+                          isUser ? "bg-yellow-500/10 border border-yellow-500/20 text-white" : "bg-zinc-950 text-zinc-300 border border-white/5"
+                        }`}>
+                          <p>{msg.text}</p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {exitSending && (
+                    <div className="flex items-center gap-1 text-[10px] text-zinc-500 italic">
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-yellow-500" />
+                      <span>Gwan-Sik is typing...</span>
                     </div>
-                  ))}
+                  )}
                 </div>
 
                 {!exitFinished ? (
                   <div className="flex gap-2">
                     <input
                       type="text"
-                      placeholder="Write your response in Korean/English..."
                       value={exitText}
                       onChange={(e) => setExitText(e.target.value)}
+                      placeholder="Discuss experience in Korean/English..."
                       onKeyDown={(e) => e.key === "Enter" && handleSendExitTurn()}
-                      className="flex-grow bg-zinc-900 border border-white/5 focus:border-yellow-500 outline-none p-2 rounded-xl text-xs text-white"
+                      className="flex-grow bg-zinc-900 border border-white/10 rounded-lg p-2.5 text-xs text-white focus:outline-none focus:border-yellow-500 font-korean"
                     />
                     <button
                       onClick={handleSendExitTurn}
                       disabled={exitSending || !exitText.trim()}
-                      className="bg-yellow-500 hover:bg-yellow-400 text-zinc-950 px-4 rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer"
+                      className="bg-yellow-500 hover:bg-yellow-400 text-zinc-955 px-4 rounded-lg text-xs font-bold transition cursor-pointer"
                     >
-                      {exitSending && <Loader2 className="w-3 animate-spin" />}
-                      <span>Send</span>
+                      Send
                     </button>
                     <button
                       onClick={handleFinishExit}
-                      className="bg-zinc-900 hover:bg-zinc-800 border border-white/5 px-3 rounded-xl text-xs font-bold text-red-400 cursor-pointer"
+                      className="bg-red-950/20 border border-red-500/20 text-red-400 hover:text-red-300 px-4 rounded-lg text-xs font-bold transition cursor-pointer"
                     >
-                      End
+                      Finish
                     </button>
                   </div>
                 ) : (
-                  <div className="p-3 bg-zinc-900 rounded-xl border border-white/5 text-[11px] text-zinc-400 space-y-1.5 animate-fade-in">
-                    <p className="font-bold text-white">Exit Interview Feedback:</p>
-                    <p>{exitFeedback}</p>
-                    <button 
-                      onClick={() => setExitSessionId(null)}
-                      className="text-[10px] text-yellow-400 hover:underline block mt-1 cursor-pointer"
-                    >
-                      Start exit reflection again
-                    </button>
+                  <div className="p-4 bg-zinc-900 rounded-xl border border-yellow-500/20 text-xs text-zinc-400 animate-fade-in space-y-2">
+                    <p className="font-bold text-white">Exit Interview Feedback Report:</p>
+                    <p className="leading-relaxed italic">{exitFeedback}</p>
                   </div>
                 )}
               </div>
             )}
           </div>
 
-          <div className="flex flex-col gap-2 max-w-xs mx-auto pt-2">
-            <button 
-              onClick={onComplete}
-              className="bg-gradient-to-r from-yellow-500 via-orange-500 to-indigo-500 hover:from-yellow-600 text-zinc-950 font-black py-4 px-8 rounded-2xl transition text-sm flex items-center justify-center gap-2 mx-auto shadow-lg shadow-yellow-500/20 cursor-pointer w-full max-w-xs animate-pulse"
-            >
-              <span>Graduate Course 4</span>
-              <ChevronRight className="w-4 h-4 text-zinc-950" />
-            </button>
-            <p className="text-[10px] text-zinc-500">Congratulations! Move next to Korean 5 (B1→B2) or review Course 4.</p>
+          <div className="flex justify-between items-center pt-4 border-t border-white/5 font-sans">
+            <button onClick={() => setStep(5)} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-sm font-bold transition flex items-center gap-2 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
+            <button onClick={() => setStep(7)} className="bg-yellow-500 hover:bg-yellow-400 text-zinc-955 px-8 py-3 rounded-xl text-sm font-bold transition flex items-center gap-2 cursor-pointer font-bold">Proceed to Graduation <ChevronRight className="w-4 h-4 text-zinc-955" /></button>
           </div>
+        </div>
+      )}
+
+      {/* Step 7: Graduation / Completion */}
+      {step === 7 && (
+        <div className="glass-panel p-10 rounded-[2.5rem] bg-zinc-900/40 border border-white/10 shadow-2xl w-full space-y-8 flex-grow flex flex-col justify-center text-center animate-fade-in max-w-3xl mx-auto">
+          <div className="p-4 bg-yellow-500/10 rounded-full border border-yellow-500/25 w-fit mx-auto text-yellow-400">
+            <Award className="w-10 h-10 animate-bounce" />
+          </div>
+          
+          <div>
+            <h2 className="text-3xl font-black text-white font-sans">You are now an Independent B1 User of Korean! 🎓🏆</h2>
+            <p className="text-zinc-400 text-sm mt-1.5 font-sans">Congratulations! Move next to Korean 5 (B1&rarr;B2) or review Course 4.</p>
+          </div>
+
+          {/* Homework checklist */}
+          <div className="bg-zinc-950 p-6 rounded-2xl border border-white/5 text-left text-xs space-y-3 font-sans leading-relaxed">
+            <span className="text-[10px] font-black uppercase tracking-widest text-yellow-400 block font-sans">Interactive Homework List:</span>
+            <div className="space-y-2">
+              {homeworkItems.map((item: any) => {
+                const isChecked = !!completedHomework[item.id];
+                return (
+                  <label key={item.id} className="flex items-start gap-3 p-3 bg-zinc-900/45 rounded-lg border border-white/[0.03] cursor-pointer hover:bg-zinc-900 transition">
+                    <input
+                      type="checkbox"
+                      checked={isChecked}
+                      onChange={() => handleToggleHomework(item.id, isChecked)}
+                      className="mt-0.5 rounded border-white/10 text-yellow-500 focus:ring-0 focus:ring-offset-0 bg-zinc-950"
+                    />
+                    <div className="text-zinc-300">
+                      <span className="font-bold text-white block mb-0.5 font-sans">
+                        {item.id === "hw_b1_cap_1" ? "Task 1: Scenario Writing" : item.id === "hw_b1_cap_2" ? "Task 2: Speech Recording" : "Task 3: Exit Essay"}
+                      </span>
+                      <span className={isChecked ? "line-through text-zinc-550" : ""}>{item.text}</span>
+                    </div>
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Badge */}
+          <div className="p-5 bg-gradient-to-r from-yellow-500/10 to-amber-500/10 rounded-2xl border border-yellow-500/20 text-center space-y-1">
+            <div className="flex justify-center items-center gap-1 text-yellow-450 font-extrabold text-sm uppercase">
+              <Award className="w-5 h-5" />
+              <span>Badge Earned: {quizBadge || "B1 Communicator"}</span>
+            </div>
+            <div className="flex justify-center gap-4 text-xs font-bold pt-1">
+              <span className="text-yellow-450 font-sans">XP +150 Completion Bonus</span>
+              <span className="text-zinc-700">|</span>
+              <span className="text-amber-400 font-sans">Course 4 Graduate</span>
+            </div>
+          </div>
+
+          <button
+            onClick={() => {
+              if (typeof window !== "undefined") {
+                window.dispatchEvent(new CustomEvent("hangeulai-xp", { detail: { amount: 150, type: "correct" } }));
+              }
+              onComplete();
+            }}
+            className="bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-600 text-zinc-955 font-black py-4 px-10 rounded-2xl transition text-sm flex items-center justify-center gap-2 mx-auto shadow-lg shadow-yellow-500/20 cursor-pointer"
+          >
+            <span>Complete Capstone &amp; Graduate Course</span>
+            <ChevronRight className="w-4 h-4 text-zinc-955" />
+          </button>
         </div>
       )}
     </div>
