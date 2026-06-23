@@ -55,6 +55,18 @@ export default function Course8Phase1PronunciationWizard({
   onComplete,
   courseXP
 }: Course8Phase1PronunciationWizardProps) {
+  const getStepMaxXP = (sNum: number) => {
+    if (sNum === 1) return 0;
+    if (sNum === 12) return 200;
+    const sObj = outlineSteps.find(os => os.num === sNum);
+    const label = sObj ? sObj.label.toLowerCase() : "";
+    if (label.includes("activity") || label.includes("game") || label.includes("drill") || label.includes("practice")) return 60;
+    return 35;
+  };
+  const getStepXP = (sNum: number) => {
+    return (sNum < step || sNum <= maxStep) ? getStepMaxXP(sNum) : 0;
+  };
+
   const [step, setStep] = useState(1);
   const [maxStep, setMaxStep] = useState(1);
   useEffect(() => {
@@ -524,37 +536,82 @@ return (
           </button>
         </div>
       </header>
-      {showOutline && (
-        <div className="mb-6 p-5 bg-zinc-955/80 rounded-3xl border border-white/5 shadow-2xl animate-in fade-in slide-in-from-top-4 duration-300 relative z-30">
-          <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest block mb-3 font-mono">Curriculum Syllabus Map</span>
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
-            {outlineSteps.map(s => {
-              const isCurrent = step === s.num;
-              const isCompleted = s.num < step || s.num <= maxStep;
-              return (
-                <button
-                  key={s.num}
-                  disabled={!isCompleted && !isCurrent}
-                  onClick={() => {
-                    setStep(s.num);
-                    setShowOutline(false);
-                  }}
-                  className={`p-2.5 rounded-xl border text-left transition ${
-                    isCurrent
-                      ? "border-brand-500 bg-brand-500/10 text-white"
-                      : isCompleted
-                      ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400 hover:border-emerald-500/50"
-                      : "border-red-500/20 bg-red-950/20 text-red-400/40 cursor-not-allowed opacity-50"
-                  }`}
-                >
-                  <div className="text-[9px] font-black font-mono text-zinc-500">STEP {s.num}</div>
-                  <div className="text-xs font-bold truncate">{s.label}</div>
-                </button>
-              );
-            })}
+      {showOutline && (() => {
+        const phaseEarnedXP = outlineSteps.reduce((acc, s) => acc + getStepXP(s.num), 0);
+        const phaseMaxXP = outlineSteps.reduce((acc, s) => acc + getStepMaxXP(s.num), 0);
+        return (
+          <div className="mb-6 p-5 bg-zinc-955/80 rounded-3xl border border-white/5 shadow-2xl animate-in fade-in slide-in-from-top-4 duration-300 relative z-30">
+            <div className="flex justify-between items-center mb-3">
+              <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest block mb-3 font-mono">Curriculum Syllabus Map</span>
+              <span className="text-[10px] font-black text-zinc-400 bg-zinc-900 border border-white/10 px-2 py-0.5 rounded">Required: 180 XP</span>
+            </div>
+            
+            {/* Phase Level Progress Bar */}
+            <div className="mb-4 p-3 bg-zinc-900/60 rounded-2xl border border-white/5 space-y-2">
+              <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-wider text-zinc-400">
+                <span>Phase XP Progress</span>
+                <span className="text-brand-400">{phaseEarnedXP} / {phaseMaxXP} XP</span>
+              </div>
+              <div className="w-full h-2 bg-zinc-950 rounded-full overflow-hidden border border-white/5">
+                <div 
+                  className="h-full bg-gradient-to-r from-brand-500 to-indigo-500 rounded-full transition-all duration-300"
+                  style={{ width: `${(phaseEarnedXP / (phaseMaxXP || 1)) * 100}%` }}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
+              {outlineSteps.map(s => {
+                const isCurrent = step === s.num;
+                const isCompleted = s.num < step || s.num <= maxStep;
+                return (
+                  <button
+                    key={s.num}
+                    disabled={!isCompleted && !isCurrent}
+                    onClick={() => {
+                      if (courseXP < 0) {
+                        window.dispatchEvent(new CustomEvent("hangeulai-warning", {
+                          detail: { message: "To start Phase 1, you need at least 0 XP in this course. You currently have " + courseXP + " XP." }
+                        }));
+                        return;
+                      }
+                      setStep(s.num);
+                      setShowOutline(false);
+                    }}
+                    className={`p-2.5 rounded-xl border text-left transition flex flex-col justify-between h-20 ${
+                      isCurrent
+                        ? "border-brand-500 bg-brand-500/10 text-white"
+                        : isCompleted
+                        ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400 hover:border-emerald-500/50"
+                        : "border-red-500/20 bg-red-950/20 text-red-400/40 cursor-not-allowed opacity-50"
+                    }`}
+                  >
+                    <div>
+                      <div className="text-[9px] font-black font-mono text-zinc-500">STEP {s.num}</div>
+                      <div className="text-[11px] font-bold truncate w-full">{s.label}</div>
+                    </div>
+                    {/* Step level mini progress / XP potential */}
+                    <div className="w-full mt-1">
+                      <div className="flex justify-between text-[7px] font-black text-zinc-500">
+                        <span>Potential</span>
+                        <span className={isCompleted ? "text-emerald-400 font-bold" : "text-zinc-500"}>
+                          {getStepXP(s.num)}/{getStepMaxXP(s.num)} XP
+                        </span>
+                      </div>
+                      <div className="w-full h-1 bg-zinc-950 rounded-full overflow-hidden mt-0.5">
+                        <div 
+                          className={`h-full rounded-full ${isCompleted ? "bg-emerald-400" : "bg-zinc-800"}`}
+                          style={{ width: isCompleted ? "100%" : "0%" }}
+                        />
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Outline panel */}
       
@@ -603,7 +660,7 @@ return (
             <button 
               onClick={() => {
     if (courseXP < 0) {
-      alert("To start Phase 1, you need at least 0 XP in this course. You currently have " + courseXP + " XP. Please complete earlier steps/phases to earn more XP!");
+      window.dispatchEvent(new CustomEvent("hangeulai-warning", { detail: { message: String("To start Phase 1, you need at least 0 XP in this course. You currently have " + courseXP + " XP. Please complete earlier steps/phases to earn more XP!") } }));
       return;
     }
     setStep(2);
@@ -940,7 +997,7 @@ return (
             <button 
               onClick={() => {
     if (courseXP < 0) {
-      alert("To start Phase 1, you need at least 0 XP in this course. You currently have " + courseXP + " XP. Please complete earlier steps/phases to earn more XP!");
+      window.dispatchEvent(new CustomEvent("hangeulai-warning", { detail: { message: String("To start Phase 1, you need at least 0 XP in this course. You currently have " + courseXP + " XP. Please complete earlier steps/phases to earn more XP!") } }));
       return;
     }
     setStep(2);
@@ -1441,6 +1498,7 @@ return (
         </div>
       )}
     
+  
   {/* Re-Answer panel for mistakes */}
   {step === outlineSteps.length && (  quizMistakes.length > 0) && (
     <div className="bg-zinc-900/60 p-6 rounded-2xl border border-red-500/20 text-left space-y-4 max-w-4xl mx-auto w-full mt-6 relative z-10">
@@ -1458,7 +1516,18 @@ return (
               onClick={() => {
                 const targetQStep = outlineSteps.length - 1;
                 setStep(targetQStep);
+                
+                // Find matching blueprint question index
+                const bpIdx = (quizBlueprint || []).findIndex((q: any) => q.correct_answer === m || q.question === m || q.correctId === m);
+                if (bpIdx !== -1) {
+                  if (typeof setQuizIdx === "function") setQuizIdx(bpIdx);
                 if (typeof setQuizChecked === "function") setQuizChecked(false);
+                if (typeof setQuizCorrect === "function") setQuizCorrect(null);
+                if (typeof setQuizScore === "function") setQuizScore(null);
+                if (typeof setQuizSelected === "function") setQuizSelected(null);
+                }
+
+                // Remove from mistakes list
                 if (typeof setQuizMistakes === "function") setQuizMistakes((prev: any) => prev.filter((item: any) => item !== m));
               }}
               className="bg-brand-500/10 hover:bg-brand-500/20 text-brand-400 border border-brand-500/20 px-3 py-1.5 rounded-lg text-xs font-bold transition shrink-0 cursor-pointer"

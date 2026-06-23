@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Sparkles, BookOpen, MessageSquare, Headphones, Award, Home, User, LogOut, Library, Globe, Gamepad2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { apiRequest } from "../lib/api";
 
 import FloatingKeyboard from "./FloatingKeyboard";
@@ -12,9 +12,116 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
   const pathname = usePathname();
   const [xp, setXp] = useState(0);
   const [streak, setStreak] = useState(0);
-
-
   const [isCollapsed, setIsCollapsed] = useState(true);
+
+  // Universal Diary & Warning States
+  const [notes, setNotes] = useState<any[]>([]);
+  const [notesOpen, setNotesOpen] = useState(false);
+  const [newNoteText, setNewNoteText] = useState("");
+  const [savingNote, setSavingNote] = useState(false);
+  const [generatingAiNote, setGeneratingAiNote] = useState(false);
+  const [warningPopup, setWarningPopup] = useState<{ show: boolean; message: string } | null>(null);
+
+  const getActiveLocation = () => {
+    if (typeof window === "undefined") return { courseId: 1, phaseNum: 1, step: 1 };
+    const courseId = parseInt(localStorage.getItem("hangeulai_active_course_id") || "1", 10);
+    const phaseNum = parseInt(localStorage.getItem("hangeulai_active_phase_num") || "1", 10);
+    const stepKey = courseId === 1 
+      ? `hangeulai_phase${phaseNum}_step` 
+      : `hangeulai_c${courseId}p${phaseNum}_step`;
+    const step = parseInt(localStorage.getItem(stepKey) || "1", 10);
+    return { courseId, phaseNum, step };
+  };
+
+  const loadNotes = async () => {
+    try {
+      const data = await apiRequest("/notes");
+      setNotes(data || []);
+    } catch (err) {
+      console.error("Failed to load notes:", err);
+    }
+  };
+
+  const playWarningSound = () => {
+    try {
+      const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const osc1 = audioCtx.createOscillator();
+      const osc2 = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+      
+      osc1.type = "sawtooth";
+      osc1.frequency.setValueAtTime(120, audioCtx.currentTime);
+      osc1.frequency.exponentialRampToValueAtTime(80, audioCtx.currentTime + 0.3);
+      
+      osc2.type = "square";
+      osc2.frequency.setValueAtTime(123, audioCtx.currentTime);
+      osc2.frequency.exponentialRampToValueAtTime(83, audioCtx.currentTime + 0.3);
+      
+      gainNode.gain.setValueAtTime(0.15, audioCtx.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+      
+      osc1.connect(gainNode);
+      osc2.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+      
+      osc1.start();
+      osc2.start();
+      osc1.stop(audioCtx.currentTime + 0.3);
+      osc2.stop(audioCtx.currentTime + 0.3);
+    } catch (e) {
+      console.warn("AudioContext warning sound failed", e);
+    }
+  };
+
+  const navigateToLocation = async (courseId: number, phaseNum: number, step: number) => {
+    if (pathname === "/lessons") {
+      window.dispatchEvent(new CustomEvent("hangeulai-teleport", {
+        detail: { courseId, phaseNum, step }
+      }));
+      setNotesOpen(false);
+    } else {
+      localStorage.setItem("hangeulai_teleport_pending", JSON.stringify({ courseId, phaseNum, step }));
+      window.location.href = "/lessons";
+    }
+  };
+
+  const handleSaveManualNote = async () => {
+    if (!newNoteText.trim() || savingNote) return;
+    setSavingNote(true);
+    try {
+      const { courseId, phaseNum, step } = getActiveLocation();
+
+      const res = await apiRequest("/notes", {
+        method: "POST",
+        body: JSON.stringify({
+          course_id: courseId,
+          phase_num: phaseNum,
+          step: step,
+          content: newNoteText.trim(),
+          is_ai: false
+        })
+      });
+      setNotes(prev => [res, ...prev]);
+      setNewNoteText("");
+    } catch (err) {
+      console.error("Failed to save note:", err);
+    } finally {
+      setSavingNote(false);
+    }
+  };
+
+  const handleDeleteNote = async (noteId: string) => {
+    try {
+      await apiRequest(`/notes/${noteId}`, { method: "DELETE" });
+      setNotes(prev => prev.filter(n => n.id !== noteId));
+    } catch (err) {
+      console.error("Failed to delete note:", err);
+    }
+  };
+
+  useEffect(() => {
+    loadNotes();
+  }, []);
 
   useEffect(() => {
     async function loadMetrics() {
@@ -35,11 +142,54 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
       loadMetrics();
     };
 
+    const handleAddNoteEvent = async (e: Event) => {
+      const customEvent = e as CustomEvent;
+      const { question, selected_answer, correct_answer, is_correct, explanation } = customEvent.detail || {};
+      if (!question) return;
+
+      setGeneratingAiNote(true);
+      try {
+        const { courseId, phaseNum, step } = getActiveLocation();
+
+        const res = await apiRequest("/notes/generate-ai-summary", {
+          method: "POST",
+          body: JSON.stringify({
+            course_id: courseId,
+            phase_num: phaseNum,
+            step: step,
+            question,
+            selected_answer: selected_answer || "None",
+            correct_answer: correct_answer || "None",
+            is_correct,
+            explanation: explanation || ""
+          })
+        });
+        setNotes(prev => [res, ...prev]);
+        setWarningPopup({ show: true, message: "✨ Note generated and saved to your Diary successfully!" });
+      } catch (err) {
+        console.error("Failed to generate AI note summary:", err);
+      } finally {
+        setGeneratingAiNote(false);
+      }
+    };
+
+    const handleWarning = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      if (customEvent.detail && customEvent.detail.message) {
+        setWarningPopup({ show: true, message: customEvent.detail.message });
+        playWarningSound();
+      }
+    };
+
     window.addEventListener("hangeulai-xp" as any, handleXpEvent);
+    window.addEventListener("hangeulai-add-note", handleAddNoteEvent);
+    window.addEventListener("hangeulai-warning" as any, handleWarning);
     loadMetrics();
 
     return () => {
       window.removeEventListener("hangeulai-xp" as any, handleXpEvent);
+      window.removeEventListener("hangeulai-add-note", handleAddNoteEvent);
+      window.removeEventListener("hangeulai-warning" as any, handleWarning);
     };
   }, [pathname]);
 
@@ -192,6 +342,181 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
         <main className="flex-grow p-6">
           {children}
           <FloatingKeyboard />
+          
+          {/* Universal Floating Warning Modal */}
+          {warningPopup?.show && (
+            <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/60 backdrop-blur-md p-4 animate-fade-in">
+              <div className="w-full max-w-sm bg-zinc-950/90 border border-white/10 rounded-3xl p-6 text-center space-y-4 shadow-2xl relative backdrop-blur-xl animate-slide-in">
+                <div className="w-12 h-12 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto text-red-500">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-6 h-6 animate-bounce">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                  </svg>
+                </div>
+                <h3 className="text-md font-black uppercase tracking-wider text-red-400">Alert Notification</h3>
+                <p className="text-xs text-zinc-300 leading-relaxed font-semibold">
+                  {warningPopup.message}
+                </p>
+                <button
+                  onClick={() => setWarningPopup(null)}
+                  className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 rounded-2xl text-xs transition cursor-pointer shadow-lg shadow-red-500/15 border border-white/10"
+                >
+                  Acknowledge
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Floating Diary Button */}
+          <button 
+            onClick={() => setNotesOpen(!notesOpen)}
+            className="fixed bottom-6 right-6 z-[9999] p-4 bg-gradient-to-r from-brand-500 to-indigo-600 hover:from-brand-600 hover:to-indigo-700 text-white rounded-full shadow-2xl shadow-brand-500/25 border border-white/10 hover:scale-110 active:scale-95 transition-all duration-200 cursor-pointer"
+            title="Open Course Diary"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6 animate-pulse">
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+            </svg>
+          </button>
+
+          {/* Floating Diary Drawer */}
+          {notesOpen && (
+            <div className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-sm flex justify-end animate-fade-in">
+              <div className="w-full max-w-md bg-zinc-950/95 border-l border-white/10 h-full p-6 flex flex-col justify-between shadow-2xl backdrop-blur-xl animate-slide-in">
+                <div className="space-y-6 flex-grow overflow-y-auto pr-1">
+                  {/* Header */}
+                  <div className="flex items-center justify-between border-b border-white/5 pb-4">
+                    <div className="flex items-center gap-2 font-black text-sm text-zinc-300">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-brand-400">
+                        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+                        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+                      </svg>
+                      <span>Universal Course Diary</span>
+                    </div>
+                    <button 
+                      onClick={() => setNotesOpen(false)}
+                      className="text-zinc-500 hover:text-white text-xs font-bold cursor-pointer border border-white/5 bg-zinc-900/60 px-2 py-1 rounded"
+                    >
+                      ✕ Close
+                    </button>
+                  </div>
+
+                  {/* Current tag indicator */}
+                  {(() => {
+                    const loc = getActiveLocation();
+                    return (
+                      <div className="p-3 bg-brand-500/5 border border-brand-500/10 rounded-xl text-left text-xs space-y-3">
+                        <div>
+                          <span className="text-[9px] text-zinc-500 uppercase tracking-widest font-bold block mb-1">Current Tagged Location</span>
+                          <div className="font-extrabold text-white flex items-center justify-between">
+                            <span>
+                              Course {loc.courseId} · Phase {loc.phaseNum} · Step {loc.step}
+                            </span>
+                            <span className="text-[9px] bg-brand-500/20 text-brand-300 px-2 py-0.5 rounded border border-brand-500/20 font-mono">
+                              Auto-tagged
+                            </span>
+                          </div>
+                        </div>
+                        <button
+                          onClick={async () => {
+                            if (generatingAiNote) return;
+                            setGeneratingAiNote(true);
+                            try {
+                              const res = await apiRequest("/notes/generate-ai-summary", {
+                                method: "POST",
+                                body: JSON.stringify({
+                                  course_id: loc.courseId,
+                                  phase_num: loc.phaseNum,
+                                  step: loc.step,
+                                  question: "Active Study Slide",
+                                  selected_answer: "Interactive Study Materials",
+                                  correct_answer: "Verified Korean Curriculum",
+                                  is_correct: true,
+                                  explanation: `The student requested an AI summary of this Korean lesson slide. Focus on key grammar particles, vowels, consonants, vocabulary examples, and conversational nuances covered in this phase.`
+                                })
+                              });
+                              setNotes(prev => [res, ...prev]);
+                              setWarningPopup({ show: true, message: "✨ Note generated and saved to your Diary successfully!" });
+                            } catch (err) {
+                              console.error("Failed to generate AI note summary:", err);
+                            } finally {
+                              setGeneratingAiNote(false);
+                            }
+                          }}
+                          disabled={generatingAiNote}
+                          className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold py-2.5 rounded-xl text-xs transition cursor-pointer flex items-center justify-center gap-1.5 shadow-lg shadow-indigo-500/20"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5 animate-pulse">
+                            <path d="m12 3-1.912 5.886L4.202 9.075 9.07 13.56 7.158 19.44 12 15.83l4.842 3.61-1.911-5.88 4.867-4.485-5.886-.189z" />
+                          </svg>
+                          <span>{generatingAiNote ? "Summarizing..." : "AI Summarize Current Screen"}</span>
+                        </button>
+                      </div>
+                    );
+                  })()}
+
+                  {/* Write manual note */}
+                  <div className="space-y-2 text-left">
+                    <span className="text-[10px] text-zinc-500 uppercase tracking-wider font-extrabold">Write New Note</span>
+                    <textarea
+                      value={newNoteText}
+                      onChange={(e) => setNewNoteText(e.target.value)}
+                      placeholder="Type your study notes, vocabulary references, or remarks here..."
+                      className="w-full bg-zinc-900 border border-white/10 rounded-xl p-3 text-xs text-white placeholder-zinc-500 outline-none focus:border-brand-500 transition h-24 resize-none"
+                    />
+                    <div className="flex justify-end">
+                      <button
+                        onClick={handleSaveManualNote}
+                        disabled={savingNote || !newNoteText.trim()}
+                        className="bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white font-bold px-4 py-2 rounded-xl text-xs transition cursor-pointer"
+                      >
+                        {savingNote ? "Saving..." : "Save Note"}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Notes List */}
+                  <div className="space-y-3 text-left">
+                    <span className="text-[10px] text-zinc-500 uppercase tracking-wider font-extrabold block">Saved Diary Entries ({notes.length})</span>
+                    <div className="space-y-3 max-h-[45vh] overflow-y-auto pr-1">
+                      {notes.map((note) => (
+                        <div key={note.id} className="p-4 bg-zinc-900/60 rounded-2xl border border-white/5 space-y-2.5 relative group">
+                          <div className="flex justify-between items-start gap-2">
+                            <button
+                              onClick={() => navigateToLocation(note.course_id, note.phase_num, note.step)}
+                              className="text-[9px] bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 border border-indigo-500/25 px-2.5 py-0.5 rounded-full font-mono transition cursor-pointer font-bold"
+                              title="Click to Teleport back to this Screen"
+                            >
+                              📍 Course {note.course_id} · Phase {note.phase_num} · Step {note.step}
+                            </button>
+                            <button
+                              onClick={() => handleDeleteNote(note.id)}
+                              className="text-zinc-500 hover:text-red-400 p-1 rounded hover:bg-white/5 transition opacity-0 group-hover:opacity-100 cursor-pointer"
+                              title="Delete Note"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5">
+                                <path d="M3 6h18" />
+                                <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                                <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                              </svg>
+                            </button>
+                          </div>
+                          
+                          <p className="text-xs text-zinc-200 leading-relaxed whitespace-pre-wrap">
+                            {note.content}
+                          </p>
+                          
+                          <div className="flex justify-between items-center text-[8px] text-zinc-500 font-mono">
+                            <span>{note.is_ai ? "🤖 AI Generated Summary" : "✍️ Student Note"}</span>
+                            <span>{new Date(note.created_at).toLocaleDateString()}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </main>
         
         {/* Mobile Navigation bar at the bottom */}
