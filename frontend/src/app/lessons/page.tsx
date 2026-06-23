@@ -461,6 +461,11 @@ export default function LessonPlayer() {
       
       // Play sound
       playCentralSound(type);
+
+      // Dispatch net XP event for SidebarLayout to catch
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("hangeulai-xp-net", { detail: { amount: netXP } }));
+      }
       
       // Floating text coords - spread across screen for visibility
       const id = Date.now() + Math.random();

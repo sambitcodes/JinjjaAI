@@ -15,6 +15,7 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
   const [xp, setXp] = useState(0);
   const [streak, setStreak] = useState(0);
   const [isCollapsed, setIsCollapsed] = useState(true);
+  const [activeCourseId, setActiveCourseId] = useState<number>(1);
 
   // Universal Diary & Warning States
   const [notes, setNotes] = useState<any[]>([]);
@@ -141,6 +142,10 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
 
   useEffect(() => {
     loadNotes();
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("hangeulai_active_course_id");
+      if (stored) setActiveCourseId(parseInt(stored, 10));
+    }
   }, []);
 
   useEffect(() => {
@@ -213,15 +218,24 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
       }
     };
 
-    window.addEventListener("hangeulai-xp" as any, handleXpEvent);
+    const handleStepChange = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      if (customEvent.detail && typeof customEvent.detail.courseId === "number") {
+        setActiveCourseId(customEvent.detail.courseId);
+      }
+    };
+
+    window.addEventListener("hangeulai-xp-net" as any, handleXpEvent);
     window.addEventListener("hangeulai-add-note", handleAddNoteEvent);
     window.addEventListener("hangeulai-warning" as any, handleWarning);
+    window.addEventListener("hangeulai-step-change" as any, handleStepChange);
     loadMetrics();
 
     return () => {
-      window.removeEventListener("hangeulai-xp" as any, handleXpEvent);
+      window.removeEventListener("hangeulai-xp-net" as any, handleXpEvent);
       window.removeEventListener("hangeulai-add-note", handleAddNoteEvent);
       window.removeEventListener("hangeulai-warning" as any, handleWarning);
+      window.removeEventListener("hangeulai-step-change" as any, handleStepChange);
     };
   }, [pathname]);
 
@@ -286,6 +300,39 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
     { name: "AI Benchmarks", href: "/benchmarks", icon: Award, colorClass: "text-fuchsia-400 hover:text-fuchsia-300", activeBg: "bg-fuchsia-500/10 text-fuchsia-300 border border-fuchsia-500/25 shadow-[0_0_15px_rgba(217,70,239,0.15)]" },
   ];
 
+  const getCourseXPDetails = (cId: number) => {
+    if (typeof window === "undefined") return { earned: 0, max: 0, pct: 0 };
+    let earned = 0;
+    let max = 0;
+    const courseData = auditData[cId.toString()];
+    if (courseData) {
+      for (const phaseNum of Object.keys(courseData)) {
+        const stepsData = courseData[phaseNum]?.steps;
+        if (!stepsData) continue;
+        for (const stepNum of Object.keys(stepsData)) {
+          const key = `hangeulai_c${cId}p${phaseNum}_s${stepNum}_earned_xp`;
+          earned += parseInt(localStorage.getItem(key) || "0", 10);
+          max += stepsData[stepNum]?.max_xp || 35;
+        }
+      }
+    }
+    const pct = max > 0 ? Math.round((earned / max) * 100) : 0;
+    return { earned, max, pct };
+  };
+
+  const getAllCoursesXP = () => {
+    let total = 0;
+    for (let c = 1; c <= 8; c++) {
+      const { earned } = getCourseXPDetails(c);
+      total += earned;
+    }
+    return total;
+  };
+
+  const activeCourseXP = getCourseXPDetails(activeCourseId);
+  const allCoursesXP = getAllCoursesXP();
+  const gameXP = Math.max(0, xp - allCoursesXP);
+
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-[#09090b] text-foreground">
       
@@ -315,10 +362,27 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
 
           {/* Quick Metrics */}
           {!isCollapsed ? (
-            <div className="glass-panel p-4 rounded-xl border border-white/5 space-y-2 animate-fade-in">
+            <div className="bg-zinc-900/60 p-4 rounded-xl border border-white/5 space-y-2.5 animate-fade-in text-left">
+              <div className="space-y-1">
+                <div className="flex justify-between text-[11px] text-zinc-400">
+                  <span className="font-semibold text-zinc-300">Course {activeCourseId} XP</span>
+                  <span className="font-bold text-brand-400">{activeCourseXP.earned} / {activeCourseXP.max} XP</span>
+                </div>
+                <div className="w-full h-1.5 bg-zinc-950 rounded-full overflow-hidden border border-white/5">
+                  <div 
+                    className="h-full bg-gradient-to-r from-brand-500 to-indigo-500 rounded-full transition-all duration-300"
+                    style={{ width: `${activeCourseXP.pct}%` }}
+                  />
+                </div>
+                <span className="text-[9px] text-zinc-500 block text-right font-medium">{activeCourseXP.pct}% Completed</span>
+              </div>
+              <div className="flex justify-between text-xs text-zinc-400">
+                <span>Game XP</span>
+                <span className="font-bold text-amber-400">{gameXP} XP</span>
+              </div>
               <div className="flex justify-between text-xs text-zinc-400">
                 <span>Total XP</span>
-                <span className="font-bold text-accent-teal">{xp}</span>
+                <span className="font-bold text-accent-teal">{xp} XP</span>
               </div>
               <div className="flex justify-between text-xs text-zinc-400">
                 <span>Streak</span>
@@ -326,9 +390,19 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
               </div>
             </div>
           ) : (
-            <div className="flex flex-col items-center gap-2 py-2">
-              <div className="text-[10px] font-bold text-accent-teal" title={`Total XP: ${xp}`}>🏆 {xp}</div>
-              <div className="text-[10px] font-bold text-accent-pink" title={`Streak: ${streak} Days`}>🔥 {streak}d</div>
+            <div className="flex flex-col items-center gap-2.5 py-3 border-y border-white/5 my-2">
+              <div className="text-[10px] font-bold text-brand-400" title={`Active Course XP: ${activeCourseXP.earned} (${activeCourseXP.pct}%)`}>
+                📚 {activeCourseXP.earned}
+              </div>
+              <div className="text-[10px] font-bold text-amber-400" title={`Game XP: ${gameXP}`}>
+                🎮 {gameXP}
+              </div>
+              <div className="text-[10px] font-bold text-accent-teal" title={`Total XP: ${xp}`}>
+                🏆 {xp}
+              </div>
+              <div className="text-[10px] font-bold text-accent-pink" title={`Streak: ${streak} Days`}>
+                🔥 {streak}d
+              </div>
             </div>
           )}
 

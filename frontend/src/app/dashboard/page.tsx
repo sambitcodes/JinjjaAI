@@ -11,6 +11,7 @@ import {
   Library, Globe, Gamepad2
 } from "lucide-react";
 import { ensureAuthenticated, apiRequest } from "../../lib/api";
+import xpAudit from "../../lib/xp-audit.json";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // TYPES
@@ -1205,11 +1206,28 @@ export default function Dashboard() {
                     return 0;
                   };
 
-                  const progressPct = getCourseDetailedProgress(course.id, state.completedPhases, state.lastPhase);
-                  const lastPhaseProgress = getLastVisitedPhaseProgress(course.id, state.lastPhase, state.completedPhases);
+                  const getCourseXPDetails = (cId: number) => {
+                    if (typeof window === "undefined") return { earned: 0, max: 0, pct: 0 };
+                    let earned = 0;
+                    let max = 0;
+                    const courseData = (xpAudit as any)[cId.toString()];
+                    if (courseData) {
+                      for (const phaseNum of Object.keys(courseData)) {
+                        const stepsData = courseData[phaseNum]?.steps;
+                        if (!stepsData) continue;
+                        for (const stepNum of Object.keys(stepsData)) {
+                          const key = `hangeulai_c${cId}p${phaseNum}_s${stepNum}_earned_xp`;
+                          earned += parseInt(localStorage.getItem(key) || "0", 10);
+                          max += stepsData[stepNum]?.max_xp || 35;
+                        }
+                      }
+                    }
+                    const pct = max > 0 ? Math.round((earned / max) * 100) : 0;
+                    return { earned, max, pct };
+                  };
 
-                  const xpEarned = state.totalXP || completedCount * course.xpPerPhase;
-                  const maxXP = course.phases * course.xpPerPhase;
+                  const { earned: xpEarned, max: maxXP, pct: progressPct } = getCourseXPDetails(course.id);
+                  const lastPhaseProgress = getLastVisitedPhaseProgress(course.id, state.lastPhase, state.completedPhases);
                   const isStarted = completedCount > 0 || state.lastPhase > 0;
 
                   return (
