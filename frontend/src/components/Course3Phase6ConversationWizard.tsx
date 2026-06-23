@@ -752,7 +752,30 @@ return (
 
           <div className="flex justify-between items-center pt-4 border-t border-white/5">
             <button onClick={() => setStep(1)} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-sm font-bold transition flex items-center gap-2 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
-            <button onClick={handleNextConcept} disabled={!cChecked} className="bg-yellow-500 hover:bg-yellow-400 disabled:opacity-50 text-zinc-950 px-5 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer">Next Skill <ChevronRight className="w-4 h-4" /></button>
+            
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const qObj = Array.isArray(conceptQuestions[step]) ? conceptQuestions[step][cIdx] : conceptQuestions[step];
+                      if (!qObj) return;
+                      const selOptText = qObj.options ? (qObj.options.find(o => o.id === cSelected)?.text || qObj.options.find(o => o.text === cSelected)?.text || cSelected) : cSelected;
+                      const corrOptText = qObj.options ? (qObj.options.find(o => o.id === qObj.correctId)?.text || qObj.options.find(o => o.text === qObj.correctId)?.text || qObj.correctId) : qObj.correctId;
+                      window.dispatchEvent(new CustomEvent("hangeulai-add-note", {
+                        detail: {
+                          question: qObj.question || "Concept Check",
+                          selected_answer: String(selOptText || ""),
+                          correct_answer: String(corrOptText || ""),
+                          is_correct: !!cCorrect,
+                          explanation: qObj.explanation || ""
+                        }
+                      }));
+                    }}
+                    className="mr-2 bg-white/10 hover:bg-white/20 text-white text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-lg border border-white/5 transition cursor-pointer"
+                    title="Add this concept summary to your diary notes"
+                  >
+                    + Add to Notes
+                  </button>
+                  <button onClick={handleNextConcept} disabled={!cChecked} className="bg-yellow-500 hover:bg-yellow-400 disabled:opacity-50 text-zinc-950 px-5 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer">Next Skill <ChevronRight className="w-4 h-4" /></button>
           </div>
         </div>
       )}
@@ -828,7 +851,30 @@ return (
     }
     setStep(2);
   }} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-sm font-bold transition flex items-center gap-2 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
-            <button onClick={handleNextConcept} disabled={!cChecked} className="bg-yellow-500 hover:bg-yellow-400 disabled:opacity-50 text-zinc-950 px-5 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer">Next Skill <ChevronRight className="w-4 h-4" /></button>
+            
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const qObj = Array.isArray(conceptQuestions[step]) ? conceptQuestions[step][cIdx] : conceptQuestions[step];
+                      if (!qObj) return;
+                      const selOptText = qObj.options ? (qObj.options.find(o => o.id === cSelected)?.text || qObj.options.find(o => o.text === cSelected)?.text || cSelected) : cSelected;
+                      const corrOptText = qObj.options ? (qObj.options.find(o => o.id === qObj.correctId)?.text || qObj.options.find(o => o.text === qObj.correctId)?.text || qObj.correctId) : qObj.correctId;
+                      window.dispatchEvent(new CustomEvent("hangeulai-add-note", {
+                        detail: {
+                          question: qObj.question || "Concept Check",
+                          selected_answer: String(selOptText || ""),
+                          correct_answer: String(corrOptText || ""),
+                          is_correct: !!cCorrect,
+                          explanation: qObj.explanation || ""
+                        }
+                      }));
+                    }}
+                    className="mr-2 bg-white/10 hover:bg-white/20 text-white text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-lg border border-white/5 transition cursor-pointer"
+                    title="Add this concept summary to your diary notes"
+                  >
+                    + Add to Notes
+                  </button>
+                  <button onClick={handleNextConcept} disabled={!cChecked} className="bg-yellow-500 hover:bg-yellow-400 disabled:opacity-50 text-zinc-950 px-5 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer">Next Skill <ChevronRight className="w-4 h-4" /></button>
           </div>
         </div>
       )}
@@ -908,7 +954,30 @@ return (
 
           <div className="flex justify-between items-center pt-4 border-t border-white/5">
             <button onClick={() => setStep(3)} className="glass-panel px-5 py-3 rounded-xl hover:bg-white/5 text-zinc-400 text-sm font-bold transition flex items-center gap-2 cursor-pointer"><ChevronLeft className="w-4 h-4" /> Back</button>
-            <button onClick={handleNextConcept} disabled={!cChecked} className="bg-yellow-500 hover:bg-yellow-400 disabled:opacity-50 text-zinc-950 px-5 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer">Start Activities <ChevronRight className="w-4 h-4" /></button>
+            
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const qObj = Array.isArray(conceptQuestions[step]) ? conceptQuestions[step][cIdx] : conceptQuestions[step];
+                      if (!qObj) return;
+                      const selOptText = qObj.options ? (qObj.options.find(o => o.id === cSelected)?.text || qObj.options.find(o => o.text === cSelected)?.text || cSelected) : cSelected;
+                      const corrOptText = qObj.options ? (qObj.options.find(o => o.id === qObj.correctId)?.text || qObj.options.find(o => o.text === qObj.correctId)?.text || qObj.correctId) : qObj.correctId;
+                      window.dispatchEvent(new CustomEvent("hangeulai-add-note", {
+                        detail: {
+                          question: qObj.question || "Concept Check",
+                          selected_answer: String(selOptText || ""),
+                          correct_answer: String(corrOptText || ""),
+                          is_correct: !!cCorrect,
+                          explanation: qObj.explanation || ""
+                        }
+                      }));
+                    }}
+                    className="mr-2 bg-white/10 hover:bg-white/20 text-white text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-lg border border-white/5 transition cursor-pointer"
+                    title="Add this concept summary to your diary notes"
+                  >
+                    + Add to Notes
+                  </button>
+                  <button onClick={handleNextConcept} disabled={!cChecked} className="bg-yellow-500 hover:bg-yellow-400 disabled:opacity-50 text-zinc-950 px-5 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer">Start Activities <ChevronRight className="w-4 h-4" /></button>
           </div>
         </div>
       )}

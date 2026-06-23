@@ -26,7 +26,21 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
         // Fallback for offline mode
       }
     }
+    
+    const handleXpEvent = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      if (customEvent.detail && typeof customEvent.detail.amount === "number") {
+        setXp(prev => Math.max(0, prev + customEvent.detail.amount));
+      }
+      loadMetrics();
+    };
+
+    window.addEventListener("hangeulai-xp" as any, handleXpEvent);
     loadMetrics();
+
+    return () => {
+      window.removeEventListener("hangeulai-xp" as any, handleXpEvent);
+    };
   }, [pathname]);
 
   const handleLogout = () => {

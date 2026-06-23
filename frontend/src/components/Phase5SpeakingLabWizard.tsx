@@ -366,16 +366,7 @@ export default function Phase5SpeakingLabWizard({ activeLesson, speakWord, onCom
   }, [step, answeredConcepts]);
 
   // Automatically save answered concept states when checked
-  useEffect(() => {
-    if (cChecked && cSelected !== null && cCorrect !== null && step >= 2 && step <= 6) {
-      if (!answeredConcepts[step]) {
-        setAnsweredConcepts(prev => ({
-          ...prev,
-          [step]: { selected: cSelected, correct: cCorrect }
-        }));
-      }
-    }
-  }, [cChecked, cSelected, cCorrect, step, answeredConcepts]);
+  
 
   // Screen 7 — Shadowing
   const [shadowItems, setShadowItems] = useState<any[]>([]);
@@ -467,6 +458,7 @@ export default function Phase5SpeakingLabWizard({ activeLesson, speakWord, onCom
     const isCorrect = cSelected === q.correctId;
     setCChecked(true);
     setCCorrect(isCorrect);
+    setAnsweredConcepts(prev => ({ ...prev, [step]: { selected: cSelected, correct: isCorrect } }));
     if (isCorrect) {
       window.dispatchEvent(new CustomEvent("hangeulai-xp", { detail: { amount: 20, type: 'correct' } }));
     } else {

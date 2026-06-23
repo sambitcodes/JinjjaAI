@@ -41,9 +41,9 @@ export default function TutorChat() {
   const [enVoices, setEnVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [selectedKoVoiceName, setSelectedKoVoiceName] = useState<string>(() => {
     if (typeof window !== "undefined") {
-      return localStorage.getItem("hangeulai_selected_ko_voice") || "ko-KR-SunHiNeural";
+      return localStorage.getItem("hangeulai_selected_ko_voice") || "google-online";
     }
-    return "ko-KR-SunHiNeural";
+    return "google-online";
   });
   const [selectedEnVoiceName, setSelectedEnVoiceName] = useState<string>("en-US-AriaNeural");
 

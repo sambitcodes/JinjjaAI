@@ -143,9 +143,9 @@ export default function LessonPlayer() {
   const [koVoices, setKoVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [selectedKoVoiceName, setSelectedKoVoiceName] = useState<string>(() => {
     if (typeof window !== "undefined") {
-      return localStorage.getItem("hangeulai_selected_ko_voice") || "ko-KR-SunHiNeural";
+      return localStorage.getItem("hangeulai_selected_ko_voice") || "google-online";
     }
-    return "ko-KR-SunHiNeural";
+    return "google-online";
   });
 
   // Diary/Notes States
@@ -545,15 +545,11 @@ export default function LessonPlayer() {
       localStorage.setItem(courseStateKey, JSON.stringify(states));
       setCourseStates(states);
 
-      await apiRequest("/progress/profile", {
-        method: "PATCH",
-        body: JSON.stringify({
-          course_states: states
-        })
+      await apiRequest(`/progress/reset-course/${courseId}`, {
+        method: "POST"
       });
 
       if (oldCourseXP > 0) {
-        await apiRequest(`/progress/xp/add?amount=-${oldCourseXP}`, { method: "POST" });
         setProfile((prev: any) => {
           if (!prev) return prev;
           return { ...prev, total_xp: Math.max(0, (prev.total_xp || 0) - oldCourseXP) };
@@ -564,11 +560,14 @@ export default function LessonPlayer() {
       if (courseId === 1) {
         for (let p = 1; p <= 6; p++) {
           localStorage.removeItem(`hangeulai_phase${p}_step`);
+          localStorage.removeItem(`hangeulai_phase${p}_max_step`);
         }
       } else {
         for (let p = 1; p <= 12; p++) {
           localStorage.removeItem(`hangeulai_c${courseId}p${p}_step`);
+          localStorage.removeItem(`hangeulai_c${courseId}p${p}_max_step`);
           localStorage.removeItem(`hangeulai_c${courseId - 1}p${p}_step`);
+          localStorage.removeItem(`hangeulai_c${courseId - 1}p${p}_max_step`);
         }
       }
 
@@ -580,6 +579,7 @@ export default function LessonPlayer() {
       setWritingAnswer("");
       setQuizChecked(false);
       setQuizCorrect(null);
+      setWizardKey(prev => prev + 1);
       
       await loadLessons();
     } catch (err) {
@@ -1086,6 +1086,7 @@ export default function LessonPlayer() {
       setQuizIdx(0);
       setShowCourseSelector(false);
       setShowSyllabus(true);
+      setWizardKey(prev => prev + 1);
 
       // Initialize course progress state live
       try {
@@ -1822,9 +1823,29 @@ export default function LessonPlayer() {
             {currentStep === 1 ? (
               /* Step 1: Highly organized curriculum content formatted beautifully in Markdown */
               <div className="glass-panel neon-border p-8 rounded-3xl shadow-2xl w-full space-y-6 flex-grow flex flex-col justify-center">
-                <div className="inline-flex items-center gap-1.5 bg-brand-500/10 text-brand-300 font-bold text-xs py-1.5 px-3 rounded-full border border-brand-500/20 w-fit">
-                  <Sparkles className="w-3.5 h-3.5" />
-                  <span>Course Lesson Explanation</span>
+                <div className="flex justify-between items-center w-full">
+                  <div className="inline-flex items-center gap-1.5 bg-brand-500/10 text-brand-300 font-bold text-xs py-1.5 px-3 rounded-full border border-brand-500/20 w-fit">
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>Course Lesson Explanation</span>
+                  </div>
+                  <button
+                    onClick={() => {
+                      window.dispatchEvent(new CustomEvent("hangeulai-add-note", {
+                        detail: {
+                          question: activeLesson?.title || "Lesson Overview",
+                          selected_answer: "Interactive Study Materials",
+                          correct_answer: "Verified Korean Curriculum",
+                          is_correct: true,
+                          explanation: `The student requested an AI summary of this Korean lesson slide: ${activeLesson?.title || "Korean Course Section"}. Focus on key grammar particles, vowels, consonants, vocabulary examples, and conversational nuances covered in this phase.`
+                        }
+                      }));
+                    }}
+                    className="flex items-center gap-1 bg-brand-500/10 hover:bg-brand-500/20 text-brand-300 text-xs font-black uppercase tracking-wider px-3 py-1.5 rounded-full border border-brand-500/25 transition cursor-pointer"
+                    title="Add this theory summary to your diary notes"
+                    disabled={generatingAiNote}
+                  >
+                    <Plus className="w-3.5 h-3.5" /> Add to Notes
+                  </button>
                 </div>
                 
                 <div className="prose prose-invert max-w-none bg-zinc-900/60 p-6 rounded-2xl border border-white/5 leading-relaxed font-sans text-zinc-300">
@@ -2107,7 +2128,7 @@ export default function LessonPlayer() {
       {/* Floating Diary Button */}
       <button 
         onClick={() => setNotesOpen(!notesOpen)}
-        className="fixed bottom-6 right-6 z-50 p-4 bg-gradient-to-r from-brand-500 to-indigo-600 hover:from-brand-600 hover:to-indigo-700 text-white rounded-full shadow-2xl shadow-brand-500/25 border border-white/10 hover:scale-110 active:scale-95 transition-all duration-200 cursor-pointer"
+        className="fixed bottom-6 right-6 z-[9999] p-4 bg-gradient-to-r from-brand-500 to-indigo-600 hover:from-brand-600 hover:to-indigo-700 text-white rounded-full shadow-2xl shadow-brand-500/25 border border-white/10 hover:scale-110 active:scale-95 transition-all duration-200 cursor-pointer"
         title="Open Course Diary"
       >
         <Notebook className="w-6 h-6 animate-pulse" />
@@ -2115,7 +2136,7 @@ export default function LessonPlayer() {
 
       {/* Floating Diary Drawer */}
       {notesOpen && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex justify-end animate-fade-in">
+        <div className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-sm flex justify-end animate-fade-in">
           <div className="w-full max-w-md bg-zinc-950/95 border-l border-white/10 h-full p-6 flex flex-col justify-between shadow-2xl backdrop-blur-xl animate-slide-in">
             <div className="space-y-6 flex-grow overflow-y-auto pr-1">
               {/* Header */}

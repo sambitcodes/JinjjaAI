@@ -900,6 +900,29 @@ return (
               </div>
               {quizChecked && (
                 <div className="p-3 bg-zinc-950 rounded-xl border border-white/5 text-xs text-zinc-400">
+                  <div className="flex justify-between items-center border-b border-white/5 pb-2 mb-2">
+                    <span className="font-extrabold text-[10px] uppercase tracking-wider">Checkpoint Feedback</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const qObj = quizBlueprint[quizIdx];
+                        if (!qObj) return;
+                        window.dispatchEvent(new CustomEvent("hangeulai-add-note", {
+                          detail: {
+                            question: qObj.question || "Quiz Checkpoint Question",
+                            selected_answer: String(quizSelected || ""),
+                            correct_answer: String(qObj.correct_answer || ""),
+                            is_correct: !!quizCorrect,
+                            explanation: qObj.explanation || ""
+                          }
+                        }));
+                      }}
+                      className="flex items-center gap-1 bg-white/10 hover:bg-white/20 text-white text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded border border-white/5 transition cursor-pointer"
+                      title="Add this attempt summary to your diary notes"
+                    >
+                      + Add to Notes
+                    </button>
+                  </div>
                   <p className="font-extrabold text-white">{quizCorrect ? "✓ Correct!" : "✗ Incorrect."}</p>
                   <p className="mt-1">{quizExplanation}</p>
                 </div>

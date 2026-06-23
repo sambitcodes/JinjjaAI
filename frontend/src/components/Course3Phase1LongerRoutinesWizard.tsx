@@ -820,7 +820,30 @@ return (
             {cChecked && (
               <div className="animate-fade-in space-y-3">
                 <p className="text-xs text-zinc-400 leading-relaxed">{conceptQuestions[2][cIdx].explanation}</p>
-                <button
+                
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const qObj = Array.isArray(conceptQuestions[step]) ? conceptQuestions[step][cIdx] : conceptQuestions[step];
+                      if (!qObj) return;
+                      const selOptText = qObj.options ? (qObj.options.find(o => o.id === cSelected)?.text || qObj.options.find(o => o.text === cSelected)?.text || cSelected) : cSelected;
+                      const corrOptText = qObj.options ? (qObj.options.find(o => o.id === qObj.correctId)?.text || qObj.options.find(o => o.text === qObj.correctId)?.text || qObj.correctId) : qObj.correctId;
+                      window.dispatchEvent(new CustomEvent("hangeulai-add-note", {
+                        detail: {
+                          question: qObj.question || "Concept Check",
+                          selected_answer: String(selOptText || ""),
+                          correct_answer: String(corrOptText || ""),
+                          is_correct: !!cCorrect,
+                          explanation: qObj.explanation || ""
+                        }
+                      }));
+                    }}
+                    className="mr-2 bg-white/10 hover:bg-white/20 text-white text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-lg border border-white/5 transition cursor-pointer"
+                    title="Add this concept summary to your diary notes"
+                  >
+                    + Add to Notes
+                  </button>
+                  <button
                   onClick={handleNextConcept}
                   className="bg-brand-500 hover:bg-brand-600 text-white px-5 py-2 rounded-xl text-xs font-bold transition cursor-pointer"
                 >
@@ -868,7 +891,30 @@ return (
             {cChecked && (
               <div className="animate-fade-in space-y-3">
                 <p className="text-xs text-zinc-400 leading-relaxed">{conceptQuestions[3][cIdx].explanation}</p>
-                <button
+                
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const qObj = Array.isArray(conceptQuestions[step]) ? conceptQuestions[step][cIdx] : conceptQuestions[step];
+                      if (!qObj) return;
+                      const selOptText = qObj.options ? (qObj.options.find(o => o.id === cSelected)?.text || qObj.options.find(o => o.text === cSelected)?.text || cSelected) : cSelected;
+                      const corrOptText = qObj.options ? (qObj.options.find(o => o.id === qObj.correctId)?.text || qObj.options.find(o => o.text === qObj.correctId)?.text || qObj.correctId) : qObj.correctId;
+                      window.dispatchEvent(new CustomEvent("hangeulai-add-note", {
+                        detail: {
+                          question: qObj.question || "Concept Check",
+                          selected_answer: String(selOptText || ""),
+                          correct_answer: String(corrOptText || ""),
+                          is_correct: !!cCorrect,
+                          explanation: qObj.explanation || ""
+                        }
+                      }));
+                    }}
+                    className="mr-2 bg-white/10 hover:bg-white/20 text-white text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-lg border border-white/5 transition cursor-pointer"
+                    title="Add this concept summary to your diary notes"
+                  >
+                    + Add to Notes
+                  </button>
+                  <button
                   onClick={handleNextConcept}
                   className="bg-brand-500 hover:bg-brand-600 text-white px-5 py-2 rounded-xl text-xs font-bold transition cursor-pointer"
                 >
@@ -918,7 +964,30 @@ return (
             {cChecked && (
               <div className="animate-fade-in space-y-3">
                 <p className="text-xs text-zinc-400 leading-relaxed">{conceptQuestions[4][cIdx].explanation}</p>
-                <button
+                
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const qObj = Array.isArray(conceptQuestions[step]) ? conceptQuestions[step][cIdx] : conceptQuestions[step];
+                      if (!qObj) return;
+                      const selOptText = qObj.options ? (qObj.options.find(o => o.id === cSelected)?.text || qObj.options.find(o => o.text === cSelected)?.text || cSelected) : cSelected;
+                      const corrOptText = qObj.options ? (qObj.options.find(o => o.id === qObj.correctId)?.text || qObj.options.find(o => o.text === qObj.correctId)?.text || qObj.correctId) : qObj.correctId;
+                      window.dispatchEvent(new CustomEvent("hangeulai-add-note", {
+                        detail: {
+                          question: qObj.question || "Concept Check",
+                          selected_answer: String(selOptText || ""),
+                          correct_answer: String(corrOptText || ""),
+                          is_correct: !!cCorrect,
+                          explanation: qObj.explanation || ""
+                        }
+                      }));
+                    }}
+                    className="mr-2 bg-white/10 hover:bg-white/20 text-white text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-lg border border-white/5 transition cursor-pointer"
+                    title="Add this concept summary to your diary notes"
+                  >
+                    + Add to Notes
+                  </button>
+                  <button
                   onClick={handleNextConcept}
                   className="bg-brand-500 hover:bg-brand-600 text-white px-5 py-2 rounded-xl text-xs font-bold transition cursor-pointer"
                 >
@@ -972,7 +1041,30 @@ return (
             {cChecked && (
               <div className="animate-fade-in space-y-3">
                 <p className="text-xs text-zinc-400 leading-relaxed">{conceptQuestions[5][cIdx].explanation}</p>
-                <button
+                
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const qObj = Array.isArray(conceptQuestions[step]) ? conceptQuestions[step][cIdx] : conceptQuestions[step];
+                      if (!qObj) return;
+                      const selOptText = qObj.options ? (qObj.options.find(o => o.id === cSelected)?.text || qObj.options.find(o => o.text === cSelected)?.text || cSelected) : cSelected;
+                      const corrOptText = qObj.options ? (qObj.options.find(o => o.id === qObj.correctId)?.text || qObj.options.find(o => o.text === qObj.correctId)?.text || qObj.correctId) : qObj.correctId;
+                      window.dispatchEvent(new CustomEvent("hangeulai-add-note", {
+                        detail: {
+                          question: qObj.question || "Concept Check",
+                          selected_answer: String(selOptText || ""),
+                          correct_answer: String(corrOptText || ""),
+                          is_correct: !!cCorrect,
+                          explanation: qObj.explanation || ""
+                        }
+                      }));
+                    }}
+                    className="mr-2 bg-white/10 hover:bg-white/20 text-white text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-lg border border-white/5 transition cursor-pointer"
+                    title="Add this concept summary to your diary notes"
+                  >
+                    + Add to Notes
+                  </button>
+                  <button
                   onClick={handleNextConcept}
                   className="bg-brand-500 hover:bg-brand-600 text-white px-5 py-2 rounded-xl text-xs font-bold transition cursor-pointer"
                 >
@@ -1645,6 +1737,29 @@ return (
                 <div className={`p-4 rounded-xl border text-xs text-left space-y-1.5 ${
                   quizCorrect ? "bg-accent-teal/5 border-accent-teal/20 text-accent-teal" : "bg-red-500/5 border-red-500/10 text-red-400"
                 }`}>
+                  <div className="flex justify-between items-center border-b border-white/5 pb-2 mb-2">
+                    <span className="font-extrabold text-[10px] uppercase tracking-wider">Checkpoint Feedback</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const qObj = quizBlueprint[quizIdx];
+                        if (!qObj) return;
+                        window.dispatchEvent(new CustomEvent("hangeulai-add-note", {
+                          detail: {
+                            question: qObj.question || "Quiz Checkpoint Question",
+                            selected_answer: String(quizBlueprint[quizIdx]?.type === "writing" ? quizWritingAns : quizSelectedOpt || ""),
+                            correct_answer: String(qObj.correct_answer || ""),
+                            is_correct: !!quizCorrect,
+                            explanation: qObj.explanation || ""
+                          }
+                        }));
+                      }}
+                      className="flex items-center gap-1 bg-white/10 hover:bg-white/20 text-white text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded border border-white/5 transition cursor-pointer"
+                      title="Add this attempt summary to your diary notes"
+                    >
+                      + Add to Notes
+                    </button>
+                  </div>
                   <p className="font-extrabold">{quizCorrect ? "Correct!" : "Incorrect."}</p>
                   <p><strong>Explanation:</strong> {quizBlueprint[quizIdx]?.explanation}</p>
                   {!quizCorrect && <p className="font-mono mt-1 text-zinc-400">Correct Answer: {quizBlueprint[quizIdx]?.correct_answer}</p>}

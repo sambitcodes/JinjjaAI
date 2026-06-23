@@ -202,16 +202,7 @@ export default function Course2Phase1GreetingsWizard({
   }, [step, answeredConcepts]);
 
   // Automatically save answered concept states when checked
-  useEffect(() => {
-    if (cChecked && cSelected !== null && cCorrect !== null && step >= 2 && step <= 6) {
-      if (!answeredConcepts[step]) {
-        setAnsweredConcepts(prev => ({
-          ...prev,
-          [step]: { selected: cSelected, correct: cCorrect }
-        }));
-      }
-    }
-  }, [cChecked, cSelected, cCorrect, step, answeredConcepts]);
+  
 
   // Concept Micro-questions definitions
   const conceptQuestions: Record<number, MicroQuestion> = {
@@ -379,6 +370,7 @@ export default function Course2Phase1GreetingsWizard({
     const isCorrect = selectedId === currentQuestion.correctId;
     setCChecked(true);
     setCCorrect(isCorrect);
+    setAnsweredConcepts(prev => ({ ...prev, [step]: { selected: selectedId, correct: isCorrect } }));
     
     if (isCorrect) {
       playCorrectSound();
@@ -1458,6 +1450,29 @@ return (
                 <div className={`p-4 rounded-xl border text-xs text-left space-y-1.5 ${
                   quizCorrect ? "bg-accent-teal/5 border-accent-teal/20 text-accent-teal" : "bg-red-500/5 border-red-500/10 text-red-400"
                 }`}>
+                  <div className="flex justify-between items-center border-b border-white/5 pb-2 mb-2">
+                    <span className="font-extrabold text-[10px] uppercase tracking-wider">Checkpoint Feedback</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const qObj = quizBlueprint[quizIdx];
+                        if (!qObj) return;
+                        window.dispatchEvent(new CustomEvent("hangeulai-add-note", {
+                          detail: {
+                            question: qObj.question || "Quiz Checkpoint Question",
+                            selected_answer: String(quizAnswerSelected || ""),
+                            correct_answer: String(qObj.correct_answer || ""),
+                            is_correct: !!quizCorrect,
+                            explanation: qObj.explanation || ""
+                          }
+                        }));
+                      }}
+                      className="flex items-center gap-1 bg-white/10 hover:bg-white/20 text-white text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded border border-white/5 transition cursor-pointer"
+                      title="Add this attempt summary to your diary notes"
+                    >
+                      + Add to Notes
+                    </button>
+                  </div>
                   <p className="font-extrabold">{quizCorrect ? "Correct!" : "Incorrect."}</p>
                   <p><strong>Explanation:</strong> {quizBlueprint[quizIdx]?.explanation}</p>
                   {!quizCorrect && <p className="font-mono mt-1 text-zinc-400">Correct Answer: {quizBlueprint[quizIdx]?.correct_answer}</p>}

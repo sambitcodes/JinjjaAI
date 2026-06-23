@@ -118,16 +118,7 @@ export default function Phase2ConsonantWizard({
   }, [step, answeredConcepts]);
 
   // Automatically save answered concept states when checked
-  useEffect(() => {
-    if (cChecked && cSelected !== null && cCorrect !== null && step >= 2 && step <= 6) {
-      if (!answeredConcepts[step]) {
-        setAnsweredConcepts(prev => ({
-          ...prev,
-          [step]: { selected: cSelected, correct: cCorrect }
-        }));
-      }
-    }
-  }, [cChecked, cSelected, cCorrect, step, answeredConcepts]);
+  
 
   // Concept Micro-questions definitions for Consonants
   const conceptQuestions: Record<number, MicroQuestion> = {
@@ -264,6 +255,7 @@ export default function Phase2ConsonantWizard({
     const isCorrect = cSelected === q.correctId;
     setCChecked(true);
     setCCorrect(isCorrect);
+    setAnsweredConcepts(prev => ({ ...prev, [step]: { selected: cSelected, correct: isCorrect } }));
     if (isCorrect) {
       playCorrectSound();
     } else {

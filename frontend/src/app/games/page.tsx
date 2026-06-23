@@ -171,6 +171,9 @@ export default function GamesArcade() {
         localStorage.setItem("hangeulai_games_played", nextPlayed.toString());
         setEarnedXpTotal(nextXp);
         setGamesPlayed(nextPlayed);
+        
+        // Dispatch live XP update to SidebarLayout
+        window.dispatchEvent(new CustomEvent("hangeulai-xp", { detail: { amount } }));
       }
     } catch (err) {
       console.error("Failed to sync game XP rewards:", err);

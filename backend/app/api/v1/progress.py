@@ -280,9 +280,13 @@ async def reset_progress(
 
     # 2. Delete dynamic learning assets
     from sqlalchemy import delete
+    from backend.app.models.study import UserExerciseAttempt, UserNote, Conversation
     await db.execute(delete(CuratedLesson).where(CuratedLesson.user_id == current_user.id))
     await db.execute(delete(MasteryScore).where(MasteryScore.user_id == current_user.id))
     await db.execute(delete(PronunciationAttempt).where(PronunciationAttempt.user_id == current_user.id))
+    await db.execute(delete(UserExerciseAttempt).where(UserExerciseAttempt.user_id == current_user.id))
+    await db.execute(delete(UserNote).where(UserNote.user_id == current_user.id))
+    await db.execute(delete(Conversation).where(Conversation.user_id == current_user.id))
 
     # 3. Reset Profile stats
     profile.total_xp = 0
@@ -296,6 +300,74 @@ async def reset_progress(
     await db.commit()
     await db.refresh(profile)
     return profile
+
+@router.post("/reset-course/{course_id}", response_model=ProfileResponse)
+async def reset_course_progress(
+    course_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    from sqlalchemy import delete
+    from backend.app.models.study import UserExerciseAttempt, UserNote
+    from backend.app.curriculum import PREGENERATED_LESSONS
+
+    # 1. Fetch user profile
+    stmt_prof = select(Profile).where(Profile.user_id == current_user.id)
+    res_prof = await db.execute(stmt_prof)
+    profile = res_prof.scalars().first()
+    if not profile:
+        raise HTTPException(status_code=404, detail="Profile not found")
+
+    # 2. Reset profile stats for this course
+    course_states = dict(profile.course_states or {})
+    course_states[str(course_id)] = {
+        "lastPhase": 1,
+        "completedPhases": [],
+        "totalXP": 0,
+        "lastVisited": datetime.now(timezone.utc).isoformat(),
+        "phaseSteps": {"1": 1},
+        "rewardedSteps": []
+    }
+    
+    # Update total XP dynamically on the profile by subtracting the old course XP
+    old_course_xp = 0
+    if str(course_id) in (profile.course_states or {}):
+        old_course_xp = profile.course_states[str(course_id)].get("totalXP", 0)
+    profile.total_xp = max(0, profile.total_xp - old_course_xp)
+    
+    profile.course_states = course_states
+
+    # 3. Delete Notes for this course
+    await db.execute(delete(UserNote).where(UserNote.user_id == current_user.id, UserNote.course_id == course_id))
+
+    # 4. Delete Exercise attempts for this course
+    ids_to_delete = []
+    course_data = PREGENERATED_LESSONS.get(course_id, {})
+    for phase_num, phase_data in course_data.items():
+        # Quizzes
+        for q in phase_data.get("quizzes", []):
+            if isinstance(q, dict) and "id" in q:
+                ids_to_delete.append(q["id"])
+            elif hasattr(q, "id"):
+                ids_to_delete.append(getattr(q, "id"))
+        # Practice sets
+        for key in ["practice_listening", "practice_gapfill", "practice_context", "listening_items", "speaking_targets", "pattern_items", "free_tasks", "assessment_items"]:
+            for item in phase_data.get(key, []):
+                if isinstance(item, dict) and "id" in item:
+                    ids_to_delete.append(item["id"])
+                elif hasattr(item, "id"):
+                    ids_to_delete.append(getattr(item, "id"))
+
+    if ids_to_delete:
+        await db.execute(delete(UserExerciseAttempt).where(
+            UserExerciseAttempt.user_id == current_user.id,
+            UserExerciseAttempt.exercise_id.in_(ids_to_delete)
+        ))
+
+    await db.commit()
+    await db.refresh(profile)
+    return profile
+
 
 @router.get("/activity-summary")
 async def get_activity_summary(
