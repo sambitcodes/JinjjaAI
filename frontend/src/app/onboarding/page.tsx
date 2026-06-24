@@ -242,7 +242,7 @@ export default function OnboardingPage() {
             <Sparkles className="w-5 h-5 text-brand-400 animate-pulse" />
           </h1>
           <p className="text-sm text-zinc-400 leading-relaxed">
-            Let's customize <strong>진짜 AI</strong> to match your starting goals and background!
+            Let's customize <strong>애라.ai</strong> to match your starting goals and background!
           </p>
         </header>
 

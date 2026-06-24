@@ -799,7 +799,7 @@ export default function Dashboard() {
       <div className="min-h-screen flex items-center justify-center bg-zinc-950">
         <div className="text-center space-y-4">
           <Loader2 className="w-12 h-12 text-brand-500 animate-spin mx-auto" />
-          <p className="text-zinc-500 text-sm font-bold">Loading your HangeulAI command center...</p>
+          <p className="text-sm font-bold">Loading your 애라.ai command center...</p>
         </div>
       </div>
     );
@@ -854,10 +854,10 @@ export default function Dashboard() {
               <section className="glass-panel p-6 md:p-8 rounded-3xl border border-white/5 bg-gradient-to-r from-zinc-950 via-zinc-900/80 to-amber-950/10 relative overflow-hidden">
                 <div className="absolute -right-10 -top-10 text-[140px] font-black text-white/3 select-none font-korean">한</div>
                 <div className="flex flex-col md:flex-row items-center md:items-start gap-5 relative z-10">
-                  <img src="/LOGO.png" className="w-20 h-20 rounded-2xl object-contain bg-zinc-950/80 p-2.5 border border-white/10 shadow-xl shadow-amber-500/10 flex-shrink-0" alt="HangeulAI" />
+                  <img src="/LOGO.png" className="w-20 h-20 rounded-2xl object-contain bg-zinc-950/80 p-2.5 border border-white/10 shadow-xl shadow-amber-500/10 flex-shrink-0" alt="애라.ai" />
                   <div className="space-y-2 text-center md:text-left">
                     <div className="inline-flex items-center gap-1.5 bg-amber-500/10 text-amber-400 font-extrabold text-xs py-1 px-3 rounded-full border border-amber-500/20">
-                      <Sparkles className="w-3.5 h-3.5" /> <span>진짜 AI (Jinjja AI)</span>
+                      <Sparkles className="w-3.5 h-3.5" /> <span>애라.ai</span>
                     </div>
                     <h1 className="text-3xl md:text-4xl font-black tracking-tight text-white">
                       Annyeong, <span className="bg-gradient-to-r from-amber-400 via-red-400 to-blue-400 bg-clip-text text-transparent">{profile?.display_name || "Learner"}</span>! 🌸
@@ -1108,7 +1108,7 @@ export default function Dashboard() {
               <section className="space-y-4">
                 <h2 className="text-xl font-bold text-white flex items-center gap-2">
                   <Sparkles className="w-5 h-5 text-blue-400" />
-                  Everything in HangeulAI
+                  Everything in 애라.ai
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                   {APP_FEATURES.map(f => (

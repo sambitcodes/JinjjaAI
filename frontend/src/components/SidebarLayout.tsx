@@ -493,18 +493,18 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
           <div 
             onClick={() => setIsCollapsed(!isCollapsed)}
             className={`flex ${isCollapsed ? "flex-col items-center justify-center" : "flex-col items-center space-y-3"} p-2 rounded-2xl cursor-pointer hover:bg-white/5 transition duration-200`}
-            title={isCollapsed ? "Click to Expand 진짜 AI" : "Click to Collapse"}
+            title={isCollapsed ? "Click to Expand 애라.ai" : "Click to Collapse"}
           >
             <img 
               src="/LOGO.png" 
               className={`rounded-2xl object-contain bg-white/5 p-1.5 border border-white/10 shadow-lg shadow-brand-500/10 transition-all duration-300 ${
                 isCollapsed ? "w-14 h-14" : "w-36 h-36"
               }`} 
-              alt="진짜 AI Logo" 
+              alt="애라.ai Logo" 
             />
             {!isCollapsed && (
               <span className="font-black text-2xl tracking-wider bg-gradient-to-r from-amber-400 via-red-400 to-blue-400 bg-clip-text text-transparent animate-fade-in truncate">
-                진짜 AI
+                애라.ai
               </span>
             )}
           </div>
@@ -590,7 +590,7 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
             className={`w-full flex items-center text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-xl transition font-semibold ${
               isCollapsed ? "justify-center p-3" : "space-x-3 px-4 py-3"
             }`}
-            title="Logout from 진짜 AI"
+            title="Logout from 애라.ai"
           >
             <LogOut className="w-5 h-5 flex-shrink-0" />
             {!isCollapsed && <span className="truncate">Sign Out</span>}
@@ -621,9 +621,9 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
       {/* Mobile Top Navigation */}
       <header className="md:hidden flex justify-between items-center px-6 py-4 glass-panel border-b border-white/5">
         <div className="flex items-center space-x-2">
-          <img src="/LOGO.png" className="w-6 h-6 rounded-md object-contain bg-white/5 p-0.5 border border-white/10" alt="진짜 AI Logo" />
+          <img src="/LOGO.png" className="w-6 h-6 rounded-md object-contain bg-white/5 p-0.5 border border-white/10" alt="애라.ai Logo" />
           <span className="font-black text-md bg-gradient-to-r from-brand-400 to-accent-pink bg-clip-text text-transparent">
-            진짜 AI
+            애라.ai
           </span>
         </div>
         <div className="flex items-center space-x-4 text-xs font-bold">

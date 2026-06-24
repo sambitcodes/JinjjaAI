@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "진짜 AI - Adaptive Korean Tutor Powered by Gwan-Sik",
+  title: "애라.ai - Adaptive Korean Tutor Powered by Gwan-Sik",
   description: "Master Korean with Gwan-Sik, your personalized local AI tutor. Practice writing with floating Hangeul soft keyboards and track your CEFR curriculum pathway.",
 };
 

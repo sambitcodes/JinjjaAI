@@ -977,7 +977,7 @@ export default function TutorChat() {
               <div className="flex items-center justify-between border-b border-white/5 pb-2">
                 <div className="flex items-center gap-2 text-brand-gold font-extrabold text-sm">
                   <Sparkles className="w-4 h-4 animate-pulse-slow" />
-                  <span>진짜 AI Tutor: Meet Gwan-Sik! 🇰🇷✨</span>
+                  <span>애라.ai Tutor: Meet Gwan-Sik! 🇰🇷✨</span>
                 </div>
                 <button 
                   onClick={() => setIntroOpen(false)}

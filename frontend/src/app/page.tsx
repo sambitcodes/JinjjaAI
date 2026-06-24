@@ -82,12 +82,12 @@ export default function HomeLandingPage() {
               <div className="absolute -inset-1.5 bg-gradient-to-r from-pink-500 to-purple-500 rounded-xl blur opacity-40 group-hover:opacity-75 transition duration-500" />
               <img 
                 src="/LOGO.png" 
-                alt="진짜 AI Logo" 
+                alt="애라.ai Logo" 
                 className="relative w-10 h-10 rounded-xl object-contain bg-zinc-900 border border-purple-500/30 p-1"
               />
             </div>
             <div className="flex flex-col">
-              <span className="text-lg font-black tracking-tight bg-gradient-to-r from-white via-purple-200 to-pink-400 bg-clip-text text-transparent">진짜 AI</span>
+              <span className="text-lg font-black tracking-tight bg-gradient-to-r from-white via-purple-200 to-pink-400 bg-clip-text text-transparent">애라.ai</span>
               <span className="text-[8px] text-purple-400/80 uppercase tracking-widest font-bold">Hangeul AI Tutor</span>
             </div>
           </div>
@@ -137,7 +137,7 @@ export default function HomeLandingPage() {
 
           {/* Subtext */}
           <p className="text-base md:text-lg text-zinc-400/80 font-medium max-w-2xl leading-relaxed mb-12">
-            No massive boring textbook grids. 진짜 AI combines double-LLM Agentic RAG textbook research with syllable-level speech recognition to build a dynamic course exclusively around you.
+            No massive boring textbook grids. 애라.ai combines double-LLM Agentic RAG textbook research with syllable-level speech recognition to build a dynamic course exclusively around you.
           </p>
 
           {/* CTAs */}
@@ -345,10 +345,10 @@ export default function HomeLandingPage() {
               className="w-8 h-8 rounded-lg object-contain bg-zinc-900 border border-purple-500/30 p-1" 
               alt="Logo" 
             />
-            <span className="text-sm font-black text-white">진짜 AI</span>
+            <span className="text-sm font-black text-white">애라.ai</span>
           </div>
           <p className="text-[10px] text-zinc-600 font-medium">
-            &copy; 2026 진짜 AI / HangeulAI Laboratory. All rights reserved. Powered by Groq Cloud APIs.
+            &copy; 2026 애라.ai. All rights reserved. Powered by Groq Cloud APIs.
           </p>
         </div>
       </footer>

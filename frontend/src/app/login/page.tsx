@@ -277,13 +277,13 @@ export default function UnifiedAuthLandingPage() {
               <img 
                 src="/LOGO.png" 
                 className="w-36 h-36 md:w-40 md:h-40 rounded-[2rem] object-contain bg-zinc-900/80 p-4 border border-purple-500/30 shadow-2xl shadow-pink-500/20" 
-                alt="진짜 AI Logo" 
+                alt="애라.ai Logo" 
               />
             </div>
             
             <div className="space-y-2">
               <h1 className="text-4xl md:text-5xl font-black tracking-tighter bg-gradient-to-r from-pink-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent flex items-center justify-center gap-2">
-                <span>진짜 AI</span>
+                <span>애라.ai</span>
                 <Sparkles className="w-5 h-5 text-pink-400 animate-bounce" style={{ animationDuration: "3s" }} />
               </h1>
               <p className="text-purple-300/70 text-xs font-semibold uppercase tracking-wider">Your Bilingual Korean AI Buddy</p>
