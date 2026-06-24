@@ -238,18 +238,18 @@ async def gwan_sik_chat(
 ):
     system_prompt = (
         "You are Gwan-Sik, a warm, supportive, lightweight contextual study helper for a student learning Hangeul/Korean.\n"
-        "Your purpose is strictly restricted to helping the learner understand the CURRENT LESSON screen only.\n"
-        "Do NOT act as a general-purpose AI or tutor for anything outside this screen's scope.\n\n"
+        "Your purpose is strictly restricted to helping the learner understand the current lesson screen, theory, or general Hangeul/Korean language concepts.\n"
+        "Do NOT act as a general-purpose AI for topics outside of Hangeul, Korean language, grammar, pronunciation, or the lesson content.\n\n"
         f"CURRENT SCREEN SCOPE:\n"
         f"- Course ID: {payload.course_id}\n"
         f"- Phase Number: {payload.phase_num}\n"
         f"- Step: {payload.step}\n"
         f"- Screen Context: {payload.screen_context or 'Not specified'}\n\n"
         "CRITICAL INSTRUCTIONS:\n"
-        "1. You must ONLY answer questions directly related to the Korean grammar, letters, vocabulary, examples, or explanations visible on this screen.\n"
-        "2. If the user asks ANY question that is off-topic, unrelated to this specific lesson, or seeks general knowledge (e.g. 'Who won the 2022 FIFA World Cup?', 'Write a python script', 'How to bake a cake', or even unrelated general Korean grammar not visible/relevant to the current step), you MUST respond EXACTLY with:\n"
+        "1. You MUST answer any questions about Korean grammar, Hangeul vowels/consonants, vocabulary, spelling, pronunciation, the lesson content, or questions asking to explain/summarize the current screen.\n"
+        "2. Only deflect completely unrelated non-educational/non-Korean off-topic queries (e.g., 'Write a python script', 'How to bake a cake', 'Who won the World Cup', math, general programming, history of other countries). If and only if the query is completely unrelated to Korean/Hangeul or learning, respond EXACTLY with:\n"
         "   'I\\'m currently designed to help only with this lesson\\'s content. Please ask a question related to the current topic.'\n"
-        "3. Keep your answers brief, clear, and focused on helping the student understand this specific slide."
+        "3. Answer permitted questions warmly, clearly, and concisely, keeping the student engaged."
     )
 
     messages = [{"role": "system", "content": system_prompt}]
@@ -290,30 +290,34 @@ async def gwan_sik_chat(
                         yield "I'm currently designed to help only with this lesson's content. Please ask a question related to the current topic."
                         return
 
-                    buffer = ""
-                    async for chunk in response.iter_text():
-                        buffer += chunk
-                        while "\n" in buffer:
-                            line, buffer = buffer.split("\n", 1)
-                            line = line.strip()
-                            if not line:
-                                continue
-                            if line.startswith("data:"):
-                                data_str = line[5:].strip()
-                                if data_str == "[DONE]":
-                                    break
-                                try:
-                                    data_json = json.loads(data_str)
-                                    delta = data_json["choices"][0]["delta"]
-                                    if "content" in delta:
-                                        yield delta["content"]
-                                except Exception:
-                                    pass
+                    async for line in response.iter_lines():
+                        line = line.strip()
+                        if not line:
+                            continue
+                        if line.startswith("data:"):
+                            data_str = line[5:].strip()
+                            if data_str == "[DONE]":
+                                break
+                            try:
+                                data_json = json.loads(data_str)
+                                delta = data_json["choices"][0]["delta"]
+                                if "content" in delta:
+                                    yield delta["content"]
+                            except Exception:
+                                pass
         except Exception as e:
             print(f"Gwan-Sik streaming error: {e}", flush=True)
             yield "I'm currently designed to help only with this lesson's content. Please ask a question related to the current topic."
 
-    return StreamingResponse(stream_generator(), media_type="text/plain")
+    return StreamingResponse(
+        stream_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        }
+    )
 
 
 @router.post("/gwan-sik/generate-note", response_model=GwanSikNoteResponse)

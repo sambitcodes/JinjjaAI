@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Sparkles, BookOpen, MessageSquare, Headphones, Award, Home, User, LogOut, Library, Globe, Gamepad2 } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
-import { apiRequest } from "../lib/api";
+import { apiRequest, API_BASE_URL } from "../lib/api";
 
 import FloatingKeyboard from "./FloatingKeyboard";
 import xpAudit from "../lib/xp-audit.json";
@@ -278,7 +278,7 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
       const screenContext = getScreenContextText();
       const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
       
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1"}/tutor/gwan-sik/chat`, {
+      const response = await fetch(`${API_BASE_URL}/tutor/gwan-sik/chat`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -662,10 +662,10 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
             </div>
           )}
 
-          {/* Floating Diary Button (bottom-6 right-20: left of keyboard) */}
+          {/* Floating Diary Button (bottom-6 right-24: left of keyboard) */}
           <button 
             onClick={() => setNotesOpen(!notesOpen)}
-            className="fixed bottom-6 right-20 z-[9999] p-4 bg-gradient-to-r from-brand-500 to-indigo-600 hover:from-brand-600 hover:to-indigo-700 text-white rounded-full shadow-2xl shadow-brand-500/25 border border-white/10 hover:scale-110 active:scale-95 transition-all duration-200 cursor-pointer"
+            className="fixed bottom-6 right-24 z-[9999] w-14 h-14 flex items-center justify-center bg-gradient-to-r from-brand-500 to-indigo-600 hover:from-brand-600 hover:to-indigo-700 text-white rounded-full shadow-2xl shadow-brand-500/25 border border-white/10 hover:scale-110 active:scale-95 transition-all duration-200 cursor-pointer"
             title="Open Course Diary"
           >
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6 animate-pulse">
@@ -674,11 +674,11 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
             </svg>
           </button>
 
-          {/* Floating Gwan-Sik Button (bottom-20 right-6: above keyboard) */}
+          {/* Floating Gwan-Sik Button (bottom-24 right-6: above keyboard) */}
           {pathname === "/lessons" && (
             <button 
               onClick={() => setGwanSikOpen(!gwanSikOpen)}
-              className="fixed bottom-20 right-6 z-[9999] w-14 h-14 rounded-full border border-white/10 hover:scale-110 active:scale-95 transition-all duration-200 cursor-pointer overflow-hidden p-0 bg-zinc-900 shadow-2xl shadow-teal-500/25 flex items-center justify-center"
+              className="fixed bottom-24 right-6 z-[9999] w-14 h-14 rounded-full border border-white/10 hover:scale-110 active:scale-95 transition-all duration-200 cursor-pointer overflow-hidden p-0 bg-zinc-900 shadow-2xl shadow-teal-500/25 flex items-center justify-center"
               title="Open Gwan-Sik Helper"
             >
               <img src="/parkbogum.jpg" alt="Gwan-Sik" className="w-full h-full object-cover" />
