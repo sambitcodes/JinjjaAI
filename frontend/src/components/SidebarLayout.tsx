@@ -327,7 +327,7 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
         const updated = [...prev];
         const lastMsg = updated[updated.length - 1];
         if (lastMsg && lastMsg.role === "assistant") {
-          lastMsg.content = "I'm currently designed to help only with this lesson's content. Please ask a question related to the current topic.";
+          lastMsg.content = "Failed to communicate with Gwan-Sik helper. Please check your connection or try again later.";
         }
         return updated;
       });

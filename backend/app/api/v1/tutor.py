@@ -279,6 +279,10 @@ async def gwan_sik_chat(
         }
         
         try:
+            log_payload = f"Payload: {json.dumps(payload_data)}\nHeaders keys: {list(headers.keys())}\nAPI Key length: {len(settings.GROQ_API_KEY) if settings.GROQ_API_KEY else 0}"
+            with open("gwan_sik_errors.log", "a", encoding="utf-8") as lf:
+                lf.write(log_payload + "\n")
+
             async with httpx.AsyncClient() as client:
                 async with client.stream(
                     "POST",
@@ -288,7 +292,12 @@ async def gwan_sik_chat(
                     timeout=20.0
                 ) as response:
                     if response.status_code != 200:
-                        yield "I'm currently designed to help only with this lesson's content. Please ask a question related to the current topic."
+                        error_body = await response.aread()
+                        error_msg = f"Groq API status: {response.status_code}, body: {error_body.decode('utf-8')}"
+                        print(error_msg, flush=True)
+                        with open("gwan_sik_errors.log", "a", encoding="utf-8") as lf:
+                            lf.write(error_msg + "\n")
+                        yield "Gwan-Sik helper is temporarily unavailable due to a connection issue with the translation engine. Please try again."
                         return
 
                     async for line in response.iter_lines():
@@ -307,8 +316,12 @@ async def gwan_sik_chat(
                             except Exception:
                                 pass
         except Exception as e:
-            print(f"Gwan-Sik streaming error: {e}", flush=True)
-            yield "I'm currently designed to help only with this lesson's content. Please ask a question related to the current topic."
+            import traceback
+            error_msg = f"Gwan-Sik streaming error exception: {e}\n{traceback.format_exc()}"
+            print(error_msg, flush=True)
+            with open("gwan_sik_errors.log", "a", encoding="utf-8") as lf:
+                lf.write(error_msg + "\n")
+            yield "An error occurred in the Gwan-Sik streaming engine. Please try again."
 
     return StreamingResponse(
         stream_generator(),
