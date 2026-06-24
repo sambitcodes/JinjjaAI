@@ -2,7 +2,7 @@ from datetime import timedelta
 import asyncio
 import uuid
 import httpx
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -35,28 +35,75 @@ def _get_client_ip(request: Request) -> str:
     return request.client.host if request.client else "unknown"
 
 
-async def _record_event_and_notify(
-    db: AsyncSession,
-    user: User,
+async def _record_event(
+    user_id: uuid.UUID,
+    email: str,
     event_type: str,
     method: str,
     ip_address: str,
     user_agent: str,
 ):
-    """Write a LoginEvent row and fire the admin email alert (non-blocking)."""
-    # 1. Write DB event
-    event = LoginEvent(
-        user_id=user.id,
-        email=user.email,
-        event_type=event_type,
-        method=method,
-        ip_address=ip_address,
-        user_agent=user_agent,
-    )
-    db.add(event)
-    await db.commit()
+    """
+    Write a LoginEvent row in its own DB session.
+    Completely isolated from the main request session — won't break login if it fails.
+    """
+    from backend.app.core.database import async_session_factory
+    try:
+        async with async_session_factory() as db:
+            event = LoginEvent(
+                user_id=user_id,
+                email=email,
+                event_type=event_type,
+                method=method,
+                ip_address=ip_address,
+                user_agent=user_agent,
+            )
+            db.add(event)
+            await db.commit()
+            print(f"[ADMIN] ✓ Event recorded: {event_type} / {method} for {email}", flush=True)
+    except Exception as e:
+        print(f"[ADMIN] ✗ Failed to record event: {e}", flush=True)
 
-    # 2. Build profile info dict for the email
+
+async def _send_email_alert(
+    event_type: str,
+    method: str,
+    email: str,
+    display_name: str | None,
+    ip_address: str,
+    user_agent: str,
+    user_id: str,
+    profile_info: dict | None,
+):
+    """Send email alert — errors are caught and logged, never propagate."""
+    try:
+        await send_login_alert(
+            event_type=event_type,
+            method=method,
+            email=email,
+            display_name=display_name,
+            ip_address=ip_address,
+            user_agent=user_agent,
+            user_id=user_id,
+            profile_info=profile_info,
+        )
+    except Exception as e:
+        print(f"[EMAIL] ✗ Alert failed: {e}", flush=True)
+
+
+def _schedule_tracking(
+    background_tasks: BackgroundTasks,
+    user: User,
+    event_type: str,
+    method: str,
+    ip: str,
+    ua: str,
+):
+    """
+    Schedule both DB recording and email alert as FastAPI background tasks.
+    Uses BackgroundTasks (reliable) instead of asyncio.create_task.
+    Neither task will ever break or delay the login response.
+    """
     profile_info = None
     if hasattr(user, "profile") and user.profile:
         p = user.profile
@@ -70,17 +117,26 @@ async def _record_event_and_notify(
             "current_streak": p.current_streak,
         }
 
-    # 3. Fire email in background (don't block the login response)
-    asyncio.create_task(send_login_alert(
+    background_tasks.add_task(
+        _record_event,
+        user_id=user.id,
+        email=user.email,
+        event_type=event_type,
+        method=method,
+        ip_address=ip,
+        user_agent=ua,
+    )
+    background_tasks.add_task(
+        _send_email_alert,
         event_type=event_type,
         method=method,
         email=user.email,
         display_name=user.profile.display_name if user.profile else None,
-        ip_address=ip_address,
-        user_agent=user_agent,
+        ip_address=ip,
+        user_agent=ua,
         user_id=str(user.id),
         profile_info=profile_info,
-    ))
+    )
 
 
 async def get_current_user(
@@ -103,7 +159,6 @@ async def get_current_user(
     except JWTError:
         raise credentials_exception
     
-    # Query user with profile
     stmt = select(User).where(User.id == uuid.UUID(token_data.sub)).options(selectinload(User.profile))
     result = await db.execute(stmt)
     user = result.scalars().first()
@@ -112,8 +167,12 @@ async def get_current_user(
     return user
 
 @router.post("/register", response_model=UserFullResponse, status_code=status.HTTP_201_CREATED)
-async def register(user_in: UserRegister, request: Request, db: AsyncSession = Depends(get_db)):
-    # Check if user already exists
+async def register(
+    user_in: UserRegister,
+    request: Request,
+    background_tasks: BackgroundTasks,
+    db: AsyncSession = Depends(get_db),
+):
     stmt = select(User).where(User.email == user_in.email)
     result = await db.execute(stmt)
     if result.scalars().first():
@@ -128,7 +187,7 @@ async def register(user_in: UserRegister, request: Request, db: AsyncSession = D
         role="user",
     )
     db.add(new_user)
-    await db.flush()  # To populate user ID
+    await db.flush()
 
     new_profile = Profile(
         user_id=new_user.id,
@@ -139,20 +198,23 @@ async def register(user_in: UserRegister, request: Request, db: AsyncSession = D
     await db.commit()
     await db.refresh(new_user)
     
-    # Reload user with profile relationship
     stmt = select(User).where(User.id == new_user.id).options(selectinload(User.profile))
     result = await db.execute(stmt)
     user = result.scalars().first()
 
-    # Log signup event + email alert
     ip = _get_client_ip(request)
     ua = request.headers.get("User-Agent", "")
-    await _record_event_and_notify(db, user, "signup", "password", ip, ua)
+    _schedule_tracking(background_tasks, user, "signup", "password", ip, ua)
 
     return user
 
 @router.post("/login", response_model=Token)
-async def login(user_in: UserLogin, request: Request, db: AsyncSession = Depends(get_db)):
+async def login(
+    user_in: UserLogin,
+    request: Request,
+    background_tasks: BackgroundTasks,
+    db: AsyncSession = Depends(get_db),
+):
     ip = _get_client_ip(request)
     ua = request.headers.get("User-Agent", "")
 
@@ -162,7 +224,6 @@ async def login(user_in: UserLogin, request: Request, db: AsyncSession = Depends
         result = await db.execute(stmt)
         user = result.scalars().first()
         if not user:
-            # Auto-register Sambit
             user = User(
                 email="sambit@hangeulai.com",
                 password_hash=get_password_hash("12345678"),
@@ -181,8 +242,6 @@ async def login(user_in: UserLogin, request: Request, db: AsyncSession = Depends
             db.add(profile)
             await db.commit()
             await db.refresh(user)
-            
-            # Reload with profile
             stmt = select(User).where(User.id == user.id).options(selectinload(User.profile))
             result = await db.execute(stmt)
             user = result.scalars().first()
@@ -190,14 +249,8 @@ async def login(user_in: UserLogin, request: Request, db: AsyncSession = Depends
         access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
         access_token = create_access_token(user.id, expires_delta=access_token_expires)
         refresh_token = create_refresh_token(user.id)
-
-        await _record_event_and_notify(db, user, "login", "password", ip, ua)
-
-        return {
-            "access_token": access_token,
-            "refresh_token": refresh_token,
-            "token_type": "bearer",
-        }
+        _schedule_tracking(background_tasks, user, "login", "password", ip, ua)
+        return {"access_token": access_token, "refresh_token": refresh_token, "token_type": "bearer"}
 
     stmt = select(User).where(User.email == user_in.email).options(selectinload(User.profile))
     result = await db.execute(stmt)
@@ -211,14 +264,9 @@ async def login(user_in: UserLogin, request: Request, db: AsyncSession = Depends
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(user.id, expires_delta=access_token_expires)
     refresh_token = create_refresh_token(user.id)
-
-    await _record_event_and_notify(db, user, "login", "password", ip, ua)
+    _schedule_tracking(background_tasks, user, "login", "password", ip, ua)
     
-    return {
-        "access_token": access_token,
-        "refresh_token": refresh_token,
-        "token_type": "bearer",
-    }
+    return {"access_token": access_token, "refresh_token": refresh_token, "token_type": "bearer"}
 
 @router.post("/refresh", response_model=Token)
 async def refresh_token(refresh_token: str, db: AsyncSession = Depends(get_db)):
@@ -245,31 +293,29 @@ async def refresh_token(refresh_token: str, db: AsyncSession = Depends(get_db)):
         
     access_token = create_access_token(user.id)
     new_refresh_token = create_refresh_token(user.id)
-    return {
-        "access_token": access_token,
-        "refresh_token": new_refresh_token,
-        "token_type": "bearer",
-    }
+    return {"access_token": access_token, "refresh_token": new_refresh_token, "token_type": "bearer"}
 
 @router.post("/google", response_model=dict)
-async def google_login(payload: dict, request: Request, db: AsyncSession = Depends(get_db)):
+async def google_login(
+    payload: dict,
+    request: Request,
+    background_tasks: BackgroundTasks,
+    db: AsyncSession = Depends(get_db),
+):
     id_token = payload.get("id_token")
     if not id_token:
         raise HTTPException(status_code=400, detail="Missing Google ID token")
         
     async with httpx.AsyncClient() as client:
-        # Validate ID Token with Google's API
         resp = await client.get(f"https://oauth2.googleapis.com/tokeninfo?id_token={id_token}", timeout=5.0)
         if resp.status_code != 200:
             raise HTTPException(status_code=400, detail="Invalid Google ID token")
         info = resp.json()
         
-    # Extract email and name
     email = info.get("email")
     if not email:
         raise HTTPException(status_code=400, detail="Could not retrieve email from Google")
         
-    # Check if user already exists
     stmt = select(User).where(User.email == email).options(selectinload(User.profile))
     result = await db.execute(stmt)
     user = result.scalars().first()
@@ -279,16 +325,9 @@ async def google_login(payload: dict, request: Request, db: AsyncSession = Depen
     is_new_signup = False
 
     if not user:
-        # Create new user
-        user = User(
-            email=email,
-            password_hash="",  # Google auth users don't have password_hash
-            role="user",
-        )
+        user = User(email=email, password_hash="", role="user")
         db.add(user)
         await db.flush()
-        
-        # Create empty profile that will be configured during onboarding
         profile = Profile(
             user_id=user.id,
             display_name=info.get("name") or email.split("@")[0],
@@ -300,19 +339,16 @@ async def google_login(payload: dict, request: Request, db: AsyncSession = Depen
         db.add(profile)
         await db.commit()
         await db.refresh(user)
-
-        # Reload with profile
         stmt = select(User).where(User.id == user.id).options(selectinload(User.profile))
         result = await db.execute(stmt)
         user = result.scalars().first()
-
         is_new_signup = True
         
     access_token = create_access_token(user.id)
     refresh_token = create_refresh_token(user.id)
 
     event_type = "signup" if is_new_signup else "login"
-    await _record_event_and_notify(db, user, event_type, "google", ip, ua)
+    _schedule_tracking(background_tasks, user, event_type, "google", ip, ua)
     
     return {
         "access_token": access_token,

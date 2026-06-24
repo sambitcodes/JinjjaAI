@@ -124,6 +124,7 @@ export default function AdminPage() {
   const [totalEvents, setTotalEvents] = useState(0);
 
   const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [methodFilter, setMethodFilter] = useState("");
   const [eventTypeFilter, setEventTypeFilter] = useState("");
@@ -142,13 +143,14 @@ export default function AdminPage() {
       headers: { "X-Admin-Secret": secret }
     });
     if (res.status === 403) { setAuthError(true); return null; }
-    if (!res.ok) throw new Error(await res.text());
+    if (!res.ok) throw new Error(`${res.status} — ${res.statusText}`);
     return res.json();
   }, []);
 
   const loadData = useCallback(async (secret: string) => {
     setLoading(true);
     setAuthError(false);
+    setLoadError(null);
     try {
       const [statsData, usersData, eventsData] = await Promise.all([
         apiFetch("/admin/stats", secret),
@@ -158,12 +160,15 @@ export default function AdminPage() {
       if (statsData) setStats(statsData);
       if (usersData) { setUsers(usersData.users); setTotalUsers(usersData.total); }
       if (eventsData) { setEvents(eventsData.events); setTotalEvents(eventsData.total); }
-    } catch (e) {
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Unknown error";
+      setLoadError(`Backend unreachable: ${msg}`);
       console.error("Admin load failed:", e);
     } finally {
       setLoading(false);
     }
   }, [apiFetch]);
+
 
   const handleLogin = (secret: string) => {
     sessionStorage.setItem(ADMIN_SECRET_KEY, secret);
@@ -274,6 +279,23 @@ export default function AdminPage() {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+
+        {/* ── API URL Debug Banner ─────────────────────────────────────────── */}
+        <div className="flex items-center gap-3 px-5 py-3 bg-zinc-900/60 border border-white/5 rounded-2xl text-xs font-mono text-zinc-600">
+          <span className="text-zinc-500">API →</span>
+          <span className="text-zinc-400">{API_BASE}</span>
+        </div>
+
+        {/* ── Error Banner ─────────────────────────────────────────────────── */}
+        {loadError && (
+          <div className="flex items-center gap-3 px-5 py-3.5 bg-red-500/10 border border-red-500/20 rounded-2xl text-sm">
+            <span className="text-red-400 font-black">⚠ Error:</span>
+            <span className="text-red-300">{loadError}</span>
+            <span className="text-zinc-500 ml-auto text-xs">
+              Set <code className="bg-zinc-800 px-1 rounded">NEXT_PUBLIC_API_URL</code> on Render frontend if this is wrong
+            </span>
           </div>
         )}
 
