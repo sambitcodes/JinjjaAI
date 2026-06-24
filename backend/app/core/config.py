@@ -76,6 +76,16 @@ class Settings(BaseSettings):
     # Groq Settings
     GROQ_API_KEY: str | None = None
 
+    # Email / SMTP Settings (Gmail)
+    SMTP_HOST: str = "smtp.gmail.com"
+    SMTP_PORT: int = 465
+    SMTP_USER: str = ""
+    SMTP_PASSWORD: str = ""  # Gmail App Password
+    ADMIN_EMAIL: str = "sambitmaths123@gmail.com"
+
+    # Admin Dashboard Secret
+    ADMIN_SECRET: str = "aera-admin-2025"
+
     @field_validator("REDIS_URL", mode="before")
     @classmethod
     def assemble_redis_url(cls, v: str | None, values) -> str:

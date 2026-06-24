@@ -52,3 +52,20 @@ class Profile(Base):
 
     # Relationships
     user: Mapped["User"] = relationship("User", back_populates="profile")
+
+
+class LoginEvent(Base):
+    """Tracks every signup and login event for admin monitoring."""
+    __tablename__ = "login_events"
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    email: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    event_type: Mapped[str] = mapped_column(String(20), nullable=False)   # "signup" | "login"
+    method: Mapped[str] = mapped_column(String(20), nullable=False)        # "password" | "google"
+    ip_address: Mapped[str] = mapped_column(String(100), nullable=True)
+    user_agent: Mapped[str] = mapped_column(String(500), nullable=True)
+    timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), index=True)
+
+    user: Mapped["User"] = relationship("User")
+
