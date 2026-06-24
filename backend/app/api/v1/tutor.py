@@ -229,7 +229,9 @@ class GwanSikNoteResponse(BaseModel):
     quickRevision: str
 
 
-@router.post("/gwan-sik/chat", response_model=GwanSikChatResponse)
+from fastapi.responses import StreamingResponse
+
+@router.post("/gwan-sik/chat")
 async def gwan_sik_chat(
     payload: GwanSikChatRequest,
     current_user: User = Depends(get_current_user)
@@ -250,17 +252,18 @@ async def gwan_sik_chat(
         "3. Keep your answers brief, clear, and focused on helping the student understand this specific slide."
     )
 
-    try:
+    messages = [{"role": "system", "content": system_prompt}]
+    for msg in payload.conversation_history:
+        messages.append({
+            "role": "user" if msg["role"] == "user" else "assistant",
+            "content": msg["content"]
+        })
+    messages.append({"role": "user", "content": payload.message})
+
+    async def stream_generator():
         import httpx
         from backend.app.core.config import settings
-        
-        messages = [{"role": "system", "content": system_prompt}]
-        for msg in payload.conversation_history:
-            messages.append({
-                "role": "user" if msg["role"] == "user" else "assistant",
-                "content": msg["content"]
-            })
-        messages.append({"role": "user", "content": payload.message})
+        import json
 
         headers = {
             "Authorization": f"Bearer {settings.GROQ_API_KEY}",
@@ -270,24 +273,47 @@ async def gwan_sik_chat(
             "model": "llama-3.3-70b-versatile",
             "messages": messages,
             "temperature": 0.2,
-            "max_tokens": 500
+            "max_tokens": 500,
+            "stream": True
         }
-        async with httpx.AsyncClient() as client:
-            response = await client.post(
-                "https://api.groq.com/openai/v1/chat/completions",
-                headers=headers,
-                json=payload_data,
-                timeout=20.0
-            )
-            if response.status_code == 200:
-                res_data = response.json()
-                reply = res_data["choices"][0]["message"]["content"].strip()
-                return GwanSikChatResponse(reply=reply)
-            else:
-                return GwanSikChatResponse(reply="I'm currently designed to help only with this lesson's content. Please ask a question related to the current topic.")
-    except Exception as e:
-        print(f"Gwan-Sik API error: {e}", flush=True)
-        return GwanSikChatResponse(reply="I'm currently designed to help only with this lesson's content. Please ask a question related to the current topic.")
+        
+        try:
+            async with httpx.AsyncClient() as client:
+                async with client.stream(
+                    "POST",
+                    "https://api.groq.com/openai/v1/chat/completions",
+                    headers=headers,
+                    json=payload_data,
+                    timeout=20.0
+                ) as response:
+                    if response.status_code != 200:
+                        yield "I'm currently designed to help only with this lesson's content. Please ask a question related to the current topic."
+                        return
+
+                    buffer = ""
+                    async for chunk in response.iter_text():
+                        buffer += chunk
+                        while "\n" in buffer:
+                            line, buffer = buffer.split("\n", 1)
+                            line = line.strip()
+                            if not line:
+                                continue
+                            if line.startswith("data:"):
+                                data_str = line[5:].strip()
+                                if data_str == "[DONE]":
+                                    break
+                                try:
+                                    data_json = json.loads(data_str)
+                                    delta = data_json["choices"][0]["delta"]
+                                    if "content" in delta:
+                                        yield delta["content"]
+                                except Exception:
+                                    pass
+        except Exception as e:
+            print(f"Gwan-Sik streaming error: {e}", flush=True)
+            yield "I'm currently designed to help only with this lesson's content. Please ask a question related to the current topic."
+
+    return StreamingResponse(stream_generator(), media_type="text/plain")
 
 
 @router.post("/gwan-sik/generate-note", response_model=GwanSikNoteResponse)
