@@ -278,9 +278,11 @@ async def gwan_sik_chat(
             "stream": True
         }
         
+        import os
+        log_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "gwan_sik_errors.log")
         try:
             log_payload = f"Payload: {json.dumps(payload_data)}\nHeaders keys: {list(headers.keys())}\nAPI Key length: {len(settings.GROQ_API_KEY) if settings.GROQ_API_KEY else 0}"
-            with open("gwan_sik_errors.log", "a", encoding="utf-8") as lf:
+            with open(log_path, "a", encoding="utf-8") as lf:
                 lf.write(log_payload + "\n")
 
             async with httpx.AsyncClient() as client:
@@ -295,7 +297,7 @@ async def gwan_sik_chat(
                         error_body = await response.aread()
                         error_msg = f"Groq API status: {response.status_code}, body: {error_body.decode('utf-8')}"
                         print(error_msg, flush=True)
-                        with open("gwan_sik_errors.log", "a", encoding="utf-8") as lf:
+                        with open(log_path, "a", encoding="utf-8") as lf:
                             lf.write(error_msg + "\n")
                         yield "Gwan-Sik helper is temporarily unavailable due to a connection issue with the translation engine. Please try again."
                         return
@@ -319,7 +321,7 @@ async def gwan_sik_chat(
             import traceback
             error_msg = f"Gwan-Sik streaming error exception: {e}\n{traceback.format_exc()}"
             print(error_msg, flush=True)
-            with open("gwan_sik_errors.log", "a", encoding="utf-8") as lf:
+            with open(log_path, "a", encoding="utf-8") as lf:
                 lf.write(error_msg + "\n")
             yield "An error occurred in the Gwan-Sik streaming engine. Please try again."
 
