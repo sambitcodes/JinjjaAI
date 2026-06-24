@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from backend.app.api.v1 import auth, lessons, tutor, speech, progress, speaking, conversation, grammar_lab, pls_lab, notes, shadow_dj, context_detective, register_roulette
+from backend.app.api.v1 import auth, lessons, tutor, speech, progress, speaking, conversation, grammar_lab, pls_lab, notes, shadow_dj, context_detective, register_roulette, idiom_heist
 
 api_router = APIRouter()
 
@@ -16,6 +16,8 @@ api_router.include_router(notes.router, prefix="/notes", tags=["notes"])
 api_router.include_router(shadow_dj.router, prefix="/shadow-dj", tags=["shadow-dj"])
 api_router.include_router(context_detective.router, prefix="/context-detective", tags=["context-detective"])
 api_router.include_router(register_roulette.router, prefix="/register-roulette", tags=["register-roulette"])
+api_router.include_router(idiom_heist.router, prefix="/idiom-heist", tags=["idiom-heist"])
+
 
 
 

@@ -4,7 +4,8 @@ import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { 
   Gamepad2, Award, Sparkles, ChevronLeft, Play, RefreshCw, BrainCircuit, Target,
-  Layers, Swords, Heart, Plus, Trophy, Trash2, CheckCircle2, ChevronRight, Zap, Loader2, Volume2
+  Layers, Swords, Heart, Plus, Trophy, Trash2, CheckCircle2, ChevronRight, Zap, Loader2, Volume2,
+  Lock, Unlock, ShieldAlert, Coins, Fingerprint, Flame
 } from "lucide-react";
 import { apiRequest, ensureAuthenticated } from "../../lib/api";
 
@@ -125,7 +126,7 @@ const BOSS_QUESTIONS: BossQuestion[] = [
 // COMPONENT MAIN
 // ─────────────────────────────────────────────────────────────────────────────
 
-type GameTab = "arcade" | "orchard" | "sniper" | "sentence" | "boss" | "forge" | "dj" | "detective" | "roulette";
+type GameTab = "arcade" | "orchard" | "sniper" | "sentence" | "boss" | "forge" | "dj" | "detective" | "roulette" | "heist";
 
 export default function GamesArcade() {
   const [loading, setLoading] = useState(true);
@@ -482,6 +483,31 @@ export default function GamesArcade() {
                 <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition duration-300" />
               </button>
             </div>
+            {/* Idiom Heist Card */}
+            <div 
+              className="glass-panel p-6 rounded-[2.2rem] border border-white/10 bg-gradient-to-br from-red-950/10 to-amber-950/10 hover:border-red-500/50 hover:shadow-[0_0_30px_rgba(239,68,68,0.35)] transition duration-300 group flex flex-col justify-between"
+            >
+              <div className="space-y-4 text-left">
+                <div className="flex justify-between items-center">
+                  <span className="text-3xl p-3 bg-zinc-950 rounded-2xl border border-white/5 group-hover:scale-110 transition duration-300">🔑</span>
+                  <span className="text-[9px] font-black uppercase px-2.5 py-1 rounded bg-red-500/10 text-red-400 border border-red-500/20">
+                    Idioms &amp; Chunks
+                  </span>
+                </div>
+                <h3 className="text-xl font-black text-white">Idiom Heist</h3>
+                <p className="text-zinc-400 text-xs leading-relaxed">
+                  Crack safes using the most natural Korean idioms. Choose the right expression and form to complete the perfect heist.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setActiveTab("heist")}
+                className="w-full pt-6 mt-6 border-t border-white/[0.04] flex items-center justify-between text-xs font-black text-zinc-400 hover:text-white transition cursor-pointer"
+              >
+                <span>Start Heist</span>
+                <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition duration-300" />
+              </button>
+            </div>
 
           </div>
         </div>
@@ -562,6 +588,16 @@ export default function GamesArcade() {
           ───────────────────────────────────────────────────────────────────────────── */}
       {activeTab === "roulette" && (
         <RegisterRouletteView 
+          onEarnXp={handleEarnXp}
+          onBack={() => setActiveTab("arcade")}
+        />
+      )}
+
+      {/* ─────────────────────────────────────────────────────────────────────────────
+          GAME: IDIOM HEIST
+          ───────────────────────────────────────────────────────────────────────────── */}
+      {activeTab === "heist" && (
+        <IdiomHeistView 
           onEarnXp={handleEarnXp}
           onBack={() => setActiveTab("arcade")}
         />
@@ -4583,6 +4619,839 @@ function RegisterRouletteView({ onEarnXp, onBack }: { onEarnXp: (amount: number)
               className="px-10 py-3.5 bg-gradient-to-r from-purple-500 to-orange-500 hover:from-purple-650 hover:to-orange-650 text-white font-black rounded-2xl text-xs shadow-xl hover:shadow-purple-500/25 transition cursor-pointer w-full sm:w-auto"
             >
               Replay Cases
+            </button>
+          </div>
+
+        </div>
+      )}
+
+    </div>
+  );
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// IDIOM HEIST GAME VIEW
+// ─────────────────────────────────────────────────────────────────────────────
+
+interface HeistLock {
+  id: string;
+  type: "context_choice" | "literal_vs_idiomatic" | "collocation" | "gapfill" | "idiom_rewrite";
+  theme: string;
+  difficulty: number;
+  scenarioDesc: string;
+  plainSentenceKo?: string;
+  plainSentenceEn?: string;
+  underlinedSegment?: string;
+  hint?: string;
+  idiomOptions: {
+    id: string;
+    textKo: string;
+    meaningEn: string;
+    register: string;
+    connotation: string;
+    isCorrect: boolean;
+  }[];
+  gaps: {
+    id: string;
+    hint: string;
+  }[];
+}
+
+function IdiomHeistView({ onEarnXp, onBack }: { onEarnXp: (amount: number) => void; onBack: () => void }) {
+  const [gameState, setGameState] = useState<"lobby" | "playing" | "summary">("lobby");
+  const [mode, setMode] = useState<"practice" | "arcade">("arcade");
+  const [theme, setTheme] = useState<string>("mixed");
+  const [difficulty, setDifficulty] = useState<number>(2);
+
+  // Heist state
+  const [sessionId, setSessionId] = useState("");
+  const [locks, setLocks] = useState<HeistLock[]>([]);
+  const [currentLockIdx, setCurrentLockIdx] = useState(0);
+  const [isEvaluating, setIsEvaluating] = useState(false);
+  const [alarmMeter, setAlarmMeter] = useState(0); // 0 to 3 strikes
+  const [lootCount, setLootCount] = useState(0);
+
+  // Time & combos
+  const [timeLeft, setTimeLeft] = useState(25);
+  const [timerActive, setTimerActive] = useState(false);
+  const [combo, setCombo] = useState(0);
+  const [maxCombo, setMaxCombo] = useState(0);
+  const [earnedXp, setEarnedXp] = useState(0);
+
+  // User input states
+  const [userSelectedIdx, setUserSelectedIdx] = useState<number | null>(null);
+  const [userText, setUserText] = useState("");
+  const [gapInputs, setGapInputs] = useState<Record<string, string>>({});
+
+  // Hints
+  const [showHint, setShowHint] = useState(false);
+  const [usedHintThisLock, setUsedHintThisLock] = useState(false);
+
+  // Feedback popup
+  const [feedback, setFeedback] = useState("");
+  const [feedbackStatus, setFeedbackStatus] = useState<"success" | "failure" | "jammed" | null>(null);
+  const [seenIdioms, setSeenIdioms] = useState<string[]>([]);
+
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+
+  // Timer Tick Hook
+  useEffect(() => {
+    let timerId: NodeJS.Timeout;
+    if (timerActive && timeLeft > 0) {
+      timerId = setInterval(() => {
+        setTimeLeft((prev) => prev - 1);
+      }, 1000);
+    } else if (timeLeft === 0 && timerActive) {
+      setTimerActive(false);
+      handleTimeout();
+    }
+    return () => clearInterval(timerId);
+  }, [timeLeft, timerActive]);
+
+  const startHeistSession = async () => {
+    setIsEvaluating(true);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API_BASE}/idiom-heist/start`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({ mode, theme, difficulty })
+      });
+
+      if (!res.ok) throw new Error("Could not initialize heist.");
+
+      const data = await res.json();
+      setSessionId(data.sessionId);
+      setLocks(data.locks);
+      setCurrentLockIdx(0);
+      setAlarmMeter(0);
+      setLootCount(0);
+      setCombo(0);
+      setMaxCombo(0);
+      setEarnedXp(0);
+      setSeenIdioms([]);
+      setGameState("playing");
+      setupLock(data.locks, 0);
+
+    } catch (e) {
+      console.error(e);
+      alert("Error starting heist. Please try again.");
+    } finally {
+      setIsEvaluating(false);
+    }
+  };
+
+  const setupLock = (activeLocks: HeistLock[], idx: number) => {
+    setCurrentLockIdx(idx);
+    setUserSelectedIdx(null);
+    setUserText("");
+    setGapInputs({});
+    setShowHint(false);
+    setUsedHintThisLock(false);
+    setFeedback("");
+    setFeedbackStatus(null);
+
+    if (mode === "arcade") {
+      setTimeLeft(difficulty === 4 ? 15 : 25);
+      setTimerActive(true);
+    } else {
+      setTimerActive(false);
+    }
+  };
+
+  const handleTimeout = () => {
+    triggerLockFeedback(false, "System Override Alert: Lock timed out! Alarm triggered.");
+  };
+
+  const submitChoiceAnswer = async (optIdx: number) => {
+    if (feedbackStatus) return;
+    setUserSelectedIdx(optIdx);
+    setTimerActive(false);
+
+    const activeLock = locks[currentLockIdx];
+    const option = activeLock.idiomOptions[optIdx];
+    
+    setIsEvaluating(true);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API_BASE}/idiom-heist/solve-lock`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({
+          lockId: activeLock.id,
+          userChoiceId: option.id
+        })
+      });
+
+      if (!res.ok) throw new Error("Solve lock error");
+      const data = await res.json();
+
+      if (data.usedIdiomIds) {
+        setSeenIdioms(prev => [...new Set([...prev, ...data.usedIdiomIds])]);
+      }
+      triggerLockFeedback(data.success, data.explanation);
+
+    } catch (e) {
+      // client-side fallback
+      const isCorrect = option.isCorrect;
+      triggerLockFeedback(isCorrect, isCorrect ? "Lock cracked using local decoder key!" : "Security breach! Wrong configuration selected.");
+    } finally {
+      setIsEvaluating(false);
+    }
+  };
+
+  const submitTextOrGapAnswer = async () => {
+    if (feedbackStatus || isEvaluating) return;
+    setTimerActive(false);
+
+    const activeLock = locks[currentLockIdx];
+    // Serialize input
+    let textPayload = userText;
+    if (activeLock.type === "gapfill") {
+      // Gather gap values comma-separated
+      const gapValues = activeLock.gaps.map(g => gapInputs[g.id] || "");
+      textPayload = gapValues.join(", ");
+    }
+
+    if (!textPayload.trim() && activeLock.type !== "gapfill") {
+      alert("Please enter your answer to bypass the lock.");
+      setTimerActive(true);
+      return;
+    }
+
+    setIsEvaluating(true);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API_BASE}/idiom-heist/solve-lock`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({
+          lockId: activeLock.id,
+          userSentenceKo: textPayload
+        })
+      });
+
+      if (!res.ok) throw new Error("Solve lock text error");
+      const data = await res.json();
+
+      if (data.usedIdiomIds) {
+        setSeenIdioms(prev => [...new Set([...prev, ...data.usedIdiomIds])]);
+      }
+      triggerLockFeedback(data.success, data.explanation);
+
+    } catch (e) {
+      triggerLockFeedback(true, "Fallback: Lock opened via direct decrypter.");
+    } finally {
+      setIsEvaluating(false);
+    }
+  };
+
+  const triggerLockFeedback = (success: boolean, text: string) => {
+    setFeedback(text);
+    setFeedbackStatus(success ? "success" : "failure");
+
+    let baseReward = 0;
+    if (success) {
+      // Determine base points
+      const activeLock = locks[currentLockIdx];
+      const isChoice = ["context_choice", "literal_vs_idiomatic", "collocation"].includes(activeLock.type);
+      baseReward = isChoice ? 12 : 20;
+
+      // Streaks and multipliers
+      const nextCombo = combo + 1;
+      setCombo(nextCombo);
+      if (nextCombo > maxCombo) setMaxCombo(nextCombo);
+
+      let multiplier = 1.0;
+      if (nextCombo >= 7) multiplier = 2.0;
+      else if (nextCombo >= 5) multiplier = 1.6;
+      else if (nextCombo >= 3) multiplier = 1.3;
+
+      // Speed bonus
+      let speedBonus = 0;
+      if (mode === "arcade") {
+        const fullTime = difficulty === 4 ? 15 : 25;
+        if (timeLeft > fullTime / 2) {
+          speedBonus = Math.floor(baseReward * 0.2);
+        }
+      }
+
+      const totalXpEarned = Math.floor((baseReward * multiplier) + speedBonus);
+      setEarnedXp(prev => prev + totalXpEarned);
+      setLootCount(prev => prev + 1);
+
+      // Trigger actual UI side effect for sidebar XP
+      onEarnXp(totalXpEarned);
+    } else {
+      setCombo(0);
+      const nextAlarm = alarmMeter + 1;
+      setAlarmMeter(nextAlarm);
+
+      if (nextAlarm >= 3 && mode === "arcade") {
+        setTimeout(() => {
+          setGameState("summary");
+        }, 2000);
+        return;
+      }
+    }
+
+    // Delay move to next lock or finish
+    setTimeout(() => {
+      const nextIdx = currentLockIdx + 1;
+      if (nextIdx < locks.length) {
+        setupLock(locks, nextIdx);
+      } else {
+        setGameState("summary");
+      }
+    }, 3500);
+  };
+
+  // Helper parser for gap fills
+  const renderSentenceWithGaps = (text: string, gaps: {id: string, hint: string}[]) => {
+    if (!text) return null;
+    const parts = text.split(/(\[GAP\d+\])/g);
+    return (
+      <div className="leading-loose font-korean text-lg text-zinc-150 text-center tracking-wide">
+        {parts.map((part, idx) => {
+          const gapMatch = part.match(/\[(GAP\d+)\]/);
+          if (gapMatch) {
+            const gapId = gapMatch[1];
+            const gapInfo = gaps.find(g => g.id === gapId);
+            return (
+              <input
+                key={gapId}
+                type="text"
+                placeholder={gapInfo ? gapInfo.hint : "idiom"}
+                value={gapInputs[gapId] || ""}
+                onChange={(e) => setGapInputs(prev => ({ ...prev, [gapId]: e.target.value }))}
+                className="mx-2 px-3 py-1 bg-zinc-900 border border-red-500/35 text-amber-300 font-bold rounded-lg text-sm inline-block w-40 text-center focus:border-amber-400 focus:outline-none transition-all shadow-inner placeholder:text-zinc-650"
+              />
+            );
+          }
+          return <span key={idx}>{part}</span>;
+        })}
+      </div>
+    );
+  };
+
+  // Summary Metrics
+  const uniqueIdiomsCount = seenIdioms.length;
+  let rareLootXp = 0;
+  let rareLootLabel = "";
+  if (uniqueIdiomsCount >= 5) {
+    rareLootXp = 120;
+    rareLootLabel = "Legendary Loot Chest Unlocked 👑";
+  } else if (uniqueIdiomsCount >= 3) {
+    rareLootXp = 50;
+    rareLootLabel = "Rare Loot Chest Unlocked 💎";
+  }
+
+  let rankName = "Lookout";
+  if (lootCount >= 7) rankName = "Idiom King/Queen 👑";
+  else if (lootCount >= 5) rankName = "Master Thief 🕵️‍♂️";
+  else if (lootCount >= 3) rankName = "Safecracker 🔑";
+
+  // Trigger XP for chest on summary mount
+  useEffect(() => {
+    if (gameState === "summary" && rareLootXp > 0) {
+      onEarnXp(rareLootXp);
+    }
+  }, [gameState]);
+
+  return (
+    <div className="w-full max-w-4xl mx-auto py-8">
+      
+      {/* ─────────────────────────────────────────────────────────────────────────────
+          LOBBY VIEW
+          ───────────────────────────────────────────────────────────────────────────── */}
+      {gameState === "lobby" && (
+        <div className="glass-panel p-8 rounded-[2.5rem] border border-white/10 bg-gradient-to-br from-zinc-950 via-zinc-900/60 to-zinc-950 shadow-2xl relative overflow-hidden text-left space-y-8">
+          
+          <div className="absolute -right-16 -top-16 w-52 h-52 bg-red-500/10 rounded-full blur-[100px] pointer-events-none" />
+          <div className="absolute -left-16 -bottom-16 w-52 h-52 bg-amber-500/10 rounded-full blur-[100px] pointer-events-none" />
+
+          {/* Heading */}
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div className="space-y-2">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-500/10 border border-red-500/25 text-[10px] text-red-300 font-extrabold uppercase tracking-widest">
+                <Fingerprint className="w-3.5 h-3.5" />
+                <span>Active Target Mission</span>
+              </div>
+              <h2 className="text-3xl font-black text-white leading-tight font-sans">
+                Idiom <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-amber-500 font-black">Heist</span>
+              </h2>
+              <p className="text-zinc-400 text-xs max-w-lg leading-relaxed">
+                Slip inside the corporate vault. Crack successive terminal locks by identifying register markings, natural collocations, and C1 idiom fillers.
+              </p>
+            </div>
+            
+            <button
+              onClick={onBack}
+              className="text-zinc-400 hover:text-white text-xs font-bold border border-white/10 hover:border-white/20 bg-zinc-900/40 px-4 py-2 rounded-xl transition"
+            >
+              Cancel Mission
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            
+            {/* Mode selection */}
+            <div className="bg-zinc-900/50 p-6 rounded-3xl border border-white/5 space-y-4">
+              <span className="text-[10px] font-black uppercase text-zinc-550 tracking-widest block">Select Code Mode</span>
+              
+              <div className="space-y-3">
+                <button
+                  onClick={() => setMode("practice")}
+                  className={`w-full text-left p-4 rounded-2xl border text-xs transition duration-200 ${
+                    mode === "practice" 
+                      ? "border-amber-500 bg-amber-500/10 text-white font-extrabold shadow-lg" 
+                      : "border-white/5 bg-zinc-950/40 text-zinc-400 hover:border-white/10"
+                  }`}
+                >
+                  <span className="block font-black text-[11px] text-amber-300 uppercase tracking-wide">Practice Heist</span>
+                  <span className="text-[10px] opacity-80 mt-1 block">Unlimited time. Hints enabled. 6 custom locks.</span>
+                </button>
+
+                <button
+                  onClick={() => setMode("arcade")}
+                  className={`w-full text-left p-4 rounded-2xl border text-xs transition duration-200 ${
+                    mode === "arcade" 
+                      ? "border-red-500 bg-red-500/10 text-white font-extrabold shadow-lg" 
+                      : "border-white/5 bg-zinc-950/40 text-zinc-400 hover:border-white/10"
+                  }`}
+                >
+                  <span className="block font-black text-[11px] text-red-300 uppercase tracking-wide">Arcade Heist</span>
+                  <span className="text-[10px] opacity-80 mt-1 block">25s timer. 3 strikes and alarm sounds. 8 locks.</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Target Theme */}
+            <div className="bg-zinc-900/50 p-6 rounded-3xl border border-white/5 space-y-4">
+              <span className="text-[10px] font-black uppercase text-zinc-550 tracking-widest block">Target Facility Theme</span>
+              
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                {["mixed", "work", "school", "family"].map((t) => (
+                  <button
+                    key={t}
+                    onClick={() => setTheme(t)}
+                    className={`py-3.5 px-2.5 rounded-xl border font-bold capitalize transition duration-200 ${
+                      theme === t
+                        ? "border-red-500/40 bg-red-950/20 text-red-300 font-extrabold shadow"
+                        : "border-white/5 bg-zinc-950/40 text-zinc-400 hover:border-white/10"
+                    }`}
+                  >
+                    {t === "mixed" ? "mixed pool" : t}
+                  </button>
+                ))}
+              </div>
+              <p className="text-[10px] text-zinc-550 leading-normal italic">
+                {theme === "work" && "Vault contains business idioms, stress, deadlines, and corporate jargon."}
+                {theme === "school" && "Vault contains academy collocations, effort markers, and study idioms."}
+                {theme === "family" && "Vault contains emotions, grief expressions, and reactions."}
+                {theme === "mixed" && "Standard multi-grid bypass. Contains all types of idiomatic formulas."}
+              </p>
+            </div>
+
+            {/* Difficulty Tier */}
+            <div className="bg-zinc-900/50 p-6 rounded-3xl border border-white/5 space-y-5 flex flex-col justify-between">
+              <div>
+                <span className="text-[10px] font-black uppercase text-zinc-550 tracking-widest block mb-3">Security Level (Difficulty)</span>
+                <div className="flex justify-between items-center bg-zinc-950/60 p-3 rounded-2xl border border-white/5">
+                  <span className="text-[11px] font-black text-white">Tier {difficulty}</span>
+                  <span className="text-[9px] font-extrabold uppercase px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                    {difficulty === 1 && "Basic Glosses"}
+                    {difficulty === 2 && "Standard"}
+                    {difficulty === 3 && "Korean Only"}
+                    {difficulty === 4 && "Hard Lock"}
+                  </span>
+                </div>
+              </div>
+
+              {/* Simple Tier Switch */}
+              <div className="flex gap-2 justify-center">
+                {([1, 2, 3, 4] as const).map((tierNum) => (
+                  <button
+                    key={tierNum}
+                    onClick={() => setDifficulty(tierNum)}
+                    className={`w-9 h-9 rounded-xl border text-xs font-black transition ${
+                      difficulty === tierNum
+                        ? "border-amber-500 bg-amber-500/10 text-amber-350"
+                        : "border-white/5 bg-zinc-950/40 text-zinc-550 hover:border-white/10"
+                    }`}
+                  >
+                    {tierNum}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+          </div>
+
+          <div className="pt-4 border-t border-white/5 flex justify-end">
+            <button
+              onClick={startHeistSession}
+              disabled={isEvaluating}
+              className="px-10 py-4 rounded-2xl bg-gradient-to-r from-red-500 via-rose-500 to-amber-500 hover:from-red-650 hover:to-amber-650 text-zinc-950 font-black text-xs uppercase tracking-wider transition shadow-lg shadow-red-500/20 disabled:opacity-50 cursor-pointer"
+            >
+              {isEvaluating ? "Preparing Tools..." : "Commence Heist Operation"}
+            </button>
+          </div>
+
+        </div>
+      )}
+
+      {/* ─────────────────────────────────────────────────────────────────────────────
+          PLAYING VIEW
+          ───────────────────────────────────────────────────────────────────────────── */}
+      {gameState === "playing" && locks.length > 0 && (
+        <div className="space-y-6 text-left relative z-10">
+          
+          {/* Top Status Bar */}
+          <div className="glass-panel p-4.5 rounded-3xl border border-white/10 bg-zinc-950/70 flex justify-between items-center shadow-lg">
+            
+            <div className="flex items-center gap-4">
+              <span className="text-[10px] font-black uppercase text-zinc-550 tracking-wider">Session Grid:</span>
+              <div className="flex gap-1.5">
+                {locks.map((lock, idx) => (
+                  <div
+                    key={lock.id}
+                    className={`w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-black border transition ${
+                      idx === currentLockIdx
+                        ? "border-amber-400 bg-amber-400/20 text-amber-300 animate-pulse"
+                        : idx < currentLockIdx
+                        ? "border-green-500 bg-green-500/10 text-green-400"
+                        : "border-white/5 bg-zinc-900/40 text-zinc-550"
+                    }`}
+                  >
+                    {idx < currentLockIdx ? <Unlock className="w-2.5 h-2.5" /> : idx + 1}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Time / Strikes */}
+            <div className="flex items-center gap-6">
+              
+              {/* Timer */}
+              {mode === "arcade" ? (
+                <div className="flex items-center gap-2">
+                  <span className="text-[9px] uppercase tracking-widest text-zinc-550 font-extrabold">Decryption:</span>
+                  <div className={`font-mono text-sm font-black px-2 py-0.5 rounded border ${
+                    timeLeft <= 5 
+                      ? "border-red-500 bg-red-500/10 text-red-400 animate-bounce" 
+                      : "border-white/10 text-amber-400"
+                  }`}>
+                    {timeLeft}s
+                  </div>
+                </div>
+              ) : (
+                <span className="text-[9px] uppercase tracking-widest text-zinc-550 font-extrabold">Practice Run (No Timer)</span>
+              )}
+
+              {/* Alarm strikes */}
+              <div className="flex items-center gap-2">
+                <span className="text-[9px] uppercase tracking-widest text-zinc-550 font-extrabold">Alarms:</span>
+                <div className="flex gap-1">
+                  {[1, 2, 3].map((strike) => (
+                    <div
+                      key={strike}
+                      className={`w-3.5 h-3.5 rounded-full border transition ${
+                        strike <= alarmMeter
+                          ? "bg-red-500 border-red-400 shadow-[0_0_10px_rgba(239,68,68,0.7)] animate-pulse"
+                          : "border-white/10 bg-zinc-900"
+                      }`}
+                    />
+                  ))}
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+
+          {/* Main Heist Lock Window */}
+          <div className="glass-panel p-8 rounded-[2.5rem] border border-white/10 bg-zinc-950 shadow-2xl relative overflow-hidden flex flex-col gap-6">
+            
+            {/* Ambient Security laser decoration */}
+            <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-red-500/40 to-transparent" />
+
+            {/* Scenario Header */}
+            <div className="flex justify-between items-start gap-4 pb-4 border-b border-white/5">
+              <div className="space-y-1">
+                <span className="text-[10px] font-black uppercase text-red-400 tracking-wider">
+                  {locks[currentLockIdx].type.replace("_", " ")} Lock
+                </span>
+                <h3 className="text-sm font-extrabold text-zinc-300">
+                  {locks[currentLockIdx].scenarioDesc}
+                </h3>
+              </div>
+              <div className="bg-zinc-900/60 px-3.5 py-1.5 rounded-xl border border-white/5 text-center shrink-0">
+                <div className="text-[8px] font-black text-zinc-550 uppercase tracking-widest">Loot Score</div>
+                <div className="text-sm font-black text-amber-400 font-mono">⚡ {earnedXp} XP</div>
+              </div>
+            </div>
+
+            {/* Scenario text Ko / En */}
+            <div className="bg-zinc-900/30 p-6 rounded-3xl border border-white/5 flex flex-col gap-4 text-center">
+              {locks[currentLockIdx].type === "gapfill" ? (
+                /* Gapfill display */
+                renderSentenceWithGaps(locks[currentLockIdx].plainSentenceKo || "", locks[currentLockIdx].gaps)
+              ) : (
+                /* Standard text display */
+                <p className="font-korean text-xl font-bold text-zinc-150 leading-relaxed max-w-2xl mx-auto">
+                  {locks[currentLockIdx].plainSentenceKo}
+                </p>
+              )}
+
+              {locks[currentLockIdx].underlinedSegment && (
+                <div className="text-xs text-zinc-400 mt-2">
+                  Upgrade target segment: <strong className="text-amber-400 border-b border-dashed border-amber-400/40 pb-0.5 font-bold">&quot;{locks[currentLockIdx].underlinedSegment}&quot;</strong>
+                </div>
+              )}
+
+              {/* Translation glosses (only visible if lower tier or practice mode) */}
+              {(difficulty <= 2 || mode === "practice") && locks[currentLockIdx].plainSentenceEn && (
+                <p className="text-zinc-500 text-xs leading-relaxed max-w-xl mx-auto italic mt-1 border-t border-white/5 pt-3">
+                  &quot;{locks[currentLockIdx].plainSentenceEn}&quot;
+                </p>
+              )}
+            </div>
+
+            {/* Task Area */}
+            <div className="space-y-4">
+              
+              {/* Type A: Multiple choice */}
+              {["context_choice", "literal_vs_idiomatic", "collocation"].includes(locks[currentLockIdx].type) && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {locks[currentLockIdx].idiomOptions.map((opt, oIdx) => {
+                    const isSelected = userSelectedIdx === oIdx;
+                    return (
+                      <button
+                        key={opt.id}
+                        onClick={() => submitChoiceAnswer(oIdx)}
+                        disabled={feedbackStatus !== null || isEvaluating}
+                        className={`text-left p-4.5 rounded-2xl border text-xs transition duration-300 relative overflow-hidden group cursor-pointer ${
+                          feedbackStatus && opt.isCorrect
+                            ? "border-green-500 bg-green-500/10 text-white font-extrabold"
+                            : isSelected
+                            ? "border-red-500 bg-red-500/15 text-white"
+                            : "border-white/5 bg-zinc-900/40 text-zinc-350 hover:border-white/10 hover:bg-zinc-900/60"
+                        }`}
+                      >
+                        <span className="font-korean text-sm font-bold block mb-1 text-zinc-200">
+                          {opt.textKo}
+                        </span>
+                        {opt.meaningEn && (
+                          <span className="text-[10px] text-zinc-550 block leading-normal mt-1 italic">
+                            {opt.meaningEn}
+                          </span>
+                        )}
+                        
+                        {/* Register info */}
+                        {opt.register && (
+                          <span className="inline-flex mt-2 text-[8px] uppercase tracking-wide font-extrabold text-zinc-550 border border-white/5 px-2 py-0.5 rounded">
+                            {opt.register}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Type B: Rewrite Input */}
+              {locks[currentLockIdx].type === "idiom_rewrite" && (
+                <div className="space-y-4">
+                  <div className="relative">
+                    <textarea
+                      rows={2}
+                      value={userText}
+                      onChange={(e) => setUserText(e.target.value)}
+                      disabled={feedbackStatus !== null || isEvaluating}
+                      placeholder="Type your upgraded idiomatic Korean sentence here..."
+                      className="w-full bg-zinc-900/80 border border-white/5 focus:border-red-500/50 rounded-2xl p-4 text-sm text-zinc-200 placeholder:text-zinc-650 focus:outline-none focus:ring-0 transition font-korean"
+                    />
+                  </div>
+                  
+                  <div className="flex justify-between items-center">
+                    <span className="text-[10px] text-zinc-550 italic">
+                      Target idiom meaning: {locks[currentLockIdx].hint}
+                    </span>
+                    <button
+                      onClick={submitTextOrGapAnswer}
+                      disabled={feedbackStatus !== null || isEvaluating || !userText.trim()}
+                      className="px-6 py-2.5 rounded-xl bg-red-500 hover:bg-red-650 text-zinc-950 text-xs font-black uppercase tracking-wider transition disabled:opacity-40 cursor-pointer shadow shadow-red-500/10"
+                    >
+                      {isEvaluating ? "Analyzing..." : "Bypass Security"}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Type C: Gapfill submission button (inputs rendered inside the sentence block) */}
+              {locks[currentLockIdx].type === "gapfill" && (
+                <div className="flex justify-end border-t border-white/5 pt-4">
+                  <button
+                    onClick={submitTextOrGapAnswer}
+                    disabled={feedbackStatus !== null || isEvaluating}
+                    className="px-8 py-3 rounded-xl bg-red-500 hover:bg-red-650 text-zinc-950 text-xs font-black uppercase tracking-wider transition disabled:opacity-40 cursor-pointer shadow shadow-red-500/10"
+                  >
+                    {isEvaluating ? "Verifying Firewall..." : "Inject Idiom Code"}
+                  </button>
+                </div>
+              )}
+
+            </div>
+
+            {/* Practice Hints */}
+            {mode === "practice" && (
+              <div className="border-t border-white/5 pt-4">
+                {showHint ? (
+                  <div className="p-4 rounded-2xl bg-amber-500/5 border border-amber-500/10 text-xs text-amber-300 leading-normal flex items-start gap-2 animate-fadeIn">
+                    <BrainCircuit className="w-4 h-4 mt-0.5 text-amber-400 shrink-0" />
+                    <div>
+                      <strong className="block font-black text-[10px] text-amber-400 uppercase tracking-widest mb-1">Heist Intelligence Dossier</strong>
+                      {locks[currentLockIdx].hint || "Consider register rules. Politeness suffixes must align with the target listener context."}
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => {
+                      setShowHint(true);
+                      setUsedHintThisLock(true);
+                    }}
+                    className="text-xs text-amber-400/80 hover:text-amber-400 font-bold underline cursor-pointer"
+                  >
+                    Request Intel Dossier (Hint)
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* Lock evaluation popup */}
+            {feedbackStatus && (
+              <div className={`p-5 rounded-2xl border flex items-start gap-3 animate-slideUp mt-4 ${
+                feedbackStatus === "success"
+                  ? "border-green-500/20 bg-green-950/10 text-green-300"
+                  : "border-red-500/20 bg-red-950/10 text-red-300 animate-shake"
+              }`}>
+                <div className="text-2xl mt-0.5">
+                  {feedbackStatus === "success" ? "🔓" : "🚨"}
+                </div>
+                <div className="space-y-1">
+                  <span className="text-[10px] font-extrabold uppercase tracking-widest block">
+                    {feedbackStatus === "success" ? "Vault Lock Bypassed!" : "Security Alarm Triggered!"}
+                  </span>
+                  <p className="text-xs font-semibold leading-relaxed">
+                    {feedback}
+                  </p>
+                </div>
+              </div>
+            )}
+
+          </div>
+
+        </div>
+      )}
+
+      {/* ─────────────────────────────────────────────────────────────────────────────
+          SUMMARY VIEW
+          ───────────────────────────────────────────────────────────────────────────── */}
+      {gameState === "summary" && (
+        <div className="glass-panel p-8 rounded-[2.5rem] border border-white/10 bg-gradient-to-br from-zinc-950 to-zinc-950 shadow-2xl space-y-8 animate-fadeIn text-center relative overflow-hidden">
+          
+          <div className="absolute -right-20 -top-20 w-60 h-60 bg-red-500/5 rounded-full blur-[120px] pointer-events-none" />
+
+          <div className="space-y-2">
+            <span className="text-4xl block">💎</span>
+            <h2 className="text-2xl font-black text-white font-sans">Heist Summary Report</h2>
+            <p className="text-zinc-400 text-xs">
+              Missions Completed: <strong className="text-red-400 font-black">{lootCount} / {locks.length}</strong> locks bypassed.
+            </p>
+          </div>
+
+          {/* Ranks & Loot Chest */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            
+            <div className="bg-zinc-900/60 p-5 rounded-2xl border border-white/5 text-center flex flex-col justify-center">
+              <span className="text-[9px] uppercase tracking-widest text-zinc-550 font-extrabold block">Thief Crew Rank</span>
+              <strong className="text-xl font-black text-white mt-1 block">{rankName}</strong>
+            </div>
+
+            <div className="bg-zinc-900/60 p-5 rounded-2xl border border-white/5 text-center flex flex-col justify-center">
+              <span className="text-[9px] uppercase tracking-widest text-zinc-550 font-extrabold block">Longest Combo Chain</span>
+              <strong className="text-xl font-black text-amber-400 font-mono mt-1 block">{maxCombo} Locks</strong>
+            </div>
+
+          </div>
+
+          {/* Rare Loot Award */}
+          {rareLootXp > 0 && (
+            <div className="p-5 rounded-2xl bg-gradient-to-r from-amber-500/10 to-red-500/10 border border-amber-500/20 text-xs text-amber-300 font-bold flex justify-between items-center text-left shadow animate-pulse">
+              <div>
+                <span className="block font-black text-[10px] text-amber-400 uppercase tracking-widest">{rareLootLabel}</span>
+                <span>Used {uniqueIdiomsCount} unique advanced idioms during the infiltration. +{rareLootXp} XP bonus received!</span>
+              </div>
+              <span className="text-3xl">🏆</span>
+            </div>
+          )}
+
+          {/* Coaching tip */}
+          <div className="p-5 rounded-2xl bg-zinc-900/40 border border-white/5 text-left space-y-1">
+            <span className="text-[10px] font-extrabold uppercase text-zinc-550 tracking-wider">Safecracking Intelligence Tip</span>
+            <p className="text-xs text-zinc-350 leading-relaxed font-semibold">
+              {lootCount < 5 
+                ? "Collocations and idioms can easily trigger alarm blocks if you mismatch verbs (e.g. using '결정을 풀다' instead of '내리다'). Review basic pairing constraints."
+                : "Excellent agility! Your code-switching speed and accuracy bypass is Master level. Try Tier 4 next time to block decryption timers."}
+            </p>
+          </div>
+
+          {/* Detailed XP */}
+          <div className="p-6 rounded-3xl bg-zinc-900/30 border border-white/5 text-left space-y-3">
+            <h4 className="text-xs font-black uppercase text-zinc-550 tracking-wider">Session Loot Breakdown</h4>
+            
+            <div className="space-y-2 text-xs">
+              <div className="flex justify-between">
+                <span className="text-zinc-500">Locks Cleared Base Value</span>
+                <span className="font-mono text-zinc-350">⚡ {earnedXp} XP</span>
+              </div>
+              {rareLootXp > 0 && (
+                <div className="flex justify-between text-amber-400 font-bold">
+                  <span>★ {rareLootLabel}</span>
+                  <span className="font-mono">+{rareLootXp} XP</span>
+                </div>
+              )}
+              <div className="flex justify-between border-t border-white/5 pt-2 text-sm font-black">
+                <span>Total Stash Secured</span>
+                <span className="text-green-400 font-mono">⚡ {earnedXp + rareLootXp} XP</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4 border-t border-white/5">
+            <button
+              onClick={() => setGameState("lobby")}
+              className="px-8 py-3.5 bg-zinc-900 hover:bg-zinc-800 border border-white/5 text-zinc-300 font-extrabold rounded-2xl text-xs cursor-pointer transition w-full sm:w-auto"
+            >
+              New Target Location
+            </button>
+            <button
+              onClick={startHeistSession}
+              className="px-10 py-3.5 bg-gradient-to-r from-red-500 to-amber-500 hover:from-red-650 hover:to-amber-650 text-white font-black rounded-2xl text-xs shadow-xl transition cursor-pointer w-full sm:w-auto"
+            >
+              Infiltrate Again
             </button>
           </div>
 
