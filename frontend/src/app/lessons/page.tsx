@@ -1525,7 +1525,7 @@ export default function LessonPlayer() {
         )}
 
         {/* Main Learning Slide Area - Takes full remaining screen width */}
-        <main key={`${activeLesson?.id}_${wizardKey}`} className="flex-grow w-full flex flex-col justify-between min-h-[70vh]">
+        <main id="main-learning-container" key={`${activeLesson?.id}_${wizardKey}`} className="flex-grow w-full flex flex-col justify-between min-h-[70vh]">
 
         {activeLesson?.title?.includes("Phase 1") ? (
           <Phase1VowelBootcampWizard

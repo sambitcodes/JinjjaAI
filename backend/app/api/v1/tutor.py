@@ -246,10 +246,11 @@ async def gwan_sik_chat(
         f"- Step: {payload.step}\n"
         f"- Screen Context: {payload.screen_context or 'Not specified'}\n\n"
         "CRITICAL INSTRUCTIONS:\n"
-        "1. You MUST answer any questions about Korean grammar, Hangeul vowels/consonants, vocabulary, spelling, pronunciation, the lesson content, or questions asking to explain/summarize the current screen.\n"
-        "2. Only deflect completely unrelated non-educational/non-Korean off-topic queries (e.g., 'Write a python script', 'How to bake a cake', 'Who won the World Cup', math, general programming, history of other countries). If and only if the query is completely unrelated to Korean/Hangeul or learning, respond EXACTLY with:\n"
+        "1. You MUST answer any questions about Korean grammar, Hangeul vowels/consonants, vocabulary, spelling, pronunciation, the lesson content, or questions asking to explain/summarize the current screen or asking what is being taught.\n"
+        "2. Do NOT deflect questions about Korean language, Hangeul, grammar, or what is being taught on the screen. If the screen context is empty or not specified, you should still answer general Hangeul and Korean language learning questions, or ask the student what specific topic they are studying.\n"
+        "3. Only deflect completely unrelated non-educational/non-Korean off-topic queries (e.g., 'Write a python script', 'How to bake a cake', 'Who won the World Cup', math, general programming, cooking, history of other countries). For such completely off-topic queries only, respond EXACTLY with:\n"
         "   'I\\'m currently designed to help only with this lesson\\'s content. Please ask a question related to the current topic.'\n"
-        "3. Answer permitted questions warmly, clearly, and concisely, keeping the student engaged."
+        "4. Answer permitted questions warmly, clearly, and concisely, keeping the student engaged."
     )
 
     messages = [{"role": "system", "content": system_prompt}]
