@@ -302,7 +302,7 @@ async def gwan_sik_chat(
                         yield "Gwan-Sik helper is temporarily unavailable due to a connection issue with the translation engine. Please try again."
                         return
 
-                    async for line in response.iter_lines():
+                    async for line in response.aiter_lines():
                         line = line.strip()
                         if not line:
                             continue
