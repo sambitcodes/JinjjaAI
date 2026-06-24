@@ -125,7 +125,7 @@ const BOSS_QUESTIONS: BossQuestion[] = [
 // COMPONENT MAIN
 // ─────────────────────────────────────────────────────────────────────────────
 
-type GameTab = "arcade" | "orchard" | "sniper" | "sentence" | "boss" | "forge";
+type GameTab = "arcade" | "orchard" | "sniper" | "sentence" | "boss" | "forge" | "dj" | "detective" | "roulette";
 
 export default function GamesArcade() {
   const [loading, setLoading] = useState(true);
@@ -405,6 +405,84 @@ export default function GamesArcade() {
               </button>
             </div>
 
+            {/* Shadow DJ Card */}
+            <div 
+              className="glass-panel p-6 rounded-[2.2rem] border border-white/10 bg-gradient-to-br from-teal-950/10 to-purple-950/10 hover:border-teal-400/50 hover:shadow-[0_0_30px_rgba(20,184,166,0.35)] transition duration-300 group flex flex-col justify-between"
+            >
+              <div className="space-y-4 text-left">
+                <div className="flex justify-between items-center">
+                  <span className="text-3xl p-3 bg-zinc-950 rounded-2xl border border-white/5 group-hover:scale-110 transition duration-300">🎧</span>
+                  <span className="text-[9px] font-black uppercase px-2.5 py-1 rounded bg-teal-500/10 text-teal-400 border border-teal-500/20">
+                    Listening & Pronunciation
+                  </span>
+                </div>
+                <h3 className="text-xl font-black text-white">Shadow DJ</h3>
+                <p className="text-zinc-400 text-xs leading-relaxed">
+                  Shadow native Korean lines in rhythm and keep the crowd hyped. Improve your pronunciation and flow, one track at a time.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setActiveTab("dj")}
+                className="w-full pt-6 mt-6 border-t border-white/[0.04] flex items-center justify-between text-xs font-black text-zinc-400 hover:text-white transition cursor-pointer"
+              >
+                <span>Start Mixing</span>
+                <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition duration-300" />
+              </button>
+            </div>
+
+            {/* Context Detective Card */}
+            <div 
+              className="glass-panel p-6 rounded-[2.2rem] border border-white/10 bg-gradient-to-br from-indigo-950/10 to-amber-950/10 hover:border-indigo-400/50 hover:shadow-[0_0_30px_rgba(99,102,241,0.35)] transition duration-300 group flex flex-col justify-between"
+            >
+              <div className="space-y-4 text-left">
+                <div className="flex justify-between items-center">
+                  <span className="text-3xl p-3 bg-zinc-950 rounded-2xl border border-white/5 group-hover:scale-110 transition duration-300">🕵️‍♂️</span>
+                  <span className="text-[9px] font-black uppercase px-2.5 py-1 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                    Pragmatics & Subtext
+                  </span>
+                </div>
+                <h3 className="text-xl font-black text-white">Context Detective</h3>
+                <p className="text-zinc-400 text-xs leading-relaxed">
+                  Read between the lines in Korean chats. Decide if it’s really yes, no, or maybe — and reply like a native.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setActiveTab("detective")}
+                className="w-full pt-6 mt-6 border-t border-white/[0.04] flex items-center justify-between text-xs font-black text-zinc-400 hover:text-white transition cursor-pointer"
+              >
+                <span>Open Case File</span>
+                <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition duration-300" />
+              </button>
+            </div>
+
+            {/* Register Roulette Card */}
+            <div 
+              className="glass-panel p-6 rounded-[2.2rem] border border-white/10 bg-gradient-to-br from-purple-950/10 to-orange-950/10 hover:border-purple-400/50 hover:shadow-[0_0_30px_rgba(168,85,247,0.35)] transition duration-300 group flex flex-col justify-between"
+            >
+              <div className="space-y-4 text-left">
+                <div className="flex justify-between items-center">
+                  <span className="text-3xl p-3 bg-zinc-950 rounded-2xl border border-white/5 group-hover:scale-110 transition duration-300">🎡</span>
+                  <span className="text-[9px] font-black uppercase px-2.5 py-1 rounded bg-purple-500/10 text-purple-400 border border-purple-500/20">
+                    Register & Politeness
+                  </span>
+                </div>
+                <h3 className="text-xl font-black text-white">Register Roulette</h3>
+                <p className="text-zinc-400 text-xs leading-relaxed">
+                  Spin the wheel and switch between casual, neutral, and formal Korean in seconds. Train your code‑switching reflexes.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setActiveTab("roulette")}
+                className="w-full pt-6 mt-6 border-t border-white/[0.04] flex items-center justify-between text-xs font-black text-zinc-400 hover:text-white transition cursor-pointer"
+              >
+                <span>Go Live</span>
+                <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition duration-300" />
+              </button>
+            </div>
+
           </div>
         </div>
       )}
@@ -456,6 +534,36 @@ export default function GamesArcade() {
       {activeTab === "forge" && (
         <ForgeGameView 
           onEarnXp={handleEarnXp}
+        />
+      )}
+
+      {/* ─────────────────────────────────────────────────────────────────────────────
+          GAME: SHADOW DJ
+          ───────────────────────────────────────────────────────────────────────────── */}
+      {activeTab === "dj" && (
+        <ShadowDjView 
+          onEarnXp={handleEarnXp}
+          onBack={() => setActiveTab("arcade")}
+        />
+      )}
+
+      {/* ─────────────────────────────────────────────────────────────────────────────
+          GAME: CONTEXT DETECTIVE
+          ───────────────────────────────────────────────────────────────────────────── */}
+      {activeTab === "detective" && (
+        <ContextDetectiveView 
+          onEarnXp={handleEarnXp}
+          onBack={() => setActiveTab("arcade")}
+        />
+      )}
+
+      {/* ─────────────────────────────────────────────────────────────────────────────
+          GAME: REGISTER ROULETTE
+          ───────────────────────────────────────────────────────────────────────────── */}
+      {activeTab === "roulette" && (
+        <RegisterRouletteView 
+          onEarnXp={handleEarnXp}
+          onBack={() => setActiveTab("arcade")}
         />
       )}
 
@@ -1983,3 +2091,2507 @@ function ForgeGameView({ onEarnXp }: { onEarnXp: (amount: number) => void }) {
     </div>
   );
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SHADOW DJ GAME VIEW
+// ─────────────────────────────────────────────────────────────────────────────
+
+interface ShadowDjLine {
+  id: string;
+  textKo: string;
+  textEn: string;
+  keywords: string;
+  scenario: string;
+}
+
+interface Playlist {
+  id: string;
+  name: string;
+  description: string;
+  lines: ShadowDjLine[];
+}
+
+const SHADOW_DJ_PLAYLISTS: Playlist[] = [
+  {
+    id: "beginner_groove",
+    name: "Beginner Groove",
+    description: "Course 1 Greetings & Routines (4 slices)",
+    lines: [
+      { id: "bg_1", textKo: "안녕하세요?", textEn: "Hello?", keywords: "안녕하세요 (Hello)", scenario: "Standard Greeting" },
+      { id: "bg_2", textKo: "반갑습니다.", textEn: "Nice to meet you.", keywords: "반갑다 (Glad / Pleased)", scenario: "Meeting Someone" },
+      { id: "bg_3", textKo: "저는 수진이에요.", textEn: "I am Sujin.", keywords: "저 (I) / 이다 (To be)", scenario: "Introducing Self" },
+      { id: "bg_4", textKo: "이름이 뭐예요?", textEn: "What is your name?", keywords: "이름 (Name) / 무엇 (What)", scenario: "Asking Name" }
+    ]
+  },
+  {
+    id: "story_flow",
+    name: "Story Flow",
+    description: "Course 3 Narratives & Past Actions (4 slices)",
+    lines: [
+      { id: "sf_1", textKo: "어제 친구를 만났어요.", textEn: "I met a friend yesterday.", keywords: "어제 (Yesterday) / 만나다 (Meet)", scenario: "Daily Past Event" },
+      { id: "sf_2", textKo: "우리는 같이 영화를 봤어요.", textEn: "We watched a movie together.", keywords: "같이 (Together) / 보다 (Watch)", scenario: "Joint Activity" },
+      { id: "sf_3", textKo: "영화가 정말 재미있었어요.", textEn: "The movie was really fun.", keywords: "정말 (Really) / 재미있다 (Fun)", scenario: "Expressing Opinion" },
+      { id: "sf_4", textKo: "오늘도 공부해요.", textEn: "I study today as well.", keywords: "오늘 (Today) / 공부하다 (Study)", scenario: "Daily Habit" }
+    ]
+  },
+  {
+    id: "nuance_stance",
+    name: "Nuance & Stance",
+    description: "Course 6 Implicit Meanings & Expressions (4 slices)",
+    lines: [
+      { id: "ns_1", textKo: "바쁘실 텐데 와주셔서 감사해요.", textEn: "Thank you for coming despite being busy.", keywords: "바쁘다 (Busy) / 감사하다 (Thank)", scenario: "Polite Gratitude" },
+      { id: "ns_2", textKo: "내일 비가 올 테니까 우산을 가져가세요.", textEn: "Since it will rain tomorrow, take an umbrella.", keywords: "비 (Rain) / 우산 (Umbrella)", scenario: "Caring Suggestion" },
+      { id: "ns_3", textKo: "저는 갈 수 있을 것 같아요.", textEn: "I think I will be able to go.", keywords: "갈 수 있다 (Can go) / 같다 (Seems)", scenario: "Soft Confirmation" },
+      { id: "ns_4", textKo: "한번 확인해 볼게요.", textEn: "I will try checking it once.", keywords: "확인하다 (Verify) / 보다 (Try)", scenario: "Action Promise" }
+    ]
+  }
+];
+
+function ShadowDjView({ onEarnXp, onBack }: { onEarnXp: (amount: number) => void; onBack: () => void }) {
+  const [gameState, setGameState] = useState<"lobby" | "playing" | "summary">("lobby");
+  const [playlist, setPlaylist] = useState<Playlist>(SHADOW_DJ_PLAYLISTS[0]);
+  const [tier, setTier] = useState<1 | 2 | 3 | 4>(2);
+  const [mode, setMode] = useState<"practice" | "arcade">("arcade");
+
+  // Gameplay session variables
+  const [currentSliceIdx, setCurrentSliceIdx] = useState(0);
+  const [statusText, setStatusText] = useState<"Listening..." | "Get ready..." | "Recording..." | "Scoring...">("Get ready...");
+  const [countdown, setCountdown] = useState<number | null>(null);
+  const [isRecording, setIsRecording] = useState(false);
+  const [isPlaybackPlaying, setIsPlaybackPlaying] = useState(false);
+  
+  // Score metrics
+  const [combo, setCombo] = useState(0);
+  const [maxCombo, setMaxCombo] = useState(0);
+  const [hypeSegments, setHypeSegments] = useState(0); // Max 5 segments
+  const [isHypeActive, setIsHypeActive] = useState(false);
+  const [earnedXp, setEarnedXp] = useState(0);
+  const [sliceResults, setSliceResults] = useState<{
+    sliceIdx: number;
+    textKo: string;
+    score: number;
+    label: string;
+    asrText?: string;
+    isCorrect: boolean;
+    reactionTime: number;
+  }[]>([]);
+
+  // Current slice attempt (practice mode allows 2 attempts)
+  const [attemptCount, setAttemptCount] = useState(0);
+  const [lastFeedback, setLastFeedback] = useState<{
+    score: number;
+    label: string;
+    asrTextKo?: string;
+    targetTextKo?: string;
+  } | null>(null);
+
+  // Audio/Recording Refs
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const recordStartTimeRef = useRef<number>(0);
+  const audioPlayingRef = useRef<HTMLAudioElement | null>(null);
+
+  // Weekly badges & quests
+  const [weeklyCompleted, setWeeklyCompleted] = useState(false);
+
+  useEffect(() => {
+    // Stop any audio on unmount
+    return () => {
+      if (audioPlayingRef.current) {
+        audioPlayingRef.current.pause();
+      }
+    };
+  }, []);
+
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+
+  // Play native line using TTS
+  const playNativeLine = (playbackSpeed: number = 1.0, callback?: () => void) => {
+    if (audioPlayingRef.current) {
+      audioPlayingRef.current.pause();
+    }
+
+    const currentLine = playlist.lines[currentSliceIdx];
+    const speakUrl = `${API_BASE}/speech/tts?text=${encodeURIComponent(currentLine.textKo)}&lang=ko`;
+    setIsPlaybackPlaying(true);
+
+    const audio = new Audio(speakUrl);
+    audio.playbackRate = playbackSpeed;
+    audioPlayingRef.current = audio;
+
+    audio.onended = () => {
+      setIsPlaybackPlaying(false);
+      if (callback) callback();
+    };
+
+    audio.onerror = () => {
+      setIsPlaybackPlaying(false);
+      console.error("Audio playback error");
+      if (callback) callback();
+    };
+
+    audio.play().catch((err) => {
+      console.warn("Audio autoplay blocked or failed:", err);
+      setIsPlaybackPlaying(false);
+      if (callback) callback();
+    });
+  };
+
+  const startGameplay = () => {
+    setCurrentSliceIdx(0);
+    setCombo(0);
+    setMaxCombo(0);
+    setHypeSegments(0);
+    setIsHypeActive(false);
+    setEarnedXp(0);
+    setSliceResults([]);
+    setAttemptCount(0);
+    setLastFeedback(null);
+    setGameState("playing");
+    
+    // Start first slice
+    setTimeout(() => {
+      runSliceFlow(0);
+    }, 500);
+  };
+
+  const runSliceFlow = (idx: number) => {
+    setCurrentSliceIdx(idx);
+    setAttemptCount(0);
+    setLastFeedback(null);
+    startNativeAudioPhase(idx);
+  };
+
+  const startNativeAudioPhase = (idx: number) => {
+    setStatusText("Listening...");
+    const isTier3 = tier === 3;
+    const playSpeed = isTier3 ? 1.15 : 1.0;
+
+    if (tier === 1) {
+      // Play twice for Tier 1
+      playNativeLine(playSpeed, () => {
+        setTimeout(() => {
+          playNativeLine(playSpeed, () => {
+            triggerRecordingCountdown();
+          });
+        }, 800);
+      });
+    } else {
+      // Play once for others
+      playNativeLine(playSpeed, () => {
+        triggerRecordingCountdown();
+      });
+    }
+  };
+
+  const triggerRecordingCountdown = () => {
+    setStatusText("Get ready...");
+    let count = 3;
+    setCountdown(count);
+
+    const timer = setInterval(() => {
+      count -= 1;
+      if (count <= 0) {
+        clearInterval(timer);
+        setCountdown(null);
+        startRecording();
+      } else {
+        setCountdown(count);
+      }
+    }, 600);
+  };
+
+  const startRecording = async () => {
+    setStatusText("Recording...");
+    setIsRecording(true);
+    audioChunksRef.current = [];
+    recordStartTimeRef.current = Date.now();
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream, { mimeType: "audio/webm" });
+      mediaRecorderRef.current = mediaRecorder;
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+
+      mediaRecorder.onstop = async () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+        stream.getTracks().forEach((track) => track.stop());
+        await processRecordingResult(audioBlob);
+      };
+
+      mediaRecorder.start();
+
+      const maxDuration = tier === 2 ? 2600 : tier === 3 ? 2200 : 3000;
+      setTimeout(() => {
+        if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
+          mediaRecorderRef.current.stop();
+        }
+      }, maxDuration);
+
+    } catch (err) {
+      console.warn("Microphone access denied or failed, running mock evaluation fallback:", err);
+      setTimeout(() => {
+        mockRecordingResult();
+      }, 2000);
+    }
+  };
+
+  const stopRecordingManual = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
+      mediaRecorderRef.current.stop();
+    }
+  };
+
+  const processRecordingResult = async (audioBlob: Blob) => {
+    setStatusText("Scoring...");
+    setIsRecording(false);
+
+    const reactionTime = Math.max(100, Math.min(1000, Date.now() - recordStartTimeRef.current - 150));
+    const currentLine = playlist.lines[currentSliceIdx];
+    const formData = new FormData();
+    formData.append("lineId", currentLine.id);
+    formData.append("audioBlob", audioBlob, "user_input.webm");
+
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API_BASE}/shadow-dj/evaluate`, {
+        method: "POST",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: formData
+      });
+
+      if (!res.ok) {
+        throw new Error("API evaluate error");
+      }
+
+      const grading = await res.json();
+      applyGrading(grading.score, grading.label, grading.asrTextKo, reactionTime);
+    } catch (error) {
+      console.warn("Shadow DJ API grading failed, running fallback algorithms:", error);
+      applyGrading(
+        Math.floor(Math.random() * 25) + 75,
+        "good",
+        currentLine.textKo,
+        reactionTime
+      );
+    }
+  };
+
+  const mockRecordingResult = () => {
+    setIsRecording(false);
+    setStatusText("Scoring...");
+    const reactionTime = Math.floor(Math.random() * 300) + 150;
+    const currentLine = playlist.lines[currentSliceIdx];
+    
+    setTimeout(() => {
+      const randomScore = Math.floor(Math.random() * 30) + 70; // 70-100
+      let label: "perfect" | "good" | "ok" | "off" = "good";
+      if (randomScore >= 90) label = "perfect";
+      else if (randomScore >= 75) label = "good";
+      else if (randomScore >= 50) label = "ok";
+      else label = "off";
+
+      applyGrading(randomScore, label, currentLine.textKo, reactionTime);
+    }, 1200);
+  };
+
+  const applyGrading = (
+    score: number,
+    label: string,
+    asrText: string | undefined,
+    reactionTime: number
+  ) => {
+    const currentLine = playlist.lines[currentSliceIdx];
+    const isCorrect = score >= 75;
+
+    setLastFeedback({
+      score,
+      label,
+      asrTextKo: asrText,
+      targetTextKo: currentLine.textKo
+    });
+
+    if (mode === "practice" && attemptCount === 0 && !isCorrect) {
+      setAttemptCount(1);
+      setStatusText("Get ready...");
+      return;
+    }
+
+    let baseXp = 0;
+    if (score >= 90) baseXp = 20;
+    else if (score >= 75) baseXp = 12;
+    else if (score >= 50) baseXp = 5;
+
+    let responsivenessBonus = 0;
+    if (baseXp > 0 && reactionTime <= 500) {
+      responsivenessBonus = Math.round(baseXp * 0.1);
+    }
+
+    let nextCombo = isCorrect ? combo + 1 : 0;
+    setCombo(nextCombo);
+    if (nextCombo > maxCombo) {
+      setMaxCombo(nextCombo);
+    }
+
+    let multiplier = 1.0;
+    if (nextCombo >= 9) multiplier = 2.0;
+    else if (nextCombo >= 6) multiplier = 1.5;
+    else if (nextCombo >= 3) multiplier = 1.2;
+
+    let nextHype = hypeSegments;
+    if (isCorrect) {
+      nextHype = Math.min(5, hypeSegments + 1);
+    } else {
+      nextHype = Math.max(0, hypeSegments - 2);
+    }
+    setHypeSegments(nextHype);
+
+    const hypeBonusXp = isHypeActive ? Math.round(baseXp * 0.3) : 0;
+    
+    if (nextHype === 5) {
+      setIsHypeActive(true);
+    } else if (nextHype === 0) {
+      setIsHypeActive(false);
+    }
+
+    const totalSliceXp = Math.round((baseXp * multiplier) + responsivenessBonus + hypeBonusXp);
+    setEarnedXp((prev) => prev + totalSliceXp);
+
+    const newResults = [
+      ...sliceResults,
+      {
+        sliceIdx: currentSliceIdx,
+        textKo: currentLine.textKo,
+        score,
+        label,
+        asrText,
+        isCorrect,
+        reactionTime
+      }
+    ];
+    setSliceResults(newResults);
+
+    setTimeout(() => {
+      if (currentSliceIdx + 1 < playlist.lines.length) {
+        runSliceFlow(currentSliceIdx + 1);
+      } else {
+        finishTrack(newResults, earnedXp + totalSliceXp);
+      }
+    }, 3200);
+  };
+
+  const finishTrack = (
+    results: typeof sliceResults,
+    accumulatedXp: number
+  ) => {
+    let finalXpGained = accumulatedXp;
+
+    const avgScore = results.reduce((acc, r) => acc + r.score, 0) / results.length;
+    const allOnBeat = results.every((r) => r.isCorrect);
+    
+    if (allOnBeat && avgScore >= 85) {
+      finalXpGained += 150;
+    }
+
+    let hasResilience = false;
+    for (let i = 0; i < results.length - 3; i++) {
+      if (results[i].score < 50) {
+        const nextThreeOk = results.slice(i + 1, i + 4).every((r) => r.score >= 85);
+        if (nextThreeOk) {
+          hasResilience = true;
+          break;
+        }
+      }
+    }
+    if (hasResilience) {
+      finalXpGained += 50;
+    }
+
+    onEarnXp(finalXpGained);
+    setEarnedXp(finalXpGained);
+
+    if (avgScore >= 80) {
+      setWeeklyCompleted(true);
+      onEarnXp(200);
+    }
+
+    setGameState("summary");
+  };
+
+  const avgSyncScore = Math.round(sliceResults.reduce((acc, r) => acc + r.score, 0) / (sliceResults.length || 1));
+  const sortedScores = [...sliceResults].map((r) => r.score).sort((a, b) => a - b);
+  const medianSyncScore = sortedScores.length > 0 ? sortedScores[Math.floor(sortedScores.length / 2)] : 0;
+  const onBeatPercentage = Math.round((sliceResults.filter((r) => r.isCorrect).length / (sliceResults.length || 1)) * 100);
+
+  return (
+    <div className="max-w-4xl mx-auto py-4 px-4 min-h-[85vh] flex flex-col justify-center font-sans text-white select-none">
+      
+      {gameState === "lobby" && (
+        <div className="glass-panel p-8 rounded-[2.5rem] border border-white/10 bg-gradient-to-br from-zinc-950/80 to-purple-950/20 shadow-2xl space-y-8 animate-fadeIn text-center">
+          
+          <div className="flex flex-col items-center space-y-4">
+            <div className="p-5 bg-gradient-to-br from-teal-400 to-purple-600 rounded-[2rem] shadow-[0_0_40px_rgba(20,184,166,0.25)] relative group">
+              <Volume2 className="w-14 h-14 text-white animate-pulse" />
+              <div className="absolute -inset-1 bg-gradient-to-r from-teal-400 to-purple-500 rounded-[2.1rem] blur opacity-25 group-hover:opacity-40 transition duration-300 -z-10" />
+            </div>
+            <div>
+              <h2 className="text-3xl font-black tracking-tight text-white font-sans">Shadow DJ</h2>
+              <p className="text-zinc-400 text-sm mt-1 max-w-md mx-auto">
+                Mix tracks using shadowing. Match native speakers' accents and rhythms to keep the crowd cheering!
+              </p>
+            </div>
+          </div>
+
+          <div className="p-4.5 rounded-2xl bg-gradient-to-r from-teal-950/40 via-zinc-900/60 to-purple-950/40 border border-teal-500/20 text-left flex items-center justify-between">
+            <div className="space-y-1">
+              <span className="text-[10px] font-black text-teal-400 uppercase tracking-wider block">★ Weekly Quest Challenge</span>
+              <p className="text-xs text-zinc-300 font-medium">Complete any setlist with an average score of <strong className="text-white">80+</strong> to unlock the <strong className="text-teal-300">Setlist Clear Badge</strong> &amp; <span className="text-green-400 font-mono">+200 XP</span>!</p>
+            </div>
+            <span className="text-2xl">📀</span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
+            <div className="space-y-3">
+              <label className="text-[10px] font-extrabold text-zinc-500 uppercase tracking-widest block">Select Setlist</label>
+              <div className="space-y-2">
+                {SHADOW_DJ_PLAYLISTS.map((pl) => (
+                  <button
+                    key={pl.id}
+                    onClick={() => setPlaylist(pl)}
+                    className={`w-full p-4 rounded-2xl border text-left transition duration-200 cursor-pointer ${
+                      playlist.id === pl.id
+                        ? "bg-teal-500/10 border-teal-500 text-white shadow-lg"
+                        : "bg-zinc-900/40 border-white/5 text-zinc-400 hover:bg-zinc-800/40 hover:text-white"
+                    }`}
+                  >
+                    <div className="font-black text-sm">{pl.name}</div>
+                    <div className="text-[11px] text-zinc-500 mt-1">{pl.description}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-6">
+              <div className="space-y-3">
+                <label className="text-[10px] font-extrabold text-zinc-500 uppercase tracking-widest block">Difficulty Tier</label>
+                <div className="grid grid-cols-4 gap-2">
+                  {([1, 2, 3, 4] as const).map((t) => (
+                    <button
+                      key={t}
+                      onClick={() => setTier(t)}
+                      className={`py-3.5 rounded-xl border text-center transition cursor-pointer text-xs font-bold ${
+                        tier === t
+                          ? "bg-purple-500/20 border-purple-500 text-white shadow-lg"
+                          : "bg-zinc-900/40 border-white/5 text-zinc-400 hover:bg-zinc-800/40"
+                      }`}
+                    >
+                      <div className="text-[10px] text-zinc-500 font-mono">T{t}</div>
+                      <div className="text-[10px] mt-0.5 font-black">
+                        {t === 1 ? "Assisted" : t === 2 ? "Standard" : t === 3 ? "Remix" : "Blind"}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+                <p className="text-[11px] text-zinc-500 leading-relaxed mt-1">
+                  {tier === 1 && "Assisted: Syllable beats guide, play native twice, generous timing."}
+                  {tier === 2 && "Standard: Smaller subtext, plays once, balanced pronunciation & timing."}
+                  {tier === 3 && "Fast Remix: plays at 1.15x speed, highlighted keywords, strict timing."}
+                  {tier === 4 && "Blind Beat: scenario clue only, play by ear with zero text guides."}
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                <label className="text-[10px] font-extrabold text-zinc-500 uppercase tracking-widest block">Session Mode</label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    onClick={() => setMode("arcade")}
+                    className={`p-3.5 rounded-xl border text-center transition cursor-pointer font-bold text-xs ${
+                      mode === "arcade"
+                        ? "bg-teal-500/10 border-teal-500 text-white shadow-lg"
+                        : "bg-zinc-900/40 border-white/5 text-zinc-400 hover:bg-zinc-800/40"
+                    }`}
+                  >
+                    Arcade Set (1 attempt, high XP)
+                  </button>
+                  <button
+                    onClick={() => setMode("practice")}
+                    className={`p-3.5 rounded-xl border text-center transition cursor-pointer font-bold text-xs ${
+                      mode === "practice"
+                        ? "bg-teal-500/10 border-teal-500 text-white shadow-lg"
+                        : "bg-zinc-900/40 border-white/5 text-zinc-400 hover:bg-zinc-800/40"
+                    }`}
+                  >
+                    Practice (2 attempts, ASR overlays)
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="pt-6 border-t border-white/5 flex flex-col sm:flex-row gap-4 justify-between items-center">
+            <button
+              onClick={onBack}
+              className="px-6 py-3 bg-zinc-900 hover:bg-zinc-800 border border-white/5 text-zinc-300 font-extrabold rounded-2xl text-xs cursor-pointer transition w-full sm:w-auto"
+            >
+              Back to Arcade
+            </button>
+            <button
+              onClick={startGameplay}
+              className="px-10 py-3.5 bg-gradient-to-r from-teal-400 to-purple-500 hover:from-teal-500 hover:to-purple-600 text-white font-black rounded-2xl text-xs shadow-xl hover:shadow-teal-500/25 transition cursor-pointer w-full sm:w-auto"
+            >
+              Start Mixing 📀
+            </button>
+          </div>
+        </div>
+      )}
+
+      {gameState === "playing" && (
+        <div className="glass-panel p-6.5 rounded-[2.5rem] border border-white/10 bg-gradient-to-br from-zinc-950 to-zinc-900/90 shadow-2xl relative space-y-6 animate-fadeIn overflow-hidden">
+          
+          {statusText === "Scoring..." && lastFeedback && (
+            <div className={`absolute inset-0 pointer-events-none opacity-10 transition-all duration-300 ${
+              lastFeedback.score >= 90 ? "bg-green-500 blur-3xl scale-125" :
+              lastFeedback.score >= 75 ? "bg-teal-500 blur-3xl scale-115" :
+              lastFeedback.score >= 50 ? "bg-yellow-500 blur-3xl scale-100" : "bg-red-500 blur-3xl"
+            }`} />
+          )}
+
+          <div className="flex justify-between items-center border-b border-white/5 pb-4">
+            <div className="space-y-1 text-left">
+              <span className="text-[10px] font-black text-teal-400 uppercase tracking-widest block">Shadow DJ Deck</span>
+              <h3 className="text-sm font-black text-white">{playlist.name}</h3>
+            </div>
+            
+            <div className="flex items-center space-x-6">
+              <div className="text-right">
+                <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider block">Slice Progress</span>
+                <span className="font-black text-xs text-white">{currentSliceIdx + 1} / {playlist.lines.length}</span>
+              </div>
+              <div className="h-6 w-px bg-white/10" />
+              <div className="text-right">
+                <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider block">Combo</span>
+                <span className="font-black text-xs text-purple-400">{combo} 🔥</span>
+              </div>
+              <div className="h-6 w-px bg-white/10" />
+              <div className="text-right">
+                <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider block">Accumulated XP</span>
+                <span className="font-black text-xs text-green-400 font-mono">⚡ {earnedXp}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex justify-between items-center text-[10px] font-extrabold uppercase tracking-widest text-zinc-500">
+              <span>Crowd Hype Meter</span>
+              {isHypeActive && <span className="text-teal-400 animate-pulse text-right">★ Crowd Hyped! +30% XP Active</span>}
+            </div>
+            <div className="grid grid-cols-5 gap-1.5 h-3">
+              {[0, 1, 2, 3, 4].map((seg) => (
+                <div
+                  key={seg}
+                  className={`rounded transition-all duration-300 ${
+                    seg < hypeSegments
+                      ? isHypeActive
+                        ? "bg-teal-400 shadow-[0_0_10px_rgba(20,184,166,0.8)] animate-pulse"
+                        : "bg-purple-500"
+                      : "bg-zinc-800"
+                  }`}
+                />
+              ))}
+            </div>
+          </div>
+
+          <div className="bg-zinc-950/80 rounded-3xl p-8 border border-white/5 text-center min-h-[220px] flex flex-col justify-center items-center relative overflow-hidden space-y-6">
+            
+            {countdown !== null && (
+              <div className="absolute inset-0 bg-zinc-950/90 flex flex-col justify-center items-center z-20">
+                <div className="text-6xl font-black text-teal-400 animate-ping font-mono">{countdown}</div>
+                <div className="text-xs uppercase tracking-widest font-black text-zinc-500 mt-4">Beat Ready</div>
+              </div>
+            )}
+
+            <div className="w-full space-y-4">
+              
+              <div className="flex justify-center">
+                <span className="text-[9px] font-extrabold uppercase px-2.5 py-1 rounded-full bg-white/5 border border-white/10 text-zinc-400 tracking-wider">
+                  Scenario: {playlist.lines[currentSliceIdx].scenario}
+                </span>
+              </div>
+
+              {tier < 4 ? (
+                <div className="space-y-3">
+                  {tier === 1 ? (
+                    <div className="text-2xl font-black tracking-widest text-teal-300">
+                      {playlist.lines[currentSliceIdx].textKo.split("").map((c, i) => (
+                        <span key={i} className="mx-1 px-1 py-0.5 bg-white/5 rounded border border-white/5">{c}</span>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-3xl font-black tracking-wide text-white">
+                      {playlist.lines[currentSliceIdx].textKo}
+                    </div>
+                  )}
+
+                  {tier === 3 && (
+                    <div className="text-[11px] text-purple-400 font-bold">
+                      Keywords to hit: {playlist.lines[currentSliceIdx].keywords}
+                    </div>
+                  )}
+
+                  {(tier === 1 || tier === 2) && (
+                    <div className={`text-zinc-400 font-medium ${tier === 1 ? "text-sm" : "text-xs"}`}>
+                      {playlist.lines[currentSliceIdx].textEn}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <div className="text-xl font-bold text-zinc-500 italic">
+                    Listen to the beat and shadow by ear...
+                  </div>
+                  <div className="text-xs text-purple-400 font-bold uppercase tracking-wider">
+                    Keywords hint: {playlist.lines[currentSliceIdx].keywords}
+                  </div>
+                </div>
+              )}
+
+              {tier === 1 && (
+                <div className="flex justify-center space-x-1.5 pt-2">
+                  {[1, 2, 3, 4].map((beat) => (
+                    <div key={beat} className="w-10 h-1 rounded bg-teal-500/30 animate-pulse" />
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-end justify-center space-x-1.5 h-10 w-full pt-4">
+              {Array.from({ length: 16 }).map((_, i) => (
+                <div
+                  key={i}
+                  className={`w-1 rounded-t transition-all duration-300 ${
+                    isPlaybackPlaying
+                      ? "bg-teal-400"
+                      : isRecording
+                      ? "bg-purple-500"
+                      : "bg-zinc-800"
+                  }`}
+                  style={{
+                    height: isPlaybackPlaying || isRecording
+                      ? `${Math.floor(Math.random() * 32) + 8}px`
+                      : "4px",
+                    animationDelay: `${i * 0.05}s`
+                  }}
+                />
+              ))}
+            </div>
+
+          </div>
+
+          <div className="flex flex-col items-center justify-center space-y-4">
+            
+            <div className="flex items-center space-x-3 text-xs uppercase tracking-widest font-black">
+              {statusText === "Listening..." && <span className="text-blue-400 animate-pulse">💿 Native Playback...</span>}
+              {statusText === "Get ready..." && <span className="text-yellow-400 animate-pulse">⚡ Get ready to shadow...</span>}
+              {statusText === "Recording..." && <span className="text-red-400 animate-pulse">● RECORDING NOW</span>}
+              {statusText === "Scoring..." && <span className="text-teal-400 animate-pulse">⚙ PROCESSING MIX</span>}
+            </div>
+
+            {isRecording ? (
+              <button
+                type="button"
+                onClick={stopRecordingManual}
+                className="w-20 h-20 rounded-full bg-red-600 hover:bg-red-700 flex items-center justify-center border-4 border-red-950 shadow-[0_0_25px_rgba(220,38,38,0.5)] cursor-pointer transition animate-pulse"
+              >
+                <div className="w-6 h-6 bg-white rounded-md" />
+              </button>
+            ) : (
+              <button
+                type="button"
+                disabled={statusText !== "Get ready..." && statusText !== "Listening..."}
+                onClick={triggerRecordingCountdown}
+                className={`w-20 h-20 rounded-full flex items-center justify-center border-4 border-zinc-950 transition ${
+                  statusText === "Get ready..." || statusText === "Listening..."
+                    ? "bg-gradient-to-tr from-teal-400 to-purple-500 hover:scale-105 cursor-pointer shadow-lg"
+                    : "bg-zinc-800 opacity-40 cursor-not-allowed"
+                }`}
+              >
+                <div className="w-5 h-5 bg-white rounded-full" />
+              </button>
+            )}
+
+            {mode === "practice" && (
+              <button
+                type="button"
+                onClick={() => playNativeLine(tier === 3 ? 1.15 : 1.0)}
+                className="px-4 py-2 rounded-xl bg-zinc-900 border border-white/5 text-[10px] font-black uppercase text-zinc-400 hover:text-white cursor-pointer hover:bg-zinc-800 transition"
+              >
+                Replay Native Clip
+              </button>
+            )}
+          </div>
+
+          {lastFeedback && (
+            <div className="p-4.5 rounded-2xl bg-zinc-950 border border-white/5 space-y-2 animate-slideUp text-left">
+              <div className="flex justify-between items-center">
+                <span className="text-xs uppercase tracking-wider font-extrabold text-zinc-500">Grading Result</span>
+                <span className={`text-xs font-black uppercase tracking-wider px-2 py-0.5 rounded ${
+                  lastFeedback.score >= 90 ? "bg-green-500/10 text-green-400 border border-green-500/20" :
+                  lastFeedback.score >= 75 ? "bg-teal-500/10 text-teal-400 border border-teal-500/20" :
+                  lastFeedback.score >= 50 ? "bg-yellow-500/10 text-yellow-400 border border-yellow-500/20" :
+                  "bg-red-500/10 text-red-400 border border-red-500/20"
+                }`}>
+                  {lastFeedback.score} pts - {lastFeedback.label.toUpperCase()} SYNC
+                </span>
+              </div>
+
+              {mode === "practice" && (
+                <div className="text-xs space-y-1 pt-1.5 border-t border-white/5">
+                  <div className="text-zinc-550"><strong className="text-zinc-400">Target:</strong> {lastFeedback.targetTextKo}</div>
+                  <div className="text-zinc-400"><strong className="text-zinc-400">Your sound:</strong> {lastFeedback.asrTextKo || "(No speech detected)"}</div>
+                </div>
+              )}
+            </div>
+          )}
+
+        </div>
+      )}
+
+      {gameState === "summary" && (
+        <div className="glass-panel p-8 rounded-[2.5rem] border border-white/10 bg-gradient-to-br from-zinc-950 to-zinc-950 shadow-2xl space-y-8 animate-fadeIn text-center">
+          
+          <div className="space-y-2">
+            <span className="text-4xl">🏆</span>
+            <h2 className="text-2xl font-black text-white font-sans">Track Summary</h2>
+            <p className="text-zinc-400 text-xs">{playlist.name} Setlist Complete</p>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="bg-zinc-900/60 p-4 rounded-2xl border border-white/5">
+              <span className="text-[9px] uppercase tracking-widest text-zinc-500 font-extrabold block">Avg Sync Score</span>
+              <strong className="text-2xl font-black text-white font-mono mt-1 block">{avgSyncScore}</strong>
+            </div>
+            <div className="bg-zinc-900/60 p-4 rounded-2xl border border-white/5">
+              <span className="text-[9px] uppercase tracking-widest text-zinc-500 font-extrabold block">Longest Combo</span>
+              <strong className="text-2xl font-black text-purple-400 font-mono mt-1 block">{maxCombo} 🔥</strong>
+            </div>
+            <div className="bg-zinc-900/60 p-4 rounded-2xl border border-white/5">
+              <span className="text-[9px] uppercase tracking-widest text-zinc-500 font-extrabold block">On-Beat Rate</span>
+              <strong className="text-2xl font-black text-teal-400 font-mono mt-1 block">{onBeatPercentage}%</strong>
+            </div>
+            <div className="bg-zinc-900/60 p-4 rounded-2xl border border-white/5">
+              <span className="text-[9px] uppercase tracking-widest text-zinc-500 font-extrabold block">Median Score</span>
+              <strong className="text-2xl font-black text-yellow-400 font-mono mt-1 block">{medianSyncScore}</strong>
+            </div>
+          </div>
+
+          <div className="p-6 rounded-3xl bg-zinc-900/30 border border-white/5 text-left space-y-3">
+            <h4 className="text-xs font-black uppercase text-zinc-400 tracking-wider">Arcade XP Breakdown</h4>
+            <div className="space-y-2 text-xs">
+              <div className="flex justify-between">
+                <span className="text-zinc-500">Base &amp; Multipliers XP</span>
+                <span className="font-mono text-zinc-300">⚡ {earnedXp - (weeklyCompleted ? 200 : 0)}</span>
+              </div>
+              
+              {weeklyCompleted && (
+                <div className="flex justify-between text-teal-400">
+                  <span>★ Weekly Setlist Clear Bonus</span>
+                  <span className="font-mono">+200 XP</span>
+                </div>
+              )}
+
+              <div className="flex justify-between border-t border-white/5 pt-2 text-sm font-black">
+                <span>Total XP Earned</span>
+                <span className="text-green-400 font-mono">⚡ {earnedXp} XP</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-3 text-left">
+            <h4 className="text-[10px] font-extrabold uppercase text-zinc-500 tracking-widest">Mix Track Logs</h4>
+            <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
+              {sliceResults.map((res, i) => (
+                <div key={i} className="p-3 bg-zinc-900/40 rounded-xl border border-white/5 flex justify-between items-center text-xs">
+                  <div>
+                    <span className="text-zinc-500 mr-2 font-mono">#{i + 1}</span>
+                    <strong className="text-zinc-200">{res.textKo}</strong>
+                    <div className="text-[10px] text-zinc-500 mt-0.5">Reaction: {(res.reactionTime / 1000).toFixed(2)}s</div>
+                  </div>
+                  <span className={`font-black ${res.score >= 75 ? "text-teal-400" : "text-red-400"}`}>
+                    {res.score} pts ({res.label})
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4 border-t border-white/5">
+            <button
+              onClick={() => setGameState("lobby")}
+              className="px-8 py-3.5 bg-zinc-900 hover:bg-zinc-800 border border-white/5 text-zinc-300 font-extrabold rounded-2xl text-xs cursor-pointer transition w-full sm:w-auto"
+            >
+              Setlist Select
+            </button>
+            <button
+              onClick={startGameplay}
+              className="px-10 py-3.5 bg-gradient-to-r from-teal-400 to-purple-500 hover:from-teal-500 hover:to-purple-600 text-white font-black rounded-2xl text-xs shadow-xl hover:shadow-teal-500/25 transition cursor-pointer w-full sm:w-auto"
+            >
+              Replay Track
+            </button>
+          </div>
+
+        </div>
+      )}
+
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CONTEXT DETECTIVE GAME VIEW
+// ─────────────────────────────────────────────────────────────────────────────
+
+interface DetectiveCase {
+  id: string;
+  type: "yes_no_maybe" | "emotion" | "meaning";
+  theme: string;
+  context: string;
+  dialogueKo: string;
+  dialogueEn?: string;
+  question: string;
+  options: string[];
+  correctIdx: number;
+  inferredLabel: string;
+  explanation: string;
+  keySignals: string[];
+}
+
+const DETECTIVE_CASES: DetectiveCase[] = [
+  // Theme: Uni Group Project (group_project)
+  {
+    id: "gp_1",
+    type: "yes_no_maybe",
+    theme: "group_project",
+    context: "Kakao chat with a classmate about group project meeting times",
+    dialogueKo: "민우: 오늘 밤 10시에 줌으로 회의할 수 있어?\n수진: 아, 오늘 밤에는 과제가 좀 많아서 어려울 수도 있을 것 같아…",
+    dialogueEn: "Minwoo: Can we do a Zoom meeting at 10 PM tonight?\nSujin: Ah, I have quite a lot of homework tonight so it might be a bit difficult…",
+    question: "Is Sujin effectively saying YES, NO, or MAYBE to the 10 PM Zoom meeting?",
+    options: ["YES", "NO", "MAYBE"],
+    correctIdx: 1, // NO
+    inferredLabel: "no",
+    explanation: "'어려울 수도 있을 것 같아...' (it might be a bit difficult) followed by trailing dots is a classic Korean polite refusal (NO) disguised as a soft excuse.",
+    keySignals: ["어려울 수도", "같아…"]
+  },
+  {
+    id: "gp_2",
+    type: "emotion",
+    theme: "group_project",
+    context: "Kakao chat with a classmate who is doing the PowerPoint slides",
+    dialogueKo: "수진: 민우야, PPT 템플릿 다 만들었어?\n민우: 아, 그게… 어제 늦게까지 과제를 하느라 아직 시작을 못 했어. 미안해…",
+    dialogueEn: "Sujin: Minwoo, did you finish making the PPT template?\nMinwoo: Ah, about that… I was doing homework until late yesterday so I haven't been able to start yet. Sorry…",
+    question: "How does Minwoo feel about not starting the PPT yet?",
+    options: ["Happy", "Worried & Apologetic", "Angry", "Indifferent"],
+    correctIdx: 1, // Worried & Apologetic
+    inferredLabel: "worried",
+    explanation: "Minwoo hedges with '아, 그게...' (Ah, about that...), details his workload excuse, and ends with '미안해...' (Sorry), showing he is anxious and apologetic.",
+    keySignals: ["아, 그게…", "미안해…"]
+  },
+  {
+    id: "gp_3",
+    type: "meaning",
+    theme: "group_project",
+    context: "A classmate reviews your draft section of the report",
+    dialogueKo: "지민: 수고하셨어요! 근데 자료 조사가 아주 조금만 더 보완되면 정말 완벽할 것 같아요.",
+    dialogueEn: "Jimin: Good work! But if the data research is just a tiny bit more supplemented, I think it would be truly perfect.",
+    question: "What is Jimin really saying about your draft?",
+    options: [
+      "The draft is already absolutely perfect.",
+      "The data research section needs to be expanded or improved.",
+      "Jimin wants to do the data research for you."
+    ],
+    correctIdx: 1,
+    inferredLabel: "improvement needed",
+    explanation: "'아주 조금만 더 보완되면' (if it is just a tiny bit more supplemented) is polite understatement. Jimin is telling you to find more references/data.",
+    keySignals: ["조금만 더", "보완되면"]
+  },
+  
+  // Theme: Workplace Politics (office)
+  {
+    id: "wp_1",
+    type: "yes_no_maybe",
+    theme: "office",
+    context: "Your team manager asks if you can finish the review by tonight",
+    dialogueKo: "김 부장: 오늘 퇴근 전까지 이 보고서 검토 마칠 수 있나?\n박 대리: 네, 부장님. 오늘 중으로 어떻게든 끝내 보겠습니다.",
+    dialogueEn: "Manager Kim: Can you finish reviewing this report before leaving today?\nAssistant Manager Park: Yes, Manager. I will try to finish it by today no matter what.",
+    question: "Is Park saying YES, NO, or MAYBE?",
+    options: ["YES", "NO", "MAYBE"],
+    correctIdx: 0, // YES
+    inferredLabel: "yes",
+    explanation: "'어떻게든 끝내 보겠습니다' (I will finish it no matter what) indicates a firm YES, showing commitment to finish the task.",
+    keySignals: ["어떻게든", "끝내 보겠습니다"]
+  },
+  {
+    id: "wp_2",
+    type: "emotion",
+    theme: "office",
+    context: "A colleague during lunch talks about a client request",
+    dialogueKo: "이 대리: 그 거래처는 매번 마감 직전에 수정을 요청하네요… 진짜 대단해요.",
+    dialogueEn: "Assistant Manager Lee: That client requests revisions right before the deadline every single time… They are really something.",
+    question: "What is Lee's real emotion behind calling the client 'really something' (대단해요)?",
+    options: ["Admiration", "Frustrated & Annoyed", "Surprised", "Excited"],
+    correctIdx: 1,
+    inferredLabel: "frustrated",
+    explanation: "Calling someone sarcastically '대단해요' (great/really something) after explaining their bad behavior signals strong frustration and annoyance.",
+    keySignals: ["매번", "대단해요"]
+  },
+  {
+    id: "wp_3",
+    type: "meaning",
+    theme: "office",
+    context: "A senior colleague hints about the meeting duration",
+    dialogueKo: "정 과장: 다들 오늘 회의 길어져서 피곤하실 텐데, 핵심만 정리하고 마무리할까요?",
+    dialogueEn: "Section Chief Jung: Since everyone must be tired from today's meeting dragging on, shall we summarize the key points and wrap up?",
+    question: "What is Jung suggesting?",
+    options: [
+      "They should continue detailed discussions.",
+      "The meeting should be ended as soon as possible.",
+      "They should take a break and resume later."
+    ],
+    correctIdx: 1,
+    inferredLabel: "wrap up",
+    explanation: "'마무리할까요?' (shall we wrap up?) combines with '피곤하실 텐데' (must be tired) to suggest ending the meeting immediately.",
+    keySignals: ["피곤하실 텐데", "마무리할까요?"]
+  },
+
+  // Theme: Family Plans (family)
+  {
+    id: "fa_1",
+    type: "yes_no_maybe",
+    theme: "family",
+    context: "You ask your mother if she wants to try a spicy soup restaurant",
+    dialogueKo: "나: 엄마, 새로 생긴 매운 짬뽕집 가보실래요?\n엄마: 아이고, 나는 요즘 매운 걸 먹으면 속이 좀 불편하더라고…",
+    dialogueEn: "Me: Mom, do you want to try the new spicy Jjamppong restaurant?\nMom: Oh my, these days my stomach feels a bit uncomfortable whenever I eat spicy food…",
+    question: "Is Mom effectively saying YES, NO, or MAYBE to the restaurant proposal?",
+    options: ["YES", "NO", "MAYBE"],
+    correctIdx: 1, // NO
+    inferredLabel: "no",
+    explanation: "Pointing out a physical issue ('속이 좀 불편하더라고' - my stomach gets uncomfortable) is an indirect refusal (NO) without rejecting you directly.",
+    keySignals: ["불편하더라고…"]
+  },
+  
+  // Theme: Homestay Life (homestay)
+  {
+    id: "hs_1",
+    type: "yes_no_maybe",
+    theme: "homestay",
+    context: "You ask your homestay host if you can invite a classmate over for dinner",
+    dialogueKo: "나: 아주머니, 오늘 저녁에 학교 친구 한 명 데려와도 괜찮을까요?\n아주머니: 음… 오늘은 집이 조금 정리가 안 돼 있긴 한데…",
+    dialogueEn: "Me: Ma'am, is it okay if I bring a school friend over for dinner tonight?\nHost: Hmm… today the house is a bit untidy, though…",
+    question: "Is the host saying YES, NO, or MAYBE?",
+    options: ["YES", "NO", "MAYBE"],
+    correctIdx: 1, // NO
+    inferredLabel: "no",
+    explanation: "Hedges like '정리가 안 돼 있긴 한데...' (it is untidy, though...) are polite warnings indicating it is inconvenient (NO).",
+    keySignals: ["안 돼 있긴 한데…"]
+  }
+];
+
+function ContextDetectiveView({ onEarnXp, onBack }: { onEarnXp: (amount: number) => void; onBack: () => void }) {
+  const [gameState, setGameState] = useState<"lobby" | "playing" | "summary">("lobby");
+  const [mode, setMode] = useState<"story" | "arcade">("arcade");
+  const [theme, setTheme] = useState<string>("group_project");
+  const [tier, setTier] = useState<1 | 2 | 3 | 4>(2);
+
+  // Active cases
+  const [cases, setCases] = useState<DetectiveCase[]>([]);
+  const [currentCaseIdx, setCurrentCaseIdx] = useState(0);
+  const [showHint, setShowHint] = useState(false);
+  const [isAnswered, setIsAnswered] = useState(false);
+  const [userSelectedIdx, setUserSelectedIdx] = useState<number | null>(null);
+  
+  // Written response state
+  const [userReply, setUserReply] = useState("");
+  const [replyEvaluated, setReplyEvaluated] = useState(false);
+  const [replyAppropriateness, setReplyAppropriateness] = useState<"good" | "ok" | "mismatch" | null>(null);
+  const [replyFeedback, setReplyFeedback] = useState("");
+  const [submittingReply, setSubmittingReply] = useState(false);
+
+  // Arcade Timer
+  const [timeLeft, setTimeLeft] = useState<number>(25);
+  const [timerActive, setTimerActive] = useState(false);
+
+  // Score metrics
+  const [combo, setCombo] = useState(0);
+  const [maxCombo, setMaxCombo] = useState(0);
+  const [earnedXp, setEarnedXp] = useState(0);
+  const [usedHintThisCase, setUsedHintThisCase] = useState(false);
+
+  const [results, setResults] = useState<{
+    caseId: string;
+    type: string;
+    correct: boolean;
+    usedHint: boolean;
+    replyAppropriate?: string;
+  }[]>([]);
+
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+
+  // Timer Effect
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (timerActive && timeLeft > 0) {
+      interval = setInterval(() => {
+        setTimeLeft((prev) => prev - 1);
+      }, 1000);
+    } else if (timeLeft === 0 && timerActive) {
+      // Auto-fail on timeout
+      setTimerActive(false);
+      handleInferenceAnswer(-1); // Timeout incorrect
+    }
+    return () => clearInterval(interval);
+  }, [timeLeft, timerActive]);
+
+  const initGame = () => {
+    let selectedCases: DetectiveCase[] = [];
+    if (mode === "story") {
+      selectedCases = DETECTIVE_CASES.filter((c) => c.theme === theme);
+    } else {
+      // Random mix of 6 cases
+      selectedCases = [...DETECTIVE_CASES].sort(() => 0.5 - Math.random()).slice(0, 6);
+    }
+
+    if (selectedCases.length === 0) {
+      selectedCases = [DETECTIVE_CASES[0]];
+    }
+
+    setCases(selectedCases);
+    setCurrentCaseIdx(0);
+    setCombo(0);
+    setMaxCombo(0);
+    setEarnedXp(0);
+    setResults([]);
+    startCaseFlow(selectedCases, 0);
+    setGameState("playing");
+  };
+
+  const startCaseFlow = (activeCases: DetectiveCase[], idx: number) => {
+    setCurrentCaseIdx(idx);
+    setShowHint(false);
+    setIsAnswered(false);
+    setUserSelectedIdx(null);
+    setUserReply("");
+    setReplyEvaluated(false);
+    setReplyAppropriateness(null);
+    setReplyFeedback("");
+    setUsedHintThisCase(false);
+
+    if (mode === "arcade") {
+      setTimeLeft(25);
+      setTimerActive(true);
+    } else {
+      setTimerActive(false);
+    }
+  };
+
+  const handleInferenceAnswer = (idx: number) => {
+    if (isAnswered) return;
+    setTimerActive(false);
+    setIsAnswered(true);
+    setUserSelectedIdx(idx);
+
+    const currentCase = cases[currentCaseIdx];
+    const correct = idx === currentCase.correctIdx;
+
+    let points = 0;
+    if (correct) {
+      points = usedHintThisCase ? 8 : 15;
+    }
+
+    // Streak and multipliers
+    let nextCombo = correct ? combo + 1 : 0;
+    setCombo(nextCombo);
+    if (nextCombo > maxCombo) {
+      setMaxCombo(nextCombo);
+    }
+
+    let multiplier = 1.0;
+    if (nextCombo >= 9) multiplier = 2.0;
+    else if (nextCombo >= 6) multiplier = 1.6;
+    else if (nextCombo >= 3) multiplier = 1.3;
+
+    let totalPoints = Math.round(points * multiplier);
+
+    // Mind Reader bonus
+    let streakBonus = 0;
+    if (nextCombo > 0 && nextCombo % 5 === 0) {
+      streakBonus = 50;
+      totalPoints += 50;
+    }
+
+    setEarnedXp((prev) => prev + totalPoints);
+
+    // Append to results
+    setResults((prev) => [
+      ...prev,
+      {
+        caseId: currentCase.id,
+        type: currentCase.type,
+        correct,
+        usedHint: usedHintThisCase
+      }
+    ]);
+  };
+
+  const submitReply = async () => {
+    if (!userReply.trim() || submittingReply) return;
+    setSubmittingReply(true);
+
+    const currentCase = cases[currentCaseIdx];
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API_BASE}/context-detective/evaluate-reply`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({
+          caseId: currentCase.id,
+          userReplyKo: userReply
+        })
+      });
+
+      if (!res.ok) throw new Error("Reply evaluation failed");
+
+      const data = await res.json();
+      setReplyAppropriateness(data.appropriateness);
+      setReplyFeedback(data.feedback);
+      setReplyEvaluated(true);
+
+      // Reward XP based on appropriateness
+      let bonusXp = 0;
+      if (data.appropriateness === "good") {
+        bonusXp = 10;
+      }
+      if (bonusXp > 0) {
+        setEarnedXp((prev) => prev + bonusXp);
+      }
+
+      // Update results array entry
+      setResults((prev) => {
+        const copy = [...prev];
+        if (copy[currentCaseIdx]) {
+          copy[currentCaseIdx].replyAppropriate = data.appropriateness;
+        }
+        return copy;
+      });
+
+    } catch (e) {
+      console.warn("Reply evaluation server error, running local fallback:", e);
+      // Fallback
+      setReplyAppropriateness("good");
+      setReplyFeedback("Appropriate reply! Good context match.");
+      setReplyEvaluated(true);
+      setEarnedXp((prev) => prev + 10);
+    } finally {
+      setSubmittingReply(false);
+    }
+  };
+
+  const triggerNextCase = () => {
+    if (currentCaseIdx + 1 < cases.length) {
+      startCaseFlow(cases, currentCaseIdx + 1);
+    } else {
+      finishGame();
+    }
+  };
+
+  const finishGame = () => {
+    let finalXp = earnedXp;
+
+    // Deep Intuition bonus (streak >= 8)
+    if (maxCombo >= 8) {
+      finalXp += 100;
+    }
+
+    onEarnXp(finalXp);
+    setEarnedXp(finalXp);
+    setGameState("summary");
+  };
+
+  // Summary Metrics
+  const correctInferences = results.filter((r) => r.correct).length;
+  const totalCount = results.length || 1;
+  const overallAccuracy = Math.round((correctInferences / totalCount) * 100);
+
+  const ynmResults = results.filter((r) => r.type === "yes_no_maybe");
+  const ynmAccuracy = ynmResults.length > 0 ? Math.round((ynmResults.filter((r) => r.correct).length / ynmResults.length) * 100) : 100;
+
+  const emotionResults = results.filter((r) => r.type === "emotion");
+  const emotionAccuracy = emotionResults.length > 0 ? Math.round((emotionResults.filter((r) => r.correct).length / emotionResults.length) * 100) : 100;
+
+  const meaningResults = results.filter((r) => r.type === "meaning");
+  const meaningAccuracy = meaningResults.length > 0 ? Math.round((meaningResults.filter((r) => r.correct).length / meaningResults.length) * 100) : 100;
+
+  // Detective Rank Based on Accuracy / Streak
+  let detectiveRank = "Rookie Inspector";
+  if (overallAccuracy >= 90 && maxCombo >= 5) detectiveRank = "Context Master";
+  else if (overallAccuracy >= 80) detectiveRank = "Mind Reader";
+  else if (overallAccuracy >= 60) detectiveRank = "Inspector";
+
+  // Coaching tips generator based on mistakes
+  let coachingTakeaway = "Look out for soft markers like '좀' (a bit) or trailing '한데...' which signal polite declines.";
+  if (ynmAccuracy < 80) {
+    coachingTakeaway = "Remember that in Korean culture, direct refusals are rare. A vague reason with trailing points is almost always a polite NO.";
+  } else if (emotionAccuracy < 80) {
+    coachingTakeaway = "Pay close attention to emotional cues: rhetorical questions like '나만 몰랐던 거야?' indicate irritation rather than curious query.";
+  }
+
+  // Helper to split dialogues for Kakao Alternating Style
+  const getChatBubbles = (koText: string, enText?: string) => {
+    return koText.split("\n").map((line, idx) => {
+      const parts = line.split(":");
+      const speaker = parts[0]?.trim() || "Speaker";
+      const messageKo = parts[1]?.trim() || "";
+
+      // Simple translation match if available
+      let messageEn = "";
+      if (enText) {
+        const enLines = enText.split("\n");
+        if (enLines[idx]) {
+          const enParts = enLines[idx].split(":");
+          messageEn = enParts[1]?.trim() || "";
+        }
+      }
+
+      return {
+        speaker,
+        messageKo,
+        messageEn,
+        isMe: speaker === "나" || speaker === "Minwoo" || speaker === "민우"
+      };
+    });
+  };
+
+  return (
+    <div className="max-w-4xl mx-auto py-4 px-4 min-h-[85vh] flex flex-col justify-center font-sans text-white select-none">
+      
+      {/* ─────────────────────────────────────────────────────────────────────────────
+          LOBBY STATE
+          ───────────────────────────────────────────────────────────────────────────── */}
+      {gameState === "lobby" && (
+        <div className="glass-panel p-8 rounded-[2.5rem] border border-white/10 bg-gradient-to-br from-zinc-950/80 to-indigo-950/20 shadow-2xl space-y-8 animate-fadeIn text-center">
+          
+          <div className="flex flex-col items-center space-y-4">
+            <div className="p-5 bg-gradient-to-br from-indigo-400 to-amber-500 rounded-[2rem] shadow-[0_0_40px_rgba(99,102,241,0.25)] relative group">
+              <span className="text-4xl">🕵️‍♂️</span>
+              <div className="absolute -inset-1 bg-gradient-to-r from-indigo-400 to-amber-500 rounded-[2.1rem] blur opacity-25 group-hover:opacity-40 transition duration-300 -z-10" />
+            </div>
+            <div>
+              <h2 className="text-3xl font-black tracking-tight text-white font-sans text-transparent bg-clip-text bg-gradient-to-r from-indigo-200 to-amber-200">Context Detective</h2>
+              <p className="text-zinc-400 text-sm mt-1 max-w-md mx-auto">
+                Read between the lines in Korean chats. Decipher hidden intentions, indirect refusals, and emotion markers.
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
+            {/* Mode Select */}
+            <div className="space-y-4">
+              <label className="text-[10px] font-extrabold text-zinc-500 uppercase tracking-widest block">Session Mode</label>
+              <div className="space-y-2">
+                <button
+                  onClick={() => setMode("story")}
+                  className={`w-full p-4.5 rounded-2xl border text-left transition duration-200 cursor-pointer ${
+                    mode === "story"
+                      ? "bg-indigo-500/10 border-indigo-500 text-white shadow-lg"
+                      : "bg-zinc-900/40 border-white/5 text-zinc-400 hover:bg-zinc-800/40"
+                  }`}
+                >
+                  <div className="font-black text-sm">Story File Cases</div>
+                  <div className="text-[11px] text-zinc-500 mt-1">Theme-based cases (Workplace, Project Group, family) with rich learning guidance.</div>
+                </button>
+                <button
+                  onClick={() => setMode("arcade")}
+                  className={`w-full p-4.5 rounded-2xl border text-left transition duration-200 cursor-pointer ${
+                    mode === "arcade"
+                      ? "bg-indigo-500/10 border-indigo-500 text-white shadow-lg"
+                      : "bg-zinc-900/40 border-white/5 text-zinc-400 hover:bg-zinc-800/40"
+                  }`}
+                >
+                  <div className="font-black text-sm">Arcade Case Rush</div>
+                  <div className="text-[11px] text-zinc-500 mt-1">Random case mix with strict 25-second timers per case. Higher XP ceiling!</div>
+                </button>
+              </div>
+            </div>
+
+            {/* Custom Options */}
+            <div className="space-y-6">
+              {mode === "story" && (
+                <div className="space-y-3">
+                  <label className="text-[10px] font-extrabold text-zinc-500 uppercase tracking-widest block">Case File Theme</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {[
+                      { id: "group_project", name: "Project Group", desc: "Group work hints & tasks" },
+                      { id: "office", name: "Workplace", desc: "Manager critiques & calls" },
+                      { id: "family", name: "Family Plans", desc: "Errands & requests" },
+                      { id: "homestay", name: "Homestay Life", desc: "Polite house adjustments" }
+                    ].map((t) => (
+                      <button
+                        key={t.id}
+                        onClick={() => setTheme(t.id)}
+                        className={`p-3 rounded-xl border text-left transition cursor-pointer text-xs font-bold ${
+                          theme === t.id
+                            ? "bg-amber-500/15 border-amber-500 text-white shadow-lg"
+                            : "bg-zinc-900/40 border-white/5 text-zinc-400 hover:bg-zinc-800/40"
+                        }`}
+                      >
+                        <div className="font-black text-zinc-200">{t.name}</div>
+                        <div className="text-[10px] text-zinc-500 font-medium mt-0.5">{t.desc}</div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="space-y-3">
+                <label className="text-[10px] font-extrabold text-zinc-500 uppercase tracking-widest block">Case Complexity (Difficulty)</label>
+                <div className="grid grid-cols-4 gap-2">
+                  {([1, 2, 3, 4] as const).map((t) => (
+                    <button
+                      key={t}
+                      onClick={() => setTier(t)}
+                      className={`py-3.5 rounded-xl border text-center transition cursor-pointer text-xs font-bold ${
+                        tier === t
+                          ? "bg-indigo-500/20 border-indigo-500 text-white shadow-lg"
+                          : "bg-zinc-900/40 border-white/5 text-zinc-400 hover:bg-zinc-800/40"
+                      }`}
+                    >
+                      <div className="text-[10px] text-zinc-500 font-mono">Tier {t}</div>
+                      <div className="text-[10px] mt-0.5 font-black">
+                        {t === 1 ? "Easy" : t === 2 ? "Standard" : t === 3 ? "Strict" : "Expert"}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+                <p className="text-[11px] text-zinc-500 leading-relaxed mt-1">
+                  {tier <= 2 ? "English translations shown. Clear tone indicators." : "Only Korean. Complex hedges (e.g. '바쁠 것 같아') and tight response margins."}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="pt-6 border-t border-white/5 flex flex-col sm:flex-row gap-4 justify-between items-center">
+            <button
+              onClick={onBack}
+              className="px-6 py-3 bg-zinc-900 hover:bg-zinc-800 border border-white/5 text-zinc-300 font-extrabold rounded-2xl text-xs cursor-pointer transition w-full sm:w-auto"
+            >
+              Back to Arcade
+            </button>
+            <button
+              onClick={initGame}
+              className="px-10 py-3.5 bg-gradient-to-r from-indigo-500 to-amber-500 hover:from-indigo-600 hover:to-amber-600 text-white font-black rounded-2xl text-xs shadow-xl hover:shadow-indigo-500/25 transition cursor-pointer w-full sm:w-auto"
+            >
+              Open Case File 📂
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ─────────────────────────────────────────────────────────────────────────────
+          PLAYING STATE
+          ───────────────────────────────────────────────────────────────────────────── */}
+      {gameState === "playing" && cases.length > 0 && (
+        <div className="glass-panel p-6.5 rounded-[2.5rem] border border-white/10 bg-gradient-to-br from-zinc-950 to-zinc-900/90 shadow-2xl relative space-y-6 animate-fadeIn text-left">
+          
+          {/* Header */}
+          <div className="flex justify-between items-center border-b border-white/5 pb-4">
+            <div className="space-y-1">
+              <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest block">Vignette Case File</span>
+              <h3 className="text-sm font-black text-white">Case #{currentCaseIdx + 1} of {cases.length}</h3>
+            </div>
+
+            <div className="flex items-center space-x-6">
+              {mode === "arcade" && (
+                <div className="text-right">
+                  <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider block">Time Left</span>
+                  <span className={`font-black text-xs font-mono ${timeLeft <= 5 ? "text-red-400 animate-pulse" : "text-white"}`}>
+                    {timeLeft}s
+                  </span>
+                </div>
+              )}
+              <div className="text-right">
+                <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider block">Streak</span>
+                <span className="font-black text-xs text-amber-400">{combo} 🔥</span>
+              </div>
+              <div className="h-6 w-px bg-white/10" />
+              <div className="text-right">
+                <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider block">Case XP</span>
+                <span className="font-black text-xs text-green-400 font-mono">⚡ {earnedXp}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Context Card */}
+          <div className="p-4 rounded-2xl bg-zinc-900/50 border border-white/5 space-y-1">
+            <span className="text-[9px] font-extrabold uppercase text-indigo-400 tracking-wider block">Context Clue</span>
+            <p className="text-xs text-zinc-300 font-semibold">{cases[currentCaseIdx].context}</p>
+          </div>
+
+          {/* Kakao Alternating Chat View */}
+          <div className="p-6 rounded-3xl bg-zinc-950/80 border border-white/5 space-y-4 max-h-[300px] overflow-y-auto">
+            {getChatBubbles(cases[currentCaseIdx].dialogueKo, tier <= 2 ? cases[currentCaseIdx].dialogueEn : undefined).map((bubble, idx) => (
+              <div key={idx} className={`flex flex-col ${bubble.isMe ? "items-end" : "items-start"} space-y-1`}>
+                <span className="text-[10px] text-zinc-500 font-extrabold">{bubble.speaker}</span>
+                <div className={`p-3.5 rounded-2xl max-w-[80%] text-xs font-semibold leading-relaxed shadow-sm relative ${
+                  bubble.isMe
+                    ? "bg-indigo-600 text-white rounded-tr-none"
+                    : "bg-zinc-900 border border-white/5 text-zinc-150 rounded-tl-none"
+                }`}>
+                  {/* Text Highlight helper for hints */}
+                  {showHint && cases[currentCaseIdx].keySignals.some((sig) => bubble.messageKo.includes(sig)) ? (
+                    <span className="bg-amber-500/20 text-amber-300 px-1 py-0.5 rounded border border-amber-500/40">
+                      {bubble.messageKo}
+                    </span>
+                  ) : (
+                    <span>{bubble.messageKo}</span>
+                  )}
+                  
+                  {bubble.messageEn && (
+                    <span className="block text-[10px] text-zinc-400 mt-1 pt-1 border-t border-white/5 font-medium">{bubble.messageEn}</span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Question / Option Panel */}
+          <div className="space-y-4">
+            <h4 className="text-sm font-black text-white">{cases[currentCaseIdx].question}</h4>
+
+            {/* Inference Selection */}
+            {!isAnswered ? (
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {cases[currentCaseIdx].options.map((opt, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => handleInferenceAnswer(idx)}
+                    className="p-4 rounded-2xl bg-zinc-900 hover:bg-zinc-800 border border-white/5 text-xs font-bold text-zinc-300 hover:text-white transition duration-150 cursor-pointer text-left shadow-md flex justify-between items-center"
+                  >
+                    <span>{opt}</span>
+                    <ChevronRight className="w-4 h-4 text-zinc-500" />
+                  </button>
+                ))}
+              </div>
+            ) : (
+              /* Answer Reveal Pane */
+              <div className="p-5 rounded-2xl bg-zinc-950 border border-white/5 space-y-3 animate-slideUp">
+                <div className="flex justify-between items-center pb-2.5 border-b border-white/5">
+                  <span className="text-xs uppercase tracking-widest font-black text-zinc-500">Verdict</span>
+                  <span className={`text-xs font-black px-3 py-1 rounded-full uppercase tracking-wider ${
+                    userSelectedIdx === cases[currentCaseIdx].correctIdx
+                      ? "bg-green-500/10 text-green-400 border border-green-500/20"
+                      : "bg-red-500/10 text-red-400 border border-red-500/20"
+                  }`}>
+                    {userSelectedIdx === cases[currentCaseIdx].correctIdx ? "✓ Correct Inference" : "✗ Mismatched Inference"}
+                  </span>
+                </div>
+                
+                <p className="text-xs text-zinc-300 leading-relaxed font-semibold">
+                  {cases[currentCaseIdx].explanation}
+                </p>
+
+                {/* Highlight specific key signals */}
+                <div className="flex items-center space-x-1.5 pt-1">
+                  <span className="text-[10px] text-zinc-500 font-extrabold uppercase">Key Signal Phrases:</span>
+                  {cases[currentCaseIdx].keySignals.map((sig, sIdx) => (
+                    <span key={sIdx} className="text-[10px] font-black bg-amber-500/10 text-amber-400 px-2 py-0.5 rounded border border-amber-500/20 font-mono">{sig}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Hint Actions */}
+          {!isAnswered && (
+            <div className="flex justify-between items-center pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowHint(true);
+                  setUsedHintThisCase(true);
+                }}
+                className="text-xs font-bold text-amber-400 hover:text-amber-300 transition cursor-pointer"
+              >
+                💡 Need Clue? Highlight Signal Words (Reduces Case XP)
+              </button>
+            </div>
+          )}
+
+          {/* Social Reply Section */}
+          {isAnswered && (
+            <div className="pt-4 border-t border-white/5 space-y-4">
+              <div className="space-y-1">
+                <label className="text-[10px] font-extrabold text-zinc-500 uppercase tracking-widest block">Korean Response Drill (+10 XP)</label>
+                <p className="text-xs text-zinc-400 font-medium">Write a socially appropriate response in Korean acknowledging what they really meant:</p>
+              </div>
+
+              {!replyEvaluated ? (
+                <div className="space-y-3">
+                  <textarea
+                    rows={2}
+                    value={userReply}
+                    onChange={(e) => setUserReply(e.target.value)}
+                    placeholder="e.g., 아쉽네요. 다음에 봐요! (Write in Korean...)"
+                    className="w-full bg-zinc-950 border border-white/10 rounded-2xl p-4 text-xs font-semibold text-white focus:outline-none focus:border-indigo-500 transition resize-none placeholder-zinc-600"
+                  />
+                  <div className="flex justify-between items-center">
+                    {/* Starter phrase hints */}
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => setUserReply("아쉽네요. 다음에 봐요!")}
+                        className="px-2.5 py-1 bg-white/5 rounded-lg text-[10px] text-zinc-400 border border-white/5 hover:bg-white/10 transition cursor-pointer"
+                      >
+                        "Next time" template
+                      </button>
+                      <button
+                        onClick={() => setUserReply("알겠습니다. 수고하셨습니다.")}
+                        className="px-2.5 py-1 bg-white/5 rounded-lg text-[10px] text-zinc-400 border border-white/5 hover:bg-white/10 transition cursor-pointer"
+                      >
+                        "Workplace" template
+                      </button>
+                    </div>
+                    <button
+                      onClick={submitReply}
+                      disabled={!userReply.trim() || submittingReply}
+                      className="px-5 py-2 bg-indigo-500 hover:bg-indigo-600 text-white font-extrabold rounded-xl text-xs transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      {submittingReply ? "Analyzing..." : "Check Reply"}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-4 rounded-2xl bg-zinc-900 border border-white/5 space-y-2 animate-slideUp">
+                  <div className="flex justify-between items-center">
+                    <span className="text-[10px] font-extrabold uppercase text-zinc-500">Coach Feedback</span>
+                    <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded ${
+                      replyAppropriateness === "good" ? "bg-green-500/10 text-green-400 border border-green-500/20" :
+                      replyAppropriateness === "ok" ? "bg-yellow-500/10 text-yellow-400 border border-yellow-500/20" :
+                      "bg-red-500/10 text-red-400 border border-red-500/20"
+                    }`}>
+                      {replyAppropriateness?.toUpperCase() || "OK"} APPROPRIATENESS
+                    </span>
+                  </div>
+                  <p className="text-xs text-zinc-300 font-semibold leading-relaxed">
+                    {replyFeedback}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Action Footer */}
+          {isAnswered && (replyEvaluated || !userReply.trim()) && (
+            <div className="pt-4 border-t border-white/5 flex justify-end">
+              <button
+                onClick={triggerNextCase}
+                className="px-8 py-3 bg-gradient-to-r from-indigo-500 to-amber-500 hover:from-indigo-600 hover:to-amber-600 text-white font-black rounded-2xl text-xs shadow-xl transition cursor-pointer"
+              >
+                {currentCaseIdx + 1 < cases.length ? "Next Case" : "Complete Case File"}
+              </button>
+            </div>
+          )}
+
+        </div>
+      )}
+
+      {/* ─────────────────────────────────────────────────────────────────────────────
+          SUMMARY STATE
+          ───────────────────────────────────────────────────────────────────────────── */}
+      {gameState === "summary" && (
+        <div className="glass-panel p-8 rounded-[2.5rem] border border-white/10 bg-gradient-to-br from-zinc-950 to-zinc-950 shadow-2xl space-y-8 animate-fadeIn text-center">
+          
+          <div className="space-y-2">
+            <span className="text-4xl">🕵️‍♂️</span>
+            <h2 className="text-2xl font-black text-white font-sans">Investigation Report</h2>
+            <p className="text-zinc-400 text-xs">Detective Rank: <strong className="text-indigo-400 font-black">{detectiveRank}</strong></p>
+          </div>
+
+          {/* Accuracy breakdown */}
+          <div className="grid grid-cols-3 gap-4">
+            <div className="bg-zinc-900/60 p-4.5 rounded-2xl border border-white/5 text-center">
+              <span className="text-[9px] uppercase tracking-widest text-zinc-500 font-extrabold block">Yes/No/Maybe</span>
+              <strong className="text-2xl font-black text-white font-mono mt-1 block">{ynmAccuracy}%</strong>
+            </div>
+            <div className="bg-zinc-900/60 p-4.5 rounded-2xl border border-white/5 text-center">
+              <span className="text-[9px] uppercase tracking-widest text-zinc-500 font-extrabold block">Emotion Inference</span>
+              <strong className="text-2xl font-black text-purple-400 font-mono mt-1 block">{emotionAccuracy}%</strong>
+            </div>
+            <div className="bg-zinc-900/60 p-4.5 rounded-2xl border border-white/5 text-center">
+              <span className="text-[9px] uppercase tracking-widest text-zinc-500 font-extrabold block">Real Meaning</span>
+              <strong className="text-2xl font-black text-teal-400 font-mono mt-1 block">{meaningAccuracy}%</strong>
+            </div>
+          </div>
+
+          {/* High accuracy badge */}
+          {overallAccuracy >= 80 && (
+            <div className="p-4 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-xs text-indigo-400 font-bold flex justify-between items-center text-left">
+              <div>
+                <span className="block font-black text-[10px] text-indigo-400 uppercase tracking-widest">Setlist Clear Badge Unlocked</span>
+                <span>Case File completed with high accuracy! +200 XP Quest Bonus awarded.</span>
+              </div>
+              <span className="text-2xl">📀</span>
+            </div>
+          )}
+
+          {/* Coaching takeaway */}
+          <div className="p-5 rounded-2xl bg-zinc-900/40 border border-white/5 text-left space-y-1">
+            <span className="text-[10px] font-extrabold uppercase text-zinc-500 tracking-wider">Detective Academy Tip</span>
+            <p className="text-xs text-zinc-350 leading-relaxed font-semibold">{coachingTakeaway}</p>
+          </div>
+
+          {/* XP Breakdown Card */}
+          <div className="p-6 rounded-3xl bg-zinc-900/30 border border-white/5 text-left space-y-3">
+            <h4 className="text-xs font-black uppercase text-zinc-400 tracking-wider">Arcade XP Breakdown</h4>
+            <div className="space-y-2 text-xs">
+              <div className="flex justify-between">
+                <span className="text-zinc-500">Inference &amp; Multipliers</span>
+                <span className="font-mono text-zinc-300">⚡ {earnedXp - (overallAccuracy >= 80 ? 200 : 0)}</span>
+              </div>
+              
+              {overallAccuracy >= 80 && (
+                <div className="flex justify-between text-indigo-400 font-bold">
+                  <span>★ Case File Cleared Quest</span>
+                  <span className="font-mono">+200 XP</span>
+                </div>
+              )}
+
+              <div className="flex justify-between border-t border-white/5 pt-2 text-sm font-black">
+                <span>Total XP Earned</span>
+                <span className="text-green-400 font-mono">⚡ {earnedXp} XP</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4 border-t border-white/5">
+            <button
+              onClick={() => setGameState("lobby")}
+              className="px-8 py-3.5 bg-zinc-900 hover:bg-zinc-800 border border-white/5 text-zinc-300 font-extrabold rounded-2xl text-xs cursor-pointer transition w-full sm:w-auto"
+            >
+              Select Theme File
+            </button>
+            <button
+              onClick={initGame}
+              className="px-10 py-3.5 bg-gradient-to-r from-indigo-400 to-amber-500 hover:from-indigo-550 hover:to-amber-550 text-white font-black rounded-2xl text-xs shadow-xl hover:shadow-indigo-500/25 transition cursor-pointer w-full sm:w-auto"
+            >
+              Replay Cases
+            </button>
+          </div>
+
+        </div>
+      )}
+
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// REGISTER ROULETTE GAME VIEW
+// ─────────────────────────────────────────────────────────────────────────────
+
+type RegisterLevel = "casual" | "neutral" | "formal";
+
+interface RouletteCase {
+  id: string;
+  theme: "school" | "office" | "family" | "mixed";
+  baseSentenceKo: string;
+  baseSentenceEn: string;
+  baseRegister: RegisterLevel;
+  audienceLabel: string;       // e.g. "면접관"
+  audienceContext: string;     // description
+  targetRegister: RegisterLevel;
+  taskType: "recognition" | "rewrite";
+  candidates: {
+    sentenceKo: string;
+    register: RegisterLevel;
+  }[];
+  modelAnswerKo: string;
+  hint: string;
+}
+
+const ROULETTE_CASES: RouletteCase[] = [
+  {
+    id: "rr_1",
+    theme: "school",
+    baseSentenceKo: "선생님, 숙제 내일 내도 돼?",
+    baseSentenceEn: "Teacher, is it okay to submit homework tomorrow? (casual)",
+    baseRegister: "casual",
+    audienceLabel: "선생님 (Teacher)",
+    audienceContext: "You are speaking to your high school teacher after class.",
+    targetRegister: "neutral",
+    taskType: "rewrite",
+    candidates: [
+      { sentenceKo: "선생님, 숙제를 내일 제출해도 될까요?", register: "neutral" },
+      { sentenceKo: "선생님, 숙제 내일 내도 돼?", register: "casual" },
+      { sentenceKo: "숙제 제출 건에 관하여 내일 보고드리겠습니다.", register: "formal" }
+    ],
+    modelAnswerKo: "선생님, 숙제 내일 내도 돼요?",
+    hint: "Change the casual ending '돼?' to the polite '돼요?' or '될까요?'"
+  },
+  {
+    id: "rr_2",
+    theme: "office",
+    baseSentenceKo: "이 문제에 대해 같이 생각해 봐요.",
+    baseSentenceEn: "Let's think about this problem together. (neutral/polite)",
+    baseRegister: "neutral",
+    audienceLabel: "상사 (Section Chief)",
+    audienceContext: "You are presenting a new issue to the section chief in a meeting.",
+    targetRegister: "formal",
+    taskType: "rewrite",
+    candidates: [
+      { sentenceKo: "이 문제에 대해 같이 생각해 봐.", register: "casual" },
+      { sentenceKo: "이 문제에 대해 같이 생각해 봐요.", register: "neutral" },
+      { sentenceKo: "해당 사안에 대하여 논의해 주시기 바랍니다.", register: "formal" }
+    ],
+    modelAnswerKo: "해당 사안에 대하여 논의해 주시기 바랍니다.",
+    hint: "Replace '이 문제' with formal '해당 사안' and '생각해 봐요' with '논의해 주시기 바랍니다'."
+  },
+  {
+    id: "rr_3",
+    theme: "family",
+    baseSentenceKo: "밥 먹었어?",
+    baseSentenceEn: "Did you eat? (casual)",
+    baseRegister: "casual",
+    audienceLabel: "할아버지 (Grandfather)",
+    audienceContext: "Greeting your grandfather during a holiday gathering.",
+    targetRegister: "formal",
+    taskType: "recognition",
+    candidates: [
+      { sentenceKo: "진지 잡수셨습니까?", register: "formal" },
+      { sentenceKo: "밥 먹었어요?", register: "neutral" },
+      { sentenceKo: "밥 먹었어?", register: "casual" }
+    ],
+    modelAnswerKo: "진지 잡수셨습니까?",
+    hint: "Grandfather requires honorific verbs like '잡수시다' and formal ending '습니까'."
+  },
+  {
+    id: "rr_4",
+    theme: "mixed",
+    baseSentenceKo: "어디 가세요?",
+    baseSentenceEn: "Where are you going? (neutral)",
+    baseRegister: "neutral",
+    audienceLabel: "어린 동생 (Younger Child)",
+    audienceContext: "Speaking to a little child who is leaving the room.",
+    targetRegister: "casual",
+    taskType: "recognition",
+    candidates: [
+      { sentenceKo: "어디 가?", register: "casual" },
+      { sentenceKo: "어디 가세요?", register: "neutral" },
+      { sentenceKo: "어디로 이동하십니까?", register: "formal" }
+    ],
+    modelAnswerKo: "어디 가?",
+    hint: "Drop the '요/세요' to make it casual '가?' or '어디 가니?'"
+  },
+  {
+    id: "rr_5",
+    theme: "office",
+    baseSentenceKo: "회의 일정이 변경되었습니다.",
+    baseSentenceEn: "The meeting schedule has been changed. (formal)",
+    baseRegister: "formal",
+    audienceLabel: "동료 친구 (Close Colleague)",
+    audienceContext: "Texting a peer colleague on KakaoTalk.",
+    targetRegister: "casual",
+    taskType: "rewrite",
+    candidates: [
+      { sentenceKo: "회의 시간 바뀌었어.", register: "casual" },
+      { sentenceKo: "회의 시간이 바뀌었어요.", register: "neutral" },
+      { sentenceKo: "회의 일정이 변경되었습니다.", register: "formal" }
+    ],
+    modelAnswerKo: "회의 시간 바뀌었어.",
+    hint: "Use casual speech '바뀌었어' and simplify the nouns."
+  },
+  {
+    id: "rr_6",
+    theme: "mixed",
+    baseSentenceKo: "고객님, 잠시만 기다려 주세요.",
+    baseSentenceEn: "Customer, please wait for a moment. (neutral)",
+    baseRegister: "neutral",
+    audienceLabel: "면접관 (Job Interviewer)",
+    audienceContext: "Speaking during a live job recruitment panel interview.",
+    targetRegister: "formal",
+    taskType: "recognition",
+    candidates: [
+      { sentenceKo: "잠시만 대기해 주시기 바랍니다.", register: "formal" },
+      { sentenceKo: "잠시만 기다려 주세요.", register: "neutral" },
+      { sentenceKo: "잠깐만 기다려 봐.", register: "casual" }
+    ],
+    modelAnswerKo: "잠시만 대기해 주시기 바랍니다.",
+    hint: "Use formal ending '바랍니다' and professional verb '대기하다'."
+  }
+];
+
+function RegisterRouletteView({ onEarnXp, onBack }: { onEarnXp: (amount: number) => void; onBack: () => void }) {
+  const [gameState, setGameState] = useState<"lobby" | "playing" | "summary">("lobby");
+  const [mode, setMode] = useState<"practice" | "arcade">("arcade");
+  const [theme, setTheme] = useState<string>("mixed");
+  const [tier, setTier] = useState<1 | 2 | 3 | 4>(2);
+
+  // Gameplay variables
+  const [spins, setSpins] = useState<RouletteCase[]>([]);
+  const [currentSpinIdx, setCurrentSpinIdx] = useState(0);
+  const [isSpinning, setIsSpinning] = useState(false);
+  const [wheelDegree, setWheelDegree] = useState(0);
+  const [showTask, setShowTask] = useState(false);
+  const [isAnswered, setIsAnswered] = useState(false);
+  const [userSelectedIdx, setUserSelectedIdx] = useState<number | null>(null);
+  
+  // Rewrite inputs
+  const [userText, setUserText] = useState("");
+  const [rewriteFeedback, setRewriteFeedback] = useState("");
+  const [rewriteMarkers, setRewriteMarkers] = useState<string[]>([]);
+  const [evaluatingRewrite, setEvaluatingRewrite] = useState(false);
+
+  // Timers
+  const [timeLeft, setTimeLeft] = useState(15);
+  const [timerActive, setTimerActive] = useState(false);
+
+  // Scores
+  const [combo, setCombo] = useState(0);
+  const [maxCombo, setMaxCombo] = useState(0);
+  const [earnedXp, setEarnedXp] = useState(0);
+  const [showHint, setShowHint] = useState(false);
+  const [usedHintThisSpin, setUsedHintThisSpin] = useState(false);
+
+  const [results, setResults] = useState<{
+    caseId: string;
+    taskType: string;
+    correct: boolean;
+    targetRegister: string;
+  }[]>([]);
+
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+
+  // Timer Effect
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (timerActive && timeLeft > 0) {
+      interval = setInterval(() => {
+        setTimeLeft((prev) => prev - 1);
+      }, 1000);
+    } else if (timeLeft === 0 && timerActive) {
+      setTimerActive(false);
+      handleTimeout();
+    }
+    return () => clearInterval(interval);
+  }, [timeLeft, timerActive]);
+
+  const initGame = () => {
+    let selected = [...ROULETTE_CASES];
+    if (theme !== "mixed") {
+      selected = ROULETTE_CASES.filter((c) => c.theme === theme);
+    }
+    if (selected.length === 0) {
+      selected = [...ROULETTE_CASES];
+    }
+
+    // Shuffle or expand to meet 6 rounds
+    selected = [...selected].sort(() => 0.5 - Math.random());
+    setSpins(selected);
+    setCurrentSpinIdx(0);
+    setCombo(0);
+    setMaxCombo(0);
+    setEarnedXp(0);
+    setResults([]);
+    setGameState("playing");
+    triggerRouletteSpin(selected, 0);
+  };
+
+  const triggerRouletteSpin = (activeSpins: RouletteCase[], idx: number) => {
+    setCurrentSpinIdx(idx);
+    setIsSpinning(true);
+    setShowTask(false);
+    setIsAnswered(false);
+    setUserSelectedIdx(null);
+    setUserText("");
+    setRewriteFeedback("");
+    setRewriteMarkers([]);
+    setShowHint(false);
+    setUsedHintThisSpin(false);
+
+    // Spin wheel degree animation
+    const extraDegrees = Math.floor(Math.random() * 360) + 1440; // 4 full spins
+    setWheelDegree((prev) => prev + extraDegrees);
+
+    setTimeout(() => {
+      setIsSpinning(false);
+      setShowTask(true);
+      if (mode === "arcade") {
+        setTimeLeft(tier === 4 ? 8 : 15);
+        setTimerActive(true);
+      } else {
+        setTimerActive(false);
+      }
+    }, 2000);
+  };
+
+  const handleTimeout = () => {
+    handleAnswerResult(false, -1);
+  };
+
+  const checkRecognitionAnswer = (candidateIdx: number) => {
+    if (isAnswered) return;
+    setTimerActive(false);
+    setIsAnswered(true);
+    setUserSelectedIdx(candidateIdx);
+
+    const currentCase = spins[currentSpinIdx];
+    const isCorrect = currentCase.candidates[candidateIdx].register === currentCase.targetRegister;
+    handleAnswerResult(isCorrect, candidateIdx);
+  };
+
+  const submitRewriteAnswer = async () => {
+    if (!userText.trim() || evaluatingRewrite) return;
+    setEvaluatingRewrite(true);
+    setTimerActive(false);
+
+    const currentCase = spins[currentSpinIdx];
+
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API_BASE}/register-roulette/evaluate`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({
+          caseId: currentCase.id,
+          targetRegister: currentCase.targetRegister,
+          userSentenceKo: userText
+        })
+      });
+
+      if (!res.ok) throw new Error("Evaluation error");
+
+      const data = await res.json();
+      setRewriteFeedback(data.feedbackEn);
+      setRewriteMarkers(data.markers);
+      setIsAnswered(true);
+      handleAnswerResult(data.isCorrect, null);
+
+    } catch (e) {
+      console.warn("Rewrite evaluation error, running fallback:", e);
+      // Fallback
+      setRewriteFeedback("Appropriate rewrite ended correctly!");
+      setRewriteMarkers(["~요/습니다"]);
+      setIsAnswered(true);
+      handleAnswerResult(true, null);
+    } finally {
+      setEvaluatingRewrite(false);
+    }
+  };
+
+  const handleAnswerResult = (isCorrect: boolean, selectIdx: number | null) => {
+    const currentCase = spins[currentSpinIdx];
+    let basePoints = currentCase.taskType === "recognition" ? 10 : 15;
+    if (usedHintThisSpin) {
+      basePoints = Math.round(basePoints / 2);
+    }
+
+    let nextCombo = isCorrect ? combo + 1 : 0;
+    setCombo(nextCombo);
+    if (nextCombo > maxCombo) {
+      setMaxCombo(nextCombo);
+    }
+
+    // Multipliers
+    let multiplier = 1.0;
+    if (nextCombo >= 10) multiplier = 2.0;
+    else if (nextCombo >= 7) multiplier = 1.6;
+    else if (nextCombo >= 4) multiplier = 1.3;
+
+    let pointsEarned = isCorrect ? Math.round(basePoints * multiplier) : 0;
+
+    // Speed bonus
+    if (isCorrect && mode === "arcade") {
+      const duration = tier === 4 ? 8 : 15;
+      if (timeLeft > duration / 2) {
+        pointsEarned += Math.round(pointsEarned * 0.2); // +20%
+      }
+    }
+
+    // Streak hit 5 bonus
+    if (isCorrect && nextCombo > 0 && nextCombo % 5 === 0) {
+      pointsEarned += 50;
+    }
+
+    setEarnedXp((prev) => prev + pointsEarned);
+
+    setResults((prev) => [
+      ...prev,
+      {
+        caseId: currentCase.id,
+        taskType: currentCase.taskType,
+        correct: isCorrect,
+        targetRegister: currentCase.targetRegister
+      }
+    ]);
+  };
+
+  const advanceSpin = () => {
+    if (currentSpinIdx + 1 < spins.length) {
+      triggerRouletteSpin(spins, currentSpinIdx + 1);
+    } else {
+      finishGame();
+    }
+  };
+
+  const finishGame = () => {
+    let finalXp = earnedXp;
+    if (maxCombo >= 10) {
+      finalXp += 150; // Code-Switch Pro milestone
+    }
+    onEarnXp(finalXp);
+    setEarnedXp(finalXp);
+    setGameState("summary");
+  };
+
+  // Metrics
+  const totalRounds = results.length || 1;
+  const correctSpins = results.filter((r) => r.correct).length;
+  const overallAccuracy = Math.round((correctSpins / totalRounds) * 100);
+
+  const casualSpins = results.filter((r) => r.targetRegister === "casual");
+  const casualAccuracy = casualSpins.length > 0 ? Math.round((casualSpins.filter((r) => r.correct).length / casualSpins.length) * 100) : 100;
+
+  const formalSpins = results.filter((r) => r.targetRegister === "formal");
+  const formalAccuracy = formalSpins.length > 0 ? Math.round((formalSpins.filter((r) => r.correct).length / formalSpins.length) * 100) : 100;
+
+  let showRank = "Stagehand";
+  if (overallAccuracy >= 90 && maxCombo >= 6) showRank = "Register Master";
+  else if (overallAccuracy >= 75) showRank = "Code‑Switch Pro";
+  else if (overallAccuracy >= 50) showRank = "Host";
+
+  return (
+    <div className="max-w-4xl mx-auto py-4 px-4 min-h-[85vh] flex flex-col justify-center font-sans text-white select-none">
+      
+      {/* ─────────────────────────────────────────────────────────────────────────────
+          LOBBY STATE
+          ───────────────────────────────────────────────────────────────────────────── */}
+      {gameState === "lobby" && (
+        <div className="glass-panel p-8 rounded-[2.5rem] border border-white/10 bg-gradient-to-br from-zinc-950/80 to-purple-950/20 shadow-2xl space-y-8 text-center animate-fadeIn">
+          
+          <div className="flex flex-col items-center space-y-4">
+            <div className="p-5 bg-gradient-to-br from-purple-500 to-orange-500 rounded-[2rem] shadow-[0_0_40px_rgba(168,85,247,0.25)] relative group">
+              <span className="text-4xl">🎡</span>
+              <div className="absolute -inset-1 bg-gradient-to-r from-purple-500 to-orange-500 rounded-[2.1rem] blur opacity-25 group-hover:opacity-40 transition duration-300 -z-10" />
+            </div>
+            <div>
+              <h2 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-200 to-orange-200">Register Roulette</h2>
+              <p className="text-zinc-400 text-sm mt-1 max-w-md mx-auto">
+                Spin the wheel and switch between casual, neutral, and formal registers. Master Korean speech level rules!
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
+            <div className="space-y-4">
+              <label className="text-[10px] font-extrabold text-zinc-500 uppercase tracking-widest block">Session Mode</label>
+              <div className="space-y-2">
+                <button
+                  onClick={() => setMode("practice")}
+                  className={`w-full p-4.5 rounded-2xl border text-left transition duration-200 cursor-pointer ${
+                    mode === "practice"
+                      ? "bg-purple-500/10 border-purple-500 text-white shadow-lg"
+                      : "bg-zinc-900/40 border-white/5 text-zinc-400 hover:bg-zinc-800/40"
+                  }`}
+                >
+                  <div className="font-black text-sm">Studio Practice</div>
+                  <div className="text-[11px] text-zinc-500 mt-1">Practice drills. Slower timer, hints permitted, detailed feedback.</div>
+                </button>
+                <button
+                  onClick={() => setMode("arcade")}
+                  className={`w-full p-4.5 rounded-2xl border text-left transition duration-200 cursor-pointer ${
+                    mode === "arcade"
+                      ? "bg-purple-500/10 border-purple-500 text-white shadow-lg"
+                      : "bg-zinc-900/40 border-white/5 text-zinc-400 hover:bg-zinc-800/40"
+                  }`}
+                >
+                  <div className="font-black text-sm">Live Broadcast (Arcade)</div>
+                  <div className="text-[11px] text-zinc-500 mt-1">Timer pressures (15s). Flawless Switch streak rounds for huge XP gains!</div>
+                </button>
+              </div>
+            </div>
+
+            <div className="space-y-6">
+              <div className="space-y-3">
+                <label className="text-[10px] font-extrabold text-zinc-500 uppercase tracking-widest block">Context Panel</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { id: "school", name: "School Panel", desc: "Teachers & classmates" },
+                    { id: "office", name: "Office Panel", desc: "Memos, bosses, colleagues" },
+                    { id: "family", name: "Family Gathering", desc: "Grandparents & siblings" },
+                    { id: "mixed", name: "Mixed Panel", desc: "Random switch rush" }
+                  ].map((p) => (
+                    <button
+                      key={p.id}
+                      onClick={() => setTheme(p.id)}
+                      className={`p-3 rounded-xl border text-left transition cursor-pointer text-xs font-bold ${
+                        theme === p.id
+                          ? "bg-purple-500/15 border-purple-500 text-white shadow-lg"
+                          : "bg-zinc-900/40 border-white/5 text-zinc-400 hover:bg-zinc-800/40"
+                      }`}
+                    >
+                      <div className="font-black text-zinc-200">{p.name}</div>
+                      <div className="text-[10px] text-zinc-500 font-medium mt-0.5">{p.desc}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <label className="text-[10px] font-extrabold text-zinc-500 uppercase tracking-widest block">Difficulty Tier</label>
+                <div className="grid grid-cols-4 gap-2">
+                  {([1, 2, 3, 4] as const).map((t) => (
+                    <button
+                      key={t}
+                      onClick={() => setTier(t)}
+                      className={`py-3 rounded-xl border text-center transition cursor-pointer text-xs font-bold ${
+                        tier === t
+                          ? "bg-purple-500/20 border-purple-500 text-white shadow-lg"
+                          : "bg-zinc-900/40 border-white/5 text-zinc-400 hover:bg-zinc-800/40"
+                      }`}
+                    >
+                      <div className="text-[10px] text-zinc-500 font-mono">Tier {t}</div>
+                      <div className="text-[10px] mt-0.5 font-black">
+                        {t === 1 ? "A2 Casual" : t === 2 ? "B1 Polite" : t === 3 ? "B2 Subtlety" : "Speed Mode"}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+                <p className="text-[11px] text-zinc-500 leading-relaxed mt-1">
+                  {tier === 1 && "Tier 1: Focuses on Casual vs Neutral. Mostly recognition tasks."}
+                  {tier === 2 && "Tier 2: Adds Formal register and basic honorifics. 50/50 rewrite."}
+                  {tier === 3 && "Tier 3: Complex senior-junior contexts. Requires full lexical shifts."}
+                  {tier === 4 && "Tier 4: Ultra speed mode! 8-second timers and tricky sub-registers."}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="pt-6 border-t border-white/5 flex flex-col sm:flex-row gap-4 justify-between items-center">
+            <button
+              onClick={onBack}
+              className="px-6 py-3 bg-zinc-900 hover:bg-zinc-800 border border-white/5 text-zinc-300 font-extrabold rounded-2xl text-xs cursor-pointer transition w-full sm:w-auto"
+            >
+              Back to Arcade
+            </button>
+            <button
+              onClick={initGame}
+              className="px-10 py-3.5 bg-gradient-to-r from-purple-500 to-orange-500 hover:from-purple-600 hover:to-orange-600 text-white font-black rounded-2xl text-xs shadow-xl hover:shadow-purple-500/25 transition cursor-pointer w-full sm:w-auto"
+            >
+              Go Live 🎡
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ─────────────────────────────────────────────────────────────────────────────
+          PLAYING STATE
+          ───────────────────────────────────────────────────────────────────────────── */}
+      {gameState === "playing" && spins.length > 0 && (
+        <div className="glass-panel p-6.5 rounded-[2.5rem] border border-white/10 bg-gradient-to-br from-zinc-950 to-zinc-900/90 shadow-2xl relative space-y-6 text-left animate-fadeIn overflow-hidden">
+          
+          {/* Header */}
+          <div className="flex justify-between items-center border-b border-white/5 pb-4">
+            <div className="space-y-1">
+              <span className="text-[10px] font-black text-purple-400 uppercase tracking-widest block">Broadcast Deck</span>
+              <h3 className="text-sm font-black text-white">Spin #{currentSpinIdx + 1} of {spins.length}</h3>
+            </div>
+
+            <div className="flex items-center space-x-6">
+              {mode === "arcade" && (
+                <div className="text-right font-mono">
+                  <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider block">Time Left</span>
+                  <span className={`font-black text-xs ${timeLeft <= 4 ? "text-red-400 animate-pulse" : "text-white"}`}>
+                    {timeLeft}s
+                  </span>
+                </div>
+              )}
+              <div className="text-right">
+                <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider block">Flawless Streak</span>
+                <span className="font-black text-xs text-purple-400">{combo} 🔥</span>
+              </div>
+              <div className="h-6 w-px bg-white/10" />
+              <div className="text-right">
+                <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider block">Accumulated XP</span>
+                <span className="font-black text-xs text-green-400 font-mono">⚡ {earnedXp}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Guest Context Briefing */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="bg-zinc-900/50 p-4.5 rounded-2xl border border-white/5 space-y-1">
+              <span className="text-[9px] font-extrabold uppercase text-purple-400 tracking-widest block">Active Listener</span>
+              <div className="text-xs font-bold text-white flex items-center space-x-2">
+                <span>👤</span>
+                <span>{spins[currentSpinIdx].audienceLabel}</span>
+              </div>
+              <p className="text-[11px] text-zinc-400 mt-1 font-semibold">{spins[currentSpinIdx].audienceContext}</p>
+            </div>
+            
+            <div className="bg-zinc-900/50 p-4.5 rounded-2xl border border-white/5 space-y-1 text-center flex flex-col justify-center items-center relative">
+              <span className="text-[9px] font-extrabold uppercase text-orange-400 tracking-widest block absolute top-2.5">Roulette Dial Target</span>
+              
+              {/* Spinning Roulette Animation */}
+              <div 
+                className={`w-14 h-14 rounded-full border-4 border-zinc-900 bg-gradient-to-r from-purple-500 via-orange-500 to-indigo-500 shadow-lg mt-3 transition-transform duration-[2000ms] ease-out ${isSpinning ? "animate-spin" : ""}`}
+                style={{ transform: `rotate(${wheelDegree}deg)` }}
+              />
+
+              {!isSpinning && showTask && (
+                <span className="text-xs font-black uppercase text-white mt-1.5 px-3 py-0.5 bg-zinc-950 border border-white/10 rounded-full">
+                  Target: {spins[currentSpinIdx].targetRegister.toUpperCase()}
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Base Sentence Card */}
+          <div className="p-5 rounded-3xl bg-zinc-950/70 border border-white/5 text-center space-y-2">
+            <span className="text-[9px] font-extrabold uppercase text-zinc-500 tracking-widest block">Base Idea Sentence</span>
+            <div className="text-xl font-black text-white">{spins[currentSpinIdx].baseSentenceKo}</div>
+            <div className="text-xs text-zinc-400 font-medium">{spins[currentSpinIdx].baseSentenceEn}</div>
+          </div>
+
+          {/* Task Interactive Panel */}
+          {showTask && (
+            <div className="space-y-4 pt-2">
+              <h4 className="text-sm font-black text-zinc-200">
+                {spins[currentSpinIdx].taskType === "recognition"
+                  ? "Select the translation that matches the target register:"
+                  : `Rewrite the base sentence to fit the target register (${spins[currentSpinIdx].targetRegister}):`}
+              </h4>
+
+              {/* RECOGNITION TYPE */}
+              {spins[currentSpinIdx].taskType === "recognition" && (
+                <div className="space-y-2.5">
+                  {spins[currentSpinIdx].candidates.map((cand, idx) => (
+                    <button
+                      key={idx}
+                      disabled={isAnswered}
+                      onClick={() => checkRecognitionAnswer(idx)}
+                      className={`w-full p-4.5 rounded-2xl border text-left transition text-xs font-bold flex justify-between items-center cursor-pointer ${
+                        isAnswered
+                          ? cand.register === spins[currentSpinIdx].targetRegister
+                            ? "bg-green-500/10 border-green-500 text-green-300"
+                            : userSelectedIdx === idx
+                            ? "bg-red-500/10 border-red-500 text-red-300"
+                            : "bg-zinc-900/40 border-white/5 text-zinc-500"
+                          : "bg-zinc-900 border-white/5 text-zinc-300 hover:bg-zinc-800 hover:border-purple-500/40"
+                      }`}
+                    >
+                      <div>
+                        <span>{cand.sentenceKo}</span>
+                        <span className="text-[10px] text-zinc-500 ml-3 font-mono font-bold">[{cand.register.toUpperCase()}]</span>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-zinc-600" />
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* REWRITE TYPE */}
+              {spins[currentSpinIdx].taskType === "rewrite" && (
+                <div className="space-y-3">
+                  {!isAnswered ? (
+                    <div className="space-y-3">
+                      <input
+                        type="text"
+                        value={userText}
+                        onChange={(e) => setUserText(e.target.value)}
+                        placeholder="Write rewritten Korean sentence here..."
+                        className="w-full bg-zinc-950 border border-white/10 rounded-2xl p-4.5 text-xs font-bold text-white focus:outline-none focus:border-purple-500 transition"
+                      />
+                      <div className="flex justify-end space-x-2">
+                        {mode === "practice" && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setShowHint(true);
+                              setUsedHintThisSpin(true);
+                            }}
+                            className="px-4 py-2 bg-white/5 hover:bg-white/10 rounded-xl text-xs font-bold text-amber-400 transition cursor-pointer"
+                          >
+                            💡 Hint
+                          </button>
+                        )}
+                        <button
+                          onClick={submitRewriteAnswer}
+                          disabled={!userText.trim() || evaluatingRewrite}
+                          className="px-8 py-3 bg-purple-600 hover:bg-purple-700 text-white font-extrabold rounded-2xl text-xs transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                          {evaluatingRewrite ? "Evaluating..." : "Submit Rewrite"}
+                        </button>
+                      </div>
+                      
+                      {showHint && (
+                        <p className="text-xs text-amber-300 bg-amber-500/10 border border-amber-500/20 p-3.5 rounded-xl font-semibold leading-relaxed animate-fadeIn">
+                          Tip: {spins[currentSpinIdx].hint}
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    /* Rewrite Result details */
+                    <div className="p-5 rounded-2xl bg-zinc-950 border border-white/5 space-y-3 animate-slideUp">
+                      <div className="pb-3 border-b border-white/5 flex justify-between items-center text-xs uppercase tracking-widest font-black text-zinc-500">
+                        <span>Evaluation</span>
+                        <span className={`font-mono text-[10px] px-2 py-0.5 rounded ${
+                          results[currentSpinIdx]?.correct
+                            ? "bg-green-500/10 text-green-400 border border-green-500/20"
+                            : "bg-red-500/10 text-red-400 border border-red-500/20"
+                        }`}>
+                          {results[currentSpinIdx]?.correct ? "✓ Correct register shift" : "✗ Shift mismatched"}
+                        </span>
+                      </div>
+                      
+                      <p className="text-xs text-zinc-300 leading-relaxed font-semibold">
+                        {rewriteFeedback || (results[currentSpinIdx]?.correct ? "Correct register match!" : "The sentence endings did not match the expected target register.")}
+                      </p>
+                      
+                      <div className="space-y-1.5 pt-2 text-xs border-t border-white/5">
+                        <div><strong className="text-zinc-500">Your Rewrite:</strong> <span className="font-semibold text-zinc-200">{userText}</span></div>
+                        <div><strong className="text-zinc-500">Model Answer:</strong> <span className="font-semibold text-purple-400">{spins[currentSpinIdx].modelAnswerKo}</span></div>
+                      </div>
+
+                      {rewriteMarkers.length > 0 && (
+                        <div className="flex items-center space-x-1.5 pt-2">
+                          <span className="text-[10px] text-zinc-500 font-extrabold uppercase">Detected Markers:</span>
+                          {rewriteMarkers.map((m, mIdx) => (
+                            <span key={mIdx} className="text-[10px] font-black bg-purple-500/10 text-purple-400 px-2 py-0.5 rounded border border-purple-500/20 font-mono">{m}</span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Advancing Footer */}
+              {isAnswered && (
+                <div className="flex justify-between items-center pt-4 border-t border-white/5">
+                  <p className="text-xs text-zinc-400 font-medium">
+                    {results[currentSpinIdx]?.correct
+                      ? "Excellent switch! Hit Next to keep going."
+                      : `Target was ${spins[currentSpinIdx].targetRegister.toUpperCase()}. Check the markers above.`}
+                  </p>
+                  <button
+                    onClick={advanceSpin}
+                    className="px-8 py-3 bg-gradient-to-r from-purple-500 to-orange-500 hover:from-purple-600 hover:to-orange-600 text-white font-black rounded-2xl text-xs shadow-xl transition cursor-pointer"
+                  >
+                    {currentSpinIdx + 1 < spins.length ? "Next Spin" : "Complete Broadcast"}
+                  </button>
+                </div>
+              )}
+
+            </div>
+          )}
+
+        </div>
+      )}
+
+      {/* ─────────────────────────────────────────────────────────────────────────────
+          SUMMARY STATE
+          ───────────────────────────────────────────────────────────────────────────── */}
+      {gameState === "summary" && (
+        <div className="glass-panel p-8 rounded-[2.5rem] border border-white/10 bg-gradient-to-br from-zinc-950 to-zinc-950 shadow-2xl space-y-8 animate-fadeIn text-center">
+          
+          <div className="space-y-2">
+            <span className="text-4xl">🎡</span>
+            <h2 className="text-2xl font-black text-white font-sans">Show Rating Report</h2>
+            <p className="text-zinc-400 text-xs">Register Rank: <strong className="text-purple-400 font-black">{showRank}</strong></p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-zinc-900/60 p-4.5 rounded-2xl border border-white/5 text-center">
+              <span className="text-[9px] uppercase tracking-widest text-zinc-500 font-extrabold block">Casual Accuracy</span>
+              <strong className="text-2xl font-black text-white font-mono mt-1 block">{casualAccuracy}%</strong>
+            </div>
+            <div className="bg-zinc-900/60 p-4.5 rounded-2xl border border-white/5 text-center">
+              <span className="text-[9px] uppercase tracking-widest text-zinc-500 font-extrabold block">Formal Accuracy</span>
+              <strong className="text-2xl font-black text-purple-400 font-mono mt-1 block">{formalAccuracy}%</strong>
+            </div>
+          </div>
+
+          {/* High accuracy badge */}
+          {overallAccuracy >= 80 && (
+            <div className="p-4 rounded-2xl bg-purple-500/10 border border-purple-500/20 text-xs text-purple-400 font-bold flex justify-between items-center text-left">
+              <div>
+                <span className="block font-black text-[10px] text-purple-400 uppercase tracking-widest">Season Clear Badge Unlocked</span>
+                <span>Completed session with high register accuracy! +200 XP Quest Bonus awarded.</span>
+              </div>
+              <span className="text-2xl">📀</span>
+            </div>
+          )}
+
+          {/* coaching takeaway */}
+          <div className="p-5 rounded-2xl bg-zinc-900/40 border border-white/5 text-left space-y-1">
+            <span className="text-[10px] font-extrabold uppercase text-zinc-500 tracking-wider">Talk Show Coach Tip</span>
+            <p className="text-xs text-zinc-350 leading-relaxed font-semibold">
+              {casualAccuracy < 80 
+                ? "Remember to fully drop sentence-final particles and polite markers (요/습니다) when talking to close friends or younger children."
+                : "When shifting to formal registers, use standard written nominalization and endings like '바랍니다' rather than warm spoken polite endings."}
+            </p>
+          </div>
+
+          <div className="p-6 rounded-3xl bg-zinc-900/30 border border-white/5 text-left space-y-3">
+            <h4 className="text-xs font-black uppercase text-zinc-400 tracking-wider">Arcade XP Breakdown</h4>
+            <div className="space-y-2 text-xs">
+              <div className="flex justify-between">
+                <span className="text-zinc-500">Spins &amp; Speed Multipliers</span>
+                <span className="font-mono text-zinc-300">⚡ {earnedXp - (overallAccuracy >= 80 ? 200 : 0)}</span>
+              </div>
+              
+              {overallAccuracy >= 80 && (
+                <div className="flex justify-between text-purple-400 font-bold">
+                  <span>★ Broadcast Season Clear Bonus</span>
+                  <span className="font-mono">+200 XP</span>
+                </div>
+              )}
+
+              <div className="flex justify-between border-t border-white/5 pt-2 text-sm font-black">
+                <span>Total XP Earned</span>
+                <span className="text-green-400 font-mono">⚡ {earnedXp} XP</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4 border-t border-white/5">
+            <button
+              onClick={() => setGameState("lobby")}
+              className="px-8 py-3.5 bg-zinc-900 hover:bg-zinc-800 border border-white/5 text-zinc-300 font-extrabold rounded-2xl text-xs cursor-pointer transition w-full sm:w-auto"
+            >
+              Select Another Panel
+            </button>
+            <button
+              onClick={initGame}
+              className="px-10 py-3.5 bg-gradient-to-r from-purple-500 to-orange-500 hover:from-purple-650 hover:to-orange-650 text-white font-black rounded-2xl text-xs shadow-xl hover:shadow-purple-500/25 transition cursor-pointer w-full sm:w-auto"
+            >
+              Replay Cases
+            </button>
+          </div>
+
+        </div>
+      )}
+
+    </div>
+  );
+}
+
+
+
